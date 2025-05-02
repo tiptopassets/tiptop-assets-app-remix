@@ -20,7 +20,7 @@ const SearchBar = ({ isCollapsed }: SearchBarProps) => {
   const { toast } = useToast();
 
   useEffect(() => {
-    if (!mapLoaded || !searchInputRef.current) return;
+    if (!mapLoaded || !searchInputRef.current || !window.google) return;
 
     try {
       // Initialize the Places Autocomplete

@@ -6,7 +6,7 @@ import GoogleMap from '@/components/GoogleMap';
 import AssetIcons from '@/components/AssetIcons';
 import AssetResultList from '@/components/AssetResultList';
 import { GoogleMapProvider, useGoogleMap } from '@/contexts/GoogleMapContext';
-import { Google } from 'lucide-react';
+import { LogIn } from 'lucide-react'; // Changed from Google to LogIn
 
 const HomeContent = () => {
   const { isAnalyzing, analysisComplete } = useGoogleMap();
@@ -30,7 +30,7 @@ const HomeContent = () => {
             tiptop
           </div>
           <button className="glass-effect px-4 py-2 rounded-full flex items-center gap-2 text-gray-700 hover:scale-105 transition-transform">
-            <Google size={20} />
+            <LogIn size={20} />
             <span>Sign in Google</span>
           </button>
         </header>

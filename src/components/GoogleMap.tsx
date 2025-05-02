@@ -7,6 +7,12 @@ import { useToast } from '@/hooks/use-toast';
 // Replace with your API key
 const API_KEY = 'AIzaSyBbclc8qxh5NVR9skf6XCz_xRJCZsnmUGA';
 
+declare global {
+  interface Window {
+    google: typeof google;
+  }
+}
+
 const GoogleMap = () => {
   const mapRef = useRef<HTMLDivElement>(null);
   const { 
@@ -28,7 +34,7 @@ const GoogleMap = () => {
 
       try {
         await loader.load();
-        if (mapRef.current) {
+        if (mapRef.current && window.google) {
           const newMap = new google.maps.Map(mapRef.current, {
             center: { lat: 37.7749, lng: -122.4194 },  // Default to San Francisco
             zoom: 12,
@@ -69,6 +75,8 @@ const GoogleMap = () => {
         id="map" 
         className="h-full w-full"
       />
+      {/* Add a subtle gradient overlay for better readability */}
+      <div className="absolute inset-0 bg-gradient-to-b from-black/30 to-transparent pointer-events-none"></div>
     </div>
   );
 };
