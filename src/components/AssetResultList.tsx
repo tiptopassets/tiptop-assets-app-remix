@@ -2,9 +2,6 @@
 import { useGoogleMap } from '@/contexts/GoogleMapContext';
 import { motion } from "framer-motion";
 
-// Add framer-motion dependency
-import { useEffect } from 'react';
-
 const iconMap = {
   "parking": (
     <div className="w-12 h-12 bg-blue-400 rounded-lg flex items-center justify-center">
@@ -73,7 +70,7 @@ const AssetResultList = () => {
 
   return (
     <div className="w-full max-w-md">
-      <h2 className="text-3xl font-bold text-tiptop-purple mb-6">
+      <h2 className="text-3xl font-bold text-tiptop-purple mb-6 drop-shadow-lg">
         Immediately Available Asset Opportunities
       </h2>
 

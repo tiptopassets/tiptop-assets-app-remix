@@ -62,7 +62,7 @@ const SearchBar = ({ isCollapsed }: SearchBarProps) => {
 
   return (
     <div className={`relative w-full ${isCollapsed ? 'max-w-md' : 'max-w-xl'} transition-all duration-500 ease-in-out`}>
-      <div className="glass-effect flex items-center h-14 pl-4 pr-2 rounded-full">
+      <div className="glass-effect flex items-center h-14 pl-4 pr-2 rounded-full relative overflow-hidden glow-effect">
         <Search className="text-tiptop-purple h-5 w-5 mr-2" />
         <input
           ref={searchInputRef}
@@ -72,6 +72,14 @@ const SearchBar = ({ isCollapsed }: SearchBarProps) => {
           onChange={(e) => setAddress(e.target.value)}
           className="flex-1 bg-transparent outline-none text-gray-800 placeholder-gray-500"
         />
+        {/* Add light reflection effect */}
+        <div 
+          className="absolute inset-0 pointer-events-none" 
+          style={{
+            background: 'linear-gradient(135deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 50%)',
+            borderRadius: 'inherit'
+          }}
+        ></div>
       </div>
     </div>
   );

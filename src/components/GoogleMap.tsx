@@ -40,7 +40,25 @@ const GoogleMap = () => {
             zoom: 12,
             mapTypeId: 'satellite',
             disableDefaultUI: true,
-            zoomControl: true
+            zoomControl: true,
+            styles: [
+              {
+                featureType: "water",
+                elementType: "geometry",
+                stylers: [
+                  { color: "#336699" },
+                  { lightness: 30 }
+                ]
+              },
+              {
+                featureType: "landscape",
+                elementType: "geometry",
+                stylers: [
+                  { saturation: -30 },
+                  { lightness: 10 }
+                ]
+              }
+            ]
           });
           setMapInstance(newMap);
           setMapLoaded(true);
@@ -75,8 +93,16 @@ const GoogleMap = () => {
         id="map" 
         className="h-full w-full"
       />
-      {/* Add a subtle gradient overlay for better readability */}
-      <div className="absolute inset-0 bg-gradient-to-b from-black/30 to-transparent pointer-events-none"></div>
+      {/* Enhanced gradient overlay with glowing effect */}
+      <div className="absolute inset-0 bg-gradient-to-b from-black/40 to-transparent pointer-events-none" />
+      <div className="absolute inset-0 bg-gradient-to-r from-purple-900/20 via-transparent to-purple-900/20 pointer-events-none" 
+           style={{mixBlendMode: 'overlay'}} />
+      {/* Add a subtle light glow at the top */}
+      <div className="absolute top-0 left-0 right-0 h-24 pointer-events-none"
+           style={{
+             background: 'radial-gradient(ellipse at top, rgba(255,255,255,0.2) 0%, transparent 70%)',
+           }} 
+      />
     </div>
   );
 };
