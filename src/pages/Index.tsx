@@ -6,7 +6,7 @@ import GoogleMap from '@/components/GoogleMap';
 import AssetIcons from '@/components/AssetIcons';
 import AssetResultList from '@/components/AssetResultList';
 import { GoogleMapProvider, useGoogleMap } from '@/contexts/GoogleMapContext';
-import { LogIn } from 'lucide-react'; // Changed from Google to LogIn
+import { LogIn } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 const HomeContent = () => {
@@ -31,7 +31,7 @@ const HomeContent = () => {
           <div className="text-2xl md:text-3xl font-bold text-tiptop-purple">
             tiptop
           </div>
-          <button className="glass-effect px-3 py-1 md:px-4 md:py-2 rounded-full flex items-center gap-2 text-gray-700 hover:scale-105 transition-transform text-sm md:text-base">
+          <button className="glass-effect px-3 py-1 md:px-4 md:py-2 rounded-full flex items-center gap-2 text-white hover:scale-105 transition-transform text-sm md:text-base">
             <LogIn size={isMobile ? 16 : 20} />
             <span>Sign in Google</span>
           </button>
@@ -55,6 +55,36 @@ const HomeContent = () => {
             <AssetResultList />
           </div>
         </main>
+        
+        {/* Footer */}
+        {!analysisComplete && !isAnalyzing && (
+          <footer className="w-full py-8 px-4 text-center">
+            <div className="glass-effect max-w-4xl mx-auto py-6 px-4 md:px-8 rounded-2xl">
+              <h2 className="text-xl md:text-2xl font-semibold text-white mb-4">
+                Rent Your Assets, Make Passive Income
+              </h2>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-white">
+                <div className="p-3 glass-effect rounded-xl hover:scale-105 transition-transform cursor-pointer">
+                  <h3 className="font-medium mb-1">Rooftop</h3>
+                  <p className="text-sm opacity-80">Solar panels, gardens</p>
+                </div>
+                <div className="p-3 glass-effect rounded-xl hover:scale-105 transition-transform cursor-pointer">
+                  <h3 className="font-medium mb-1">Garden Space</h3>
+                  <p className="text-sm opacity-80">Urban farming, events</p>
+                </div>
+                <div className="p-3 glass-effect rounded-xl hover:scale-105 transition-transform cursor-pointer">
+                  <h3 className="font-medium mb-1">Storage Space</h3>
+                  <p className="text-sm opacity-80">Equipment, vehicles</p>
+                </div>
+                <div className="p-3 glass-effect rounded-xl hover:scale-105 transition-transform cursor-pointer">
+                  <h3 className="font-medium mb-1">Swimming Pool</h3>
+                  <p className="text-sm opacity-80">Hourly rental, events</p>
+                </div>
+              </div>
+              <p className="text-white mt-5 text-lg">Check which assets you can start monetizing now!</p>
+            </div>
+          </footer>
+        )}
       </div>
     </div>
   );

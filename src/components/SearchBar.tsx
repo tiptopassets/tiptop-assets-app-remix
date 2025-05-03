@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from 'react';
 import { Search } from 'lucide-react';
 import { useGoogleMap } from '@/contexts/GoogleMapContext';
@@ -174,7 +175,7 @@ const SearchBar = ({ isCollapsed }: SearchBarProps) => {
             setAddress(e.target.value);
             setHasSelectedAddress(false);
           }}
-          className="flex-1 bg-transparent outline-none text-gray-800 placeholder-gray-500"
+          className="flex-1 bg-transparent outline-none text-white placeholder-gray-300"
         />
         {/* Add light reflection effect */}
         <div 

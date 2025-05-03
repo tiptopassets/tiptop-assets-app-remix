@@ -115,6 +115,10 @@ const AnalyzeButton = () => {
       className={`glass-effect glow-effect px-8 py-3 rounded-full flex items-center justify-center text-white font-medium text-lg
         bg-tiptop-purple
         ${isDisabled ? 'opacity-70 cursor-not-allowed' : 'animate-pulse-glow hover:scale-105 transition-transform'}`}
+      style={{ 
+        boxShadow: '0 0 20px rgba(155, 135, 245, 0.5)',
+        background: 'linear-gradient(135deg, #9b87f5 0%, #8a70fd 100%)'
+      }}
     >
       {isDisabled ? (
         <>
