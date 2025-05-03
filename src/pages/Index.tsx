@@ -11,9 +11,10 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import FooterCarousel from '@/components/FooterCarousel';
 
 const HomeContent = () => {
-  const { isAnalyzing, analysisComplete } = useGoogleMap();
+  const { isAnalyzing, analysisComplete, address } = useGoogleMap();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const isMobile = useIsMobile();
+  const hasAddress = !!address;
 
   // Collapse UI elements when analysis is complete
   useEffect(() => {
@@ -57,8 +58,8 @@ const HomeContent = () => {
           </div>
         </main>
         
-        {/* Footer with carousel */}
-        {!analysisComplete && !isAnalyzing && (
+        {/* Footer with carousel - only show when no address is entered and analysis is not complete */}
+        {!analysisComplete && !isAnalyzing && !hasAddress && (
           <footer className="w-full">
             <FooterCarousel />
           </footer>

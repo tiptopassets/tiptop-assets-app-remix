@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 const SwimmingPoolIcon = () => {
   return (
     <motion.div 
-      className="3d-asset-icon absolute top-[25%] left-1"
+      className="3d-asset-icon absolute top-[20%] left-[5%]"
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 1.3, duration: 0.5 }}
