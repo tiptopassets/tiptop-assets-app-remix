@@ -28,12 +28,12 @@ const HouseIcon = () => {
       <div className="relative">
         {/* The main house image */}
         <motion.img 
-          src="/lovable-uploads/8ba119f3-849f-4b91-8a99-2d737a12a8b7.png" 
+          src="/lovable-uploads/55b3ec9d-11b2-4d20-8a7c-34161f2c03af.png" 
           alt="3D House"
           className="h-48 object-contain drop-shadow-2xl transform-gpu"
           style={{ 
             filter: `drop-shadow(0 0 15px rgba(255, 255, 255, 0.4))
-                    drop-shadow(0 0 25px rgba(255, 165, 0, 0.3))`,
+                    drop-shadow(0 0 25px rgba(255, 180, 0, 0.4))`,
           }}
           animate={{
             y: [0, -5, 0],
@@ -64,17 +64,17 @@ const HouseIcon = () => {
           }}
         >
           <img 
-            src="/lovable-uploads/8ba119f3-849f-4b91-8a99-2d737a12a8b7.png" 
+            src="/lovable-uploads/55b3ec9d-11b2-4d20-8a7c-34161f2c03af.png" 
             alt=""
             className="h-48 object-contain invisible"
           />
         </motion.div>
         
-        {/* Glass reflection effect */}
+        {/* Glass reflection effect - enhanced for 3D house */}
         <div 
           className="absolute inset-0 pointer-events-none"
           style={{
-            background: "linear-gradient(135deg, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0) 50%, rgba(255,255,255,0.08) 100%)",
+            background: "linear-gradient(135deg, rgba(255,255,255,0.35) 0%, rgba(255,255,255,0) 50%, rgba(255,255,255,0.1) 100%)",
             borderRadius: "inherit",
           }}
         />
@@ -96,6 +96,22 @@ const HouseIcon = () => {
             repeat: Infinity,
             repeatType: "loop",
             ease: "easeInOut",
+          }}
+        />
+        
+        {/* Additional glow effect for windows */}
+        <motion.div 
+          className="absolute inset-0 pointer-events-none"
+          animate={{
+            opacity: [0.3, 0.6, 0.3],
+          }}
+          transition={{
+            duration: 2.5,
+            repeat: Infinity,
+            repeatType: "reverse",
+          }}
+          style={{
+            background: 'radial-gradient(circle at 55% 40%, rgba(255, 200, 0, 0.15) 0%, transparent 50%)',
           }}
         />
       </div>
