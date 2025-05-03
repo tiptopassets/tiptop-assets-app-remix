@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 const GardenIcon = () => {
   return (
     <motion.div 
-      className="3d-asset-icon absolute top-[35%] right-12"
+      className="3d-asset-icon absolute top-[25%] right-1"
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.5, duration: 0.5 }}

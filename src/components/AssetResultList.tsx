@@ -4,6 +4,16 @@ import { motion } from "framer-motion";
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Card, CardContent } from "@/components/ui/card";
 
+// Import individual asset icon components to reuse
+import SolarPanelIcon from './asset-icons/SolarPanelIcon';
+import GardenIcon from './asset-icons/GardenIcon';
+import WifiIcon from './asset-icons/WifiIcon';
+import ParkingIcon from './asset-icons/ParkingIcon';
+import StorageIcon from './asset-icons/StorageIcon';
+import SwimmingPoolIcon from './asset-icons/SwimmingPoolIcon';
+import CarIcon from './asset-icons/CarIcon';
+import EVChargerIcon from './asset-icons/EVChargerIcon';
+
 const iconMap = {
   "parking": (
     <div className="w-12 h-12 glass-effect rounded-lg flex items-center justify-center shadow-lg">
@@ -17,11 +27,12 @@ const iconMap = {
   ),
   "solar": (
     <div className="w-12 h-12 glass-effect rounded-lg flex items-center justify-center shadow-lg">
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <rect x="2" y="6" width="20" height="12" rx="2" fill="#FFB800" />
-        <path d="M4 10H8V14H4V10ZM10 10H14V14H10V10ZM16 10H20V14H16V10Z" fill="#7D5700" />
-        <rect x="11" y="18" width="2" height="4" fill="#7D5700" />
-      </svg>
+      <img 
+        src="/lovable-uploads/4ac94444-6856-4868-a7d1-4649c212b28a.png" 
+        alt="Solar Panel" 
+        className="w-8 h-8 object-contain"
+        style={{ filter: 'drop-shadow(0 0 8px rgba(255,215,0, 0.6))' }}
+      />
     </div>
   ),
   "garden": (
@@ -36,23 +47,22 @@ const iconMap = {
   ),
   "storage": (
     <div className="w-12 h-12 glass-effect rounded-lg flex items-center justify-center shadow-lg">
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <rect x="4" y="8" width="16" height="12" rx="1" fill="#EAB308" />
-        <rect x="6" y="10" width="12" height="1" fill="#854D0E" />
-        <rect x="6" y="13" width="12" height="1" fill="#854D0E" />
-        <rect x="6" y="16" width="12" height="1" fill="#854D0E" />
-        <path d="M12 8V4M8 4H16" stroke="#854D0E" strokeWidth="2" />
-      </svg>
+      <img 
+        src="/lovable-uploads/417dfc9f-434d-4b41-aec2-fca0d8c4cb23.png" 
+        alt="Storage Box" 
+        className="w-8 h-8 object-contain"
+        style={{ filter: 'drop-shadow(0 0 8px rgba(245,158,11, 0.6))' }}
+      />
     </div>
   ),
   "wifi": (
     <div className="w-12 h-12 glass-effect rounded-lg flex items-center justify-center shadow-lg">
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M12 5C7.03 5 2.73 8.51 1 12C2.73 15.49 7.03 19 12 19C16.97 19 21.27 15.49 23 12C21.27 8.51 16.97 5 12 5ZM12 17C9.24 17 7 14.76 7 12C7 9.24 9.24 7 12 7C14.76 7 17 9.24 17 12C17 14.76 14.76 17 12 17Z" fill="#C084FC" />
-        <circle cx="12" cy="12" r="2" fill="#7E22CE" />
-        <path d="M2 12C3.73 15.49 7.56 18 12 18C16.44 18 20.27 15.49 22 12" stroke="#C084FC" strokeWidth="2" strokeLinecap="round" />
-        <path d="M20 8C17.83 6.1 15.01 5 12 5C8.99 5 6.17 6.1 4 8" stroke="#C084FC" strokeWidth="2" strokeLinecap="round" />
-      </svg>
+      <img 
+        src="/lovable-uploads/f5bf9c32-688f-4a52-8a95-4d803713d2ff.png" 
+        alt="WiFi Icon" 
+        className="w-8 h-8 object-contain"
+        style={{ filter: 'drop-shadow(0 0 8px rgba(155, 135, 245, 0.6))' }}
+      />
     </div>
   ),
   "pool": (
@@ -85,6 +95,30 @@ const iconMap = {
       />
     </div>
   )
+};
+
+// Map for background colors based on icon type
+const cardColorMap = {
+  "parking": "from-indigo-500/30 to-purple-600/20",
+  "solar": "from-yellow-500/30 to-amber-600/20",
+  "garden": "from-green-500/30 to-emerald-600/20",
+  "storage": "from-amber-500/30 to-orange-600/20",
+  "wifi": "from-purple-500/30 to-violet-600/20",
+  "pool": "from-blue-500/30 to-sky-600/20",
+  "car": "from-indigo-500/30 to-blue-600/20",
+  "evcharger": "from-violet-500/30 to-purple-600/20"
+};
+
+// Map for glow colors
+const glowColorMap = {
+  "parking": "rgba(147, 51, 234, 0.5)",
+  "solar": "rgba(250, 204, 21, 0.5)",
+  "garden": "rgba(74, 222, 128, 0.5)",
+  "storage": "rgba(245, 158, 11, 0.5)",
+  "wifi": "rgba(155, 135, 245, 0.5)",
+  "pool": "rgba(14, 165, 233, 0.5)",
+  "car": "rgba(99, 102, 241, 0.5)",
+  "evcharger": "rgba(167, 139, 250, 0.5)"
 };
 
 const AssetResultList = () => {
@@ -153,27 +187,40 @@ const AssetResultList = () => {
       </motion.h2>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {analysisResults.topOpportunities.map((opportunity, index) => (
-          <motion.div
-            key={opportunity.title}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.3 + index * 0.1 }}
-            className="asset-card glow-effect"
-          >
-            {iconMap[opportunity.icon as keyof typeof iconMap]}
-            <div>
-              <h3 className="text-xl font-semibold text-white">
-                {opportunity.title}
-              </h3>
-              <p className="text-2xl font-bold text-tiptop-purple">
-                ${opportunity.monthlyRevenue}/month
-              </p>
-              <p className="text-gray-200">{opportunity.description}</p>
-            </div>
-            <div className="absolute inset-0 bg-gradient-to-tr from-white/5 to-transparent opacity-50 pointer-events-none rounded-lg"></div>
-          </motion.div>
-        ))}
+        {analysisResults.topOpportunities.map((opportunity, index) => {
+          const iconType = opportunity.icon as keyof typeof iconMap;
+          const gradientClass = cardColorMap[iconType] || "from-purple-400/20 to-violet-500/10";
+          const glowColor = glowColorMap[iconType] || "rgba(155, 135, 245, 0.5)";
+          
+          return (
+            <motion.div
+              key={opportunity.title}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.3 + index * 0.1 }}
+              className="asset-card glow-effect"
+              style={{
+                background: `linear-gradient(to bottom right, ${glowColor.replace('0.5', '0.2')}, transparent)`,
+                boxShadow: `0 5px 20px ${glowColor}`
+              }}
+            >
+              {iconMap[iconType]}
+              <div>
+                <h3 className="text-xl font-semibold text-white">
+                  {opportunity.title}
+                </h3>
+                <p className="text-2xl font-bold text-tiptop-purple">
+                  ${opportunity.monthlyRevenue}/month
+                </p>
+                <p className="text-gray-200">{opportunity.description}</p>
+              </div>
+              <div className="absolute inset-0 bg-gradient-to-tr from-white/10 to-transparent opacity-50 pointer-events-none rounded-lg"></div>
+              
+              {/* Enhanced glossy effect */}
+              <div className="absolute top-0 left-0 right-0 h-1/3 bg-gradient-to-b from-white/20 to-transparent rounded-t-lg pointer-events-none"></div>
+            </motion.div>
+          );
+        })}
       </div>
       
       {analysisResults.restrictions && (
@@ -182,9 +229,16 @@ const AssetResultList = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.5 }}
           className="mt-6 p-4 glass-effect rounded-lg"
+          style={{
+            background: "linear-gradient(to bottom right, rgba(239, 68, 68, 0.2), rgba(239, 68, 68, 0.05))",
+            boxShadow: "0 5px 15px rgba(239, 68, 68, 0.3)"
+          }}
         >
           <h3 className="text-lg font-semibold text-red-400">Restrictions:</h3>
           <p className="text-gray-200">{analysisResults.restrictions}</p>
+          
+          {/* Enhanced glossy effect */}
+          <div className="absolute top-0 left-0 right-0 h-1/3 bg-gradient-to-b from-white/10 to-transparent rounded-t-lg pointer-events-none"></div>
         </motion.div>
       )}
     </div>

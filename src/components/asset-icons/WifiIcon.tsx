@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 const WifiIcon = () => {
   return (
     <motion.div 
-      className="3d-asset-icon absolute bottom-[30%] left-12"
+      className="3d-asset-icon absolute bottom-[25%] right-1"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.7, duration: 0.5 }}

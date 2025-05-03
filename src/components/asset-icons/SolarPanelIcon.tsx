@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 const SolarPanelIcon = () => {
   return (
     <motion.div 
-      className="3d-asset-icon absolute top-6 right-[45%]"
+      className="3d-asset-icon absolute top-1 left-[50%] transform -translate-x-1/2"
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.3, duration: 0.5 }}
