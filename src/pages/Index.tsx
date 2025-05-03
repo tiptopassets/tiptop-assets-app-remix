@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import SearchBar from '@/components/SearchBar';
@@ -33,11 +32,7 @@ const HomeContent = () => {
         {/* Header */}
         <header className="w-full p-4 md:p-6 flex justify-between items-center">
           <Link to="/" className="text-2xl md:text-3xl font-bold text-tiptop-purple hover:scale-105 transition-transform flex items-center">
-            <div className="glass-effect p-2 rounded-lg flex items-center justify-center">
-              <span className="bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-tiptop-purple">tiptop</span>
-              <div className="absolute inset-0 bg-gradient-to-tr from-white/10 to-transparent opacity-50 pointer-events-none rounded-lg"></div>
-              <div className="absolute -inset-0.5 bg-gradient-to-r from-purple-500/20 to-violet-500/20 rounded-xl blur-sm -z-10 pointer-events-none"></div>
-            </div>
+            tiptop
           </Link>
           <button className="glass-effect px-3 py-1 md:px-4 md:py-2 rounded-full flex items-center gap-2 text-white hover:scale-105 transition-transform text-sm md:text-base">
             <LogIn size={isMobile ? 16 : 20} />
