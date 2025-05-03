@@ -11,7 +11,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import FooterCarousel from '@/components/FooterCarousel';
 
 const Footer = () => (
-  <div className="w-full py-4 mt-auto text-center text-gray-300 text-sm glass-effect backdrop-blur-md">
+  <div className="w-full py-4 mt-auto text-center text-gray-300 text-sm bg-black">
     <div className="max-w-5xl mx-auto">
       © 2025 Tiptop by Kolonia. All rights reserved.
     </div>
@@ -69,7 +69,7 @@ const HomeContent = () => {
         
         {/* Footer with carousel - only show when no address is entered and analysis is not complete */}
         {!analysisComplete && !isAnalyzing && !hasAddress && (
-          <footer className="w-full mt-auto">
+          <footer className="w-full mt-40 mb-20">
             <FooterCarousel />
           </footer>
         )}
