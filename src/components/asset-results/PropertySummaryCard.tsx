@@ -62,9 +62,11 @@ const PropertySummaryCard = ({
             </div>
           </div>
           
-          <div className="mt-4 text-gray-100">
-            <p className="mb-2">This {analysisResults.propertyType} property offers excellent monetization potential through multiple assets.</p>
-            <p>Select the opportunities below that you'd like to pursue to calculate your potential income.</p>
+          <div className="mt-4">
+            <p className="mb-2 text-gray-100">This {analysisResults.propertyType} property offers excellent monetization potential through multiple assets.</p>
+            <p className="text-lg font-medium text-white/90 bg-white/10 backdrop-blur-md p-3 rounded-lg mt-3 border border-white/20 shadow-lg glow-text">
+              Select the opportunities below that you'd like to pursue to calculate your potential income.
+            </p>
           </div>
         </CardContent>
       </Card>

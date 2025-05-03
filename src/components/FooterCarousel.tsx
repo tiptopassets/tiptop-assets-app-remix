@@ -1,6 +1,8 @@
+
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { motion } from "framer-motion";
+
 type AssetCardProps = {
   title: string;
   description: string;
@@ -10,6 +12,7 @@ type AssetCardProps = {
   gradientTo: string;
   glowColor: string;
 };
+
 const assetCards: AssetCardProps[] = [{
   title: "Rooftop",
   description: "Solar panels, gardens",
@@ -83,6 +86,7 @@ const assetCards: AssetCardProps[] = [{
   gradientTo: "to-rose-500/20",
   glowColor: "rgba(244, 114, 182, 0.7)"
 }];
+
 const AssetCard = ({
   title,
   description,
@@ -92,67 +96,82 @@ const AssetCard = ({
   gradientTo,
   glowColor
 }: AssetCardProps) => {
-  return <motion.div whileHover={{
-    scale: 1.05,
-    y: -5
-  }} className={`p-3 rounded-xl cursor-pointer transition-all duration-300 shadow-lg ${hoverColor}
-                 backdrop-blur-xl bg-white/10 border border-white/20 h-full
-                 bg-gradient-to-br ${gradientFrom} ${gradientTo} overflow-hidden relative`} style={{
-    boxShadow: `0 5px 15px ${glowColor}`
-  }}>
-      <div className={`absolute inset-0 bg-gradient-to-tr ${color} to-transparent opacity-20 z-0`}></div>
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-white/20 to-transparent z-0"></div>
-      <div className="relative z-10">
-        <h3 className="font-medium mb-1 text-white drop-shadow-md">{title}</h3>
-        <p className="text-sm text-white/90">{description}</p>
-      </div>
-      
-      {/* Glossy reflection */}
-      <div className="absolute top-0 left-0 right-0 h-1/2 bg-gradient-to-b from-white/30 to-transparent rounded-t-xl pointer-events-none"></div>
-      
-      {/* Bottom light effect */}
-      <div className="absolute bottom-0 left-0 right-0 h-1/4 bg-gradient-to-t from-white/10 to-transparent rounded-b-xl pointer-events-none"></div>
-    </motion.div>;
+  return <motion.div 
+    whileHover={{
+      scale: 1.05,
+      y: -5
+    }} 
+    className={`p-3 rounded-xl cursor-pointer transition-all duration-300 shadow-lg ${hoverColor}
+               backdrop-blur-xl bg-white/10 border border-white/20 h-full
+               bg-gradient-to-br ${gradientFrom} ${gradientTo} overflow-hidden relative`} 
+    style={{
+      boxShadow: `0 5px 15px ${glowColor}`
+    }}
+  >
+    <div className={`absolute inset-0 bg-gradient-to-tr ${color} to-transparent opacity-20 z-0`}></div>
+    <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-white/20 to-transparent z-0"></div>
+    <div className="relative z-10">
+      <h3 className="font-medium mb-1 text-white drop-shadow-md">{title}</h3>
+      <p className="text-sm text-white/90">{description}</p>
+    </div>
+    
+    {/* Glossy reflection */}
+    <div className="absolute top-0 left-0 right-0 h-1/2 bg-gradient-to-b from-white/30 to-transparent rounded-t-xl pointer-events-none"></div>
+    
+    {/* Bottom light effect */}
+    <div className="absolute bottom-0 left-0 right-0 h-1/4 bg-gradient-to-t from-white/10 to-transparent rounded-b-xl pointer-events-none"></div>
+  </motion.div>;
 };
+
 const FooterCarousel = () => {
   const isMobile = useIsMobile();
+  
   return <div className="w-full py-8 px-4">
-      <div className="max-w-5xl mx-auto">
-        <motion.div initial={{
-        opacity: 0,
-        y: 20
-      }} animate={{
-        opacity: 1,
-        y: 0
-      }} transition={{
-        duration: 0.5
-      }} className="glass-effect py-6 px-4 md:px-8 rounded-2xl relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-tr from-tiptop-purple/20 to-transparent opacity-70"></div>
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_right,_var(--tw-gradient-stops))] from-white/20 via-transparent to-transparent"></div>
+    <div className="max-w-5xl mx-auto">
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="glass-effect py-6 px-4 md:px-8 rounded-2xl relative overflow-hidden"
+      >
+        <div className="absolute inset-0 bg-gradient-to-tr from-tiptop-purple/20 to-transparent opacity-70"></div>
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_right,_var(--tw-gradient-stops))] from-white/20 via-transparent to-transparent"></div>
+        
+        <h2 className="text-xl md:text-2xl font-semibold text-white mb-6 text-center relative z-10 drop-shadow-lg">
+          Rent Your Assets, Make Passive Income
+        </h2>
+        
+        <Carousel 
+          opts={{
+            align: "start",
+            loop: true
+          }} 
+          className="w-full relative z-10"
+        >
+          <CarouselContent className="py-2">
+            {assetCards.map((card, index) => (
+              <CarouselItem key={index} className={isMobile ? "basis-full sm:basis-1/2" : "basis-1/4"}>
+                <AssetCard {...card} />
+              </CarouselItem>
+            ))}
+          </CarouselContent>
           
-          <h2 className="text-xl md:text-2xl font-semibold text-white mb-6 text-center relative z-10 drop-shadow-lg">
-            Rent Your Assets, Make Passive Income
-          </h2>
-          
-          <Carousel opts={{
-          align: "start",
-          loop: true
-        }} className="w-full relative z-10">
-            <CarouselContent className="py-2">
-              {assetCards.map((card, index) => <CarouselItem key={index} className={isMobile ? "basis-full sm:basis-1/2" : "basis-1/4"}>
-                  <AssetCard {...card} />
-                </CarouselItem>)}
-            </CarouselContent>
-            
-            <div className="flex justify-center mt-4">
-              <CarouselPrevious className="static relative transform-none mr-2 bg-white/10 hover:bg-white/20 border-white/20" />
-              <CarouselNext className="static relative transform-none bg-white/10 hover:bg-white/20 border-white/20" />
-            </div>
-          </Carousel>
-          
-          <p className="text-white mt-5 text-center text-lg relative z-10 drop-shadow-md">Check which assets you can start monetizing now! Enter your property address.</p>
-        </motion.div>
-      </div>
-    </div>;
+          <div className="flex justify-center mt-4">
+            <CarouselPrevious className="static relative transform-none mr-2 bg-white/10 hover:bg-white/20 border-white/20" />
+            <CarouselNext className="static relative transform-none bg-white/10 hover:bg-white/20 border-white/20" />
+          </div>
+        </Carousel>
+        
+        <motion.p 
+          className="text-white mt-5 text-center text-lg relative z-10 drop-shadow-md"
+          whileHover={{ scale: 1.02 }}
+          transition={{ type: "spring", stiffness: 400, damping: 10 }}
+        >
+          Check which assets you can start monetizing now! Enter your property address.
+        </motion.p>
+      </motion.div>
+    </div>
+  </div>;
 };
+
 export default FooterCarousel;

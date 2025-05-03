@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { FormField, SelectedAsset, Opportunity } from "@/types/analysis";
 import { LogIn } from 'lucide-react';
+import iconMap from './IconMap';
 
 interface AssetFormSectionProps {
   selectedAssets: SelectedAsset[];
@@ -47,6 +48,10 @@ const AssetFormSection = ({
     onComplete();
   };
 
+  if (selectedAssets.length === 0) {
+    return null;
+  }
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -61,6 +66,7 @@ const AssetFormSection = ({
       <form onSubmit={handleSubmit} className="space-y-8">
         {selectedAssets.map((asset) => {
           const formFields = findFormFields(asset.title);
+          const iconType = asset.icon as keyof typeof iconMap;
           
           if (formFields.length === 0) return null;
           
@@ -74,9 +80,10 @@ const AssetFormSection = ({
               }}
             >
               <div className="mb-4 flex items-center gap-4">
-                <div className="w-12 h-12 glass-icon flex items-center justify-center">
-                  {/* This would be the asset icon */}
-                  <span className="text-white text-lg">{asset.icon.charAt(0).toUpperCase()}</span>
+                <div className="w-12 h-12 glass-effect flex items-center justify-center rounded-lg">
+                  {iconMap[iconType] || (
+                    <span className="text-white text-lg">{asset.title.charAt(0)}</span>
+                  )}
                 </div>
                 <div>
                   <h3 className="text-xl font-semibold text-white">{asset.title}</h3>
