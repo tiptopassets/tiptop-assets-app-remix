@@ -28,12 +28,12 @@ const HouseIcon = () => {
       <div className="relative">
         {/* The main house image */}
         <motion.img 
-          src="/lovable-uploads/e6249249-86a2-4511-81d6-8e66ce807506.png" 
+          src="/lovable-uploads/8ba119f3-849f-4b91-8a99-2d737a12a8b7.png" 
           alt="3D House"
           className="h-48 object-contain drop-shadow-2xl transform-gpu"
           style={{ 
             filter: `drop-shadow(0 0 15px rgba(255, 255, 255, 0.4))
-                    drop-shadow(0 0 25px rgba(255, 135, 45, 0.3))`,
+                    drop-shadow(0 0 25px rgba(255, 165, 0, 0.3))`,
           }}
           animate={{
             y: [0, -5, 0],
@@ -46,12 +46,12 @@ const HouseIcon = () => {
           }}
         />
         
-        {/* Glowing overlay */}
+        {/* Glowing overlay for windows */}
         <motion.div 
           className="absolute top-0 left-0 w-full h-full pointer-events-none"
           style={{
-            filter: `drop-shadow(0 0 8px rgba(255, 165, 0, ${glowIntensity}))
-                    drop-shadow(0 0 12px rgba(255, 140, 0, ${glowIntensity * 0.7}))`,
+            filter: `drop-shadow(0 0 8px rgba(255, 200, 50, ${glowIntensity}))
+                    drop-shadow(0 0 12px rgba(255, 180, 0, ${glowIntensity * 0.7}))`,
             mixBlendMode: "screen",
           }}
           animate={{
@@ -64,7 +64,7 @@ const HouseIcon = () => {
           }}
         >
           <img 
-            src="/lovable-uploads/e6249249-86a2-4511-81d6-8e66ce807506.png" 
+            src="/lovable-uploads/8ba119f3-849f-4b91-8a99-2d737a12a8b7.png" 
             alt=""
             className="h-48 object-contain invisible"
           />
@@ -74,8 +74,28 @@ const HouseIcon = () => {
         <div 
           className="absolute inset-0 pointer-events-none"
           style={{
-            background: "linear-gradient(135deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 50%, rgba(255,255,255,0.05) 100%)",
+            background: "linear-gradient(135deg, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0) 50%, rgba(255,255,255,0.08) 100%)",
             borderRadius: "inherit",
+          }}
+        />
+        
+        {/* Subtle shimmer effect */}
+        <motion.div
+          className="absolute inset-0 opacity-60 pointer-events-none"
+          animate={{
+            background: [
+              'radial-gradient(circle at 30% 30%, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0) 35%)',
+              'radial-gradient(circle at 70% 70%, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0) 35%)',
+              'radial-gradient(circle at 30% 70%, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0) 35%)',
+              'radial-gradient(circle at 70% 30%, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0) 35%)',
+              'radial-gradient(circle at 30% 30%, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0) 35%)',
+            ]
+          }}
+          transition={{
+            duration: 10,
+            repeat: Infinity,
+            repeatType: "loop",
+            ease: "easeInOut",
           }}
         />
       </div>
