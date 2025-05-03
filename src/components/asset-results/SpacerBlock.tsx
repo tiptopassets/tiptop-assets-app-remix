@@ -1,7 +1,7 @@
 
 const SpacerBlock = () => {
   return (
-    <div className="h-[400px] md:h-[450px] lg:h-[500px]"></div>
+    <div className="h-[300px] md:h-[350px]"></div>
   );
 };
 
