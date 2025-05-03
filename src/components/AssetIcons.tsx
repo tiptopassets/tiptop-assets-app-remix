@@ -39,18 +39,32 @@ const AssetIcons = () => {
   return (
     <>
       {!hasAddress ? (
-        // Circular layout around house when no address
+        // Circular layout with carousel effect around house when no address
         <div className="relative w-full h-[400px] flex items-center justify-center">
-          <HouseIcon />
-
-          <SolarPanelIcon />
-          <GardenIcon />
-          <WifiIcon />
-          <ParkingIcon />
-          <StorageIcon />
-          <SwimmingPoolIcon />
-          <CarIcon />
-          <EVChargerIcon />
+          <div className="relative w-64 h-64">
+            <motion.div 
+              className="absolute inset-0"
+              animate={{ rotate: 360 }}
+              transition={{ 
+                duration: 60, 
+                repeat: Infinity, 
+                ease: "linear" 
+              }}
+            >
+              {/* This is the container that rotates */}
+              <div className="w-full h-full relative">
+                <HouseIcon />
+                <SolarPanelIcon />
+                <GardenIcon />
+                <WifiIcon />
+                <ParkingIcon />
+                <StorageIcon />
+                <SwimmingPoolIcon />
+                <CarIcon />
+                <EVChargerIcon />
+              </div>
+            </motion.div>
+          </div>
         </div>
       ) : (
         // Row layout when address is entered
@@ -66,6 +80,7 @@ const AssetIcons = () => {
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: index * 0.1, duration: 0.3 }}
+              className="glass-icon-container"
             >
               <Icon.Component />
             </motion.div>

@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 const EVChargerIcon = () => {
   return (
     <motion.div 
-      className="3d-asset-icon absolute top-[10%] right-[35%]"
+      className="3d-asset-icon absolute top-[-5%] right-[10%]"
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 1.1, duration: 0.5 }}

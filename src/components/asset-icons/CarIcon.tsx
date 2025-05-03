@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 const CarIcon = () => {
   return (
     <motion.div 
-      className="3d-asset-icon absolute left-[35%] bottom-[10%]"
+      className="3d-asset-icon absolute bottom-[-5%] left-[10%]"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 1.5, duration: 0.5 }}
