@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 const ParkingIcon = () => {
   return (
     <motion.div 
-      className="3d-asset-icon absolute bottom-[10%] right-10 md:right-20"
+      className="3d-asset-icon absolute bottom-[10%] right-12"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.9, duration: 0.5 }}

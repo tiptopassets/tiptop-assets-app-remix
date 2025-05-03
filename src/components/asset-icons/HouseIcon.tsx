@@ -70,15 +70,6 @@ const HouseIcon = () => {
           />
         </motion.div>
         
-        {/* Glass reflection effect - enhanced for 3D house */}
-        <div 
-          className="absolute inset-0 pointer-events-none"
-          style={{
-            background: "linear-gradient(135deg, rgba(255,255,255,0.35) 0%, rgba(255,255,255,0) 50%, rgba(255,255,255,0.1) 100%)",
-            borderRadius: "inherit",
-          }}
-        />
-        
         {/* Subtle shimmer effect */}
         <motion.div
           className="absolute inset-0 opacity-60 pointer-events-none"

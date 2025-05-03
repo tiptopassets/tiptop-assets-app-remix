@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 const StorageIcon = () => {
   return (
     <motion.div 
-      className="3d-asset-icon absolute bottom-6 left-[40%] md:left-[35%]"
+      className="3d-asset-icon absolute bottom-6 left-[45%]"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 1.1, duration: 0.5 }}
