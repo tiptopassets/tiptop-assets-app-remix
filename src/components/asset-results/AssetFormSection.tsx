@@ -149,7 +149,7 @@ const AssetFormSection = ({
         <div className="flex justify-center mt-8">
           <Button 
             type="submit"
-            className="glass-effect bg-gradient-to-r from-tiptop-purple to-purple-600 hover:opacity-90 px-8 py-6 rounded-full flex items-center gap-3 text-xl animate-pulse-glow"
+            className="glass-effect bg-gradient-to-r from-tiptop-purple to-purple-600 hover:opacity-90 px-8 py-6 rounded-full flex items-center gap-3 text-xl"
             style={{ 
               boxShadow: '0 0 20px rgba(155, 135, 245, 0.5)',
             }}
