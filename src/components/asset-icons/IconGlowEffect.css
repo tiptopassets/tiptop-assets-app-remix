@@ -21,13 +21,7 @@
   position: relative;
   width: 80px;
   height: 80px;
-  border-radius: 16px;
   padding: 10px;
-  backdrop-filter: blur(12px);
-  box-shadow: 
-    0 10px 30px rgba(0, 0, 0, 0.25),
-    0 5px 15px rgba(0, 0, 0, 0.15),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.15);
   overflow: hidden;
   transition: all 0.4s ease;
   transform: perspective(1000px);
@@ -35,16 +29,13 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  /* Removed the background, border and box styles */
 }
 
 .standardized-icon:hover {
   transform: translateY(-6px) scale(1.05);
-  background: rgba(255, 255, 255, 0.14);
-  box-shadow: 
-    0 15px 35px rgba(0, 0, 0, 0.35),
-    0 8px 20px rgba(0, 0, 0, 0.2),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.25),
-    0 0 25px rgba(155, 135, 245, 0.3);
+  /* Keeping only the glow effect and removing box background */
+  box-shadow: 0 0 25px rgba(155, 135, 245, 0.3);
 }
 
 .standardized-icon::before {
@@ -65,50 +56,22 @@
   pointer-events: none;
 }
 
-.standardized-icon::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: 16px;
-  padding: 2px;
-  background: linear-gradient(
-    225deg,
-    rgba(255, 255, 255, 0.4) 0%,
-    rgba(255, 255, 255, 0.1) 50%,
-    transparent 100%
-  );
-  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-  -webkit-mask-composite: xor;
-  mask-composite: exclude;
-  pointer-events: none;
-}
-
 /* Enhanced glossy icon card for carousel */
 .glossy-icon-card {
   position: relative;
   width: 100%;
   aspect-ratio: 1/1;
-  border-radius: 16px;
   padding: 10px;
-  background: rgba(255, 255, 255, 0.08);
-  backdrop-filter: blur(12px);
-  box-shadow: 
-    0 10px 30px rgba(0, 0, 0, 0.25),
-    0 5px 15px rgba(0, 0, 0, 0.15),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.15);
   overflow: hidden;
   transition: all 0.4s ease;
   transform: perspective(1000px);
+  /* Removed the background and border styles */
 }
 
 .glossy-icon-card:hover {
   transform: translateY(-6px) scale(1.05);
-  background: rgba(255, 255, 255, 0.14);
-  box-shadow: 
-    0 15px 35px rgba(0, 0, 0, 0.35),
-    0 8px 20px rgba(0, 0, 0, 0.2),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.25),
-    0 0 25px rgba(155, 135, 245, 0.3);
+  /* Keeping only the glow effect */
+  box-shadow: 0 0 25px rgba(155, 135, 245, 0.3);
 }
 
 .glossy-icon-card::before {
@@ -126,24 +89,6 @@
   );
   transform: rotate(30deg);
   z-index: 0;
-  pointer-events: none;
-}
-
-.glossy-icon-card::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: 16px;
-  padding: 2px;
-  background: linear-gradient(
-    225deg,
-    rgba(255, 255, 255, 0.4) 0%,
-    rgba(255, 255, 255, 0.1) 50%,
-    transparent 100%
-  );
-  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-  -webkit-mask-composite: xor;
-  mask-composite: exclude;
   pointer-events: none;
 }
 
