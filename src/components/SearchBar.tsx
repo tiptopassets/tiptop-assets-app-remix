@@ -94,11 +94,7 @@ const SearchBar = ({ isCollapsed }: SearchBarProps) => {
   // Start analysis when an address is selected
   const startAnalysis = () => {
     if (!address) {
-      toast({
-        title: "Address Required",
-        description: "Please enter your property address first",
-        variant: "destructive",
-      });
+      // Removed the toast notification for address requirement
       return;
     }
 
