@@ -1,5 +1,6 @@
+
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import SearchBar from '@/components/SearchBar';
 import AnalyzeButton from '@/components/AnalyzeButton';
 import GoogleMap from '@/components/GoogleMap';
@@ -10,17 +11,41 @@ import { LogIn } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import FooterCarousel from '@/components/FooterCarousel';
 import { motion } from 'framer-motion';
+import { useAuth } from '@/contexts/AuthContext';
+import { toast } from '@/hooks/use-toast';
 
 const HomeContent = () => {
   const { isAnalyzing, analysisComplete, address } = useGoogleMap();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const isMobile = useIsMobile();
   const hasAddress = !!address;
+  const navigate = useNavigate();
+  const { user, signInWithGoogle, loading } = useAuth();
 
   // Collapse UI elements when analysis is complete
   useEffect(() => {
     setIsCollapsed(analysisComplete);
   }, [analysisComplete]);
+
+  const handleSignIn = async () => {
+    try {
+      await signInWithGoogle();
+    } catch (error) {
+      console.error('Sign in error:', error);
+      toast({
+        title: "Authentication Error",
+        description: "There was a problem signing in. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // If user is already authenticated, redirect to dashboard
+  useEffect(() => {
+    if (user && !loading) {
+      navigate('/dashboard');
+    }
+  }, [user, loading, navigate]);
 
   return (
     <div className="min-h-screen relative overflow-hidden">
@@ -34,9 +59,16 @@ const HomeContent = () => {
           <Link to="/" className="text-2xl md:text-3xl font-bold text-tiptop-purple hover:scale-105 transition-transform flex items-center">
             tiptop
           </Link>
-          <button className="glass-effect px-3 py-1 md:px-4 md:py-2 rounded-full flex items-center gap-2 text-white hover:scale-105 transition-transform text-sm md:text-base">
+          <button 
+            onClick={handleSignIn}
+            disabled={loading}
+            className="glass-effect px-3 py-1 md:px-4 md:py-2 rounded-full flex items-center gap-2 text-white hover:scale-105 transition-transform text-sm md:text-base"
+          >
             <LogIn size={isMobile ? 16 : 20} />
-            <span className="text-gray-100">Sign in Google</span>
+            <span className="text-gray-100">Sign in with Google</span>
+            
+            {/* Glow effect for hover */}
+            <div className="absolute -inset-0.5 bg-gradient-to-r from-purple-500/20 to-violet-500/20 rounded-full blur-sm -z-10"></div>
           </button>
         </header>
 

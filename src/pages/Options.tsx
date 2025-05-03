@@ -1,19 +1,22 @@
+
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { CheckCircle2, Upload, User, ArrowRight, LogIn } from 'lucide-react';
+import { CheckCircle2, Upload, User, LogIn } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
 
 const Options = () => {
   const navigate = useNavigate();
   const [selectedOption, setSelectedOption] = useState<'manual' | 'concierge' | null>(null);
+  const { signInWithGoogle } = useAuth();
 
   const handleOptionSelect = (option: 'manual' | 'concierge') => {
     setSelectedOption(option);
   };
 
-  const handleContinue = () => {
+  const handleContinue = async () => {
     if (!selectedOption) {
       toast({
         title: "Selection Required",
@@ -23,17 +26,23 @@ const Options = () => {
       return;
     }
     
-    // For demo purposes, show toast and then redirect to auth page
+    // Show toast and try to authenticate with Google
     toast({
       title: "Option Selected",
       description: `${selectedOption === 'manual' ? 'Manual Upload' : 'Tiptop Concierge'} selected`,
     });
     
-    // In a real app, this would redirect to OAuth
-    setTimeout(() => {
-      // Simulating Google auth redirect for now
-      alert("In a real app, you would be redirected to Google OAuth authentication");
-    }, 1500);
+    try {
+      // Trigger Google authentication
+      await signInWithGoogle();
+    } catch (error) {
+      console.error('Google sign in error:', error);
+      toast({
+        title: "Authentication Error",
+        description: "There was a problem signing in with Google. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
 
   return (
