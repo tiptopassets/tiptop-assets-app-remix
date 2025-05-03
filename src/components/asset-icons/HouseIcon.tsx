@@ -5,7 +5,6 @@ import './IconGlowEffect.css';
 
 const HouseIcon = () => {
   const [glowIntensity, setGlowIntensity] = useState(0.5);
-  const [rotationDegree, setRotationDegree] = useState(0);
   
   // Create a subtle pulsing effect
   useEffect(() => {
@@ -16,15 +15,7 @@ const HouseIcon = () => {
       });
     }, 100);
     
-    // Create a slow rotation effect for carousel animation
-    const rotationInterval = setInterval(() => {
-      setRotationDegree(prev => (prev + 0.1) % 360);
-    }, 50);
-    
-    return () => {
-      clearInterval(interval);
-      clearInterval(rotationInterval);
-    };
+    return () => clearInterval(interval);
   }, []);
 
   return (
@@ -111,16 +102,6 @@ const HouseIcon = () => {
         }}
         style={{
           background: 'radial-gradient(circle at 55% 40%, rgba(255, 200, 0, 0.15) 0%, transparent 50%)',
-        }}
-      />
-      
-      {/* Rotating ring for carousel effect */}
-      <div 
-        className="absolute inset-0 w-full h-full pointer-events-none"
-        style={{
-          transform: `rotate(${rotationDegree}deg)`,
-          transformOrigin: 'center center',
-          transition: 'transform 0.05s linear'
         }}
       />
     </motion.div>

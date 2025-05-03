@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 const StorageIcon = () => {
   return (
     <motion.div 
-      className="3d-asset-icon absolute bottom-[-15%] left-[50%] transform -translate-x-1/2"
+      className="3d-asset-icon absolute bottom-[5%] left-[50%] transform -translate-x-1/2"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 1.1, duration: 0.5 }}
@@ -17,9 +17,7 @@ const StorageIcon = () => {
             src="/lovable-uploads/417dfc9f-434d-4b41-aec2-fca0d8c4cb23.png" 
             alt="Storage Box" 
             className="relative z-10 w-10 h-10 object-contain"
-            style={{ 
-              filter: 'drop-shadow(0 0 8px rgba(245,158,11, 0.6))',
-            }}
+            style={{ filter: 'drop-shadow(0 0 8px rgba(245,158,11, 0.6))' }}
           />
           <div className="absolute inset-0 rounded-lg bg-gradient-to-tr from-white/20 to-transparent opacity-40"></div>
         </div>

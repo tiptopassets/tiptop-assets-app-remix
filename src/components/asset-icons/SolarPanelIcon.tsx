@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 const SolarPanelIcon = () => {
   return (
     <motion.div 
-      className="3d-asset-icon absolute top-[-15%] left-[50%] transform -translate-x-1/2"
+      className="3d-asset-icon absolute top-[5%] left-[50%] transform -translate-x-1/2"
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.3, duration: 0.5 }}
@@ -17,9 +17,7 @@ const SolarPanelIcon = () => {
             src="/lovable-uploads/4ac94444-6856-4868-a7d1-4649c212b28a.png" 
             alt="Solar Panel" 
             className="relative z-10 w-10 h-10 object-contain"
-            style={{ 
-              filter: 'drop-shadow(0 0 8px rgba(255,215,0, 0.6))',
-            }}
+            style={{ filter: 'drop-shadow(0 0 8px rgba(255,215,0, 0.6))' }}
           />
           <div className="absolute inset-0 rounded-lg bg-gradient-to-tr from-white/20 to-transparent opacity-40"></div>
         </div>
