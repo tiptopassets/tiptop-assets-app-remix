@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import SearchBar from '@/components/SearchBar';
 import AnalyzeButton from '@/components/AnalyzeButton';
@@ -60,7 +61,7 @@ const HomeContent = () => {
         
         {/* Footer with carousel - only show when no address is entered and analysis is not complete */}
         {!analysisComplete && !isAnalyzing && !hasAddress && (
-          <footer className="w-full mt-96">
+          <footer className="w-full mt-64">
             <FooterCarousel />
           </footer>
         )}
