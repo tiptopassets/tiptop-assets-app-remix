@@ -18,7 +18,7 @@ const AssetIcons = () => {
         transition={{ duration: 0.8, ease: "easeOut" }}
       >
         <img 
-          src="/lovable-uploads/38c4dd36-b2e0-4e04-a613-1ac8c513265e.png" 
+          src="/lovable-uploads/16aed391-2f58-4689-9ed3-43da2bdc31b7.png" 
           alt="3D House"
           className="h-40 object-contain drop-shadow-2xl"
           style={{ filter: 'drop-shadow(0 0 20px rgba(155, 135, 245, 0.5))' }}
