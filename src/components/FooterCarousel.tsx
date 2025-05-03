@@ -170,6 +170,18 @@ const FooterCarousel = () => {
           Check which assets you can start monetizing now! Enter your property address.
         </motion.p>
       </motion.div>
+      
+      {/* Copyright footer */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.7, duration: 0.5 }}
+        className="mt-6 text-center"
+      >
+        <p className="text-white/60 text-xs backdrop-blur-sm py-2 px-4 rounded-full inline-block bg-black/30 border border-white/10">
+          © 2025 Tiptop by Kolonia. All rights reserved.
+        </p>
+      </motion.div>
     </div>
   </div>;
 };
