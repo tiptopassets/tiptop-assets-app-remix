@@ -2,7 +2,7 @@
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { motion } from "framer-motion";
-import { EvCharging } from "lucide-react";
+import { BatteryCharging } from "lucide-react";
 
 const EVChargingDashboard = () => {
   return (
@@ -14,7 +14,7 @@ const EVChargingDashboard = () => {
         className="space-y-6"
       >
         <div className="flex items-center">
-          <EvCharging className="mr-2 text-tiptop-purple" size={32} />
+          <BatteryCharging className="mr-2 text-tiptop-purple" size={32} />
           <h1 className="text-3xl font-bold">EV Charging Asset</h1>
         </div>
         
@@ -23,20 +23,28 @@ const EVChargingDashboard = () => {
         </p>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <Card className="overflow-hidden border-0 shadow-md">
-            <CardHeader className="bg-gradient-to-r from-purple-500/10 to-blue-500/10">
+          <Card className="overflow-hidden border-0 shadow-md relative">
+            {/* Glassmorphism effect */}
+            <div className="absolute inset-0 bg-gradient-to-br from-white/80 to-white/40 backdrop-blur-sm z-0"></div>
+            <div className="absolute inset-0 bg-white/50 z-0"></div>
+            
+            <CardHeader className="bg-gradient-to-r from-purple-500/10 to-blue-500/10 relative z-10">
               <CardTitle>Charging Station Details</CardTitle>
             </CardHeader>
-            <CardContent className="pt-6">
+            <CardContent className="pt-6 relative z-10">
               <p>This section would contain specific details about the EV charging asset.</p>
             </CardContent>
           </Card>
           
-          <Card className="overflow-hidden border-0 shadow-md">
-            <CardHeader className="bg-gradient-to-r from-purple-500/10 to-blue-500/10">
+          <Card className="overflow-hidden border-0 shadow-md relative">
+            {/* Glassmorphism effect */}
+            <div className="absolute inset-0 bg-gradient-to-br from-white/80 to-white/40 backdrop-blur-sm z-0"></div>
+            <div className="absolute inset-0 bg-white/50 z-0"></div>
+            
+            <CardHeader className="bg-gradient-to-r from-purple-500/10 to-blue-500/10 relative z-10">
               <CardTitle>Usage Statistics</CardTitle>
             </CardHeader>
-            <CardContent className="pt-6">
+            <CardContent className="pt-6 relative z-10">
               <p>This section would contain usage statistics for the EV charging asset.</p>
             </CardContent>
           </Card>

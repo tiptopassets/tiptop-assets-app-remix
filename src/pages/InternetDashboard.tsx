@@ -23,20 +23,28 @@ const InternetDashboard = () => {
         </p>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <Card className="overflow-hidden border-0 shadow-md">
-            <CardHeader className="bg-gradient-to-r from-purple-500/10 to-blue-500/10">
+          <Card className="overflow-hidden border-0 shadow-md relative">
+            {/* Glassmorphism effect */}
+            <div className="absolute inset-0 bg-gradient-to-br from-white/80 to-white/40 backdrop-blur-sm z-0"></div>
+            <div className="absolute inset-0 bg-white/50 z-0"></div>
+            
+            <CardHeader className="bg-gradient-to-r from-purple-500/10 to-blue-500/10 relative z-10">
               <CardTitle>Internet Connection Details</CardTitle>
             </CardHeader>
-            <CardContent className="pt-6">
+            <CardContent className="pt-6 relative z-10">
               <p>This section would contain specific details about the internet asset.</p>
             </CardContent>
           </Card>
           
-          <Card className="overflow-hidden border-0 shadow-md">
-            <CardHeader className="bg-gradient-to-r from-purple-500/10 to-blue-500/10">
+          <Card className="overflow-hidden border-0 shadow-md relative">
+            {/* Glassmorphism effect */}
+            <div className="absolute inset-0 bg-gradient-to-br from-white/80 to-white/40 backdrop-blur-sm z-0"></div>
+            <div className="absolute inset-0 bg-white/50 z-0"></div>
+            
+            <CardHeader className="bg-gradient-to-r from-purple-500/10 to-blue-500/10 relative z-10">
               <CardTitle>Bandwidth Usage</CardTitle>
             </CardHeader>
-            <CardContent className="pt-6">
+            <CardContent className="pt-6 relative z-10">
               <p>This section would contain bandwidth usage metrics for the internet asset.</p>
             </CardContent>
           </Card>

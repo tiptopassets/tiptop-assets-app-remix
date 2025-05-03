@@ -3,7 +3,7 @@ import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
-import { Plus, Sun, Wifi, EvCharging, Car, Home, ParkingCircle } from "lucide-react";
+import { Plus, Sun, Wifi, BatteryCharging, Car, Home, ParkingCircle } from "lucide-react";
 
 interface AssetCardProps {
   title: string;
@@ -114,7 +114,7 @@ const AddAsset = () => {
           
           <AssetCard
             title="EV Charging"
-            icon={<EvCharging size={24} />}
+            icon={<BatteryCharging size={24} />}
             description="Install an EV charging station and earn from electric vehicle owners in your area."
             onSelect={() => handleAssetSelect('ev-charging')}
           />

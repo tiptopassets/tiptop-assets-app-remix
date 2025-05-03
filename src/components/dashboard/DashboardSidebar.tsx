@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Home, Sun, Wifi, EvCharging, Plus, User, SignOut } from 'lucide-react';
+import { Home, Sun, Wifi, Plus, User, LogOut, BatteryCharging } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
 
@@ -10,7 +10,7 @@ const menuItems = [
   { icon: Home, label: 'Dashboard', path: '/dashboard' },
   { icon: Sun, label: 'Rooftop', path: '/dashboard/rooftop' },
   { icon: Wifi, label: 'Internet', path: '/dashboard/internet' },
-  { icon: EvCharging, label: 'EV Charging', path: '/dashboard/ev-charging' },
+  { icon: BatteryCharging, label: 'EV Charging', path: '/dashboard/ev-charging' },
   { icon: Plus, label: 'Add Asset', path: '/dashboard/add-asset' },
   { icon: User, label: 'My Account', path: '/dashboard/account' },
 ];
@@ -103,7 +103,7 @@ const DashboardSidebar = () => {
             collapsed ? "justify-center" : "justify-start"
           )}
         >
-          <SignOut size={collapsed ? 24 : 20} />
+          <LogOut size={collapsed ? 24 : 20} />
           {!collapsed && <span className="ml-3">Sign Out</span>}
         </button>
       </div>

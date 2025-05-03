@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { PropertyOverviewCard } from "@/components/dashboard/PropertyOverviewCard";
@@ -16,13 +15,23 @@ const mockPropertyData = {
   imageUrl: "https://maps.googleapis.com/maps/api/staticmap?center=Brooklyn+Bridge,New+York,NY&zoom=13&size=600x300&maptype=satellite&key=YOUR_API_KEY"
 };
 
-const mockAssets = [
+// Define asset type
+type Asset = {
+  id: string;
+  type: string;
+  status: 'active' | 'pending' | 'inactive';
+  revenue: number;
+  partner: string;
+  actionRequired?: string;
+};
+
+const mockAssets: Asset[] = [
   { id: '1', type: 'Rooftop Solar', status: 'active', revenue: 450.00, partner: 'SolarCity', actionRequired: undefined },
   { id: '2', type: 'Internet Bandwidth', status: 'pending', revenue: 120.00, partner: 'Grass', actionRequired: 'Sign Contract' },
   { id: '3', type: 'Parking Space', status: 'active', revenue: 300.00, partner: 'Neighbor.com', actionRequired: undefined },
   { id: '4', type: 'Storage Space', status: 'inactive', revenue: 0, partner: 'Neighbor.com', actionRequired: 'Define Hours' },
   { id: '5', type: 'EV Charging', status: 'pending', revenue: 380.00, partner: 'ChargePoint', actionRequired: 'Download App' },
-] as const;
+];
 
 const revenueDistribution = [
   { name: 'Solar', value: 450 },
@@ -42,7 +51,7 @@ const revenueOverTime = [
 
 const Dashboard = () => {
   const { user } = useAuth();
-  const [assets] = useState(mockAssets);
+  const [assets] = useState<Asset[]>(mockAssets);
   
   const totalMonthlyRevenue = assets.reduce((sum, asset) => sum + asset.revenue, 0);
   const activeAssetCount = assets.filter(asset => asset.status === 'active').length;
@@ -98,7 +107,7 @@ const Dashboard = () => {
           </p>
         </motion.div>
 
-        {/* Property Overview Card */}
+        {/* Property Overview Card with glassmorphism */}
         <motion.div variants={itemVariants}>
           <PropertyOverviewCard
             address={mockPropertyData.address}
@@ -142,7 +151,7 @@ const Dashboard = () => {
           />
         </motion.div>
 
-        {/* Assets Table */}
+        {/* Assets Table with glassmorphism */}
         <motion.div variants={itemVariants}>
           <h2 className="text-xl font-semibold mb-4 flex items-center">
             <ChartBar className="mr-2" size={20} />
@@ -157,7 +166,7 @@ const Dashboard = () => {
           />
         </motion.div>
 
-        {/* Revenue Charts */}
+        {/* Revenue Charts with glassmorphism */}
         <motion.div variants={itemVariants}>
           <h2 className="text-xl font-semibold mb-4 flex items-center">
             <PieChart className="mr-2" size={20} />
