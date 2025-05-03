@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useGoogleMap } from '@/contexts/GoogleMapContext';
 import { motion } from "framer-motion";
@@ -6,7 +7,6 @@ import AssetCard, { glowColorMap } from './asset-results/AssetCard';
 import iconMap from './asset-results/IconMap';
 import PropertySummaryCard from './asset-results/PropertySummaryCard';
 import AdditionalAssetsCarousel from './asset-results/AdditionalAssetsCarousel';
-import RestrictionsCard from './asset-results/RestrictionsCard';
 import AssetFormSection from './asset-results/AssetFormSection';
 import { AdditionalOpportunity, SelectedAsset } from '@/types/analysis';
 import { toast } from '@/hooks/use-toast';
@@ -197,9 +197,6 @@ const AssetResultList = () => {
         selectedAssets={selectedAssets}
         onAssetToggle={handleAssetToggle}
       />
-      
-      {/* Restrictions Card */}
-      <RestrictionsCard restrictions={analysisResults.restrictions} />
       
       {/* Continue Button - Only show when at least one asset is selected */}
       {selectedAssets.length > 0 && !showFormSection && (

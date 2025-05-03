@@ -16,6 +16,17 @@ const PropertySummaryCard = ({
   selectedAssetsCount,
   isCollapsed
 }: PropertySummaryCardProps) => {
+  // Calculate total potential income
+  const calculateTotalPotential = () => {
+    let total = 0;
+    analysisResults.topOpportunities.forEach(opportunity => {
+      total += opportunity.monthlyRevenue;
+    });
+    return total;
+  };
+  
+  const totalPotentialIncome = calculateTotalPotential();
+
   return (
     <motion.div
       initial={{ opacity: 0, y: -20 }}
@@ -32,7 +43,7 @@ const PropertySummaryCard = ({
             <div className="text-right">
               <div className="text-lg text-gray-200">Selected Monthly Income</div>
               <div className="text-2xl md:text-3xl font-bold text-white drop-shadow-lg">
-                ${selectedAssetsCount ? totalMonthlyIncome : 0}
+                ${selectedAssetsCount ? totalMonthlyIncome : 0} <span className="text-base text-gray-300">out of ${totalPotentialIncome} possible</span>
               </div>
             </div>
           </div>

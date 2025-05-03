@@ -117,10 +117,9 @@ const SearchBar = ({ isCollapsed }: SearchBarProps) => {
     if (!mapLoaded || !searchInputRef.current || !window.google) return;
 
     try {
-      // Initialize the Places Autocomplete
+      // Initialize the Places Autocomplete - removed US restriction
       autocompleteRef.current = new google.maps.places.Autocomplete(searchInputRef.current, {
         types: ['address'],
-        componentRestrictions: { country: 'us' },
         fields: ['formatted_address', 'geometry']
       });
 
