@@ -61,7 +61,7 @@ const iconMap: Record<string, React.ReactNode> = {
   "pool": (
     <div className="w-12 h-12 glass-effect rounded-lg flex items-center justify-center shadow-lg">
       <img 
-        src="/lovable-uploads/76f34c86-decf-4d23-aeee-b23ba55c1be1.png" 
+        src="/lovable-uploads/f14eb0ad-2e5a-40c8-b1a5-a0b1b22c11ee.png" 
         alt="Swimming Pool Icon" 
         className="w-8 h-8 object-contain"
         style={{ filter: 'drop-shadow(0 0 5px rgba(14, 165, 233, 0.6))' }}
