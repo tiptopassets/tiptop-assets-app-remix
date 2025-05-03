@@ -1,6 +1,6 @@
 
 import { motion } from "framer-motion";
-import { Check } from 'lucide-react';
+import { Check, Plus } from 'lucide-react';
 
 // Define types for props
 export interface AssetCardProps {
@@ -61,9 +61,18 @@ const AssetCard = ({
       onClick={onClick}
     >
       {/* Selection indicator */}
-      {isSelected && (
-        <div className="absolute top-3 right-3 bg-white rounded-full p-1 shadow-lg z-20">
+      <div className={`absolute top-3 right-3 transition-all duration-300 ${isSelected ? 'bg-white' : 'bg-white/30 border border-white/50'} rounded-full p-1.5 shadow-lg z-20`}>
+        {isSelected ? (
           <Check className="h-4 w-4 text-tiptop-purple" />
+        ) : (
+          <Plus className="h-4 w-4 text-white" />
+        )}
+      </div>
+      
+      {/* Banner that says "Click to select" when not selected */}
+      {!isSelected && (
+        <div className="absolute top-2 left-2 bg-white/20 backdrop-blur-sm px-2 py-1 rounded-full text-xs text-white font-medium">
+          Click to select
         </div>
       )}
       

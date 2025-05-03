@@ -1,5 +1,6 @@
 
 import { motion } from "framer-motion";
+import { Check, Plus } from 'lucide-react';
 import {
   Carousel,
   CarouselContent,
@@ -12,9 +13,15 @@ import { glowColorMap } from "./AssetCard";
 
 interface AdditionalAssetsCarouselProps {
   opportunities: AdditionalOpportunity[];
+  selectedAssets: string[];
+  onAssetToggle: (assetTitle: string) => void;
 }
 
-const AdditionalAssetsCarousel = ({ opportunities }: AdditionalAssetsCarouselProps) => {
+const AdditionalAssetsCarousel = ({ 
+  opportunities, 
+  selectedAssets, 
+  onAssetToggle 
+}: AdditionalAssetsCarouselProps) => {
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -37,16 +44,27 @@ const AdditionalAssetsCarousel = ({ opportunities }: AdditionalAssetsCarouselPro
           {opportunities.map((opportunity, index) => {
             const iconType = opportunity.icon as keyof typeof glowColorMap;
             const glowColor = glowColorMap[iconType] || "rgba(155, 135, 245, 0.5)";
+            const isSelected = selectedAssets.includes(opportunity.title);
             
             return (
               <CarouselItem key={index} className="basis-1/2 md:basis-1/3 lg:basis-1/4">
                 <div 
-                  className="h-full rounded-lg p-3 flex flex-col items-center text-center glass-effect"
+                  className={`h-full rounded-lg p-3 flex flex-col items-center text-center glass-effect relative cursor-pointer ${isSelected ? 'ring-2 ring-white/70' : ''}`}
                   style={{
                     background: `linear-gradient(to bottom right, ${glowColor.replace('0.5', '0.8')}, transparent)`,
-                    boxShadow: `0 4px 15px ${glowColor}`
+                    boxShadow: isSelected ? `0 5px 20px ${glowColor.replace('0.5', '0.7')}` : `0 4px 15px ${glowColor}`
                   }}
+                  onClick={() => onAssetToggle(opportunity.title)}
                 >
+                  {/* Selection indicator */}
+                  <div className={`absolute top-2 right-2 transition-all duration-300 ${isSelected ? 'bg-white' : 'bg-white/30 border border-white/50'} rounded-full p-1 shadow-lg z-20`}>
+                    {isSelected ? (
+                      <Check className="h-3 w-3 text-tiptop-purple" />
+                    ) : (
+                      <Plus className="h-3 w-3 text-white" />
+                    )}
+                  </div>
+                  
                   <div className="w-10 h-10 glass-effect rounded-lg flex items-center justify-center mb-2">
                     <img 
                       src={`/lovable-uploads/${iconType === 'wifi' ? 'f5bf9c32-688f-4a52-8a95-4d803713d2ff.png' : 

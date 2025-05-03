@@ -13,9 +13,9 @@ const RestrictionsCard = ({ restrictions }: RestrictionsCardProps) => {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, delay: 0.7 }}
-      className="mt-6 p-4 glass-effect rounded-lg"
+      className="mt-6 p-4 glass-effect rounded-lg relative overflow-hidden"
       style={{
-        background: "linear-gradient(to bottom right, rgba(239, 68, 68, 0.8), rgba(239, 68, 68, 0.6))",
+        background: "linear-gradient(to bottom right, rgba(239, 68, 68, 0.9), rgba(239, 68, 68, 0.7))",
         boxShadow: "0 5px 15px rgba(239, 68, 68, 0.3)"
       }}
     >
