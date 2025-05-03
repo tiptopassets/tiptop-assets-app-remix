@@ -41,7 +41,7 @@ const HomeContent = () => {
         </header>
 
         {/* Main content */}
-        <main className="flex-1 w-full flex flex-col items-center justify-center px-4 md:px-6 transition-all duration-500">
+        <main className="flex-1 w-full flex flex-col items-center justify-start px-4 md:px-6 transition-all duration-500">
           <div className={`text-center mb-6 md:mb-8 transform transition-all duration-500 ${isCollapsed ? 'scale-0 h-0 mb-0' : 'scale-100'}`}>
             <h1 className="text-3xl md:text-5xl font-bold text-white mb-2 drop-shadow-lg">
               {isAnalyzing ? "Analyzing Your Home Assets..." : "Monetize Your Home Assets"}
@@ -54,7 +54,7 @@ const HomeContent = () => {
           </div>
 
           {/* Asset Icons and Results */}
-          <div className={`mt-8 w-full flex flex-col justify-center items-center ${analysisComplete ? 'mt-32' : ''}`}>
+          <div className={`mt-8 w-full flex flex-col justify-center items-center ${analysisComplete ? 'mt-4' : ''}`}>
             {!analysisComplete && !isAnalyzing && <AssetIcons />}
             <AssetResultList />
           </div>
@@ -62,7 +62,7 @@ const HomeContent = () => {
         
         {/* Footer with carousel - only show when no address is entered and analysis is not complete */}
         {!analysisComplete && !isAnalyzing && !hasAddress && (
-          <footer className="w-full mt-64">
+          <footer className="w-full mt-auto">
             <FooterCarousel />
           </footer>
         )}

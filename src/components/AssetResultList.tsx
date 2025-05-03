@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useGoogleMap } from '@/contexts/GoogleMapContext';
 import { motion } from "framer-motion";
@@ -152,6 +151,9 @@ const AssetResultList = () => {
 
   return (
     <div className="w-full px-4 md:px-0 md:max-w-3xl">
+      {/* Add spacing to push property summary card down */}
+      <div className="h-[180px] md:h-[220px]"></div>
+      
       {/* Property Summary Card */}
       <PropertySummaryCard 
         analysisResults={analysisResults}

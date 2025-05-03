@@ -23,13 +23,15 @@ const GoogleMap = () => {
     isAnalyzing, 
     analysisComplete,
     setMapLoaded,
-    mapInstance
+    mapInstance,
+    addressCoordinates,
+    setAddressCoordinates
   } = useGoogleMap();
   const { toast } = useToast();
 
-  // Effect for adding marker when address changes
+  // Effect for adding marker when analysis is complete
   useEffect(() => {
-    if (!mapInstance || !address) return;
+    if (!mapInstance || !address || !analysisComplete || isAnalyzing) return;
 
     // If there's already a marker, remove it
     if (markerRef.current) {
@@ -42,19 +44,13 @@ const GoogleMap = () => {
     geocoder.geocode({ address }, (results, status) => {
       if (status === 'OK' && results && results[0]) {
         const location = results[0].geometry.location;
+        const coordinates = {
+          lat: location.lat(),
+          lng: location.lng()
+        };
         
-        // Create custom marker element with glowing effect
-        const markerElement = document.createElement('div');
-        markerElement.className = 'custom-pin';
-        markerElement.innerHTML = `
-          <div class="pin-glow"></div>
-          <div class="pin-icon">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"></path>
-              <circle cx="12" cy="10" r="3"></circle>
-            </svg>
-          </div>
-        `;
+        // Store coordinates in context
+        setAddressCoordinates(coordinates);
         
         // Create custom marker
         markerRef.current = new google.maps.Marker({
@@ -74,39 +70,58 @@ const GoogleMap = () => {
           }
         });
 
-        // Add a glowing effect to the marker
-        const pulseDiv = document.createElement('div');
-        pulseDiv.className = 'map-marker-pulse';
-        pulseDiv.style.position = 'absolute';
-        pulseDiv.style.transform = 'translate(-50%, -50%)';
-        pulseDiv.style.width = '40px';
-        pulseDiv.style.height = '40px';
-        pulseDiv.style.borderRadius = '50%';
-        pulseDiv.style.backgroundColor = 'rgba(147, 51, 234, 0.4)';
-        pulseDiv.style.animation = 'pulse 2s infinite';
-
-        // Add a style element for the pulse animation
-        const styleElement = document.createElement('style');
-        styleElement.textContent = `
-          @keyframes pulse {
-            0% {
-              transform: translate(-50%, -50%) scale(0.5);
-              opacity: 1;
+        // Add a pulsing glow effect around the pin
+        const pinGlowOverlay = new google.maps.OverlayView();
+        pinGlowOverlay.onAdd = function() {
+          const div = document.createElement('div');
+          div.className = 'map-pin-glow';
+          div.style.position = 'absolute';
+          div.style.width = '60px';
+          div.style.height = '60px';
+          div.style.borderRadius = '50%';
+          div.style.background = 'radial-gradient(circle, rgba(147, 51, 234, 0.6) 0%, rgba(147, 51, 234, 0) 70%)';
+          div.style.animation = 'pulse-glow 2s infinite';
+          
+          const styleElement = document.createElement('style');
+          styleElement.textContent = `
+            @keyframes pulse-glow {
+              0% {
+                transform: scale(0.8);
+                opacity: 1;
+              }
+              70% {
+                transform: scale(1.2);
+                opacity: 0.7;
+              }
+              100% {
+                transform: scale(0.8);
+                opacity: 1;
+              }
             }
-            100% {
-              transform: translate(-50%, -50%) scale(2);
-              opacity: 0;
-            }
-          }
-        `;
-        document.head.appendChild(styleElement);
+          `;
+          document.head.appendChild(styleElement);
+          
+          this.getPanes().overlayMouseTarget.appendChild(div);
+          this.div_ = div;
+        };
         
-        // Center map on the address with some animation
+        pinGlowOverlay.draw = function() {
+          if (!this.div_) return;
+          const position = this.getProjection().fromLatLngToDivPixel(location);
+          if (position) {
+            this.div_.style.left = (position.x - 30) + 'px';
+            this.div_.style.top = (position.y - 30) + 'px';
+          }
+        };
+        
+        pinGlowOverlay.setMap(mapInstance);
+        
+        // Center map on the address with smooth animation
         mapInstance.panTo(location);
         mapInstance.setZoom(18);
       }
     });
-  }, [address, mapInstance]);
+  }, [address, mapInstance, analysisComplete, isAnalyzing, setAddressCoordinates]);
 
   useEffect(() => {
     const loadMap = async () => {

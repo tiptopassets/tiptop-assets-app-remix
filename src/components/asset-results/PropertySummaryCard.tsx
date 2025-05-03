@@ -32,11 +32,17 @@ const PropertySummaryCard = ({
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      className="mb-8"
+      className="mb-8 z-10 relative"
     >
       <Card className="glass-effect overflow-hidden border-none relative">
+        {/* Enhanced background gradients for glossy effect */}
         <div className="absolute inset-0 bg-gradient-to-r from-tiptop-purple/80 to-purple-600/70 rounded-lg"></div>
-        <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-white/10 rounded-lg"></div>
+        <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-white/20 rounded-lg"></div>
+        
+        {/* Additional light reflection effect */}
+        <div className="absolute top-0 left-0 right-0 h-1/4 bg-gradient-to-b from-white/30 to-transparent rounded-t-lg"></div>
+        <div className="absolute bottom-0 left-0 right-0 h-1/6 bg-gradient-to-t from-black/20 to-transparent rounded-b-lg"></div>
+        
         <CardContent className="p-6 relative z-10">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-2xl md:text-3xl font-bold text-white drop-shadow-md">Property Summary</h2>
@@ -48,7 +54,7 @@ const PropertySummaryCard = ({
             </div>
           </div>
           
-          <div className="bg-white/20 backdrop-blur-sm rounded-lg p-4">
+          <div className="bg-white/20 backdrop-blur-sm rounded-lg p-4 border border-white/30">
             <h3 className="text-lg font-medium text-white mb-2">Property Details:</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
@@ -68,6 +74,9 @@ const PropertySummaryCard = ({
               Select the opportunities below that you'd like to pursue to calculate your potential income.
             </p>
           </div>
+          
+          {/* Outer glow effect */}
+          <div className="absolute -inset-1 bg-gradient-to-r from-purple-500/20 to-violet-500/20 rounded-xl blur-lg -z-10"></div>
         </CardContent>
       </Card>
     </motion.div>
