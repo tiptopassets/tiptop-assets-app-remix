@@ -112,12 +112,13 @@ const AnalyzeButton = () => {
     <button
       onClick={handleAnalyze}
       disabled={isDisabled}
-      className={`glass-effect glow-effect px-8 py-3 rounded-full flex items-center justify-center text-tiptop-purple font-medium text-lg
+      className={`glass-effect glow-effect px-8 py-3 rounded-full flex items-center justify-center text-white font-medium text-lg
+        bg-tiptop-purple
         ${isDisabled ? 'opacity-70 cursor-not-allowed' : 'animate-pulse-glow hover:scale-105 transition-transform'}`}
     >
       {isDisabled ? (
         <>
-          <div className="h-5 w-5 mr-2 rounded-full border-2 border-tiptop-purple border-t-transparent animate-spin"></div>
+          <div className="h-5 w-5 mr-2 rounded-full border-2 border-white border-t-transparent animate-spin"></div>
           Analyzing...
         </>
       ) : (

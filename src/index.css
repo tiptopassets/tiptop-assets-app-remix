@@ -88,6 +88,23 @@
   border-radius: 10px;
 }
 
+.glass-icon {
+  background: rgba(255, 255, 255, 0.25);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
+  border-radius: 16px;
+  padding: 12px;
+  transition: all 0.3s ease;
+  animation: float 5s infinite ease-in-out;
+}
+
+.glass-icon:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15), 0 0 15px rgba(133, 89, 255, 0.3);
+}
+
 .asset-card {
   @apply flex items-center gap-4 p-4 relative;
   background: rgba(255, 255, 255, 0.2);
@@ -99,6 +116,16 @@
     0 4px 6px -1px rgba(0, 0, 0, 0.1),
     0 2px 4px -2px rgba(0, 0, 0, 0.1),
     0 0 0 1px rgba(255, 255, 255, 0.15) inset;
+  transition: all 0.3s ease;
+}
+
+.asset-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 
+    0 10px 15px -3px rgba(0, 0, 0, 0.1),
+    0 4px 6px -4px rgba(0, 0, 0, 0.1),
+    0 0 0 1px rgba(255, 255, 255, 0.2) inset,
+    0 0 20px rgba(133, 89, 255, 0.15);
 }
 
 .glow-effect {
@@ -143,3 +170,15 @@ button.glass-effect:hover {
   transition: all 0.3s ease;
   transform: translateY(-2px);
 }
+
+/* Responsive adjustments for mobile */
+@media (max-width: 640px) {
+  .glass-icon {
+    padding: 8px;
+  }
+  
+  .asset-card {
+    @apply p-3 gap-3;
+  }
+}
+

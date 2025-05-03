@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from 'react';
 import { Search } from 'lucide-react';
 import { useGoogleMap } from '@/contexts/GoogleMapContext';
@@ -13,11 +12,109 @@ const SearchBar = ({ isCollapsed }: SearchBarProps) => {
     mapInstance, 
     address, 
     setAddress,
-    mapLoaded
+    mapLoaded,
+    setIsAnalyzing,
+    setAnalysisComplete,
+    setAnalysisResults,
+    analysisComplete
   } = useGoogleMap();
   const searchInputRef = useRef<HTMLInputElement>(null);
   const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
   const { toast } = useToast();
+  const [hasSelectedAddress, setHasSelectedAddress] = useState(false);
+
+  // Mock analysis results
+  const mockAnalysisResults = {
+    propertyType: "single-family",
+    amenities: ["rooftop", "garden", "parking", "storage"],
+    rooftop: {
+      area: 1200,
+      solarCapacity: 18,
+      revenue: 72
+    },
+    garden: {
+      area: 500,
+      opportunity: "High",
+      revenue: 30
+    },
+    parking: {
+      spaces: 2,
+      rate: 15,
+      revenue: 900
+    },
+    pool: {
+      present: false,
+      area: 0,
+      type: "none",
+      revenue: 0
+    },
+    storage: {
+      volume: 50,
+      revenue: 100
+    },
+    bandwidth: {
+      available: 250,
+      revenue: 20
+    },
+    shortTermRental: {
+      nightlyRate: 120,
+      monthlyProjection: 2500
+    },
+    permits: ["solar installation", "commercial parking"],
+    restrictions: "No short-term rentals under 30 days by HOA rules",
+    topOpportunities: [
+      {
+        icon: "parking",
+        title: "Parking Space",
+        monthlyRevenue: 900,
+        description: "2 spaces available for rent"
+      },
+      {
+        icon: "solar",
+        title: "Rooftop Solar",
+        monthlyRevenue: 72,
+        description: "1200 sq ft usable with 18kW potential"
+      },
+      {
+        icon: "storage",
+        title: "Storage Space",
+        monthlyRevenue: 100,
+        description: "50 cubic meters available"
+      },
+      {
+        icon: "wifi",
+        title: "Internet Bandwidth",
+        monthlyRevenue: 20,
+        description: "250 Mbps available for sharing"
+      }
+    ] 
+  };
+
+  // Start analysis when an address is selected
+  const startAnalysis = () => {
+    if (!address) {
+      toast({
+        title: "Address Required",
+        description: "Please enter your property address first",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsAnalyzing(true);
+
+    // Simulate API call with timeout
+    setTimeout(() => {
+      setAnalysisResults(mockAnalysisResults);
+      setIsAnalyzing(false);
+      setAnalysisComplete(true);
+      
+      toast({
+        title: "Analysis Complete",
+        description: "We've identified 4 monetization opportunities for your property",
+      });
+    }, 3000);
+  }
 
   useEffect(() => {
     if (!mapLoaded || !searchInputRef.current || !window.google) return;
@@ -38,10 +135,14 @@ const SearchBar = ({ isCollapsed }: SearchBarProps) => {
         if (place.geometry && place.geometry.location && mapInstance) {
           // Set the address
           setAddress(place.formatted_address || '');
+          setHasSelectedAddress(true);
           
           // Center map to selected address
           mapInstance.setCenter(place.geometry.location);
           mapInstance.setZoom(18);
+          
+          // Auto trigger analysis when address is selected
+          startAnalysis();
         }
       });
     } catch (error) {
@@ -69,7 +170,10 @@ const SearchBar = ({ isCollapsed }: SearchBarProps) => {
           type="text"
           placeholder="Search your address"
           value={address}
-          onChange={(e) => setAddress(e.target.value)}
+          onChange={(e) => {
+            setAddress(e.target.value);
+            setHasSelectedAddress(false);
+          }}
           className="flex-1 bg-transparent outline-none text-gray-800 placeholder-gray-500"
         />
         {/* Add light reflection effect */}

@@ -1,6 +1,7 @@
 
 import { useGoogleMap } from '@/contexts/GoogleMapContext';
 import { motion } from "framer-motion";
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const iconMap = {
   "parking": (
@@ -64,15 +65,21 @@ const iconMap = {
 
 const AssetResultList = () => {
   const { analysisComplete, analysisResults, isAnalyzing } = useGoogleMap();
+  const isMobile = useIsMobile();
 
   // Don't show results until analysis is complete and not analyzing
   if (!analysisComplete || isAnalyzing || !analysisResults) return null;
 
   return (
-    <div className="w-full max-w-md">
-      <h2 className="text-3xl font-bold text-tiptop-purple mb-6 drop-shadow-lg">
+    <div className="w-full px-4 md:px-0 md:max-w-md">
+      <motion.h2 
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="text-2xl md:text-3xl font-bold text-tiptop-purple mb-6 drop-shadow-lg text-center md:text-left"
+      >
         Immediately Available Asset Opportunities
-      </h2>
+      </motion.h2>
 
       <div className="space-y-4">
         {analysisResults.topOpportunities.map((opportunity, index) => (
@@ -98,10 +105,15 @@ const AssetResultList = () => {
       </div>
       
       {analysisResults.restrictions && (
-        <div className="mt-6 p-4 glass-effect">
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.5 }}
+          className="mt-6 p-4 glass-effect"
+        >
           <h3 className="text-lg font-semibold text-red-500">Restrictions:</h3>
           <p className="text-gray-600">{analysisResults.restrictions}</p>
-        </div>
+        </motion.div>
       )}
     </div>
   );
