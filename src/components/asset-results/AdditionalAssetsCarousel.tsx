@@ -56,12 +56,21 @@ const AdditionalAssetsCarousel = ({
                   }}
                   onClick={() => onAssetToggle(opportunity.title)}
                 >
-                  {/* Selection indicator */}
-                  <div className={`absolute top-2 right-2 transition-all duration-300 ${isSelected ? 'bg-white' : 'bg-white/30 border border-white/50'} rounded-full p-1 shadow-lg z-20`}>
-                    {isSelected ? (
-                      <Check className="h-3 w-3 text-tiptop-purple" />
-                    ) : (
-                      <Plus className="h-3 w-3 text-white" />
+                  {/* Selection indicator with text below */}
+                  <div className="absolute top-2 right-2 flex flex-col items-center">
+                    <div className={`transition-all duration-300 ${isSelected ? 'bg-white' : 'bg-white/30 border border-white/50'} rounded-full p-1 shadow-lg z-20`}>
+                      {isSelected ? (
+                        <Check className="h-3 w-3 text-tiptop-purple" />
+                      ) : (
+                        <Plus className="h-3 w-3 text-white" />
+                      )}
+                    </div>
+                    
+                    {/* Text below the + icon */}
+                    {!isSelected && (
+                      <div className="text-[10px] text-white font-medium mt-1 bg-white/20 backdrop-blur-sm px-1.5 py-0.5 rounded-full whitespace-nowrap">
+                        Click to select
+                      </div>
                     )}
                   </div>
                   

@@ -60,21 +60,23 @@ const AssetCard = ({
       }}
       onClick={onClick}
     >
-      {/* Selection indicator */}
-      <div className={`absolute top-3 right-3 transition-all duration-300 ${isSelected ? 'bg-white' : 'bg-white/30 border border-white/50'} rounded-full p-1.5 shadow-lg z-20`}>
-        {isSelected ? (
-          <Check className="h-4 w-4 text-tiptop-purple" />
-        ) : (
-          <Plus className="h-4 w-4 text-white" />
+      {/* Selection indicator with text below */}
+      <div className="absolute top-3 right-3 flex flex-col items-center">
+        <div className={`transition-all duration-300 ${isSelected ? 'bg-white' : 'bg-white/30 border border-white/50'} rounded-full p-1.5 shadow-lg z-20`}>
+          {isSelected ? (
+            <Check className="h-4 w-4 text-tiptop-purple" />
+          ) : (
+            <Plus className="h-4 w-4 text-white" />
+          )}
+        </div>
+        
+        {/* Banner that says "Click to select" when not selected - now below the + sign */}
+        {!isSelected && (
+          <div className="text-xs text-white font-medium mt-1 bg-white/20 backdrop-blur-sm px-2 py-0.5 rounded-full">
+            Click to select
+          </div>
         )}
       </div>
-      
-      {/* Banner that says "Click to select" when not selected */}
-      {!isSelected && (
-        <div className="absolute top-2 left-2 bg-white/20 backdrop-blur-sm px-2 py-1 rounded-full text-xs text-white font-medium">
-          Click to select
-        </div>
-      )}
       
       {iconComponent}
       <div>

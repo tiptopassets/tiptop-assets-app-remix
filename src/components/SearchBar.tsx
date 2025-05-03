@@ -17,7 +17,8 @@ const SearchBar = ({ isCollapsed }: SearchBarProps) => {
     setIsAnalyzing,
     setAnalysisComplete,
     setAnalysisResults,
-    analysisComplete
+    analysisComplete,
+    setAddressCoordinates
   } = useGoogleMap();
   const searchInputRef = useRef<HTMLInputElement>(null);
   const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
@@ -133,6 +134,11 @@ const SearchBar = ({ isCollapsed }: SearchBarProps) => {
           setAddress(place.formatted_address || '');
           setHasSelectedAddress(true);
           
+          // Save coordinates
+          const lat = place.geometry.location.lat();
+          const lng = place.geometry.location.lng();
+          setAddressCoordinates({ lat, lng });
+          
           // Center map to selected address
           mapInstance.setCenter(place.geometry.location);
           mapInstance.setZoom(18);
@@ -155,7 +161,7 @@ const SearchBar = ({ isCollapsed }: SearchBarProps) => {
         google.maps.event.clearInstanceListeners(autocompleteRef.current);
       }
     };
-  }, [mapLoaded, mapInstance, setAddress, toast]);
+  }, [mapLoaded, mapInstance, setAddress, toast, setAddressCoordinates]);
 
   return (
     <div className={`relative w-full ${isCollapsed ? 'max-w-md' : 'max-w-xl'} transition-all duration-500 ease-in-out`}>

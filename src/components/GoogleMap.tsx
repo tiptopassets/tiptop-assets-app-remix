@@ -3,6 +3,7 @@ import { useEffect, useRef } from 'react';
 import { useGoogleMap } from '@/contexts/GoogleMapContext';
 import { Loader } from '@googlemaps/js-api-loader';
 import { useToast } from '@/hooks/use-toast';
+import { MapPinIcon } from 'lucide-react';
 
 // Replace with your API key
 const API_KEY = 'AIzaSyBbclc8qxh5NVR9skf6XCz_xRJCZsnmUGA';
@@ -15,14 +16,97 @@ declare global {
 
 const GoogleMap = () => {
   const mapRef = useRef<HTMLDivElement>(null);
+  const markerRef = useRef<google.maps.Marker | null>(null);
   const { 
     setMapInstance, 
     address, 
     isAnalyzing, 
     analysisComplete,
-    setMapLoaded
+    setMapLoaded,
+    mapInstance
   } = useGoogleMap();
   const { toast } = useToast();
+
+  // Effect for adding marker when address changes
+  useEffect(() => {
+    if (!mapInstance || !address) return;
+
+    // If there's already a marker, remove it
+    if (markerRef.current) {
+      markerRef.current.setMap(null);
+    }
+
+    // Create the geocoder to convert address to coordinates
+    const geocoder = new google.maps.Geocoder();
+    
+    geocoder.geocode({ address }, (results, status) => {
+      if (status === 'OK' && results && results[0]) {
+        const location = results[0].geometry.location;
+        
+        // Create custom marker element with glowing effect
+        const markerElement = document.createElement('div');
+        markerElement.className = 'custom-pin';
+        markerElement.innerHTML = `
+          <div class="pin-glow"></div>
+          <div class="pin-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"></path>
+              <circle cx="12" cy="10" r="3"></circle>
+            </svg>
+          </div>
+        `;
+        
+        // Create custom marker
+        markerRef.current = new google.maps.Marker({
+          position: location,
+          map: mapInstance,
+          animation: google.maps.Animation.DROP,
+          icon: {
+            url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
+              <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none">
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" fill="#9333EA" stroke="#ffffff" stroke-width="1.5"/>
+                <circle cx="12" cy="10" r="3" fill="#ffffff" stroke="#9333EA" stroke-width="0.5"/>
+              </svg>
+            `),
+            scaledSize: new google.maps.Size(40, 40),
+            origin: new google.maps.Point(0, 0),
+            anchor: new google.maps.Point(20, 40)
+          }
+        });
+
+        // Add a glowing effect to the marker
+        const pulseDiv = document.createElement('div');
+        pulseDiv.className = 'map-marker-pulse';
+        pulseDiv.style.position = 'absolute';
+        pulseDiv.style.transform = 'translate(-50%, -50%)';
+        pulseDiv.style.width = '40px';
+        pulseDiv.style.height = '40px';
+        pulseDiv.style.borderRadius = '50%';
+        pulseDiv.style.backgroundColor = 'rgba(147, 51, 234, 0.4)';
+        pulseDiv.style.animation = 'pulse 2s infinite';
+
+        // Add a style element for the pulse animation
+        const styleElement = document.createElement('style');
+        styleElement.textContent = `
+          @keyframes pulse {
+            0% {
+              transform: translate(-50%, -50%) scale(0.5);
+              opacity: 1;
+            }
+            100% {
+              transform: translate(-50%, -50%) scale(2);
+              opacity: 0;
+            }
+          }
+        `;
+        document.head.appendChild(styleElement);
+        
+        // Center map on the address with some animation
+        mapInstance.panTo(location);
+        mapInstance.setZoom(18);
+      }
+    });
+  }, [address, mapInstance]);
 
   useEffect(() => {
     const loadMap = async () => {

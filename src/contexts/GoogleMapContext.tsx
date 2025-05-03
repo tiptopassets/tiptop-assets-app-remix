@@ -14,6 +14,8 @@ interface GoogleMapContextType {
   setAnalysisResults: (results: AnalysisResults | null) => void;
   mapLoaded: boolean;
   setMapLoaded: (loaded: boolean) => void;
+  addressCoordinates: google.maps.LatLngLiteral | null;
+  setAddressCoordinates: (coords: google.maps.LatLngLiteral | null) => void;
 }
 
 export interface AssetOpportunity {
@@ -73,6 +75,7 @@ export const GoogleMapProvider = ({ children }: { children: ReactNode }) => {
   const [analysisComplete, setAnalysisComplete] = useState(false);
   const [analysisResults, setAnalysisResults] = useState<AnalysisResults | null>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
+  const [addressCoordinates, setAddressCoordinates] = useState<google.maps.LatLngLiteral | null>(null);
 
   return (
     <GoogleMapContext.Provider
@@ -89,6 +92,8 @@ export const GoogleMapProvider = ({ children }: { children: ReactNode }) => {
         setAnalysisResults,
         mapLoaded,
         setMapLoaded,
+        addressCoordinates,
+        setAddressCoordinates,
       }}
     >
       {children}

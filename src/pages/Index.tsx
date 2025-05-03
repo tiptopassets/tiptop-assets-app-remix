@@ -54,7 +54,7 @@ const HomeContent = () => {
           </div>
 
           {/* Asset Icons and Results */}
-          <div className="mt-8 w-full flex flex-col justify-center items-center">
+          <div className={`mt-8 w-full flex flex-col justify-center items-center ${analysisComplete ? 'mt-32' : ''}`}>
             {!analysisComplete && !isAnalyzing && <AssetIcons />}
             <AssetResultList />
           </div>
