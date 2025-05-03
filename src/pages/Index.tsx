@@ -92,10 +92,10 @@ const HomeContent = () => {
           </div>
         </main>
         
-        {/* Footer with carousel - pushed much lower */}
+        {/* Footer with carousel - pushed much lower, especially on mobile */}
         {!analysisComplete && !isAnalyzing && !hasAddress && (
           <footer className="w-full mt-auto">
-            <div className="py-20 md:py-32"></div> {/* Extra spacing to push footer down */}
+            <div className={`py-20 md:py-32 ${isMobile ? 'pb-36' : ''}`}></div> {/* Increased spacing for mobile */}
             <FooterCarousel />
           </footer>
         )}

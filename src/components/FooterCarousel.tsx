@@ -160,7 +160,8 @@ const FooterCarousel = () => {
   const isMobile = useIsMobile();
   
   return <div className="w-full py-8 px-4">
-    <div className="max-w-5xl mx-auto">
+    {/* Add extra mobile spacing - increasing the top margin on mobile */}
+    <div className={`max-w-5xl mx-auto ${isMobile ? 'mt-16' : ''}`}>
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
