@@ -14,10 +14,12 @@ const ParkingIcon = () => {
         <div className="relative w-12 h-12 flex items-center justify-center">
           <div className="absolute inset-0 bg-transparent rounded-lg transform rotate-3 translate-z-4 blur-[2px]"></div>
           <img 
-            src="/lovable-uploads/d469ef0b-f200-47aa-b3a1-e7ec1f301a48.png" 
+            src="/lovable-uploads/72c97a7c-f1cb-47be-9354-616e819e15ee.png" 
             alt="Parking Icon" 
-            className="relative z-10 w-10 h-10 object-contain"
-            style={{ filter: 'drop-shadow(0 0 8px rgba(155, 135, 245, 0.6))' }}
+            className="relative z-10 w-10 h-10 object-contain animate-float"
+            style={{ 
+              filter: 'drop-shadow(0 0 8px rgba(147, 51, 234, 0.6))',
+            }}
           />
           <div className="absolute inset-0 rounded-lg bg-gradient-to-tr from-white/20 to-transparent opacity-40"></div>
         </div>

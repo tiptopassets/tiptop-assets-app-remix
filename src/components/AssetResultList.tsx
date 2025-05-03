@@ -6,15 +6,17 @@ import { Card, CardContent } from "@/components/ui/card";
 
 const iconMap = {
   "parking": (
-    <div className="w-12 h-12 bg-gradient-to-br from-blue-300 to-blue-500 rounded-lg flex items-center justify-center shadow-lg">
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <rect x="4" y="4" width="16" height="16" rx="2" fill="#60A5FA" />
-        <path d="M12 6H9V18H11V14H12C14.2 14 16 12.2 16 10C16 7.8 14.2 6 12 6ZM12 12H11V8H12C13.1 8 14 8.9 14 10C14 11.1 13.1 12 12 12Z" fill="#1E3A8A" />
-      </svg>
+    <div className="w-12 h-12 glass-effect rounded-lg flex items-center justify-center shadow-lg">
+      <img 
+        src="/lovable-uploads/72c97a7c-f1cb-47be-9354-616e819e15ee.png" 
+        alt="Parking Icon" 
+        className="w-8 h-8 object-contain"
+        style={{ filter: 'drop-shadow(0 0 5px rgba(155, 135, 245, 0.6))' }}
+      />
     </div>
   ),
   "solar": (
-    <div className="w-12 h-12 bg-gradient-to-br from-yellow-300 to-amber-500 rounded-lg flex items-center justify-center shadow-lg">
+    <div className="w-12 h-12 glass-effect rounded-lg flex items-center justify-center shadow-lg">
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
         <rect x="2" y="6" width="20" height="12" rx="2" fill="#FFB800" />
         <path d="M4 10H8V14H4V10ZM10 10H14V14H10V10ZM16 10H20V14H16V10Z" fill="#7D5700" />
@@ -23,17 +25,17 @@ const iconMap = {
     </div>
   ),
   "garden": (
-    <div className="w-12 h-12 bg-gradient-to-br from-green-300 to-green-500 rounded-lg flex items-center justify-center shadow-lg">
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M12 4C12 7.5 14 10.5 18 11C16 11.5 14 13 14 16C14 13 12 11.5 10 11C14 10.5 16 7.5 16 4" fill="#4ADE80" />
-        <path d="M12 22V16" stroke="#166534" strokeWidth="2" />
-        <circle cx="14" cy="10" r="2" fill="#4ADE80" />
-        <circle cx="9" cy="13" r="2" fill="#4ADE80" />
-      </svg>
+    <div className="w-12 h-12 glass-effect rounded-lg flex items-center justify-center shadow-lg">
+      <img 
+        src="/lovable-uploads/ef52333e-7ea8-4692-aeed-9a222da95b75.png" 
+        alt="Garden Icon" 
+        className="w-8 h-8 object-contain"
+        style={{ filter: 'drop-shadow(0 0 5px rgba(74, 222, 128, 0.6))' }}
+      />
     </div>
   ),
   "storage": (
-    <div className="w-12 h-12 bg-gradient-to-br from-amber-300 to-amber-500 rounded-lg flex items-center justify-center shadow-lg">
+    <div className="w-12 h-12 glass-effect rounded-lg flex items-center justify-center shadow-lg">
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
         <rect x="4" y="8" width="16" height="12" rx="1" fill="#EAB308" />
         <rect x="6" y="10" width="12" height="1" fill="#854D0E" />
@@ -44,7 +46,7 @@ const iconMap = {
     </div>
   ),
   "wifi": (
-    <div className="w-12 h-12 bg-gradient-to-br from-purple-300 to-purple-500 rounded-lg flex items-center justify-center shadow-lg">
+    <div className="w-12 h-12 glass-effect rounded-lg flex items-center justify-center shadow-lg">
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
         <path d="M12 5C7.03 5 2.73 8.51 1 12C2.73 15.49 7.03 19 12 19C16.97 19 21.27 15.49 23 12C21.27 8.51 16.97 5 12 5ZM12 17C9.24 17 7 14.76 7 12C7 9.24 9.24 7 12 7C14.76 7 17 9.24 17 12C17 14.76 14.76 17 12 17Z" fill="#C084FC" />
         <circle cx="12" cy="12" r="2" fill="#7E22CE" />
@@ -54,12 +56,33 @@ const iconMap = {
     </div>
   ),
   "pool": (
-    <div className="w-12 h-12 bg-gradient-to-br from-sky-300 to-sky-500 rounded-lg flex items-center justify-center shadow-lg">
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M22 15C22 18.866 17.523 22 12 22C6.477 22 2 18.866 2 15C2 12 6.477 9 12 9C17.523 9 22 12 22 15Z" fill="#7DD3FC" />
-        <path d="M12 9C13.6569 9 15 7.65685 15 6C15 4.34315 13.6569 3 12 3C10.3431 3 9 4.34315 9 6C9 7.65685 10.3431 9 12 9Z" fill="#0EA5E9" />
-        <path d="M15 6C15 7.65685 13.6569 9 12 9C10.3431 9 9 7.65685 9 6" stroke="#0369A1" strokeWidth="0.5" />
-      </svg>
+    <div className="w-12 h-12 glass-effect rounded-lg flex items-center justify-center shadow-lg">
+      <img 
+        src="/lovable-uploads/76f34c86-decf-4d23-aeee-b23ba55c1be1.png" 
+        alt="Swimming Pool Icon" 
+        className="w-8 h-8 object-contain"
+        style={{ filter: 'drop-shadow(0 0 5px rgba(14, 165, 233, 0.6))' }}
+      />
+    </div>
+  ),
+  "car": (
+    <div className="w-12 h-12 glass-effect rounded-lg flex items-center justify-center shadow-lg">
+      <img 
+        src="/lovable-uploads/5169ceb8-ccbc-4b72-8758-a91052320c2c.png" 
+        alt="Car Icon" 
+        className="w-8 h-8 object-contain"
+        style={{ filter: 'drop-shadow(0 0 5px rgba(99, 102, 241, 0.6))' }}
+      />
+    </div>
+  ),
+  "evcharger": (
+    <div className="w-12 h-12 glass-effect rounded-lg flex items-center justify-center shadow-lg">
+      <img 
+        src="/lovable-uploads/33b65ff0-5489-400b-beba-1248db897a30.png" 
+        alt="EV Charger Icon" 
+        className="w-8 h-8 object-contain"
+        style={{ filter: 'drop-shadow(0 0 5px rgba(167, 139, 250, 0.6))' }}
+      />
     </div>
   )
 };

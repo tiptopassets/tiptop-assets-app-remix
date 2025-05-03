@@ -11,6 +11,7 @@ import ParkingIcon from './asset-icons/ParkingIcon';
 import StorageIcon from './asset-icons/StorageIcon';
 import SwimmingPoolIcon from './asset-icons/SwimmingPoolIcon';
 import CarIcon from './asset-icons/CarIcon';
+import EVChargerIcon from './asset-icons/EVChargerIcon';
 
 const AssetIcons = () => {
   const { isAnalyzing, analysisComplete } = useGoogleMap();
@@ -31,6 +32,7 @@ const AssetIcons = () => {
       <StorageIcon />
       <SwimmingPoolIcon />
       <CarIcon />
+      <EVChargerIcon />
     </div>
   );
 };
