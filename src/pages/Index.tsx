@@ -60,9 +60,10 @@ const HomeContent = () => {
           </div>
         </main>
         
-        {/* Footer with carousel - only show when no address is entered and analysis is not complete */}
+        {/* Footer with carousel - pushed much lower */}
         {!analysisComplete && !isAnalyzing && !hasAddress && (
           <footer className="w-full mt-auto">
+            <div className="py-20 md:py-32"></div> {/* Extra spacing to push footer down */}
             <FooterCarousel />
           </footer>
         )}
