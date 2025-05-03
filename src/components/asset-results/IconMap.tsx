@@ -1,4 +1,3 @@
-
 import React from 'react';
 
 // Define interface for the icons
@@ -11,7 +10,7 @@ const iconMap: Record<string, React.ReactNode> = {
   "parking": (
     <div className="w-12 h-12 glass-effect rounded-lg flex items-center justify-center shadow-lg">
       <img 
-        src="/lovable-uploads/72c97a7c-f1cb-47be-9354-616e819e15ee.png" 
+        src="/lovable-uploads/091a67ab-4042-438b-bc99-27ee182ea80e.png" 
         alt="Parking Icon" 
         className="w-8 h-8 object-contain"
         style={{ filter: 'drop-shadow(0 0 5px rgba(155, 135, 245, 0.6))' }}
