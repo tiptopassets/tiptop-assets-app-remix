@@ -9,6 +9,7 @@ import { GoogleMapProvider, useGoogleMap } from '@/contexts/GoogleMapContext';
 import { LogIn } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import FooterCarousel from '@/components/FooterCarousel';
+import { motion } from 'framer-motion';
 
 const HomeContent = () => {
   const { isAnalyzing, analysisComplete, address } = useGoogleMap();
@@ -65,6 +66,18 @@ const HomeContent = () => {
             <FooterCarousel />
           </footer>
         )}
+        
+        {/* Copyright footer - always visible */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.7, duration: 0.5 }}
+          className="w-full py-4 text-center"
+        >
+          <p className="text-white/60 text-xs backdrop-blur-sm py-2 px-4 rounded-full inline-block bg-black/30 border border-white/10">
+            © 2025 Tiptop by Kolonia. All rights reserved.
+          </p>
+        </motion.div>
       </div>
     </div>
   );
