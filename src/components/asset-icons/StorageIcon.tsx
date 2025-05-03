@@ -8,8 +8,7 @@ const StorageIcon = () => {
       whileHover={{ scale: 1.05 }}
       transition={{ type: "spring", stiffness: 300 }}
     >
-      <div className="w-full h-full rounded-xl flex items-center justify-center icon-3d
-                     backdrop-blur-sm backdrop-filter shadow-[0_0_15px_rgba(245,158,11,0.5)]">
+      <div className="w-full h-full flex items-center justify-center">
         <div className="relative w-full h-full flex items-center justify-center">
           <div className="absolute inset-0 bg-transparent rounded-lg transform rotate-3 translate-z-4 blur-[2px]"></div>
           <img 

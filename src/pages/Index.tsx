@@ -61,7 +61,7 @@ const HomeContent = () => {
         
         {/* Footer with carousel - only show when no address is entered and analysis is not complete */}
         {!analysisComplete && !isAnalyzing && !hasAddress && (
-          <footer className="w-full">
+          <footer className="w-full mt-32">
             <FooterCarousel />
           </footer>
         )}

@@ -57,7 +57,7 @@ const AssetIcons = () => {
                   transition={{ duration: 0.3 }}
                   className="p-1"
                 >
-                  <div className="glossy-icon-card">
+                  <div className="standardized-icon">
                     <Icon.Component />
                   </div>
                 </motion.div>
