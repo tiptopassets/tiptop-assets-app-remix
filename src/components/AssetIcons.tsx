@@ -1,4 +1,3 @@
-
 import { useGoogleMap } from '@/contexts/GoogleMapContext';
 import { motion } from 'framer-motion';
 
@@ -109,19 +108,15 @@ const AssetIcons = () => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.9, duration: 0.5 }}
       >
-        <div className="w-16 h-16 bg-gradient-to-br from-blue-300 to-blue-500 rounded-xl flex items-center justify-center icon-3d">
+        <div className="w-16 h-16 bg-gradient-to-br from-purple-300 to-purple-500 rounded-xl flex items-center justify-center icon-3d">
           <div className="relative w-12 h-12 flex items-center justify-center">
-            <div className="absolute inset-0 bg-blue-400 rounded-lg transform rotate-3 translate-z-4 blur-[2px]"></div>
-            <svg className="relative z-10 w-10 h-10" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <rect x="3" y="3" width="18" height="18" rx="3" fill="url(#parkingGradient)" stroke="#1E3A8A" strokeWidth="1.5" />
-              <path d="M12 6H9V18H11V14H12C14.2 14 16 12.2 16 10C16 7.8 14.2 6 12 6ZM12 12H11V8H12C13.1 8 14 8.9 14 10C14 11.1 13.1 12 12 12Z" fill="#1E3A8A" />
-              <defs>
-                <linearGradient id="parkingGradient" x1="3" y1="12" x2="21" y2="12" gradientUnits="userSpaceOnUse">
-                  <stop stopColor="#93C5FD" />
-                  <stop offset="1" stopColor="#3B82F6" />
-                </linearGradient>
-              </defs>
-            </svg>
+            <div className="absolute inset-0 bg-purple-400 rounded-lg transform rotate-3 translate-z-4 blur-[2px]"></div>
+            <img 
+              src="/lovable-uploads/5f56c954-41e9-45ff-804e-740a9af81588.png" 
+              alt="Parking Icon" 
+              className="relative z-10 w-10 h-10 object-contain"
+              style={{ filter: 'drop-shadow(0 0 8px rgba(155, 135, 245, 0.6))' }}
+            />
             <div className="absolute inset-0 rounded-lg bg-gradient-to-tr from-white/40 to-transparent opacity-60"></div>
           </div>
         </div>
