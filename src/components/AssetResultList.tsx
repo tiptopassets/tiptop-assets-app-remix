@@ -1,17 +1,18 @@
-
 import { useState } from 'react';
 import { useGoogleMap } from '@/contexts/GoogleMapContext';
 import { motion } from "framer-motion";
-import { Button } from '@/components/ui/button';
-import AssetCard, { glowColorMap } from './asset-results/AssetCard';
-import iconMap from './asset-results/IconMap';
-import PropertySummaryCard from './asset-results/PropertySummaryCard';
-import AdditionalAssetsCarousel from './asset-results/AdditionalAssetsCarousel';
-import AssetFormSection from './asset-results/AssetFormSection';
-import { AdditionalOpportunity, SelectedAsset } from '@/types/analysis';
 import { toast } from '@/hooks/use-toast';
-import { LogIn, ArrowRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { AdditionalOpportunity, SelectedAsset } from '@/types/analysis';
+import { LogIn } from 'lucide-react';
+
+// Refactored Components
+import PropertySummaryCard from './asset-results/PropertySummaryCard';
+import AssetOpportunitiesGrid from './asset-results/AssetOpportunitiesGrid';
+import AdditionalAssetsCarousel from './asset-results/AdditionalAssetsCarousel';
+import ContinueButton from './asset-results/ContinueButton';
+import AssetFormSection from './asset-results/AssetFormSection';
+import SpacerBlock from './asset-results/SpacerBlock';
 
 // Sample additional asset opportunities
 const additionalOpportunities: AdditionalOpportunity[] = [
@@ -153,7 +154,7 @@ const AssetResultList = () => {
   return (
     <div className="w-full px-4 md:px-0 md:max-w-3xl">
       {/* Increased spacing to push property summary card even lower */}
-      <div className="h-[300px] md:h-[350px]"></div>
+      <SpacerBlock />
       
       {/* Property Summary Card */}
       <PropertySummaryCard 
@@ -163,36 +164,12 @@ const AssetResultList = () => {
         isCollapsed={false}
       />
 
-      <motion.h2 
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.2 }}
-        className="text-2xl md:text-3xl font-bold text-white mb-6 drop-shadow-lg text-center md:text-left"
-      >
-        Available Asset Opportunities
-      </motion.h2>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {analysisResults.topOpportunities.map((opportunity, index) => {
-          const iconType = opportunity.icon as keyof typeof iconMap;
-          const glowColor = glowColorMap[iconType] || "rgba(155, 135, 245, 0.5)";
-          const isSelected = selectedAssets.includes(opportunity.title);
-          
-          return (
-            <AssetCard
-              key={opportunity.title}
-              title={opportunity.title}
-              icon={opportunity.icon}
-              monthlyRevenue={opportunity.monthlyRevenue}
-              description={opportunity.description}
-              iconComponent={iconMap[iconType]}
-              isSelected={isSelected}
-              onClick={() => handleAssetToggle(opportunity.title)}
-              glowColor={glowColor}
-            />
-          );
-        })}
-      </div>
+      {/* Asset Opportunities Grid */}
+      <AssetOpportunitiesGrid
+        opportunities={analysisResults.topOpportunities}
+        selectedAssets={selectedAssets}
+        onAssetToggle={handleAssetToggle}
+      />
       
       {/* Additional Asset Opportunities Carousel */}
       <AdditionalAssetsCarousel 
@@ -201,25 +178,12 @@ const AssetResultList = () => {
         onAssetToggle={handleAssetToggle}
       />
       
-      {/* Continue Button - Only show when at least one asset is selected */}
-      {selectedAssets.length > 0 && !showFormSection && (
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3 }}
-          className="mt-8 flex justify-center"
-        >
-          <Button 
-            onClick={handleContinue}
-            className="glass-effect bg-gradient-to-r from-tiptop-purple to-purple-600 hover:opacity-90 px-8 py-6 rounded-full flex items-center gap-3 text-xl animate-pulse-glow"
-            style={{ 
-              boxShadow: '0 0 20px rgba(155, 135, 245, 0.5)',
-            }}
-          >
-            <span>Continue with Selected Assets</span>
-            <ArrowRight size={24} />
-          </Button>
-        </motion.div>
+      {/* Continue Button - Only show when at least one asset is selected and form section is not visible */}
+      {!showFormSection && (
+        <ContinueButton
+          selectedAssetsCount={selectedAssets.length}
+          onClick={handleContinue}
+        />
       )}
       
       {/* Additional Information Form Section */}
