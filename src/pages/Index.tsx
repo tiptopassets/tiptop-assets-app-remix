@@ -10,14 +10,6 @@ import { LogIn } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import FooterCarousel from '@/components/FooterCarousel';
 
-const Footer = () => (
-  <div className="w-full py-4 mt-auto text-center text-gray-300 text-sm bg-black">
-    <div className="max-w-5xl mx-auto">
-      © 2025 Tiptop by Kolonia. All rights reserved.
-    </div>
-  </div>
-);
-
 const HomeContent = () => {
   const { isAnalyzing, analysisComplete, address } = useGoogleMap();
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -30,12 +22,12 @@ const HomeContent = () => {
   }, [analysisComplete]);
 
   return (
-    <div className="min-h-screen relative overflow-hidden flex flex-col">
+    <div className="min-h-screen relative overflow-hidden">
       {/* Google Map as background */}
       <GoogleMap />
 
       {/* Content overlay */}
-      <div className="relative z-10 min-h-screen flex flex-col items-center flex-1">
+      <div className="relative z-10 min-h-screen flex flex-col items-center">
         {/* Header */}
         <header className="w-full p-4 md:p-6 flex justify-between items-center">
           <div className="text-2xl md:text-3xl font-bold text-tiptop-purple">
@@ -69,13 +61,10 @@ const HomeContent = () => {
         
         {/* Footer with carousel - only show when no address is entered and analysis is not complete */}
         {!analysisComplete && !isAnalyzing && !hasAddress && (
-          <footer className="w-full mt-40 mb-20">
+          <footer className="w-full mt-64">
             <FooterCarousel />
           </footer>
         )}
-        
-        {/* Copyright Footer - Always show */}
-        <Footer />
       </div>
     </div>
   );

@@ -210,13 +210,11 @@ const AssetResultList = () => {
             onClick={handleContinue}
             className="glass-effect bg-gradient-to-r from-tiptop-purple to-purple-600 hover:opacity-90 px-8 py-6 rounded-full flex items-center gap-3 text-xl animate-pulse-glow"
             style={{ 
-              boxShadow: '0 0 30px rgba(155, 135, 245, 0.7)',
-              border: '1px solid rgba(255, 255, 255, 0.2)',
-              backdropFilter: 'blur(10px)'
+              boxShadow: '0 0 20px rgba(155, 135, 245, 0.5)',
             }}
           >
-            <span className="text-white drop-shadow-md">Continue with Selected Assets</span>
-            <ArrowRight size={24} className="text-white drop-shadow-md" />
+            <span>Continue with Selected Assets</span>
+            <ArrowRight size={24} />
           </Button>
         </motion.div>
       )}

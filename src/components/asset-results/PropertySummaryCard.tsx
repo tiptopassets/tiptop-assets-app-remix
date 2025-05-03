@@ -34,14 +34,9 @@ const PropertySummaryCard = ({
       transition={{ duration: 0.5 }}
       className="mb-8"
     >
-      <Card className="glass-effect overflow-hidden border-none relative backdrop-blur-md">
+      <Card className="glass-effect overflow-hidden border-none relative">
         <div className="absolute inset-0 bg-gradient-to-r from-tiptop-purple/80 to-purple-600/70 rounded-lg"></div>
         <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-white/10 rounded-lg"></div>
-        
-        {/* Enhanced glossy effect */}
-        <div className="absolute top-0 left-0 right-0 h-1/3 bg-gradient-to-b from-white/20 to-transparent rounded-t-lg pointer-events-none"></div>
-        <div className="absolute bottom-0 left-0 right-0 h-1/5 bg-gradient-to-t from-black/20 to-transparent rounded-b-lg pointer-events-none"></div>
-        
         <CardContent className="p-6 relative z-10">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-2xl md:text-3xl font-bold text-white drop-shadow-md">Property Summary</h2>
@@ -53,9 +48,8 @@ const PropertySummaryCard = ({
             </div>
           </div>
           
-          <div className="bg-white/20 backdrop-blur-sm rounded-lg p-4 border border-white/30 shadow-xl" 
-               style={{ boxShadow: '0 8px 32px rgba(255, 255, 255, 0.1)' }}>
-            <h3 className="text-lg font-medium text-white mb-2 drop-shadow-sm">Property Details:</h3>
+          <div className="bg-white/20 backdrop-blur-sm rounded-lg p-4">
+            <h3 className="text-lg font-medium text-white mb-2">Property Details:</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <p className="text-gray-200"><span className="font-medium">Type:</span> {analysisResults.propertyType}</p>
