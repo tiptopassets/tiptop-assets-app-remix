@@ -52,8 +52,9 @@ const HomeContent = () => {
             {!isAnalyzing && !analysisComplete && <AnalyzeButton />}
           </div>
 
-          <div className="mt-8 w-full flex flex-col md:flex-row justify-center items-center">
-            <AssetIcons />
+          {/* Asset Icons and Results */}
+          <div className="mt-8 w-full flex flex-col justify-center items-center">
+            {!analysisComplete && !isAnalyzing && <AssetIcons />}
             <AssetResultList />
           </div>
         </main>

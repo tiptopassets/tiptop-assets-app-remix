@@ -2,6 +2,7 @@
 import { useGoogleMap } from '@/contexts/GoogleMapContext';
 import './asset-icons/IconGlowEffect.css';
 import { motion } from 'framer-motion';
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 
 // Import individual icon components
 import HouseIcon from './asset-icons/HouseIcon';
@@ -17,8 +18,8 @@ import EVChargerIcon from './asset-icons/EVChargerIcon';
 const AssetIcons = () => {
   const { isAnalyzing, analysisComplete, address } = useGoogleMap();
   
-  // Icons for row display after address entry
-  const rowIcons = [
+  // Icons for carousel display
+  const carouselIcons = [
     { name: "Solar Panel", Component: SolarPanelIcon },
     { name: "Garden", Component: GardenIcon },
     { name: "WiFi", Component: WifiIcon },
@@ -37,42 +38,44 @@ const AssetIcons = () => {
 
   // Show different layouts based on whether address has been entered
   return (
-    <>
-      {!hasAddress ? (
-        // Circular layout around house when no address
-        <div className="relative w-full h-[400px] flex items-center justify-center">
-          <HouseIcon />
-
-          <SolarPanelIcon />
-          <GardenIcon />
-          <WifiIcon />
-          <ParkingIcon />
-          <StorageIcon />
-          <SwimmingPoolIcon />
-          <CarIcon />
-          <EVChargerIcon />
-        </div>
-      ) : (
-        // Row layout when address is entered
-        <motion.div 
-          className="w-full flex flex-wrap justify-center gap-3 mt-6"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
+    <div className="relative w-full flex flex-col items-center">
+      {/* Horizontal Carousel for Asset Icons */}
+      <div className="w-full max-w-3xl mb-8">
+        <Carousel
+          opts={{
+            align: "start",
+            loop: true,
+          }}
+          className="w-full px-8"
         >
-          {rowIcons.map((Icon, index) => (
-            <motion.div 
-              key={Icon.name}
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: index * 0.1, duration: 0.3 }}
-            >
-              <Icon.Component />
-            </motion.div>
-          ))}
-        </motion.div>
+          <CarouselContent>
+            {carouselIcons.map((Icon) => (
+              <CarouselItem key={Icon.name} className="basis-1/4 md:basis-1/5 lg:basis-1/6">
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.3 }}
+                  className="p-1"
+                >
+                  <div className="glossy-icon-card">
+                    <Icon.Component />
+                  </div>
+                </motion.div>
+              </CarouselItem>
+            ))}
+          </CarouselContent>
+          <CarouselPrevious className="bg-white/10 backdrop-blur-md border-white/20 text-white hover:bg-white/20 -left-2" />
+          <CarouselNext className="bg-white/10 backdrop-blur-md border-white/20 text-white hover:bg-white/20 -right-2" />
+        </Carousel>
+      </div>
+      
+      {/* House Icon Below */}
+      {!hasAddress && (
+        <div className="w-full flex justify-center mt-6">
+          <HouseIcon />
+        </div>
       )}
-    </>
+    </div>
   );
 };
 
