@@ -14,7 +14,7 @@ const StorageIcon = () => {
         <div className="relative w-12 h-12 flex items-center justify-center">
           <div className="absolute inset-0 bg-amber-400 rounded-lg transform rotate-3 translate-z-4 blur-[2px]"></div>
           <img 
-            src="/lovable-uploads/de2e8f5a-9141-4411-ade1-64e8bbcd1367.png" 
+            src="/lovable-uploads/417dfc9f-434d-4b41-aec2-fca0d8c4cb23.png" 
             alt="Storage Box" 
             className="relative z-10 w-10 h-10 object-contain"
             style={{ filter: 'drop-shadow(0 0 8px rgba(245,158,11, 0.6))' }}

@@ -6,7 +6,7 @@ import './IconGlowEffect.css';
 const HouseIcon = () => {
   const [glowIntensity, setGlowIntensity] = useState(0.5);
   
-  // Create a subtle pulsing effect for the solar panels
+  // Create a subtle pulsing effect
   useEffect(() => {
     const interval = setInterval(() => {
       setGlowIntensity(prev => {
@@ -28,12 +28,12 @@ const HouseIcon = () => {
       <div className="relative">
         {/* The main house image */}
         <motion.img 
-          src="/lovable-uploads/ebe8eca7-2fd2-4673-9591-9e84fb0fc0fa.png" 
-          alt="3D Transparent House with Solar Panels"
+          src="/lovable-uploads/e6249249-86a2-4511-81d6-8e66ce807506.png" 
+          alt="3D House"
           className="h-48 object-contain drop-shadow-2xl transform-gpu"
           style={{ 
             filter: `drop-shadow(0 0 15px rgba(255, 255, 255, 0.4))
-                    drop-shadow(0 0 25px rgba(155, 135, 245, 0.3))`,
+                    drop-shadow(0 0 25px rgba(255, 135, 45, 0.3))`,
           }}
           animate={{
             y: [0, -5, 0],
@@ -46,12 +46,12 @@ const HouseIcon = () => {
           }}
         />
         
-        {/* Glowing overlay for the solar panels */}
+        {/* Glowing overlay */}
         <motion.div 
           className="absolute top-0 left-0 w-full h-full pointer-events-none"
           style={{
-            filter: `drop-shadow(0 0 8px rgba(65, 105, 225, ${glowIntensity}))
-                    drop-shadow(0 0 12px rgba(25, 25, 255, ${glowIntensity * 0.7}))`,
+            filter: `drop-shadow(0 0 8px rgba(255, 165, 0, ${glowIntensity}))
+                    drop-shadow(0 0 12px rgba(255, 140, 0, ${glowIntensity * 0.7}))`,
             mixBlendMode: "screen",
           }}
           animate={{
@@ -64,7 +64,7 @@ const HouseIcon = () => {
           }}
         >
           <img 
-            src="/lovable-uploads/ebe8eca7-2fd2-4673-9591-9e84fb0fc0fa.png" 
+            src="/lovable-uploads/e6249249-86a2-4511-81d6-8e66ce807506.png" 
             alt=""
             className="h-48 object-contain invisible"
           />
