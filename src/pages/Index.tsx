@@ -43,7 +43,7 @@ const HomeContent = () => {
         <main className="flex-1 w-full flex flex-col items-center justify-center px-4 md:px-6 transition-all duration-500">
           <div className={`text-center mb-6 md:mb-8 transform transition-all duration-500 ${isCollapsed ? 'scale-0 h-0 mb-0' : 'scale-100'}`}>
             <h1 className="text-3xl md:text-5xl font-bold text-white mb-2 drop-shadow-lg">
-              Monetize Your Home Assets
+              {isAnalyzing ? "Analyzing Your Home Assets..." : "Monetize Your Home Assets"}
             </h1>
           </div>
 

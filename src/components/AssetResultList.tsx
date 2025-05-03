@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useGoogleMap } from '@/contexts/GoogleMapContext';
 import { motion } from "framer-motion";
@@ -12,6 +11,7 @@ import AssetFormSection from './asset-results/AssetFormSection';
 import { AdditionalOpportunity, SelectedAsset } from '@/types/analysis';
 import { toast } from '@/hooks/use-toast';
 import { LogIn, ArrowRight } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 // Sample additional asset opportunities
 const additionalOpportunities: AdditionalOpportunity[] = [
@@ -81,6 +81,7 @@ const AssetResultList = () => {
   const { analysisComplete, analysisResults, isAnalyzing } = useGoogleMap();
   const [selectedAssets, setSelectedAssets] = useState<string[]>([]);
   const [showFormSection, setShowFormSection] = useState(false);
+  const navigate = useNavigate();
 
   // Don't show results until analysis is complete and not analyzing
   if (!analysisComplete || isAnalyzing || !analysisResults) return null;
@@ -136,16 +137,8 @@ const AssetResultList = () => {
   };
   
   const handleAuthenticateClick = () => {
-    // Mock authentication for now - would connect to actual auth in a real app
-    toast({
-      title: "Authentication Required",
-      description: "Redirecting to Google authentication...",
-    });
-    
-    // Simulate redirect to auth page
-    setTimeout(() => {
-      alert("In a real app, you would be redirected to Google OAuth authentication");
-    }, 1500);
+    // Navigate to the options page
+    navigate('/options');
   };
   
   // Prepare the selected assets for the form
@@ -218,7 +211,10 @@ const AssetResultList = () => {
         >
           <Button 
             onClick={handleContinue}
-            className="glass-effect bg-gradient-to-r from-tiptop-purple to-purple-600 hover:opacity-90 px-8 py-6 rounded-full flex items-center gap-3 text-xl"
+            className="glass-effect bg-gradient-to-r from-tiptop-purple to-purple-600 hover:opacity-90 px-8 py-6 rounded-full flex items-center gap-3 text-xl animate-pulse-glow"
+            style={{ 
+              boxShadow: '0 0 20px rgba(155, 135, 245, 0.5)',
+            }}
           >
             <span>Continue with Selected Assets</span>
             <ArrowRight size={24} />

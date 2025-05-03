@@ -141,7 +141,10 @@ const AssetFormSection = ({ selectedAssets, opportunities, onComplete }: AssetFo
       <div className="mt-12 flex justify-center">
         <Button 
           onClick={onComplete}
-          className="glass-effect bg-gradient-to-r from-tiptop-purple to-purple-600 hover:opacity-90 px-8 py-6 rounded-full flex items-center gap-3 text-xl"
+          className="glass-effect bg-gradient-to-r from-tiptop-purple to-purple-600 hover:opacity-90 px-8 py-6 rounded-full flex items-center gap-3 text-xl animate-pulse-glow"
+          style={{ 
+            boxShadow: '0 0 20px rgba(155, 135, 245, 0.5)',
+          }}
         >
           <span>Complete & Authenticate</span>
           <LogIn size={24} />
