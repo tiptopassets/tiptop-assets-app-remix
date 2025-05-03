@@ -14,7 +14,7 @@ const WifiIcon = () => {
           <img 
             src="/lovable-uploads/f5bf9c32-688f-4a52-8a95-4d803713d2ff.png" 
             alt="WiFi Icon" 
-            className="relative z-10 w-10 h-10 object-contain"
+            className="relative z-10 w-8 h-8 object-contain m-auto"
             style={{ filter: 'drop-shadow(0 0 10px rgba(155, 135, 245, 0.8))' }}
           />
           <div className="absolute inset-0 rounded-lg bg-gradient-to-tr from-white/20 to-transparent opacity-40"></div>
