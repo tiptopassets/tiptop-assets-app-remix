@@ -14,6 +14,12 @@ const SelectedAssetsButton = ({
   onContinue, 
   showFormSection 
 }: SelectedAssetsButtonProps) => {
+  // Debug log
+  console.log("SelectedAssetsButton rendering with", {
+    selectedAssetsCount,
+    showFormSection
+  });
+
   if (selectedAssetsCount === 0 || showFormSection) {
     return null;
   }
@@ -27,7 +33,7 @@ const SelectedAssetsButton = ({
     >
       <Button 
         onClick={onContinue}
-        className="bg-gradient-to-r from-tiptop-purple to-purple-600 hover:opacity-90 px-8 py-6 rounded-full flex items-center gap-3 text-xl"
+        className="bg-gradient-to-r from-tiptop-purple to-purple-600 hover:opacity-90 px-8 py-6 rounded-full"
         style={{ 
           boxShadow: '0 0 20px rgba(155, 135, 245, 0.5)',
           background: 'linear-gradient(135deg, rgba(155, 135, 245, 0.9), rgba(138, 112, 253, 0.9))',
@@ -37,7 +43,7 @@ const SelectedAssetsButton = ({
       >
         <div className="relative overflow-hidden rounded-full flex items-center gap-3">
           <div className="absolute inset-0 bg-gradient-to-tr from-white/10 to-transparent opacity-50"></div>
-          <span>Continue with Selected Assets</span>
+          <span className="text-xl">Continue with Selected Assets</span>
           <ArrowRight size={24} />
         </div>
       </Button>

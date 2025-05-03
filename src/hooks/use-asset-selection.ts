@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { toast } from '@/hooks/use-toast';
 import { AdditionalOpportunity, Opportunity, SelectedAsset } from '@/types/analysis';
 
@@ -35,6 +35,14 @@ export const useAssetSelection = (
         return [...prev, assetTitle];
       }
     });
+    
+    // If showing form section and user deselects all assets, hide form
+    if (showFormSection) {
+      const isCurrentlySelected = selectedAssets.includes(assetTitle);
+      if (isCurrentlySelected && selectedAssets.length === 1) {
+        setShowFormSection(false);
+      }
+    }
   };
   
   const handleContinue = () => {
@@ -47,13 +55,20 @@ export const useAssetSelection = (
       return;
     }
     
+    // Debug log
+    console.log("Continuing with assets:", selectedAssets);
+    
+    // Set the flag to show the form section
     setShowFormSection(true);
     
     // Scroll to the form section
     setTimeout(() => {
       const formSection = document.getElementById('asset-form-section');
       if (formSection) {
+        console.log("Scrolling to form section");
         formSection.scrollIntoView({ behavior: 'smooth' });
+      } else {
+        console.log("Form section element not found");
       }
     }, 100);
   };
@@ -64,6 +79,12 @@ export const useAssetSelection = (
     ...additionalOpportunities.filter(opp => selectedAssets.includes(opp.title))
   ];
 
+  // Debug log whenever selected assets change
+  useEffect(() => {
+    console.log("Selected assets updated:", selectedAssets);
+    console.log("Selected asset objects:", selectedAssetObjects);
+  }, [selectedAssets, selectedAssetObjects]);
+  
   const totalMonthlyIncome = calculateTotalMonthlyIncome();
 
   return {

@@ -1,5 +1,4 @@
 
-import { useState } from 'react';
 import { useGoogleMap } from '@/contexts/GoogleMapContext';
 import { useNavigate } from 'react-router-dom';
 import { useAssetSelection } from '@/hooks/use-asset-selection';
@@ -80,7 +79,10 @@ const AssetResultList = () => {
   const navigate = useNavigate();
 
   // Don't show results until analysis is complete and not analyzing
-  if (!analysisComplete || isAnalyzing || !analysisResults) return null;
+  if (!analysisComplete || isAnalyzing || !analysisResults) {
+    console.log("Analysis not complete or results not available");
+    return null;
+  }
 
   const {
     selectedAssets,
@@ -90,6 +92,14 @@ const AssetResultList = () => {
     handleAssetToggle,
     handleContinue,
   } = useAssetSelection(analysisResults.topOpportunities, additionalOpportunities);
+  
+  // Debug logging
+  console.log("AssetResultList rendering with:", {
+    selectedAssets,
+    selectedAssetObjects,
+    showFormSection,
+    totalMonthlyIncome
+  });
   
   const handleAuthenticateClick = () => {
     // Navigate to the options page
@@ -131,7 +141,7 @@ const AssetResultList = () => {
       />
       
       {/* Additional Information Form Section */}
-      {showFormSection && (
+      {showFormSection && selectedAssetObjects.length > 0 && (
         <div id="asset-form-section">
           <AssetFormSection 
             selectedAssets={selectedAssetObjects}
