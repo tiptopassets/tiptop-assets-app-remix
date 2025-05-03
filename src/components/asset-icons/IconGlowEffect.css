@@ -8,11 +8,13 @@
   box-shadow: 0 8px 32px rgba(31, 38, 135, 0.2);
   border: 1px solid rgba(255, 255, 255, 0.18);
   transition: all 0.3s ease;
+  background: rgba(255, 255, 255, 0.05);
 }
 
 .icon-3d:hover {
   transform: translateY(-5px) scale(1.05);
   box-shadow: 0 10px 40px rgba(131, 93, 248, 0.4);
+  background: rgba(255, 255, 255, 0.1);
 }
 
 .animate-float {
@@ -46,3 +48,12 @@
     box-shadow: 0 0 10px rgba(155, 135, 245, 0.5);
   }
 }
+
+.glass-effect {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(8px);
+  border-radius: 10px;
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+}
+
