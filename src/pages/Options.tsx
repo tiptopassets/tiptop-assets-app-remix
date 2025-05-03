@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { CheckCircle2, Upload, User, ArrowRight, LogIn } from 'lucide-react';
@@ -50,9 +50,13 @@ const Options = () => {
       <div className="relative z-10 w-full max-w-5xl px-4 md:px-6 py-12 flex flex-col items-center">
         {/* Header */}
         <header className="w-full flex justify-between items-center mb-16">
-          <div className="text-2xl md:text-3xl font-bold text-tiptop-purple">
-            tiptop
-          </div>
+          <Link to="/" className="text-2xl md:text-3xl font-bold hover:scale-105 transition-transform flex items-center">
+            <div className="glass-effect p-2 rounded-lg flex items-center justify-center">
+              <span className="bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-tiptop-purple">tiptop</span>
+              <div className="absolute inset-0 bg-gradient-to-tr from-white/10 to-transparent opacity-50 pointer-events-none rounded-lg"></div>
+              <div className="absolute -inset-0.5 bg-gradient-to-r from-purple-500/20 to-violet-500/20 rounded-xl blur-sm -z-10 pointer-events-none"></div>
+            </div>
+          </Link>
         </header>
         
         <motion.div 
