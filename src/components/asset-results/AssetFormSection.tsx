@@ -68,8 +68,7 @@ const AssetFormSection = ({
           const formFields = findFormFields(asset.title);
           const iconType = asset.icon as keyof typeof iconMap;
           
-          if (formFields.length === 0) return null;
-          
+          // Always render each selected asset card, even if it has no form fields
           return (
             <div 
               key={asset.title}
@@ -91,47 +90,58 @@ const AssetFormSection = ({
                 </div>
               </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                {formFields.map((field) => (
-                  <div key={`${asset.title}-${field.name}`} className="form-field">
-                    <Label htmlFor={`${asset.title}-${field.name}`} className="text-white mb-1 block">
-                      {field.label}
-                    </Label>
-                    
-                    {field.type === "select" ? (
-                      <Select 
-                        defaultValue={String(field.value)}
-                        onValueChange={(value) => handleInputChange(asset.title, field.name, value)}
-                      >
-                        <SelectTrigger className="glass-effect border-white/20 text-white">
-                          <SelectValue placeholder={String(field.value)} />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {field.options?.map(option => (
-                            <SelectItem key={option} value={option}>{option}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    ) : (
-                      <Input
-                        id={`${asset.title}-${field.name}`}
-                        type={field.type} 
-                        defaultValue={field.value}
-                        onChange={(e) => {
-                          const value = field.type === "number" 
-                            ? parseFloat(e.target.value) 
-                            : e.target.value;
-                          handleInputChange(asset.title, field.name, value);
-                        }}
-                        className="glass-effect border-white/20 text-white"
-                      />
-                    )}
-                  </div>
-                ))}
-              </div>
+              {formFields.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                  {formFields.map((field) => (
+                    <div key={`${asset.title}-${field.name}`} className="form-field">
+                      <Label htmlFor={`${asset.title}-${field.name}`} className="text-white mb-1 block">
+                        {field.label}
+                      </Label>
+                      
+                      {field.type === "select" ? (
+                        <Select 
+                          defaultValue={String(field.value)}
+                          onValueChange={(value) => handleInputChange(asset.title, field.name, value)}
+                        >
+                          <SelectTrigger className="glass-effect border-white/20 text-white">
+                            <SelectValue placeholder={String(field.value)} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {field.options?.map(option => (
+                              <SelectItem key={option} value={option}>{option}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        <Input
+                          id={`${asset.title}-${field.name}`}
+                          type={field.type} 
+                          defaultValue={field.value}
+                          onChange={(e) => {
+                            const value = field.type === "number" 
+                              ? parseFloat(e.target.value) 
+                              : e.target.value;
+                            handleInputChange(asset.title, field.name, value);
+                          }}
+                          className="glass-effect border-white/20 text-white"
+                        />
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="mt-2 text-gray-200 italic">
+                  No additional information needed for this asset.
+                </div>
+              )}
               
               {/* Enhanced glossy effect */}
               <div className="absolute top-0 left-0 right-0 h-1/3 bg-gradient-to-b from-white/10 to-transparent rounded-t-lg pointer-events-none"></div>
+              
+              {/* Additional glossy and glow effects */}
+              <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-white/10 rounded-lg pointer-events-none"></div>
+              <div className="absolute bottom-0 left-0 right-0 h-1/4 bg-gradient-to-t from-black/10 to-transparent rounded-b-lg pointer-events-none"></div>
+              <div className="absolute -inset-1 bg-gradient-to-r from-purple-500/10 to-violet-500/10 rounded-xl blur-lg -z-10 pointer-events-none"></div>
             </div>
           );
         })}
