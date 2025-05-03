@@ -41,7 +41,7 @@ const iconMap: Record<string, React.ReactNode> = {
   "storage": (
     <div className="w-12 h-12 glass-effect rounded-lg flex items-center justify-center shadow-lg">
       <img 
-        src="/lovable-uploads/417dfc9f-434d-4b41-aec2-fca0d8c4cb23.png" 
+        src="/lovable-uploads/22c671c2-d3d7-4f4f-bde0-baf89c4f5ce1.png" 
         alt="Storage Box" 
         className="w-8 h-8 object-contain"
         style={{ filter: 'drop-shadow(0 0 8px rgba(245,158,11, 0.6))' }}
