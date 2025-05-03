@@ -1,10 +1,10 @@
+
 import { useState } from 'react';
 import { useGoogleMap } from '@/contexts/GoogleMapContext';
 import { useNavigate } from 'react-router-dom';
 import { useAssetSelection } from '@/hooks/use-asset-selection';
 import { AdditionalOpportunity } from '@/types/analysis';
-import { toast } from '@/hooks/use-toast';
-import { LogIn, ArrowRight } from 'lucide-react';
+import { LogIn } from 'lucide-react';
 import AssetGrid from './asset-results/AssetGrid';
 import PropertySummaryCard from './asset-results/PropertySummaryCard';
 import AdditionalAssetsCarousel from './asset-results/AdditionalAssetsCarousel';

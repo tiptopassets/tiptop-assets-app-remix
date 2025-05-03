@@ -34,9 +34,12 @@ const PropertySummaryCard = ({
       transition={{ duration: 0.5 }}
       className="mb-8"
     >
-      <Card className="glass-effect overflow-hidden border-none relative">
+      <Card className="overflow-hidden border-none relative">
         <div className="absolute inset-0 bg-gradient-to-r from-tiptop-purple/80 to-purple-600/70 rounded-lg"></div>
         <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-white/10 rounded-lg"></div>
+        {/* Enhanced glossy effect */}
+        <div className="absolute inset-0 backdrop-blur-md rounded-lg"></div>
+        <div className="absolute top-0 left-0 right-0 h-1/3 bg-gradient-to-b from-white/20 to-transparent rounded-t-lg"></div>
         <CardContent className="p-6 relative z-10">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-2xl md:text-3xl font-bold text-white drop-shadow-md">Property Summary</h2>
@@ -64,7 +67,7 @@ const PropertySummaryCard = ({
           
           <div className="mt-4">
             <p className="mb-2 text-gray-100">This {analysisResults.propertyType} property offers excellent monetization potential through multiple assets.</p>
-            <p className="text-lg font-medium text-white/90 bg-white/10 backdrop-blur-md p-3 rounded-lg mt-3 border border-white/20 shadow-lg glow-text">
+            <p className="text-lg font-medium text-lime-300 bg-white/10 backdrop-blur-md p-3 rounded-lg mt-3 border border-white/20 shadow-lg glow-text">
               Select the opportunities below that you'd like to pursue to calculate your potential income.
             </p>
           </div>
