@@ -1,14 +1,17 @@
 
+import { useState } from 'react';
 import { useGoogleMap } from '@/contexts/GoogleMapContext';
-import { useNavigate } from 'react-router-dom';
-import { useAssetSelection } from '@/hooks/use-asset-selection';
-import { AdditionalOpportunity } from '@/types/analysis';
-import { LogIn } from 'lucide-react';
-import AssetGrid from './asset-results/AssetGrid';
+import { motion } from "framer-motion";
+import { Button } from '@/components/ui/button';
+import AssetCard, { glowColorMap } from './asset-results/AssetCard';
+import iconMap from './asset-results/IconMap';
 import PropertySummaryCard from './asset-results/PropertySummaryCard';
 import AdditionalAssetsCarousel from './asset-results/AdditionalAssetsCarousel';
 import AssetFormSection from './asset-results/AssetFormSection';
-import SelectedAssetsButton from './asset-results/SelectedAssetsButton';
+import { AdditionalOpportunity, SelectedAsset } from '@/types/analysis';
+import { toast } from '@/hooks/use-toast';
+import { LogIn, ArrowRight } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 // Sample additional asset opportunities
 const additionalOpportunities: AdditionalOpportunity[] = [
@@ -76,35 +79,73 @@ const additionalOpportunities: AdditionalOpportunity[] = [
 
 const AssetResultList = () => {
   const { analysisComplete, analysisResults, isAnalyzing } = useGoogleMap();
+  const [selectedAssets, setSelectedAssets] = useState<string[]>([]);
+  const [showFormSection, setShowFormSection] = useState(false);
   const navigate = useNavigate();
 
   // Don't show results until analysis is complete and not analyzing
-  if (!analysisComplete || isAnalyzing || !analysisResults) {
-    console.log("Analysis not complete or results not available");
-    return null;
-  }
+  if (!analysisComplete || isAnalyzing || !analysisResults) return null;
 
-  const {
-    selectedAssets,
-    selectedAssetObjects,
-    showFormSection,
-    totalMonthlyIncome,
-    handleAssetToggle,
-    handleContinue,
-  } = useAssetSelection(analysisResults.topOpportunities, additionalOpportunities);
+  // Calculate total potential monthly income from selected assets
+  const calculateTotalMonthlyIncome = () => {
+    let total = 0;
+    
+    // Add from main opportunities
+    analysisResults.topOpportunities
+      .filter(opportunity => selectedAssets.includes(opportunity.title))
+      .forEach(opportunity => total += opportunity.monthlyRevenue);
+    
+    // Add from additional opportunities
+    additionalOpportunities
+      .filter(opportunity => selectedAssets.includes(opportunity.title))
+      .forEach(opportunity => total += opportunity.monthlyRevenue);
+      
+    return total;
+  };
+
+  const totalMonthlyIncome = calculateTotalMonthlyIncome();
+
+  const handleAssetToggle = (assetTitle: string) => {
+    setSelectedAssets(prev => {
+      if (prev.includes(assetTitle)) {
+        return prev.filter(title => title !== assetTitle);
+      } else {
+        return [...prev, assetTitle];
+      }
+    });
+  };
   
-  // Debug logging
-  console.log("AssetResultList rendering with:", {
-    selectedAssets,
-    selectedAssetObjects,
-    showFormSection,
-    totalMonthlyIncome
-  });
+  const handleContinue = () => {
+    if (selectedAssets.length === 0) {
+      toast({
+        title: "Selection Required",
+        description: "Please select at least one asset to continue",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    setShowFormSection(true);
+    
+    // Scroll to the form section
+    setTimeout(() => {
+      const formSection = document.getElementById('asset-form-section');
+      if (formSection) {
+        formSection.scrollIntoView({ behavior: 'smooth' });
+      }
+    }, 100);
+  };
   
   const handleAuthenticateClick = () => {
     // Navigate to the options page
     navigate('/options');
   };
+  
+  // Prepare the selected assets for the form
+  const selectedAssetObjects: SelectedAsset[] = [
+    ...analysisResults.topOpportunities.filter(opp => selectedAssets.includes(opp.title)),
+    ...additionalOpportunities.filter(opp => selectedAssets.includes(opp.title))
+  ];
   
   // Combine all opportunities for form field lookup
   const allOpportunities = [...analysisResults.topOpportunities, ...additionalOpportunities];
@@ -119,12 +160,36 @@ const AssetResultList = () => {
         isCollapsed={false}
       />
 
-      {/* Main Asset Grid */}
-      <AssetGrid 
-        opportunities={analysisResults.topOpportunities}
-        selectedAssets={selectedAssets}
-        onAssetToggle={handleAssetToggle}
-      />
+      <motion.h2 
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.2 }}
+        className="text-2xl md:text-3xl font-bold text-white mb-6 drop-shadow-lg text-center md:text-left"
+      >
+        Available Asset Opportunities
+      </motion.h2>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {analysisResults.topOpportunities.map((opportunity, index) => {
+          const iconType = opportunity.icon as keyof typeof iconMap;
+          const glowColor = glowColorMap[iconType] || "rgba(155, 135, 245, 0.5)";
+          const isSelected = selectedAssets.includes(opportunity.title);
+          
+          return (
+            <AssetCard
+              key={opportunity.title}
+              title={opportunity.title}
+              icon={opportunity.icon}
+              monthlyRevenue={opportunity.monthlyRevenue}
+              description={opportunity.description}
+              iconComponent={iconMap[iconType]}
+              isSelected={isSelected}
+              onClick={() => handleAssetToggle(opportunity.title)}
+              glowColor={glowColor}
+            />
+          );
+        })}
+      </div>
       
       {/* Additional Asset Opportunities Carousel */}
       <AdditionalAssetsCarousel 
@@ -134,14 +199,28 @@ const AssetResultList = () => {
       />
       
       {/* Continue Button - Only show when at least one asset is selected */}
-      <SelectedAssetsButton 
-        selectedAssetsCount={selectedAssets.length}
-        onContinue={handleContinue}
-        showFormSection={showFormSection}
-      />
+      {selectedAssets.length > 0 && !showFormSection && (
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+          className="mt-8 flex justify-center"
+        >
+          <Button 
+            onClick={handleContinue}
+            className="glass-effect bg-gradient-to-r from-tiptop-purple to-purple-600 hover:opacity-90 px-8 py-6 rounded-full flex items-center gap-3 text-xl animate-pulse-glow"
+            style={{ 
+              boxShadow: '0 0 20px rgba(155, 135, 245, 0.5)',
+            }}
+          >
+            <span>Continue with Selected Assets</span>
+            <ArrowRight size={24} />
+          </Button>
+        </motion.div>
+      )}
       
       {/* Additional Information Form Section */}
-      {showFormSection && selectedAssetObjects.length > 0 && (
+      {showFormSection && (
         <div id="asset-form-section">
           <AssetFormSection 
             selectedAssets={selectedAssetObjects}

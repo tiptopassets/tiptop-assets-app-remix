@@ -48,12 +48,7 @@ const AssetFormSection = ({
     onComplete();
   };
 
-  // Add console logs to debug
-  console.log("AssetFormSection rendering with selected assets:", selectedAssets);
-  console.log("Form fields available:", selectedAssets.map(asset => findFormFields(asset.title)));
-
   if (selectedAssets.length === 0) {
-    console.log("No selected assets, not rendering form section");
     return null;
   }
 
@@ -73,13 +68,7 @@ const AssetFormSection = ({
           const formFields = findFormFields(asset.title);
           const iconType = asset.icon as keyof typeof iconMap;
           
-          // Debug logging
-          console.log(`Rendering form for asset: ${asset.title}, has fields:`, formFields);
-          
-          if (formFields.length === 0) {
-            console.log(`No form fields for ${asset.title}, skipping`);
-            return null;
-          }
+          if (formFields.length === 0) return null;
           
           return (
             <div 
@@ -153,15 +142,10 @@ const AssetFormSection = ({
             className="glass-effect bg-gradient-to-r from-tiptop-purple to-purple-600 hover:opacity-90 px-8 py-6 rounded-full flex items-center gap-3 text-xl animate-pulse-glow"
             style={{ 
               boxShadow: '0 0 20px rgba(155, 135, 245, 0.5)',
-              backdropFilter: 'blur(10px)',
-              border: '1px solid rgba(255, 255, 255, 0.2)'
             }}
           >
-            <div className="relative overflow-hidden rounded-full flex items-center gap-3">
-              <div className="absolute inset-0 bg-gradient-to-tr from-white/10 to-transparent opacity-50"></div>
-              <span>Complete & Authenticate</span>
-              <LogIn size={24} />
-            </div>
+            <span>Complete & Authenticate</span>
+            <LogIn size={24} />
           </Button>
         </div>
       </form>
