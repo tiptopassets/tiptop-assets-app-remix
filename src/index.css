@@ -34,8 +34,7 @@
     --ring: 222.2 84% 4.9%;
  
     --radius: 0.5rem;
-
-    --tiptop-purple: 267 83% 60%;
+    --tiptop-purple: 262 80% 57%;
   }
  
   .dark {
@@ -75,292 +74,35 @@
   }
   body {
     @apply bg-background text-foreground;
-    background-color: #121212;
+    font-feature-settings: "rlig" 1, "calt" 1;
   }
 }
 
-/* Glass and glow effects */
+/* Glass morphism and glossy effects */
 .glass-effect {
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
   border: 1px solid rgba(255, 255, 255, 0.2);
-  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
-  border-radius: 10px;
-  position: relative;
-  overflow: hidden;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
 }
 
-.glass-effect::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(
-    90deg, 
-    rgba(255, 255, 255, 0.1) 0%,
-    rgba(255, 255, 255, 0.2) 50%,
-    rgba(255, 255, 255, 0.1) 100%
-  );
-  z-index: 1;
-  transition: all 0.6s;
-  pointer-events: none;
+.glow-text {
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
 }
 
-.glass-effect:hover::before {
-  left: 100%;
+.animate-pulse-glow {
+  animation: pulse-glow 2s infinite;
 }
 
-/* New 3D Asset Icon Styles */
-.3d-asset-icon {
-  padding: 8px;
-  border-radius: 16px;
-  background: rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
-  box-shadow: 
-    0 15px 35px rgba(0, 0, 0, 0.2),
-    0 5px 15px rgba(0, 0, 0, 0.15),
-    0 0 0 1px rgba(255, 255, 255, 0.1) inset;
-  transform-style: preserve-3d;
-  transform: perspective(800px);
-  transition: transform 0.6s ease, box-shadow 0.6s ease;
-  position: relative;
-  overflow: visible;
-}
-
-.3d-asset-icon:hover {
-  transform: perspective(800px) translateY(-5px) rotateX(10deg) rotateY(-10deg);
-  box-shadow: 
-    0 20px 40px rgba(0, 0, 0, 0.3), 
-    0 10px 20px rgba(0, 0, 0, 0.2),
-    0 0 0 1px rgba(255, 255, 255, 0.15) inset,
-    0 0 30px rgba(155, 135, 245, 0.2);
-}
-
-.3d-asset-icon:after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: 16px;
-  padding: 2px;
-  background: linear-gradient(
-    225deg,
-    rgba(255, 255, 255, 0.4) 0%,
-    rgba(255, 255, 255, 0.1) 50%,
-    transparent 100%
-  );
-  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-  -webkit-mask-composite: xor;
-  mask-composite: exclude;
-  pointer-events: none;
-}
-
-.glass-icon {
-  background: rgba(255, 255, 255, 0.15);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15),
-              0 2px 16px 0 rgba(31, 38, 135, 0.15),
-              inset 0 0 8px rgba(255, 255, 255, 0.2);
-  border-radius: 16px;
-  padding: 12px;
-  transition: all 0.3s ease;
-  animation: float 5s infinite ease-in-out;
-  position: relative;
-  overflow: hidden;
-}
-
-.glass-icon:hover {
-  transform: translateY(-5px) scale(1.05);
-  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.2), 
-              0 0 15px rgba(133, 89, 255, 0.5),
-              inset 0 0 8px rgba(255, 255, 255, 0.4);
-}
-
-.asset-card {
-  @apply flex items-center gap-4 p-4 relative;
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 16px;
-  box-shadow: 
-    0 4px 6px -1px rgba(0, 0, 0, 0.1),
-    0 2px 4px -2px rgba(0, 0, 0, 0.1),
-    0 0 0 1px rgba(255, 255, 255, 0.1) inset,
-    0 0 20px rgba(155, 135, 245, 0.1);
-  transition: all 0.3s ease;
-  position: relative;
-  overflow: hidden;
-}
-
-.asset-card:hover {
-  transform: translateY(-3px) scale(1.02);
-  box-shadow: 
-    0 10px 15px -3px rgba(0, 0, 0, 0.2),
-    0 4px 6px -4px rgba(0, 0, 0, 0.2),
-    0 0 0 1px rgba(255, 255, 255, 0.2) inset,
-    0 0 30px rgba(155, 135, 245, 0.2);
-}
-
-.asset-card::before {
-  content: '';
-  position: absolute;
-  top: -50%;
-  left: -50%;
-  width: 200%;
-  height: 200%;
-  background: radial-gradient(
-    circle at center,
-    rgba(255, 255, 255, 0.1) 0%,
-    rgba(255, 255, 255, 0.05) 25%,
-    transparent 70%
-  );
-  transform: rotate(30deg);
-  pointer-events: none;
-}
-
-.glow-effect {
-  position: relative;
-  overflow: hidden;
-}
-
-.glow-effect::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  border-radius: inherit;
-  box-shadow: 0 0 30px 5px rgba(155, 135, 245, 0.3);
-  opacity: 0;
-  transition: opacity 0.3s ease;
-  pointer-events: none;
-  z-index: -1;
-}
-
-.glow-effect:hover::after {
-  opacity: 1;
-}
-
-/* 3D effect for icons */
-.icon-3d {
-  transform-style: preserve-3d;
-  transform: perspective(800px) rotateY(15deg) rotateX(10deg);
-  transition: transform 0.5s ease;
-}
-
-.icon-3d:hover {
-  transform: perspective(800px) rotateY(-15deg) rotateX(-10deg);
-}
-
-/* Add more frosty/glowing styles for various elements */
-button.glass-effect:hover {
-  background: rgba(255, 255, 255, 0.2);
-  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.2);
-  transition: all 0.3s ease;
-  transform: translateY(-2px);
-}
-
-/* Animation keyframes */
 @keyframes pulse-glow {
-  0%, 100% { 
-    opacity: 1;
-    box-shadow: 0 0 20px 2px rgba(155, 135, 245, 0.7);
-  }
-  50% { 
-    opacity: 0.8;
-    box-shadow: 0 0 30px 4px rgba(155, 135, 245, 0.9);
-  }
-}
-
-@keyframes float {
-  0%, 100% { transform: translateY(0) rotate(0deg); }
-  25% { transform: translateY(-6px) rotate(1deg); }
-  50% { transform: translateY(-10px) rotate(-1deg); }
-  75% { transform: translateY(-4px) rotate(0.5deg); }
-}
-
-@keyframes shimmer {
   0% {
-    background-position: -200% 0;
+    box-shadow: 0 0 10px rgba(155, 135, 245, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 30px rgba(155, 135, 245, 0.8);
   }
   100% {
-    background-position: 200% 0;
+    box-shadow: 0 0 10px rgba(155, 135, 245, 0.5);
   }
-}
-
-.shimmer-effect {
-  background: linear-gradient(
-    90deg,
-    rgba(255, 255, 255, 0) 0%,
-    rgba(255, 255, 255, 0.2) 25%,
-    rgba(255, 255, 255, 0.2) 50%,
-    rgba(255, 255, 255, 0) 100%
-  );
-  background-size: 200% 100%;
-  animation: shimmer 2s infinite linear;
-  border-radius: inherit;
-}
-
-/* Responsive adjustments for mobile */
-@media (max-width: 640px) {
-  .glass-icon {
-    padding: 8px;
-  }
-  
-  .asset-card {
-    @apply p-3 gap-3;
-  }
-}
-
-/* Enhanced 3D transform utilities */
-.translate-z-4 {
-  transform: translateZ(4px);
-}
-
-.translate-z-8 {
-  transform: translateZ(8px);
-}
-
-.rotate-3 {
-  transform: rotate(3deg);
-}
-
-.rotate-6 {
-  transform: rotate(6deg);
-}
-
-/* Glossy card effects */
-.glossy-card {
-  position: relative;
-  overflow: hidden;
-  border-radius: 16px;
-  background: rgba(155, 135, 245, 0.15);
-  backdrop-filter: blur(10px);
-  box-shadow: 
-    0 10px 25px -5px rgba(0, 0, 0, 0.3),
-    0 10px 10px -5px rgba(0, 0, 0, 0.15),
-    0 0 0 1px rgba(255, 255, 255, 0.1) inset;
-}
-
-.glossy-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 50%;
-  background: linear-gradient(
-    to bottom,
-    rgba(255, 255, 255, 0.3) 0%,
-    rgba(255, 255, 255, 0) 100%
-  );
-  pointer-events: none;
-  border-radius: 16px 16px 0 0;
 }
