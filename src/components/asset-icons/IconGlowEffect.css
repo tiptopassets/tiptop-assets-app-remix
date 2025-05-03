@@ -3,7 +3,7 @@
 
 .icon-3d {
   position: relative;
-  overflow: visible;
+  overflow: hidden;
   backdrop-filter: blur(8px);
   box-shadow: 0 8px 32px rgba(31, 38, 135, 0.2);
   border: 1px solid rgba(255, 255, 255, 0.18);
@@ -44,35 +44,5 @@
   }
   100% {
     box-shadow: 0 0 10px rgba(155, 135, 245, 0.5);
-  }
-}
-
-/* Glossy reflection animation */
-.gloss-effect::before {
-  content: '';
-  position: absolute;
-  top: -50%;
-  left: -50%;
-  width: 200%;
-  height: 200%;
-  background: linear-gradient(
-    45deg,
-    rgba(255, 255, 255, 0) 0%,
-    rgba(255, 255, 255, 0.2) 50%,
-    rgba(255, 255, 255, 0) 100%
-  );
-  transform: rotate(45deg);
-  animation: glossEffect 6s infinite linear;
-}
-
-@keyframes glossEffect {
-  0% {
-    transform: translateX(-100%) translateY(-100%) rotate(45deg);
-  }
-  50% {
-    transform: translateX(100%) translateY(100%) rotate(45deg);
-  }
-  100% {
-    transform: translateX(-100%) translateY(-100%) rotate(45deg);
   }
 }
