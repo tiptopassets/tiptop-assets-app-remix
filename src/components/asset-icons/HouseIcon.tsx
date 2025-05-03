@@ -1,3 +1,4 @@
+
 import { motion } from 'framer-motion';
 import { useEffect, useState } from 'react';
 import { loadImage, removeBackground } from '@/utils/imageUtils';
@@ -40,14 +41,25 @@ const HouseIcon = () => {
           </div>
         </div>
       ) : (
-        <img 
-          src={imageUrl} 
-          alt="3D House"
-          className="h-40 object-contain drop-shadow-2xl"
-          style={{ 
-            filter: 'drop-shadow(0 0 20px rgba(155, 135, 245, 0.5))',
-          }}
-        />
+        <div className="relative">
+          {/* Glow effect below the image */}
+          <div className="absolute -bottom-5 left-1/2 transform -translate-x-1/2 w-20 h-4 bg-purple-500/30 rounded-full blur-xl"></div>
+          
+          {/* Glass morphism effect around the image */}
+          <div className="absolute inset-0 -m-2 rounded-full bg-gradient-to-br from-white/10 to-purple-500/20 backdrop-blur-md z-[-1]"></div>
+          
+          <img 
+            src={imageUrl} 
+            alt="3D House"
+            className="h-40 object-contain drop-shadow-lg"
+            style={{ 
+              filter: 'drop-shadow(0 0 15px rgba(155, 135, 245, 0.7))',
+            }}
+          />
+          
+          {/* Light reflection effect */}
+          <div className="absolute top-0 right-0 h-10 w-10 bg-white/20 rounded-full blur-md"></div>
+        </div>
       )}
     </motion.div>
   );
