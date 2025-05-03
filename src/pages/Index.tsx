@@ -33,7 +33,7 @@ const HomeContent = () => {
           </div>
           <button className="glass-effect px-3 py-1 md:px-4 md:py-2 rounded-full flex items-center gap-2 text-white hover:scale-105 transition-transform text-sm md:text-base">
             <LogIn size={isMobile ? 16 : 20} />
-            <span>Sign in Google</span>
+            <span className="text-gray-100">Sign in Google</span>
           </button>
         </header>
 
@@ -64,19 +64,19 @@ const HomeContent = () => {
                 Rent Your Assets, Make Passive Income
               </h2>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-white">
-                <div className="p-3 glass-effect rounded-xl hover:scale-105 transition-transform cursor-pointer">
+                <div className="p-3 glass-effect rounded-xl hover:scale-105 transition-transform cursor-pointer" style={{ background: 'linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%)' }}>
                   <h3 className="font-medium mb-1">Rooftop</h3>
                   <p className="text-sm opacity-80">Solar panels, gardens</p>
                 </div>
-                <div className="p-3 glass-effect rounded-xl hover:scale-105 transition-transform cursor-pointer">
+                <div className="p-3 glass-effect rounded-xl hover:scale-105 transition-transform cursor-pointer" style={{ background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)' }}>
                   <h3 className="font-medium mb-1">Garden Space</h3>
                   <p className="text-sm opacity-80">Urban farming, events</p>
                 </div>
-                <div className="p-3 glass-effect rounded-xl hover:scale-105 transition-transform cursor-pointer">
+                <div className="p-3 glass-effect rounded-xl hover:scale-105 transition-transform cursor-pointer" style={{ background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)' }}>
                   <h3 className="font-medium mb-1">Storage Space</h3>
                   <p className="text-sm opacity-80">Equipment, vehicles</p>
                 </div>
-                <div className="p-3 glass-effect rounded-xl hover:scale-105 transition-transform cursor-pointer">
+                <div className="p-3 glass-effect rounded-xl hover:scale-105 transition-transform cursor-pointer" style={{ background: 'linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%)' }}>
                   <h3 className="font-medium mb-1">Swimming Pool</h3>
                   <p className="text-sm opacity-80">Hourly rental, events</p>
                 </div>

@@ -83,11 +83,7 @@ const AnalyzeButton = () => {
   
   const handleAnalyze = () => {
     if (!address) {
-      toast({
-        title: "Address Required",
-        description: "Please enter your property address first",
-        variant: "destructive",
-      });
+      // Removed toast for address required
       return;
     }
 

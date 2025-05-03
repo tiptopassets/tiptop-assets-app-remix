@@ -86,18 +86,19 @@ const AssetResultList = () => {
         transition={{ duration: 0.5 }}
         className="mb-8"
       >
-        <Card className="glass-effect overflow-hidden border-none">
-          <div className="absolute inset-0 bg-gradient-to-r from-tiptop-purple/30 to-purple-500/10 opacity-20 rounded-lg"></div>
-          <CardContent className="p-6">
+        <Card className="glass-effect overflow-hidden border-none relative">
+          <div className="absolute inset-0 bg-gradient-to-r from-tiptop-purple/80 to-purple-600/70 rounded-lg"></div>
+          <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-white/10 rounded-lg"></div>
+          <CardContent className="p-6 relative z-10">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-2xl md:text-3xl font-bold text-white">Property Summary</h2>
+              <h2 className="text-2xl md:text-3xl font-bold text-white drop-shadow-md">Property Summary</h2>
               <div className="text-right">
                 <div className="text-lg text-gray-200">Estimated Monthly Income</div>
-                <div className="text-2xl md:text-3xl font-bold text-tiptop-purple">${totalMonthlyIncome}</div>
+                <div className="text-2xl md:text-3xl font-bold text-white drop-shadow-lg">${totalMonthlyIncome}</div>
               </div>
             </div>
             
-            <div className="bg-white/10 rounded-lg p-4">
+            <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4">
               <h3 className="text-lg font-medium text-white mb-2">Property Details:</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
@@ -111,7 +112,7 @@ const AssetResultList = () => {
               </div>
             </div>
             
-            <div className="mt-4 text-gray-200">
+            <div className="mt-4 text-gray-100">
               <p className="mb-2">This {analysisResults.propertyType} property offers excellent monetization potential through multiple assets.</p>
               <p>We've identified {analysisResults.topOpportunities.length} primary opportunities that could generate approximately ${totalMonthlyIncome} in monthly passive income.</p>
             </div>
@@ -123,7 +124,7 @@ const AssetResultList = () => {
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.2 }}
-        className="text-2xl md:text-3xl font-bold text-tiptop-purple mb-6 drop-shadow-lg text-center md:text-left"
+        className="text-2xl md:text-3xl font-bold text-white mb-6 drop-shadow-lg text-center md:text-left"
       >
         Available Asset Opportunities
       </motion.h2>

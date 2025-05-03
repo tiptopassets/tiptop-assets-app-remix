@@ -113,6 +113,51 @@
   left: 100%;
 }
 
+/* New 3D Asset Icon Styles */
+.3d-asset-icon {
+  padding: 8px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  box-shadow: 
+    0 15px 35px rgba(0, 0, 0, 0.2),
+    0 5px 15px rgba(0, 0, 0, 0.15),
+    0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+  transform-style: preserve-3d;
+  transform: perspective(800px);
+  transition: transform 0.6s ease, box-shadow 0.6s ease;
+  position: relative;
+  overflow: visible;
+}
+
+.3d-asset-icon:hover {
+  transform: perspective(800px) translateY(-5px) rotateX(10deg) rotateY(-10deg);
+  box-shadow: 
+    0 20px 40px rgba(0, 0, 0, 0.3), 
+    0 10px 20px rgba(0, 0, 0, 0.2),
+    0 0 0 1px rgba(255, 255, 255, 0.15) inset,
+    0 0 30px rgba(155, 135, 245, 0.2);
+}
+
+.3d-asset-icon:after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 16px;
+  padding: 2px;
+  background: linear-gradient(
+    225deg,
+    rgba(255, 255, 255, 0.4) 0%,
+    rgba(255, 255, 255, 0.1) 50%,
+    transparent 100%
+  );
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
 .glass-icon {
   background: rgba(255, 255, 255, 0.15);
   backdrop-filter: blur(16px);
@@ -272,4 +317,50 @@ button.glass-effect:hover {
   .asset-card {
     @apply p-3 gap-3;
   }
+}
+
+/* Enhanced 3D transform utilities */
+.translate-z-4 {
+  transform: translateZ(4px);
+}
+
+.translate-z-8 {
+  transform: translateZ(8px);
+}
+
+.rotate-3 {
+  transform: rotate(3deg);
+}
+
+.rotate-6 {
+  transform: rotate(6deg);
+}
+
+/* Glossy card effects */
+.glossy-card {
+  position: relative;
+  overflow: hidden;
+  border-radius: 16px;
+  background: rgba(155, 135, 245, 0.15);
+  backdrop-filter: blur(10px);
+  box-shadow: 
+    0 10px 25px -5px rgba(0, 0, 0, 0.3),
+    0 10px 10px -5px rgba(0, 0, 0, 0.15),
+    0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+}
+
+.glossy-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 50%;
+  background: linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0.3) 0%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  pointer-events: none;
+  border-radius: 16px 16px 0 0;
 }
