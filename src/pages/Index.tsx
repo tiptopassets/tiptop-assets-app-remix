@@ -6,6 +6,7 @@ import AnalyzeButton from '@/components/AnalyzeButton';
 import GoogleMap from '@/components/GoogleMap';
 import AssetIcons from '@/components/AssetIcons';
 import AssetResultList from '@/components/AssetResultList';
+import ModelGenerationSheet from '@/components/ModelGenerationSheet';
 import { GoogleMapProvider, useGoogleMap } from '@/contexts/GoogleMapContext';
 import { LogIn } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -112,6 +113,9 @@ const HomeContent = () => {
           </p>
         </motion.div>
       </div>
+
+      {/* Model Generation Progress Sheet */}
+      <ModelGenerationSheet />
     </div>
   );
 };

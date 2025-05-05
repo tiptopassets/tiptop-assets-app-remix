@@ -1,5 +1,6 @@
 
 import { useGoogleMap } from '@/contexts/GoogleMapContext';
+import { useModelGeneration } from '@/contexts/ModelGenerationContext';
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { AssetOpportunity } from '@/contexts/GoogleMapContext';
@@ -9,8 +10,14 @@ const AnalyzeButton = () => {
     address, 
     setIsAnalyzing, 
     setAnalysisComplete, 
-    setAnalysisResults 
+    setAnalysisResults,
+    addressCoordinates
   } = useGoogleMap();
+  const {
+    capturePropertyImages,
+    generateModel,
+    setStatus
+  } = useModelGeneration();
   const [isDisabled, setIsDisabled] = useState(false);
   const { toast } = useToast();
 
@@ -81,27 +88,56 @@ const AnalyzeButton = () => {
     ] as AssetOpportunity[]
   };
   
-  const handleAnalyze = () => {
+  const handleAnalyze = async () => {
     if (!address) {
-      // Removed toast for address required
+      return;
+    }
+
+    if (!addressCoordinates) {
+      toast({
+        title: "Missing Location Data",
+        description: "We couldn't determine the exact location of this address. Please try a different address.",
+        variant: "destructive"
+      });
       return;
     }
 
     setIsDisabled(true);
     setIsAnalyzing(true);
+    
+    // Start the 3D model generation process in parallel
+    setStatus('initializing');
 
-    // Simulate API call with timeout
-    setTimeout(() => {
-      setAnalysisResults(mockAnalysisResults);
-      setIsAnalyzing(false);
-      setAnalysisComplete(true);
+    try {
+      // Start property image capture
+      await capturePropertyImages(address, addressCoordinates);
+      
+      // Generate the 3D model
+      await generateModel();
+
+      // While the 3D model is being generated, also perform the property analysis
+      setTimeout(() => {
+        setAnalysisResults(mockAnalysisResults);
+        setIsAnalyzing(false);
+        setAnalysisComplete(true);
+        setIsDisabled(false);
+        
+        toast({
+          title: "Analysis Complete",
+          description: "We've identified 4 monetization opportunities for your property",
+        });
+      }, 3000);
+    } catch (error) {
+      console.error('Error during analysis:', error);
       setIsDisabled(false);
+      setIsAnalyzing(false);
       
       toast({
-        title: "Analysis Complete",
-        description: "We've identified 4 monetization opportunities for your property",
+        title: "Analysis Failed",
+        description: "We encountered an error analyzing your property. Please try again.",
+        variant: "destructive"
       });
-    }, 3000);
+    }
   };
 
   return (
