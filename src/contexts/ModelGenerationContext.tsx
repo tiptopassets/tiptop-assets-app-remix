@@ -1,5 +1,7 @@
 
 import { createContext, useContext, useState, ReactNode } from 'react';
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from '@/hooks/use-toast';
 
 export type ModelGenerationStatus = 'idle' | 'initializing' | 'capturing' | 'generating' | 'completed' | 'error';
 
@@ -19,6 +21,7 @@ interface ModelGenerationContextType {
   setErrorMessage: (message: string | null) => void;
   capturePropertyImages: (address: string, coordinates: google.maps.LatLngLiteral) => Promise<void>;
   generateModel: () => Promise<void>;
+  resetGeneration: () => void;
 }
 
 const ModelGenerationContext = createContext<ModelGenerationContextType | undefined>(undefined);
@@ -35,6 +38,14 @@ export const ModelGenerationProvider = ({ children }: { children: ReactNode }) =
     streetView: null,
   });
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  // Reset the generation state
+  const resetGeneration = () => {
+    setStatus('idle');
+    setProgress(0);
+    setErrorMessage(null);
+    // We don't reset the property images to allow for retry without recapturing
+  };
 
   // Capture property images using Google Maps Static API and Street View API
   const capturePropertyImages = async (address: string, coordinates: google.maps.LatLngLiteral) => {
@@ -73,7 +84,7 @@ export const ModelGenerationProvider = ({ children }: { children: ReactNode }) =
     }
   };
 
-  // Generate 3D model using Meshy API (would be handled by Supabase Edge Function)
+  // Generate 3D model using Supabase Edge Function
   const generateModel = async () => {
     try {
       if (!propertyImages.satellite) {
@@ -82,21 +93,43 @@ export const ModelGenerationProvider = ({ children }: { children: ReactNode }) =
       
       setStatus('generating');
       setProgress(0);
+      setErrorMessage(null);
       
-      // Simulate the model generation process with progress updates
-      for (let i = 0; i <= 100; i += 10) {
-        await new Promise((resolve) => setTimeout(resolve, 800));
-        setProgress(i);
+      // Call the Supabase Edge Function to generate the 3D model
+      const { data, error } = await supabase.functions.invoke('generate-3d-model', {
+        body: {
+          satelliteImage: propertyImages.satellite,
+          streetViewImage: propertyImages.streetView,
+        },
+      });
+      
+      if (error) {
+        throw new Error(error.message || 'Failed to generate 3D model');
       }
       
-      // In a real implementation, this would set the URL to the generated 3D model
-      setModelUrl('/lovable-uploads/f5bf9c32-688f-4a52-8a95-4d803713d2ff.png'); // Replace with actual model URL
+      if (!data.success) {
+        throw new Error(data.error || 'Failed to generate 3D model');
+      }
       
+      // Update progress during the process
+      for (let i = 0; i <= 100; i += 10) {
+        setProgress(i);
+        await new Promise(resolve => setTimeout(resolve, 200)); // Shorter delay for demo
+      }
+      
+      // Set the model URL from the response
+      setModelUrl(data.modelUrl);
       setStatus('completed');
+      
     } catch (error) {
       console.error('Error generating 3D model:', error);
       setStatus('error');
-      setErrorMessage('Failed to generate 3D model. Please try again.');
+      setErrorMessage(error instanceof Error ? error.message : 'Failed to generate 3D model. Please try again.');
+      toast({
+        title: "3D Model Generation Failed",
+        description: error instanceof Error ? error.message : "There was a problem generating your property model",
+        variant: "destructive",
+      });
     }
   };
 
@@ -115,6 +148,7 @@ export const ModelGenerationProvider = ({ children }: { children: ReactNode }) =
         setErrorMessage,
         capturePropertyImages,
         generateModel,
+        resetGeneration,
       }}
     >
       {children}

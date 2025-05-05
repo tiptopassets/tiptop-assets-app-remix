@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { useModelGeneration, ModelGenerationStatus } from '@/contexts/ModelGenerationContext';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { Progress } from '@/components/ui/progress';
-import { Loader, CheckCircle, AlertTriangle } from 'lucide-react';
+import { Loader, CheckCircle, AlertTriangle, X } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
@@ -14,7 +14,9 @@ const ModelGenerationSheet = () => {
     progress,
     errorMessage,
     propertyImages,
-    modelUrl
+    modelUrl,
+    resetGeneration,
+    generateModel
   } = useModelGeneration();
   const [isOpen, setIsOpen] = useState(false);
   const navigate = useNavigate();
@@ -34,8 +36,13 @@ const ModelGenerationSheet = () => {
 
   // Handle retry button click for error state
   const handleRetry = () => {
+    generateModel();
+  };
+
+  // Handle close button click
+  const handleClose = () => {
     setIsOpen(false);
-    // Reset will be handled by the parent component
+    resetGeneration();
   };
 
   const statusMessages: Record<ModelGenerationStatus, string> = {
@@ -44,7 +51,7 @@ const ModelGenerationSheet = () => {
     capturing: 'Capturing property images...',
     generating: 'Generating 3D model...',
     completed: '3D model generation complete!',
-    error: errorMessage || 'An error occurred during model generation'
+    error: errorMessage || 'Failed to generate 3D model. Please try again.'
   };
 
   const statusDescriptions: Record<ModelGenerationStatus, string> = {
@@ -100,6 +107,42 @@ const ModelGenerationSheet = () => {
     }
   };
 
+  // Error UI for when model generation fails
+  const renderErrorUI = () => {
+    if (status !== 'error') return null;
+    
+    return (
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="bg-white rounded-lg p-6 my-6 border border-red-200 relative"
+      >
+        <div className="absolute top-4 right-4">
+          <X className="h-5 w-5 text-gray-400 cursor-pointer" onClick={handleClose} />
+        </div>
+        
+        <div className="flex items-start gap-4">
+          <div className="rounded-full bg-red-100 p-2">
+            <AlertTriangle className="h-6 w-6 text-red-500" />
+          </div>
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900">Failed to generate 3D model. Please try again.</h3>
+            <p className="text-gray-600 mt-1">{errorMessage || 'There was a problem generating your property model'}</p>
+          </div>
+        </div>
+        
+        {renderImages()}
+        
+        <Button 
+          className="mt-6 w-full bg-red-500 hover:bg-red-600 text-white"
+          onClick={handleRetry}
+        >
+          Try Again
+        </Button>
+      </motion.div>
+    );
+  };
+
   return (
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
       <SheetContent className="sm:max-w-md md:max-w-lg overflow-y-auto">
@@ -113,6 +156,9 @@ const ModelGenerationSheet = () => {
           </SheetDescription>
         </SheetHeader>
 
+        {/* Error UI */}
+        {renderErrorUI()}
+
         {/* Progress indicator */}
         {(status === 'capturing' || status === 'generating') && (
           <div className="my-6">
@@ -122,7 +168,7 @@ const ModelGenerationSheet = () => {
         )}
 
         {/* Property images */}
-        {renderImages()}
+        {status !== 'error' && renderImages()}
 
         {/* Call to action */}
         <div className="mt-8">
@@ -139,23 +185,6 @@ const ModelGenerationSheet = () => {
                 size="lg"
               >
                 View 3D Model
-              </Button>
-            </motion.div>
-          )}
-
-          {status === 'error' && (
-            <motion.div 
-              initial={{ opacity: 0, y: 20 }} 
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3 }}
-              className="flex justify-center"
-            >
-              <Button 
-                onClick={handleRetry} 
-                className="bg-red-500 hover:bg-red-600 text-white"
-                size="lg"
-              >
-                Try Again
               </Button>
             </motion.div>
           )}

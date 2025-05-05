@@ -1,6 +1,4 @@
 
-// This is a skeleton for a Supabase Edge Function that would call the Meshy API
-
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.21.0";
 
@@ -23,15 +21,7 @@ serve(async (req: Request) => {
     const { satelliteImage, streetViewImage } = body;
 
     if (!satelliteImage) {
-      return new Response(
-        JSON.stringify({
-          error: "Satellite image is required for 3D model generation",
-        }),
-        {
-          headers,
-          status: 400,
-        }
-      );
+      throw new Error("Satellite image is required for 3D model generation");
     }
 
     // Create a Supabase client with the Auth context from the request
@@ -45,41 +35,25 @@ serve(async (req: Request) => {
       }
     );
 
-    // In a real implementation, this would make API calls to Meshy
-    // For now, we'll simulate the model generation process
-
-    // 1. Get the Meshy API key from Supabase secrets
+    // Get the Meshy API key from Supabase secrets
     const meshyApiKey = Deno.env.get("MESHY_API_KEY");
     
     if (!meshyApiKey) {
-      return new Response(
-        JSON.stringify({
-          error: "Meshy API key not configured",
-        }),
-        {
-          headers,
-          status: 500,
-        }
-      );
+      throw new Error("Meshy API key not configured");
     }
 
-    // 2. Convert base64 images to files or pass directly to Meshy API
+    // Simulate a potential failure (in production, this would be actual API call logic)
+    const simulateSuccess = Math.random() > 0.5; // 50% chance of success for testing
     
-    // 3. Make API call to Meshy
-    // In a real implementation, this would be an actual fetch request to Meshy API
+    if (!simulateSuccess) {
+      throw new Error("Failed to generate 3D model from property images");
+    }
     
-    // 4. Store the resulting model in Supabase storage
-    // const { data, error } = await supabaseClient.storage
-    //   .from('property-models')
-    //   .upload(`model-${Date.now()}.glb`, modelData, {
-    //     contentType: 'model/gltf-binary',
-    //   });
-    
-    // 5. Return the URL to the stored model
+    // Success response (would include actual model URL in production)
     return new Response(
       JSON.stringify({
         success: true,
-        modelUrl: "https://example.com/path-to-model.glb", // This would be a real URL in production
+        modelUrl: "/lovable-uploads/f5bf9c32-688f-4a52-8a95-4d803713d2ff.png", 
         message: "3D model generated successfully",
       }),
       {
@@ -89,9 +63,11 @@ serve(async (req: Request) => {
     );
 
   } catch (error) {
+    console.error("Error in generate-3d-model function:", error);
     return new Response(
       JSON.stringify({
-        error: error.message,
+        success: false,
+        error: error.message || "An unknown error occurred",
       }),
       {
         headers,
