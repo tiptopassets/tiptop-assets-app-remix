@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from '@/hooks/use-toast';
 import { Slider } from '@/components/ui/slider';
 import { Button } from '@/components/ui/button';
-import { ZoomIn, ZoomOut, RotateCircle, X } from 'lucide-react';
+import { ZoomIn, ZoomOut, RotateCw, X } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const ModelViewer = () => {
@@ -80,7 +80,7 @@ const ModelViewer = () => {
             {/* Control overlay */}
             <div className="absolute bottom-4 right-4 flex gap-2">
               <Button variant="secondary" size="sm" onClick={() => handleResetView()}>
-                <RotateCircle className="h-4 w-4" />
+                <RotateCw className="h-4 w-4" />
               </Button>
               <Button variant="secondary" size="sm" className="zoom-in">
                 <ZoomIn className="h-4 w-4" />
