@@ -1,7 +1,7 @@
 
 import { Loader } from '@googlemaps/js-api-loader';
 
-// Replace with your API key
+// API key
 export const API_KEY = 'AIzaSyBbclc8qxh5NVR9skf6XCz_xRJCZsnmUGA';
 
 export const initializeGoogleMaps = async () => {
