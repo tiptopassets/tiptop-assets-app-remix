@@ -16,6 +16,7 @@ import EVChargingDashboard from "./pages/EVChargingDashboard";
 import AddAsset from "./pages/AddAsset";
 import AccountPage from "./pages/AccountPage";
 import ModelViewer from "./pages/ModelViewer";
+import AdminDashboard from "./pages/AdminDashboard";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -43,6 +44,7 @@ const App = () => (
               <Route path="/dashboard/ev-charging" element={<EVChargingDashboard />} />
               <Route path="/dashboard/add-asset" element={<AddAsset />} />
               <Route path="/dashboard/account" element={<AccountPage />} />
+              <Route path="/dashboard/admin" element={<AdminDashboard />} />
               <Route path="/model-viewer" element={<ModelViewer />} />
               <Route path="*" element={<NotFound />} />
             </Routes>

@@ -2,9 +2,11 @@
 import { useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Home, Sun, Wifi, Plus, User, LogOut, BatteryCharging } from 'lucide-react';
+import { Home, Sun, Wifi, Plus, User, LogOut, BatteryCharging, Users } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
+import { useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 
 const menuItems = [
   { icon: Home, label: 'Dashboard', path: '/dashboard' },
@@ -17,11 +19,34 @@ const menuItems = [
 
 const DashboardSidebar = () => {
   const [collapsed, setCollapsed] = useState(false);
-  const { signOut } = useAuth();
+  const [isAdmin, setIsAdmin] = useState(false);
+  const { signOut, user } = useAuth();
+
+  useEffect(() => {
+    if (user) {
+      // Check if current user is an admin
+      const checkAdminStatus = async () => {
+        const { data: roles } = await supabase
+          .from('user_roles')
+          .select('*')
+          .eq('user_id', user.id)
+          .eq('role', 'admin');
+        
+        setIsAdmin(roles && roles.length > 0);
+      };
+      
+      checkAdminStatus();
+    }
+  }, [user]);
 
   const toggleSidebar = () => {
     setCollapsed(!collapsed);
   };
+
+  // Add admin menu item conditionally
+  const allMenuItems = isAdmin 
+    ? [...menuItems, { icon: Users, label: 'Admin', path: '/dashboard/admin' }]
+    : menuItems;
 
   return (
     <div 
@@ -64,7 +89,7 @@ const DashboardSidebar = () => {
       {/* Navigation links */}
       <nav className="flex-1 py-4 z-10 relative">
         <ul className="space-y-1 px-2">
-          {menuItems.map((item) => (
+          {allMenuItems.map((item) => (
             <li key={item.path}>
               <NavLink
                 to={item.path}
