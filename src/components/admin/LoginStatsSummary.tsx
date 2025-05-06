@@ -36,7 +36,7 @@ export const LoginStatsSummary = () => {
         
         // Get sum of all logins
         const { data: loginData, error: loginError } = await supabase
-          .rpc('sum_login_count');
+          .rpc('sum_login_count') as { data: number | null, error: any };
           
         const totalLogins = loginData || 0;
         if (loginError) throw loginError;
