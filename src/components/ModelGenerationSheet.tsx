@@ -7,6 +7,7 @@ import { Loader, CheckCircle, AlertTriangle, X } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 
 const ModelGenerationSheet = () => {
   const {
@@ -19,6 +20,7 @@ const ModelGenerationSheet = () => {
     generateModel
   } = useModelGeneration();
   const [isOpen, setIsOpen] = useState(false);
+  const [showErrorDialog, setShowErrorDialog] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -26,7 +28,12 @@ const ModelGenerationSheet = () => {
     if (status !== 'idle') {
       setIsOpen(true);
     }
-  }, [status]);
+
+    // Show the error dialog when status is error and the error is about missing satellite image
+    if (status === 'error' && errorMessage?.toLowerCase().includes('no satellite image')) {
+      setShowErrorDialog(true);
+    }
+  }, [status, errorMessage]);
 
   // Handle view model button click
   const handleViewModel = () => {
@@ -36,12 +43,14 @@ const ModelGenerationSheet = () => {
 
   // Handle retry button click for error state
   const handleRetry = () => {
+    setShowErrorDialog(false);
     generateModel();
   };
 
   // Handle close button click
   const handleClose = () => {
     setIsOpen(false);
+    setShowErrorDialog(false);
     resetGeneration();
   };
 
@@ -143,54 +152,111 @@ const ModelGenerationSheet = () => {
     );
   };
 
-  return (
-    <Sheet open={isOpen} onOpenChange={setIsOpen}>
-      <SheetContent className="sm:max-w-md md:max-w-lg overflow-y-auto">
-        <SheetHeader className="mb-6">
-          <SheetTitle className="flex items-center gap-2">
-            {renderStatusIcon()}
-            <span>{statusMessages[status]}</span>
-          </SheetTitle>
-          <SheetDescription>
-            {statusDescriptions[status]}
-          </SheetDescription>
-        </SheetHeader>
-
-        {/* Error UI */}
-        {renderErrorUI()}
-
-        {/* Progress indicator */}
-        {(status === 'capturing' || status === 'generating') && (
-          <div className="my-6">
-            <Progress value={progress} className="h-2" />
-            <p className="text-sm text-right mt-1 text-gray-500">{progress}%</p>
+  // Dialog for the "No satellite image available" error case
+  const NoSatelliteErrorDialog = () => (
+    <Dialog open={showErrorDialog} onOpenChange={setShowErrorDialog}>
+      <DialogContent className="sm:max-w-md">
+        <div className="flex flex-col items-center gap-4">
+          <div className="rounded-full bg-red-100 p-3">
+            <AlertTriangle className="h-6 w-6 text-red-500" />
           </div>
-        )}
-
-        {/* Property images */}
-        {status !== 'error' && renderImages()}
-
-        {/* Call to action */}
-        <div className="mt-8">
-          {status === 'completed' && (
-            <motion.div 
-              initial={{ opacity: 0, y: 20 }} 
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3 }}
-              className="flex justify-center"
-            >
-              <Button 
-                onClick={handleViewModel} 
-                className="bg-tiptop-purple hover:bg-tiptop-purple/80 text-white"
-                size="lg"
-              >
-                View 3D Model
-              </Button>
-            </motion.div>
-          )}
+          
+          <h2 className="text-xl font-semibold text-center">No satellite image available for 3D model generation</h2>
+          
+          <p className="text-gray-600 text-center">There was a problem generating your property model</p>
+          
+          <div className="w-full grid grid-cols-2 gap-4 mt-2">
+            <div className="bg-gray-100 rounded-lg p-4 relative">
+              <div className="absolute top-2 left-2 bg-black/50 text-white text-xs px-2 py-1 rounded">
+                Satellite View
+              </div>
+              <div className="flex justify-center items-center h-32">
+                <img 
+                  src="/lovable-uploads/8fb0c257-98c2-4556-8f54-3de3473c2227.png" 
+                  alt="No Satellite View"
+                  className="h-24 w-auto" 
+                />
+              </div>
+            </div>
+            
+            <div className="bg-gray-100 rounded-lg p-4 relative">
+              <div className="absolute top-2 left-2 bg-black/50 text-white text-xs px-2 py-1 rounded">
+                Street View
+              </div>
+              <div className="flex justify-center items-center h-32">
+                <img 
+                  src="/lovable-uploads/f5bf9c32-688f-4a52-8a95-4d803713d2ff.png" 
+                  alt="Placeholder P"
+                  className="h-24 w-auto" 
+                />
+              </div>
+            </div>
+          </div>
+          
+          <Button 
+            onClick={handleRetry}
+            className="w-full py-6 bg-red-500 hover:bg-red-600 text-white text-lg font-medium"
+          >
+            Try Again
+          </Button>
         </div>
-      </SheetContent>
-    </Sheet>
+      </DialogContent>
+    </Dialog>
+  );
+
+  return (
+    <>
+      <Sheet open={isOpen} onOpenChange={setIsOpen}>
+        <SheetContent className="sm:max-w-md md:max-w-lg overflow-y-auto">
+          <SheetHeader className="mb-6">
+            <SheetTitle className="flex items-center gap-2">
+              {renderStatusIcon()}
+              <span>{statusMessages[status]}</span>
+            </SheetTitle>
+            <SheetDescription>
+              {statusDescriptions[status]}
+            </SheetDescription>
+          </SheetHeader>
+
+          {/* Error UI */}
+          {status === 'error' && !errorMessage?.toLowerCase().includes('no satellite image') && renderErrorUI()}
+
+          {/* Progress indicator */}
+          {(status === 'capturing' || status === 'generating') && (
+            <div className="my-6">
+              <Progress value={progress} className="h-2" />
+              <p className="text-sm text-right mt-1 text-gray-500">{progress}%</p>
+            </div>
+          )}
+
+          {/* Property images */}
+          {status !== 'error' && renderImages()}
+
+          {/* Call to action */}
+          <div className="mt-8">
+            {status === 'completed' && (
+              <motion.div 
+                initial={{ opacity: 0, y: 20 }} 
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3 }}
+                className="flex justify-center"
+              >
+                <Button 
+                  onClick={handleViewModel} 
+                  className="bg-tiptop-purple hover:bg-tiptop-purple/80 text-white"
+                  size="lg"
+                >
+                  View 3D Model
+                </Button>
+              </motion.div>
+            )}
+          </div>
+        </SheetContent>
+      </Sheet>
+      
+      {/* No Satellite Image Error Dialog */}
+      <NoSatelliteErrorDialog />
+    </>
   );
 };
 

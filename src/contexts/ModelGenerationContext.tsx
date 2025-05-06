@@ -88,7 +88,14 @@ export const ModelGenerationProvider = ({ children }: { children: ReactNode }) =
   const generateModel = async () => {
     try {
       if (!propertyImages.satellite) {
-        throw new Error('No satellite image available for 3D model generation');
+        setStatus('error');
+        setErrorMessage('No satellite image available for 3D model generation');
+        toast({
+          title: "3D Model Generation Failed",
+          description: "No satellite image available for 3D model generation",
+          variant: "destructive",
+        });
+        return;
       }
       
       setStatus('generating');

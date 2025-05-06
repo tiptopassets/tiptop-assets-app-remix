@@ -21,7 +21,16 @@ serve(async (req: Request) => {
     const { satelliteImage, streetViewImage } = body;
 
     if (!satelliteImage) {
-      throw new Error("Satellite image is required for 3D model generation");
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: "No satellite image available for 3D model generation",
+        }),
+        {
+          headers,
+          status: 400,
+        }
+      );
     }
 
     // Create a Supabase client with the Auth context from the request
