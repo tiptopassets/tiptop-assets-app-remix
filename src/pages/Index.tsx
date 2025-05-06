@@ -7,6 +7,7 @@ import GoogleMap from '@/components/GoogleMap';
 import AssetIcons from '@/components/AssetIcons';
 import AssetResultList from '@/components/AssetResultList';
 import ModelGenerationSheet from '@/components/ModelGenerationSheet';
+import HomeModelViewer from '@/components/HomeModelViewer';
 import { GoogleMapProvider, useGoogleMap } from '@/contexts/GoogleMapContext';
 import { LogIn } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -91,6 +92,9 @@ const HomeContent = () => {
             {!analysisComplete && !isAnalyzing && <AssetIcons />}
             <AssetResultList />
           </div>
+
+          {/* 3D Model Viewer */}
+          {(analysisComplete || isAnalyzing) && <HomeModelViewer />}
         </main>
         
         {/* Footer with carousel - pushed much lower, especially on mobile */}

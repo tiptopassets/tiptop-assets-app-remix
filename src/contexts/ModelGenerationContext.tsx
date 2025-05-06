@@ -22,6 +22,9 @@ interface ModelGenerationContextType {
   capturePropertyImages: (address: string, coordinates: google.maps.LatLngLiteral) => Promise<void>;
   generateModel: () => Promise<void>;
   resetGeneration: () => void;
+  isHomeModelVisible: boolean;
+  setHomeModelVisible: (visible: boolean) => void;
+  updateProgress: (newProgress: number) => void;
 }
 
 const ModelGenerationContext = createContext<ModelGenerationContextType | undefined>(undefined);
@@ -38,6 +41,7 @@ export const ModelGenerationProvider = ({ children }: { children: ReactNode }) =
     streetView: null,
   });
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isHomeModelVisible, setHomeModelVisible] = useState(false);
 
   // Reset the generation state
   const resetGeneration = () => {
@@ -45,6 +49,14 @@ export const ModelGenerationProvider = ({ children }: { children: ReactNode }) =
     setProgress(0);
     setErrorMessage(null);
     // We don't reset the property images to allow for retry without recapturing
+  };
+
+  // Update progress with smooth animation
+  const updateProgress = (newProgress: number) => {
+    setProgress(prev => {
+      if (newProgress <= prev) return prev;
+      return newProgress;
+    });
   };
 
   // Capture property images using Google Maps Static API and Street View API
@@ -101,6 +113,7 @@ export const ModelGenerationProvider = ({ children }: { children: ReactNode }) =
       setStatus('generating');
       setProgress(0);
       setErrorMessage(null);
+      setHomeModelVisible(true);
       
       // Call the Supabase Edge Function to generate the 3D model
       const { data, error } = await supabase.functions.invoke('generate-3d-model', {
@@ -120,7 +133,7 @@ export const ModelGenerationProvider = ({ children }: { children: ReactNode }) =
       
       // Update progress during the process
       for (let i = 0; i <= 100; i += 10) {
-        setProgress(i);
+        updateProgress(i);
         await new Promise(resolve => setTimeout(resolve, 200)); // Shorter delay for demo
       }
       
@@ -156,6 +169,9 @@ export const ModelGenerationProvider = ({ children }: { children: ReactNode }) =
         capturePropertyImages,
         generateModel,
         resetGeneration,
+        isHomeModelVisible,
+        setHomeModelVisible,
+        updateProgress,
       }}
     >
       {children}

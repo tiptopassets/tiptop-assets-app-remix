@@ -67,7 +67,7 @@ serve(async (req: Request) => {
       if (satelliteImage && streetViewImage) {
         // Use multi-image endpoint when both images are available
         console.log("Using multi-image Meshy API endpoint");
-        meshyEndpoint = "https://api.meshy.ai/v2/multi-image-to-3d";
+        meshyEndpoint = "https://api.meshy.ai/v1/multi-view-to-3d";
         requestBody = {
           images: [satelliteImage, streetViewImage],
           imageType: "aerial",
@@ -76,7 +76,7 @@ serve(async (req: Request) => {
       } else {
         // Use single image endpoint when only satellite image is available
         console.log("Using single-image Meshy API endpoint");
-        meshyEndpoint = "https://api.meshy.ai/v2/image-to-3d";
+        meshyEndpoint = "https://api.meshy.ai/v1/image-to-3d";
         requestBody = {
           image: satelliteImage,
           imageType: "aerial",
@@ -103,13 +103,13 @@ serve(async (req: Request) => {
       generationResult = await meshyResponse.json();
       console.log("Meshy API successful response:", generationResult);
       
-      // For this example, we'll use a placeholder URL as in the original function
-      // In production, you would use generationResult.modelUrl
+      // For this example, we'll use either the model URL from the response or a placeholder
+      const modelUrl = generationResult.modelUrl || "/lovable-uploads/f5bf9c32-688f-4a52-8a95-4d803713d2ff.png";
       
       return new Response(
         JSON.stringify({
           success: true,
-          modelUrl: generationResult.modelUrl || "/lovable-uploads/f5bf9c32-688f-4a52-8a95-4d803713d2ff.png", 
+          modelUrl: modelUrl, 
           message: "3D model generated successfully",
         }),
         {
