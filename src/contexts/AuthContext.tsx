@@ -3,6 +3,7 @@ import { createContext, useState, useEffect, useContext, ReactNode } from 'react
 import { supabase } from '@/integrations/supabase/client';
 import { Session, User } from '@supabase/supabase-js';
 import { useNavigate } from 'react-router-dom';
+import { toast } from '@/hooks/use-toast';
 
 type AuthContextType = {
   session: Session | null;
@@ -20,6 +21,47 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
+  // Function to update login statistics in the database
+  const updateLoginStats = async (userId: string) => {
+    try {
+      // Get user agent and IP information
+      const userAgent = navigator.userAgent;
+      
+      // Check if this user already has an entry in the login stats table
+      const { data: existingStats } = await supabase
+        .from('user_login_stats')
+        .select('*')
+        .eq('user_id', userId)
+        .maybeSingle();
+        
+      if (existingStats) {
+        // Update existing user's login stats
+        await supabase
+          .from('user_login_stats')
+          .update({
+            login_count: (existingStats.login_count || 0) + 1,
+            last_login_at: new Date().toISOString(),
+            last_user_agent: userAgent,
+          })
+          .eq('user_id', userId);
+      } else {
+        // First time login - create new record
+        await supabase
+          .from('user_login_stats')
+          .insert({
+            user_id: userId,
+            login_count: 1,
+            first_login_at: new Date().toISOString(),
+            last_login_at: new Date().toISOString(),
+            last_user_agent: userAgent,
+          });
+      }
+    } catch (error) {
+      console.error('Error updating login stats:', error);
+      // Don't block authentication if this fails
+    }
+  };
+
   useEffect(() => {
     // First set up the auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -27,8 +69,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setSession(currentSession);
         setUser(currentSession?.user ?? null);
         
-        // Redirect to dashboard if user is logged in
-        if (event === 'SIGNED_IN' && currentSession) {
+        // Track login event when user signs in
+        if (event === 'SIGNED_IN' && currentSession?.user) {
+          // Use setTimeout to prevent deadlocking in the auth state change handler
+          setTimeout(() => {
+            updateLoginStats(currentSession.user.id);
+          }, 0);
+          
+          // Redirect to dashboard if user is logged in
           setTimeout(() => {
             navigate('/dashboard');
           }, 0);
@@ -49,6 +97,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
       setSession(currentSession);
       setUser(currentSession?.user ?? null);
+      
+      // If user was already signed in on page load, update login stats
+      if (currentSession?.user) {
+        updateLoginStats(currentSession.user.id);
+      }
+      
       setLoading(false);
     });
 
@@ -67,6 +121,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       });
     } catch (error) {
       console.error('Google sign in error:', error);
+      toast({
+        title: "Sign In Error",
+        description: "Failed to sign in with Google. Please try again.",
+        variant: "destructive"
+      });
     }
   };
 
