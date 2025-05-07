@@ -198,8 +198,8 @@ export const ModelGenerationProvider = ({ children }: { children: ReactNode }) =
       // Set initial progress
       updateProgress(data.progress || 0);
       
-      // For demo purposes, we'll simulate the model generation with a polling mechanism
-      // In a production environment, you would use SSE to get real-time updates from Meshy API
+      // For demo purposes, we'll use polling mechanism
+      // In a production environment with proper CORS, you would use SSE to get real-time updates
       const intervalId = setInterval(async () => {
         const isCompleted = await pollTaskStatus(data.taskId);
         if (isCompleted) {

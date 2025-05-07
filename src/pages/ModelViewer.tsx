@@ -21,7 +21,7 @@ const ModelViewer = () => {
   const navigate = useNavigate();
   const [lightIntensity, setLightIntensity] = useState(50);
   const [viewMode, setViewMode] = useState<'satellite' | 'streetView'>('satellite');
-  const [autoRotate, setAutoRotate] = useState(true);
+  const [enableAutoRotate, setEnableAutoRotate] = useState(true);
   const [zoomLevel, setZoomLevel] = useState(1);
   
   useEffect(() => {
@@ -121,8 +121,9 @@ const ModelViewer = () => {
                   rotation={[0, -Math.PI / 4, 0]}
                   polar={[-Math.PI / 4, Math.PI / 4]}
                   azimuth={[-Math.PI / 4, Math.PI / 4]}
-                  autoRotate={autoRotate}
-                  autoRotateSpeed={0.5}>
+                  config={{ mass: 1, tension: 170, friction: 26 }}
+                  snap={{ mass: 4, tension: 170, friction: 26 }}
+                  speed={1.5}>
                   <Model url={modelUrl} lightIntensity={calculatedLightIntensity} />
                 </PresentationControls>
                 <Environment preset="city" />
@@ -141,8 +142,8 @@ const ModelViewer = () => {
               <Button 
                 variant="secondary" 
                 size="sm" 
-                onClick={() => setAutoRotate(prev => !prev)}
-                className={autoRotate ? "bg-tiptop-purple/50 text-white" : ""}
+                onClick={() => setEnableAutoRotate(prev => !prev)}
+                className={enableAutoRotate ? "bg-tiptop-purple/50 text-white" : ""}
               >
                 <RotateCw className="h-4 w-4" />
               </Button>
@@ -184,16 +185,16 @@ const ModelViewer = () => {
               <label className="block text-sm font-medium mb-2">Auto-Rotate</label>
               <div className="grid grid-cols-2 gap-2">
                 <Button 
-                  variant={autoRotate ? "default" : "outline"}
-                  onClick={() => setAutoRotate(true)}
-                  className={autoRotate ? "bg-tiptop-purple hover:bg-tiptop-purple/90" : ""}
+                  variant={enableAutoRotate ? "default" : "outline"}
+                  onClick={() => setEnableAutoRotate(true)}
+                  className={enableAutoRotate ? "bg-tiptop-purple hover:bg-tiptop-purple/90" : ""}
                 >
                   On
                 </Button>
                 <Button 
-                  variant={!autoRotate ? "default" : "outline"}
-                  onClick={() => setAutoRotate(false)}
-                  className={!autoRotate ? "bg-tiptop-purple hover:bg-tiptop-purple/90" : ""}
+                  variant={!enableAutoRotate ? "default" : "outline"}
+                  onClick={() => setEnableAutoRotate(false)}
+                  className={!enableAutoRotate ? "bg-tiptop-purple hover:bg-tiptop-purple/90" : ""}
                 >
                   Off
                 </Button>

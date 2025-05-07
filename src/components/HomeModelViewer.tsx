@@ -27,7 +27,7 @@ const HomeModelViewer = () => {
   const { status, progress, modelUrl, currentTaskId } = useModelGeneration();
   const [isVisible, setIsVisible] = useState(false);
   const [showControls, setShowControls] = useState(true);
-  const [rotateEnabled, setRotateEnabled] = useState(true);
+  const [enableAutoRotate, setEnableAutoRotate] = useState(true);
   const [zoomLevel, setZoomLevel] = useState(1);
   
   const isGenerating = status === 'generating';
@@ -56,7 +56,7 @@ const HomeModelViewer = () => {
   
   // Handle rotation toggle
   const handleRotateToggle = () => {
-    setRotateEnabled(prev => !prev);
+    setEnableAutoRotate(prev => !prev);
   };
   
   if (!isVisible) return null;
@@ -121,8 +121,9 @@ const HomeModelViewer = () => {
               rotation={[0, -Math.PI / 4, 0]}
               polar={[-Math.PI / 4, Math.PI / 4]}
               azimuth={[-Math.PI / 4, Math.PI / 4]}
-              autoRotate={rotateEnabled}
-              autoRotateSpeed={0.5}>
+              config={{ mass: 1, tension: 170, friction: 26 }}
+              snap={{ mass: 4, tension: 170, friction: 26 }}
+              speed={1.5}>
               <Model url={modelUrl} />
             </PresentationControls>
             <Environment preset="city" />
@@ -135,7 +136,7 @@ const HomeModelViewer = () => {
                 variant="secondary" 
                 size="sm" 
                 onClick={handleRotateToggle}
-                className={rotateEnabled ? "bg-tiptop-purple/50 text-white" : ""}
+                className={enableAutoRotate ? "bg-tiptop-purple/50 text-white" : ""}
               >
                 <RotateCw className="h-4 w-4" />
               </Button>
