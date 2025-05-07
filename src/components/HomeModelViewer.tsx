@@ -24,9 +24,11 @@ function Model({ url }: { url: string }) {
 }
 
 const HomeModelViewer = () => {
-  const { status, progress, modelUrl } = useModelGeneration();
+  const { status, progress, modelUrl, currentTaskId } = useModelGeneration();
   const [isVisible, setIsVisible] = useState(false);
   const [showControls, setShowControls] = useState(true);
+  const [rotateEnabled, setRotateEnabled] = useState(true);
+  const [zoomLevel, setZoomLevel] = useState(1);
   
   const isGenerating = status === 'generating';
   const isComplete = status === 'completed';
@@ -37,6 +39,25 @@ const HomeModelViewer = () => {
       setIsVisible(true);
     }
   }, [isGenerating, isComplete]);
+  
+  // Format task ID for display
+  const formattedTaskId = currentTaskId ? 
+    `${currentTaskId.substring(0, 8)}...${currentTaskId.substring(currentTaskId.length - 8)}` : 
+    null;
+  
+  // Handle zoom controls
+  const handleZoomIn = () => {
+    setZoomLevel(prev => Math.min(prev + 0.25, 2.5));
+  };
+  
+  const handleZoomOut = () => {
+    setZoomLevel(prev => Math.max(prev - 0.25, 0.5));
+  };
+  
+  // Handle rotation toggle
+  const handleRotateToggle = () => {
+    setRotateEnabled(prev => !prev);
+  };
   
   if (!isVisible) return null;
   
@@ -57,6 +78,11 @@ const HomeModelViewer = () => {
               ? "Please wait while we create your property model" 
               : "Interactive 3D view of your property"}
           </p>
+          {currentTaskId && (
+            <p className="text-xs text-gray-500 mt-1">
+              Task ID: {formattedTaskId}
+            </p>
+          )}
         </div>
         <Button 
           variant="ghost" 
@@ -76,7 +102,10 @@ const HomeModelViewer = () => {
             <p className="text-sm text-gray-300">Generating your 3D property model</p>
           </div>
           <Progress value={progress} className="h-1.5 bg-gray-800" />
-          <p className="text-right text-xs text-gray-500 mt-1">{progress}%</p>
+          <div className="flex justify-between text-xs text-gray-500 mt-1">
+            <span>Processing images</span>
+            <span>{progress}%</span>
+          </div>
         </div>
       )}
       
@@ -88,10 +117,12 @@ const HomeModelViewer = () => {
             <spotLight position={[10, 10, 10]} angle={0.15} penumbra={1} />
             <PresentationControls
               global
-              zoom={0.8}
+              zoom={zoomLevel}
               rotation={[0, -Math.PI / 4, 0]}
               polar={[-Math.PI / 4, Math.PI / 4]}
-              azimuth={[-Math.PI / 4, Math.PI / 4]}>
+              azimuth={[-Math.PI / 4, Math.PI / 4]}
+              autoRotate={rotateEnabled}
+              autoRotateSpeed={0.5}>
               <Model url={modelUrl} />
             </PresentationControls>
             <Environment preset="city" />
@@ -100,13 +131,18 @@ const HomeModelViewer = () => {
           {/* Controls overlay */}
           {showControls && (
             <div className="absolute bottom-4 right-4 flex gap-2">
-              <Button variant="secondary" size="sm">
+              <Button 
+                variant="secondary" 
+                size="sm" 
+                onClick={handleRotateToggle}
+                className={rotateEnabled ? "bg-tiptop-purple/50 text-white" : ""}
+              >
                 <RotateCw className="h-4 w-4" />
               </Button>
-              <Button variant="secondary" size="sm">
+              <Button variant="secondary" size="sm" onClick={handleZoomIn}>
                 <ZoomIn className="h-4 w-4" />
               </Button>
-              <Button variant="secondary" size="sm">
+              <Button variant="secondary" size="sm" onClick={handleZoomOut}>
                 <ZoomOut className="h-4 w-4" />
               </Button>
             </div>

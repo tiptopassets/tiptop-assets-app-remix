@@ -15,23 +15,8 @@ serve(async (req: Request) => {
   }
 
   try {
-    // Parse request body
     const body = await req.json();
-    const { satelliteImage, streetViewImage } = body;
-
-    if (!satelliteImage) {
-      console.error("No satellite image provided for 3D model generation");
-      return new Response(
-        JSON.stringify({
-          success: false,
-          error: "No satellite image available for 3D model generation",
-        }),
-        {
-          headers: corsHeaders,
-          status: 400,
-        }
-      );
-    }
+    const { satelliteImage, streetViewImage, taskId } = body;
 
     // Create a Supabase client with the Auth context from the request
     const supabaseClient = createClient(
@@ -52,76 +37,111 @@ serve(async (req: Request) => {
       throw new Error("Meshy API key not configured");
     }
 
-    let generationResult;
-    
-    // Log input images for debugging
-    console.log("Input images:", { 
-      satelliteImage: satelliteImage ? "Present" : "Missing",
-      streetViewImage: streetViewImage ? "Present" : "Missing"
-    });
-
-    try {
-      // Choose API endpoint based on available images
-      let meshyEndpoint, requestBody;
-      
-      if (satelliteImage && streetViewImage) {
-        // Use multi-image endpoint when both images are available
-        console.log("Using multi-image Meshy API endpoint");
-        meshyEndpoint = "https://api.meshy.ai/v1/multi-view-to-3d";
-        requestBody = {
-          images: [satelliteImage, streetViewImage],
-          imageType: "aerial",
-          outputFormat: "glb",
-        };
-      } else {
-        // Use single image endpoint when only satellite image is available
-        console.log("Using single-image Meshy API endpoint");
-        meshyEndpoint = "https://api.meshy.ai/v1/image-to-3d";
-        requestBody = {
-          image: satelliteImage,
-          imageType: "aerial",
-          outputFormat: "glb",
-        };
-      }
-      
-      // Make request to Meshy API
-      const meshyResponse = await fetch(meshyEndpoint, {
-        method: "POST",
+    // If taskId is provided, check task status
+    if (taskId) {
+      console.log("Checking status for task:", taskId);
+      const taskStatusResponse = await fetch(`https://api.meshy.ai/v1/tasks/${taskId}`, {
         headers: {
           "Authorization": `Bearer ${meshyApiKey}`,
           "Content-Type": "application/json"
-        },
-        body: JSON.stringify(requestBody)
+        }
       });
 
-      if (!meshyResponse.ok) {
-        const errorData = await meshyResponse.json();
-        console.error("Meshy API error:", errorData);
-        throw new Error(`Meshy API returned error: ${errorData.message || JSON.stringify(errorData)}`);
+      if (!taskStatusResponse.ok) {
+        const errorData = await taskStatusResponse.json();
+        throw new Error(`Meshy API returned error: ${JSON.stringify(errorData)}`);
       }
 
-      generationResult = await meshyResponse.json();
-      console.log("Meshy API successful response:", generationResult);
-      
-      // For this example, we'll use either the model URL from the response or a placeholder
-      const modelUrl = generationResult.modelUrl || "/lovable-uploads/f5bf9c32-688f-4a52-8a95-4d803713d2ff.png";
+      const statusData = await taskStatusResponse.json();
+      console.log("Task status:", statusData);
       
       return new Response(
         JSON.stringify({
           success: true,
-          modelUrl: modelUrl, 
-          message: "3D model generated successfully",
+          status: statusData.status,
+          progress: statusData.progress,
+          modelUrl: statusData.model_url || null,
+          taskId: statusData.id
         }),
         {
           headers: corsHeaders,
           status: 200,
         }
       );
-
-    } catch (apiError) {
-      console.error("Error calling Meshy API:", apiError);
-      throw new Error(`Failed to generate 3D model: ${apiError.message || "API call failed"}`);
     }
+
+    // For new task creation
+    if (!satelliteImage) {
+      console.error("No satellite image provided for 3D model generation");
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: "No satellite image available for 3D model generation",
+        }),
+        {
+          headers: corsHeaders,
+          status: 400,
+        }
+      );
+    }
+
+    let requestBody, meshyEndpoint;
+    
+    // Choose API endpoint based on available images
+    if (satelliteImage && streetViewImage) {
+      // Use multi-image endpoint when both images are available
+      console.log("Using multi-image Meshy API endpoint");
+      meshyEndpoint = "https://api.meshy.ai/v1/multi-view-to-3d";
+      requestBody = {
+        images: [satelliteImage, streetViewImage],
+        imageType: "aerial",
+        outputFormat: "glb",
+      };
+    } else {
+      // Use single image endpoint when only satellite image is available
+      console.log("Using single-image Meshy API endpoint");
+      meshyEndpoint = "https://api.meshy.ai/v1/image-to-3d";
+      requestBody = {
+        image: satelliteImage,
+        imageType: "aerial",
+        outputFormat: "glb",
+      };
+    }
+      
+    // Make request to Meshy API to create a task
+    console.log("Creating Meshy task...");
+    const meshyResponse = await fetch(meshyEndpoint, {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${meshyApiKey}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(requestBody)
+    });
+
+    if (!meshyResponse.ok) {
+      const errorData = await meshyResponse.json();
+      console.error("Meshy API error:", errorData);
+      throw new Error(`Meshy API returned error: ${JSON.stringify(errorData)}`);
+    }
+
+    const meshyData = await meshyResponse.json();
+    console.log("Meshy task created successfully:", meshyData);
+      
+    return new Response(
+      JSON.stringify({
+        success: true,
+        taskId: meshyData.id,
+        status: meshyData.status,
+        progress: meshyData.progress || 0,
+        modelUrl: null,
+        message: "3D model generation task created successfully",
+      }),
+      {
+        headers: corsHeaders,
+        status: 200,
+      }
+    );
 
   } catch (error) {
     console.error("Error in generate-3d-model function:", error);
