@@ -28,6 +28,21 @@ interface SubmissionResult {
     swimply: { sent: boolean; referralLink?: string; error?: string };
   };
   estimatedEarnings: number;
+  bundle: BundleResult;
+}
+
+interface ServiceInfo {
+  name: string;
+  description: string;
+  estimated_monthly: string;
+  integration: string;
+  confidence: number;
+}
+
+interface BundleResult {
+  bundle_name: string;
+  services: ServiceInfo[];
+  estimated_total_monthly: string;
 }
 
 // Calculate estimated earnings based on property features
@@ -48,6 +63,69 @@ function calculateEstimatedEarnings(submission: PropertySubmission): number {
   }
   
   return total;
+}
+
+// Generate a personalized bundle based on property features
+function generateBundle(submission: PropertySubmission): BundleResult {
+  const services: ServiceInfo[] = [];
+  let totalEarnings = 0;
+  let bundleName = "Custom Income Bundle";
+  
+  // Add Neighbor if has garage or driveway
+  if (submission.has_garage || submission.has_driveway) {
+    const monthlyEarning = submission.has_garage ? 200 : 150;
+    totalEarnings += monthlyEarning;
+    services.push({
+      name: "Neighbor",
+      description: "Rent your garage or driveway for storage or parking.",
+      estimated_monthly: `$${monthlyEarning}`,
+      integration: "API",
+      confidence: 95
+    });
+  }
+  
+  // Add Honeygain if has internet
+  if (submission.has_internet) {
+    const monthlyEarning = 30;
+    totalEarnings += monthlyEarning;
+    services.push({
+      name: "Honeygain",
+      description: "Earn by sharing your unused internet bandwidth.",
+      estimated_monthly: `$${monthlyEarning}`,
+      integration: "Referral",
+      confidence: 85
+    });
+  }
+  
+  // Add Swimply if has pool
+  if (submission.has_pool) {
+    const monthlyEarning = 250;
+    totalEarnings += monthlyEarning;
+    services.push({
+      name: "Swimply",
+      description: "List your backyard pool for hourly rentals.",
+      estimated_monthly: `$${monthlyEarning}`,
+      integration: "iframe",
+      confidence: 88
+    });
+  }
+  
+  // Create appropriate bundle name based on services
+  if (services.length >= 3) {
+    bundleName = "Ultimate Passive Income Bundle";
+  } else if (services.length === 2) {
+    bundleName = "Dual Income Stream";
+  } else if (services.length === 1) {
+    bundleName = `${services[0].name} Income Plan`;
+  } else {
+    bundleName = "Custom Property Analysis";
+  }
+  
+  return {
+    bundle_name: bundleName,
+    services,
+    estimated_total_monthly: `$${totalEarnings}`
+  };
 }
 
 // Call the Neighbor API to submit a lead
@@ -111,6 +189,9 @@ Deno.serve(async (req) => {
     // Calculate estimated earnings
     const estimatedEarnings = calculateEstimatedEarnings(submission);
     
+    // Generate personalized bundle
+    const bundle = generateBundle(submission);
+    
     // Track API responses
     const result: SubmissionResult = {
       success: true,
@@ -120,7 +201,8 @@ Deno.serve(async (req) => {
         honeygain: { sent: false },
         swimply: { sent: false }
       },
-      estimatedEarnings
+      estimatedEarnings,
+      bundle
     };
     
     // Process Neighbor submission if the property qualifies

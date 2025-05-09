@@ -1,11 +1,10 @@
-
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
-import { Loader2, Building, Car, WifiIcon, Swimming, Check, X } from 'lucide-react';
+import { Loader2, Building, Car, WifiIcon, Pool, Check, X } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
@@ -129,7 +128,7 @@ const SubmitProperty = () => {
           title: 'Swimply',
           description: 'Rent out your swimming pool by the hour.',
           earnings: '$200–$500/mo',
-          icon: <Swimming size={24} className="text-tiptop-purple" />,
+          icon: <Pool size={24} className="text-tiptop-purple" />,
           link: data.services.swimply.referralLink,
           linkText: 'Sign up for Swimply'
         });
@@ -316,7 +315,7 @@ const SubmitProperty = () => {
                             </FormControl>
                             <div className="space-y-1 leading-none">
                               <FormLabel className="text-white flex gap-2 items-center">
-                                <Swimming size={18} /> Swimming Pool
+                                <Pool size={18} /> Swimming Pool
                               </FormLabel>
                               <FormDescription className="text-gray-400">
                                 Do you have a swimming pool?
