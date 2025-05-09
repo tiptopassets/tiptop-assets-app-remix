@@ -9,7 +9,7 @@ import AssetResultList from '@/components/AssetResultList';
 import ModelGenerationSheet from '@/components/ModelGenerationSheet';
 import HomeModelViewer from '@/components/HomeModelViewer';
 import { GoogleMapProvider, useGoogleMap } from '@/contexts/GoogleMapContext';
-import { LogIn } from 'lucide-react';
+import { LogIn, PlusCircle } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import FooterCarousel from '@/components/FooterCarousel';
 import { motion } from 'framer-motion';
@@ -61,17 +61,29 @@ const HomeContent = () => {
           <Link to="/" className="text-2xl md:text-3xl font-bold text-tiptop-purple hover:scale-105 transition-transform flex items-center">
             tiptop
           </Link>
-          <button 
-            onClick={handleSignIn}
-            disabled={loading}
-            className="glass-effect px-3 py-1 md:px-4 md:py-2 rounded-full flex items-center gap-2 text-white hover:scale-105 transition-transform text-sm md:text-base"
-          >
-            <LogIn size={isMobile ? 16 : 20} />
-            <span className="text-gray-100">Sign in with Google</span>
-            
-            {/* Glow effect for hover */}
-            <div className="absolute -inset-0.5 bg-gradient-to-r from-purple-500/20 to-violet-500/20 rounded-full blur-sm -z-10"></div>
-          </button>
+          <div className="flex gap-4">
+            <Link
+              to="/submit-property"
+              className="glass-effect px-3 py-1 md:px-4 md:py-2 rounded-full flex items-center gap-2 text-white hover:scale-105 transition-transform text-sm md:text-base"
+            >
+              <PlusCircle size={isMobile ? 16 : 20} />
+              <span className="text-gray-100">Submit Property</span>
+              
+              {/* Glow effect for hover */}
+              <div className="absolute -inset-0.5 bg-gradient-to-r from-purple-500/20 to-violet-500/20 rounded-full blur-sm -z-10"></div>
+            </Link>
+            <button 
+              onClick={handleSignIn}
+              disabled={loading}
+              className="glass-effect px-3 py-1 md:px-4 md:py-2 rounded-full flex items-center gap-2 text-white hover:scale-105 transition-transform text-sm md:text-base"
+            >
+              <LogIn size={isMobile ? 16 : 20} />
+              <span className="text-gray-100">Sign in with Google</span>
+              
+              {/* Glow effect for hover */}
+              <div className="absolute -inset-0.5 bg-gradient-to-r from-purple-500/20 to-violet-500/20 rounded-full blur-sm -z-10"></div>
+            </button>
+          </div>
         </header>
 
         {/* Main content */}

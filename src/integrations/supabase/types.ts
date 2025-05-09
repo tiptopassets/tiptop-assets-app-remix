@@ -9,6 +9,57 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      property_submissions: {
+        Row: {
+          additional_info: string | null
+          email: string
+          estimated_earnings: number | null
+          full_name: string
+          has_driveway: boolean
+          has_garage: boolean
+          has_internet: boolean
+          has_pool: boolean
+          id: string
+          property_address: string
+          sent_to_honeygain: boolean | null
+          sent_to_neighbor: boolean | null
+          sent_to_swimply: boolean | null
+          submission_time: string | null
+        }
+        Insert: {
+          additional_info?: string | null
+          email: string
+          estimated_earnings?: number | null
+          full_name: string
+          has_driveway?: boolean
+          has_garage?: boolean
+          has_internet?: boolean
+          has_pool?: boolean
+          id?: string
+          property_address: string
+          sent_to_honeygain?: boolean | null
+          sent_to_neighbor?: boolean | null
+          sent_to_swimply?: boolean | null
+          submission_time?: string | null
+        }
+        Update: {
+          additional_info?: string | null
+          email?: string
+          estimated_earnings?: number | null
+          full_name?: string
+          has_driveway?: boolean
+          has_garage?: boolean
+          has_internet?: boolean
+          has_pool?: boolean
+          id?: string
+          property_address?: string
+          sent_to_honeygain?: boolean | null
+          sent_to_neighbor?: boolean | null
+          sent_to_swimply?: boolean | null
+          submission_time?: string | null
+        }
+        Relationships: []
+      }
       user_login_stats: {
         Row: {
           first_login_at: string

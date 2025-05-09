@@ -17,6 +17,7 @@ import AddAsset from "./pages/AddAsset";
 import AccountPage from "./pages/AccountPage";
 import ModelViewer from "./pages/ModelViewer";
 import AdminDashboard from "./pages/AdminDashboard";
+import SubmitProperty from "./pages/SubmitProperty";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -46,6 +47,7 @@ const App = () => (
               <Route path="/dashboard/account" element={<AccountPage />} />
               <Route path="/dashboard/admin" element={<AdminDashboard />} />
               <Route path="/model-viewer" element={<ModelViewer />} />
+              <Route path="/submit-property" element={<SubmitProperty />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </TooltipProvider>
