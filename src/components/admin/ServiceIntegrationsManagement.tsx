@@ -4,12 +4,20 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Plus } from 'lucide-react';
 import ServiceIntegrationsTable from './ServiceIntegrationsTable';
-import AddServiceIntegrationForm from './AddServiceIntegrationForm';
+import AddServiceIntegrationForm, { ServiceIntegrationFormValues } from './AddServiceIntegrationForm';
 import { useServiceIntegrations } from '@/hooks/useServiceIntegrations';
 
 const ServiceIntegrationsManagement = () => {
   const [showAddDialog, setShowAddDialog] = useState(false);
   const { integrations, loading, addIntegration, updateIntegrationStatus } = useServiceIntegrations();
+
+  // Create a wrapper function to handle the Promise returned by addIntegration
+  const handleAddIntegration = async (integration: ServiceIntegrationFormValues) => {
+    const result = await addIntegration(integration);
+    if (!result.success && result.error) {
+      throw result.error;
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -39,7 +47,7 @@ const ServiceIntegrationsManagement = () => {
             <DialogTitle>Add Service Integration</DialogTitle>
           </DialogHeader>
           <AddServiceIntegrationForm 
-            onAdd={addIntegration}
+            onAdd={handleAddIntegration}
             onClose={() => setShowAddDialog(false)}
           />
         </DialogContent>
