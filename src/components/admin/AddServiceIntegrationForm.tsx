@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
@@ -30,10 +29,10 @@ const formSchema = z.object({
   monthly_revenue_high: z.coerce.number().min(0),
 });
 
-type FormValues = z.infer<typeof formSchema>;
+export type ServiceIntegrationFormValues = z.infer<typeof formSchema>;
 
 interface AddServiceIntegrationFormProps {
-  onAdd: (integration: Omit<FormValues, 'id' | 'created_at'>) => Promise<void>;
+  onAdd: (integration: ServiceIntegrationFormValues) => Promise<void>;
   onClose: () => void;
 }
 
@@ -44,7 +43,7 @@ const AddServiceIntegrationForm = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Define form using react-hook-form and zod
-  const form = useForm<FormValues>({
+  const form = useForm<ServiceIntegrationFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: '',
@@ -58,20 +57,10 @@ const AddServiceIntegrationForm = ({
     },
   });
 
-  const onSubmit = async (data: FormValues) => {
+  const onSubmit = async (data: ServiceIntegrationFormValues) => {
     setIsSubmitting(true);
     try {
-      // Type assertion to ensure all required fields are included
-      await onAdd({
-        name: data.name,
-        partner_name: data.partner_name,
-        integration_url: data.integration_url,
-        description: data.description,
-        icon: data.icon,
-        status: data.status,
-        monthly_revenue_low: data.monthly_revenue_low,
-        monthly_revenue_high: data.monthly_revenue_high,
-      });
+      await onAdd(data);
       toast({
         title: "Integration Added",
         description: "The service integration was added successfully.",
