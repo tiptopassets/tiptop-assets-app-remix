@@ -15,74 +15,74 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { DialogFooter } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from '@/hooks/use-toast';
-import { ServiceIntegration } from '@/hooks/useServiceIntegrations';
 
+// Define the form schema
 const formSchema = z.object({
-  name: z.string().min(2, { message: 'Name is required' }),
-  description: z.string().min(5, { message: 'Description is required' }),
-  icon: z.string().min(1, { message: 'Icon is required' }),
-  status: z.enum(['active', 'pending', 'inactive']),
+  name: z.string().min(2, { message: 'Name must be at least 2 characters' }),
+  partner_name: z.string().min(2, { message: 'Partner name is required' }),
+  integration_url: z.string().url({ message: 'Must be a valid URL' }),
+  description: z.string().min(10, { message: 'Description must be at least 10 characters' }),
+  icon: z.string().min(1, { message: 'Icon is required' }).default('puzzle'),
+  status: z.enum(['active', 'pending', 'inactive']).default('pending'),
   monthly_revenue_low: z.coerce.number().min(0),
   monthly_revenue_high: z.coerce.number().min(0),
-  integration_url: z.string().url({ message: 'Must be a valid URL' }).optional().or(z.literal('')),
-  partner_name: z.string().min(2, { message: 'Partner name is required' }),
 });
 
+type FormValues = z.infer<typeof formSchema>;
+
 interface AddServiceIntegrationFormProps {
-  onAdd: (integration: Omit<ServiceIntegration, 'id' | 'created_at'>) => Promise<{ success: boolean }>;
+  onAdd: (integration: Omit<FormValues, 'id' | 'created_at'>) => Promise<void>;
   onClose: () => void;
 }
 
-const AddServiceIntegrationForm = ({ onAdd, onClose }: AddServiceIntegrationFormProps) => {
+const AddServiceIntegrationForm = ({
+  onAdd,
+  onClose,
+}: AddServiceIntegrationFormProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const form = useForm<z.infer<typeof formSchema>>({
+  // Define form using react-hook-form and zod
+  const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: '',
+      partner_name: '',
+      integration_url: '',
       description: '',
-      icon: 'home',
+      icon: 'puzzle',
       status: 'pending',
       monthly_revenue_low: 0,
       monthly_revenue_high: 0,
-      integration_url: '',
-      partner_name: '',
     },
   });
 
-  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+  const onSubmit = async (data: FormValues) => {
     setIsSubmitting(true);
     try {
-      const integrationData = {
-        ...values,
-        integration_url: values.integration_url || null,
-      };
-      
-      const { success } = await onAdd(integrationData);
-      
-      if (success) {
-        toast({
-          title: 'Integration Added',
-          description: `${values.name} integration has been added successfully`,
-        });
-        onClose();
-      } else {
-        throw new Error('Failed to add integration');
-      }
-    } catch (error) {
+      // Type assertion to ensure all required fields are included
+      await onAdd({
+        name: data.name,
+        partner_name: data.partner_name,
+        integration_url: data.integration_url,
+        description: data.description,
+        icon: data.icon,
+        status: data.status,
+        monthly_revenue_low: data.monthly_revenue_low,
+        monthly_revenue_high: data.monthly_revenue_high,
+      });
       toast({
-        title: 'Error',
-        description: 'Failed to add service integration',
-        variant: 'destructive',
+        title: "Integration Added",
+        description: "The service integration was added successfully.",
+      });
+      onClose();
+    } catch (error) {
+      console.error('Error adding integration:', error);
+      toast({
+        title: "Failed to Add Integration",
+        description: "There was an error adding the integration. Please try again.",
+        variant: "destructive",
       });
     } finally {
       setIsSubmitting(false);
@@ -91,8 +91,8 @@ const AddServiceIntegrationForm = ({ onAdd, onClose }: AddServiceIntegrationForm
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        <div className="grid grid-cols-2 gap-4">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <FormField
             control={form.control}
             name="name"
@@ -100,7 +100,7 @@ const AddServiceIntegrationForm = ({ onAdd, onClose }: AddServiceIntegrationForm
               <FormItem>
                 <FormLabel>Integration Name</FormLabel>
                 <FormControl>
-                  <Input placeholder="e.g. Airbnb" {...field} />
+                  <Input placeholder="e.g. Airbnb Integration" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -112,7 +112,7 @@ const AddServiceIntegrationForm = ({ onAdd, onClose }: AddServiceIntegrationForm
             name="partner_name"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Partner Name</FormLabel>
+                <FormLabel>Partner Company</FormLabel>
                 <FormControl>
                   <Input placeholder="e.g. Airbnb Inc." {...field} />
                 </FormControl>
@@ -121,7 +121,24 @@ const AddServiceIntegrationForm = ({ onAdd, onClose }: AddServiceIntegrationForm
             )}
           />
         </div>
-
+        
+        <FormField
+          control={form.control}
+          name="integration_url"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Integration URL</FormLabel>
+              <FormControl>
+                <Input placeholder="https://api.example.com/integration" {...field} />
+              </FormControl>
+              <FormDescription>
+                The URL for the integration API or partner website
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        
         <FormField
           control={form.control}
           name="description"
@@ -130,8 +147,7 @@ const AddServiceIntegrationForm = ({ onAdd, onClose }: AddServiceIntegrationForm
               <FormLabel>Description</FormLabel>
               <FormControl>
                 <Textarea 
-                  placeholder="Describe what this integration does"
-                  className="resize-none"
+                  placeholder="Describe what this integration does and how it helps monetize properties..." 
                   {...field} 
                 />
               </FormControl>
@@ -139,29 +155,20 @@ const AddServiceIntegrationForm = ({ onAdd, onClose }: AddServiceIntegrationForm
             </FormItem>
           )}
         />
-
-        <div className="grid grid-cols-2 gap-4">
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <FormField
             control={form.control}
             name="icon"
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Icon</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select an icon" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="home">Home</SelectItem>
-                    <SelectItem value="parking">Parking</SelectItem>
-                    <SelectItem value="sun">Solar</SelectItem>
-                    <SelectItem value="battery-charging">EV Charging</SelectItem>
-                    <SelectItem value="wifi">Internet</SelectItem>
-                    <SelectItem value="garden">Garden</SelectItem>
-                  </SelectContent>
-                </Select>
+                <FormControl>
+                  <Input placeholder="Icon name (e.g. home, car, wifi)" {...field} />
+                </FormControl>
+                <FormDescription>
+                  Enter a Lucide icon name
+                </FormDescription>
                 <FormMessage />
               </FormItem>
             )}
@@ -190,8 +197,8 @@ const AddServiceIntegrationForm = ({ onAdd, onClose }: AddServiceIntegrationForm
             )}
           />
         </div>
-
-        <div className="grid grid-cols-2 gap-4">
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <FormField
             control={form.control}
             name="monthly_revenue_low"
@@ -220,32 +227,15 @@ const AddServiceIntegrationForm = ({ onAdd, onClose }: AddServiceIntegrationForm
             )}
           />
         </div>
-
-        <FormField
-          control={form.control}
-          name="integration_url"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Integration URL (Optional)</FormLabel>
-              <FormControl>
-                <Input placeholder="https://partner.com/integration" {...field} />
-              </FormControl>
-              <FormDescription>
-                URL to the partner's integration portal
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <DialogFooter>
-          <Button type="button" variant="outline" onClick={onClose}>
+        
+        <div className="flex justify-end space-x-2 pt-4">
+          <Button variant="outline" onClick={onClose} type="button">
             Cancel
           </Button>
           <Button type="submit" disabled={isSubmitting}>
             {isSubmitting ? "Adding..." : "Add Integration"}
           </Button>
-        </DialogFooter>
+        </div>
       </form>
     </Form>
   );

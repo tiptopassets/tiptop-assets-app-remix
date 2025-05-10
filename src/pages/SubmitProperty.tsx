@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
-import { Loader2, Building, Car, WifiIcon, Waves, Check, X } from 'lucide-react';
+import { Loader2, Building, Car, WifiIcon, Waves, Check, Download } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
@@ -21,6 +21,7 @@ import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
 import { Card } from '@/components/ui/card';
+import { generatePropertyReportPDF } from '@/utils/pdfGenerator';
 
 // Define form schema with validation
 const formSchema = z.object({
@@ -55,6 +56,7 @@ const SubmitProperty = () => {
   const [submissionComplete, setSubmissionComplete] = useState(false);
   const [services, setServices] = useState<ServiceCard[]>([]);
   const [totalEarnings, setTotalEarnings] = useState(0);
+  const [formData, setFormData] = useState<FormValues | null>(null);
   
   // Define the form
   const form = useForm<FormValues>({
@@ -75,6 +77,7 @@ const SubmitProperty = () => {
   const onSubmit = async (values: FormValues) => {
     try {
       setIsSubmitting(true);
+      setFormData(values); // Store the form data for PDF generation
       
       // Call our edge function
       const { data, error } = await supabase.functions.invoke('process-submission', {
@@ -150,6 +153,44 @@ const SubmitProperty = () => {
     }
   };
   
+  // Download PDF report
+  const handleDownloadPDF = () => {
+    if (!formData) return;
+    
+    try {
+      const pdfBlob = generatePropertyReportPDF(
+        formData.property_address,
+        totalEarnings,
+        services.map(({ id, title, description, earnings }) => ({ id, title, description, earnings })),
+        formData.full_name
+      );
+      
+      // Create a download link
+      const url = URL.createObjectURL(pdfBlob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'TipTop_Property_Report.pdf';
+      document.body.appendChild(link);
+      link.click();
+      
+      // Clean up
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      
+      toast({
+        title: "Report Downloaded",
+        description: "Your property report has been downloaded successfully.",
+      });
+    } catch (error) {
+      console.error('PDF generation error:', error);
+      toast({
+        title: 'Download Error',
+        description: 'There was a problem generating your PDF report.',
+        variant: 'destructive',
+      });
+    }
+  };
+  
   // Handle form errors
   const onError = (errors: any) => {
     console.error('Form errors:', errors);
@@ -160,6 +201,11 @@ const SubmitProperty = () => {
     });
   };
   
+  // Redirect to Dashboard after login
+  const handleViewDashboard = () => {
+    navigate('/dashboard');
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-b from-black to-purple-900">
       {/* Header */}
@@ -423,6 +469,14 @@ const SubmitProperty = () => {
                 Based on your property features, you could earn approximately:
               </p>
               <div className="text-4xl font-bold text-tiptop-purple mt-2">${totalEarnings}/month</div>
+              
+              {/* PDF Download Button */}
+              <Button 
+                onClick={handleDownloadPDF}
+                className="mt-4 glass-effect bg-gradient-to-r from-tiptop-purple to-purple-600 hover:opacity-90"
+              >
+                <Download className="mr-2 h-4 w-4" /> Download Property Report
+              </Button>
             </div>
             
             {services.length > 0 ? (
@@ -472,13 +526,10 @@ const SubmitProperty = () => {
                 Back to Home
               </Button>
               <Button
-                onClick={() => {
-                  setSubmissionComplete(false);
-                  form.reset();
-                }}
+                onClick={handleViewDashboard} 
                 className="px-8 bg-gradient-to-r from-tiptop-purple to-purple-600"
               >
-                Submit Another Property
+                View Dashboard
               </Button>
             </div>
           </motion.div>
