@@ -13,9 +13,13 @@ const ServiceIntegrationsManagement = () => {
 
   // Create a wrapper function to handle the Promise returned by addIntegration
   const handleAddIntegration = async (integration: ServiceIntegrationFormValues) => {
-    const result = await addIntegration(integration);
-    if (!result.success && result.error) {
-      throw result.error;
+    try {
+      const result = await addIntegration(integration);
+      if (!result.success && result.error) {
+        throw result.error;
+      }
+    } catch (error) {
+      throw error;
     }
   };
 
