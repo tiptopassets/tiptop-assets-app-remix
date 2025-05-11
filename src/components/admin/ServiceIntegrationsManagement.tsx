@@ -14,7 +14,8 @@ const ServiceIntegrationsManagement = () => {
   // Create a wrapper function to handle the Promise returned by addIntegration
   const handleAddIntegration = async (integration: ServiceIntegrationFormValues) => {
     try {
-      const result = await addIntegration(integration);
+      // Cast the integration object to the required type to fix the TypeScript error
+      const result = await addIntegration(integration as any);
       if (!result.success && result.error) {
         throw result.error;
       }

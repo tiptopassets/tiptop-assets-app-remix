@@ -11,6 +11,7 @@ export interface ServiceCardProps {
   icon: React.ReactNode;
   link?: string;
   linkText?: string;
+  children?: React.ReactNode;
 }
 
 const ServiceCard: React.FC<ServiceCardProps> = ({
@@ -21,6 +22,7 @@ const ServiceCard: React.FC<ServiceCardProps> = ({
   icon,
   link,
   linkText,
+  children,
 }) => {
   return (
     <Card key={id} className="glass-effect p-6 transition-all">
@@ -33,10 +35,22 @@ const ServiceCard: React.FC<ServiceCardProps> = ({
       <p className="text-gray-300 text-sm mb-2">{description}</p>
       <p className="text-tiptop-purple font-bold">{earnings}</p>
       
-      {link && (
+      {children}
+      
+      {link && !children && (
         <Button 
           variant="outline" 
           className="mt-4 w-full"
+          onClick={() => window.open(link, '_blank')}
+        >
+          {linkText || 'Learn More'}
+        </Button>
+      )}
+      
+      {link && children && (
+        <Button 
+          variant="ghost" 
+          className="mt-2 text-xs"
           onClick={() => window.open(link, '_blank')}
         >
           {linkText || 'Learn More'}

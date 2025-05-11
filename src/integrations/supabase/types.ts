@@ -9,6 +9,76 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      affiliate_credentials: {
+        Row: {
+          created_at: string | null
+          encrypted_email: string | null
+          encrypted_password: string | null
+          id: string
+          service: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          encrypted_email?: string | null
+          encrypted_password?: string | null
+          id?: string
+          service?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          encrypted_email?: string | null
+          encrypted_password?: string | null
+          id?: string
+          service?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "affiliate_credentials_service_fkey"
+            columns: ["service"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["name"]
+          },
+        ]
+      }
+      affiliate_earnings: {
+        Row: {
+          earnings: number | null
+          id: string
+          last_sync_status: string | null
+          service: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          earnings?: number | null
+          id?: string
+          last_sync_status?: string | null
+          service?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          earnings?: number | null
+          id?: string
+          last_sync_status?: string | null
+          service?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "affiliate_earnings_service_fkey"
+            columns: ["service"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["name"]
+          },
+        ]
+      }
       property_submissions: {
         Row: {
           additional_info: string | null
@@ -57,6 +127,33 @@ export type Database = {
           sent_to_neighbor?: boolean | null
           sent_to_swimply?: boolean | null
           submission_time?: string | null
+        }
+        Relationships: []
+      }
+      services: {
+        Row: {
+          api_url: string | null
+          created_at: string | null
+          integration_type: string | null
+          login_url: string | null
+          name: string
+          status: string | null
+        }
+        Insert: {
+          api_url?: string | null
+          created_at?: string | null
+          integration_type?: string | null
+          login_url?: string | null
+          name: string
+          status?: string | null
+        }
+        Update: {
+          api_url?: string | null
+          created_at?: string | null
+          integration_type?: string | null
+          login_url?: string | null
+          name?: string
+          status?: string | null
         }
         Relationships: []
       }

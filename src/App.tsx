@@ -18,6 +18,7 @@ import AccountPage from "./pages/AccountPage";
 import ModelViewer from "./pages/ModelViewer";
 import AdminDashboard from "./pages/AdminDashboard";
 import SubmitProperty from "./pages/SubmitProperty";
+import AffiliateEarningsDashboard from "./pages/AffiliateEarningsDashboard";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -46,6 +47,7 @@ const App = () => (
               <Route path="/dashboard/add-asset" element={<AddAsset />} />
               <Route path="/dashboard/account" element={<AccountPage />} />
               <Route path="/dashboard/admin" element={<AdminDashboard />} />
+              <Route path="/dashboard/affiliate" element={<AffiliateEarningsDashboard />} />
               <Route path="/model-viewer" element={<ModelViewer />} />
               <Route path="/submit-property" element={<SubmitProperty />} />
               <Route path="*" element={<NotFound />} />

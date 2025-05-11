@@ -1,138 +1,242 @@
 
-import { useState } from 'react';
-import { NavLink } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { 
+  Home, 
+  Sun, 
+  Wifi, 
+  Battery, 
+  Plus, 
+  LogOut, 
+  UserCircle, 
+  Settings, 
+  Menu, 
+  X, 
+  Lock,
+  DollarSign
+} from 'lucide-react';
 import { motion } from 'framer-motion';
-import { Home, Sun, Wifi, Plus, User, LogOut, BatteryCharging, Users } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { useAdmin } from '@/hooks/useAdmin';
 import { useAuth } from '@/contexts/AuthContext';
+import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { useMobile } from '@/hooks/use-mobile';
 
-const menuItems = [
-  { icon: Home, label: 'Dashboard', path: '/dashboard' },
-  { icon: Sun, label: 'Rooftop', path: '/dashboard/rooftop' },
-  { icon: Wifi, label: 'Internet', path: '/dashboard/internet' },
-  { icon: BatteryCharging, label: 'EV Charging', path: '/dashboard/ev-charging' },
-  { icon: Plus, label: 'Add Asset', path: '/dashboard/add-asset' },
-  { icon: User, label: 'My Account', path: '/dashboard/account' },
+const navItems = [
+  { path: '/dashboard', icon: <Home className="h-5 w-5 mr-3" />, label: 'Dashboard' },
+  { 
+    path: '/dashboard/rooftop', 
+    icon: <Sun className="h-5 w-5 mr-3" />, 
+    label: 'Rooftop Solar'
+  },
+  { 
+    path: '/dashboard/internet', 
+    icon: <Wifi className="h-5 w-5 mr-3" />, 
+    label: 'Internet Bandwidth'
+  },
+  { 
+    path: '/dashboard/ev-charging', 
+    icon: <Battery className="h-5 w-5 mr-3" />, 
+    label: 'EV Charging'
+  },
+  {
+    path: '/dashboard/affiliate',
+    icon: <DollarSign className="h-5 w-5 mr-3" />,
+    label: 'Affiliate Earnings'
+  },
+  { 
+    path: '/dashboard/add-asset', 
+    icon: <Plus className="h-5 w-5 mr-3" />, 
+    label: 'Add Asset'
+  }
 ];
 
 const DashboardSidebar = () => {
-  const [collapsed, setCollapsed] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
-  const { signOut, user } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const { user, logout } = useAuth();
+  const { isAdmin } = useAdmin();
+  const isMobile = useMobile();
+  const [isOpen, setIsOpen] = useState(!isMobile);
 
   useEffect(() => {
-    if (user) {
-      // Check if current user is an admin
-      const checkAdminStatus = async () => {
-        const { data: roles } = await supabase
-          .from('user_roles')
-          .select('*')
-          .eq('user_id', user.id)
-          .eq('role', 'admin');
-        
-        setIsAdmin(roles && roles.length > 0);
-      };
-      
-      checkAdminStatus();
+    // Close sidebar on mobile when route changes
+    if (isMobile) {
+      setIsOpen(false);
+    } else {
+      setIsOpen(true);
     }
-  }, [user]);
+  }, [location.pathname, isMobile]);
 
-  const toggleSidebar = () => {
-    setCollapsed(!collapsed);
+  const handleLogout = async () => {
+    try {
+      await logout();
+      navigate('/');
+      toast({
+        title: 'Logged Out',
+        description: 'You have been successfully logged out.',
+      });
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to log out. Please try again.',
+        variant: 'destructive',
+      });
+    }
   };
 
-  // Add admin menu item conditionally
-  const allMenuItems = isAdmin 
-    ? [...menuItems, { icon: Users, label: 'Admin', path: '/dashboard/admin' }]
-    : menuItems;
+  const sidebarVariants = {
+    open: {
+      x: 0,
+      opacity: 1,
+      transition: { type: 'spring', stiffness: 300, damping: 24 }
+    },
+    closed: {
+      x: '-100%',
+      opacity: 0,
+      transition: { type: 'spring', stiffness: 300, damping: 24 }
+    }
+  };
+  
+  const navItemVariants = {
+    open: { opacity: 1, x: 0 },
+    closed: { opacity: 0, x: -20 }
+  };
+  
+  const overlayVariants = {
+    open: { opacity: 0.5 },
+    closed: { opacity: 0 }
+  };
 
   return (
-    <div 
-      className={cn(
-        "flex flex-col bg-tiptop-purple min-h-screen transition-all duration-300 relative",
-        collapsed ? "w-20" : "w-64"
+    <>
+      {/* Mobile Overlay */}
+      {isMobile && isOpen && (
+        <motion.div 
+          className="fixed inset-0 bg-black z-40"
+          initial="closed"
+          animate={isOpen ? "open" : "closed"}
+          variants={overlayVariants}
+          onClick={() => setIsOpen(false)}
+        />
       )}
-    >
-      {/* Glossy overlay for glassmorphism effect */}
-      <div className="absolute inset-0 bg-gradient-to-b from-white/10 to-transparent opacity-20 pointer-events-none"></div>
-      <div className="absolute inset-0 backdrop-blur-[1px] pointer-events-none"></div>
-      
-      {/* Header with logo and toggle */}
-      <div className="flex items-center justify-between p-4 border-b border-white/10 relative z-10">
-        <h1 className={cn(
-          "font-bold text-white transition-all duration-300",
-          collapsed ? "text-xl" : "text-2xl"
-        )}>
-          {!collapsed ? "Tiptop" : "T"}
-        </h1>
-        <button 
-          onClick={toggleSidebar}
-          className="p-1 rounded-md text-white hover:bg-white/10 transition-colors"
-          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+
+      {/* Mobile Toggle Button */}
+      {isMobile && (
+        <Button 
+          variant="outline" 
+          size="icon" 
+          className="fixed top-4 left-4 z-50 rounded-full"
+          onClick={() => setIsOpen(!isOpen)}
         >
-          <div className="w-6 h-6 flex items-center justify-center">
-            {collapsed ? (
-              <svg width="20" height="20" fill="none" viewBox="0 0 24 24">
-                <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 5l7 7-7 7M5 5l7 7-7 7" />
-              </svg>
-            ) : (
-              <svg width="20" height="20" fill="none" viewBox="0 0 24 24">
-                <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5l-7 7 7 7M19 5l-7 7 7 7" />
-              </svg>
-            )}
+          {isOpen ? <X /> : <Menu />}
+        </Button>
+      )}
+
+      {/* Sidebar */}
+      <motion.aside 
+        className={cn(
+          "fixed md:relative h-screen w-64 bg-gray-800 text-white z-50",
+          isMobile ? "shadow-xl" : ""
+        )}
+        initial={isMobile ? "closed" : "open"}
+        animate={isOpen ? "open" : "closed"}
+        variants={sidebarVariants}
+      >
+        <div className="flex flex-col h-full p-5">
+          {/* Logo */}
+          <div className="mb-8 mt-4 flex justify-center">
+            <Link to="/" className="text-2xl font-bold text-tiptop-purple">TipTop</Link>
           </div>
-        </button>
-      </div>
-      
-      {/* Navigation links */}
-      <nav className="flex-1 py-4 z-10 relative">
-        <ul className="space-y-1 px-2">
-          {allMenuItems.map((item) => (
-            <li key={item.path}>
-              <NavLink
-                to={item.path}
-                className={({ isActive }) => cn(
-                  "flex items-center py-3 px-4 rounded-lg text-white transition-all duration-200",
-                  isActive ? "bg-white/20 font-medium shadow-lg" : "hover:bg-white/10",
-                  collapsed ? "justify-center" : "justify-start"
-                )}
-              >
-                <item.icon size={collapsed ? 24 : 20} />
-                {!collapsed && (
-                  <span className="ml-3">{item.label}</span>
-                )}
-                
-                {/* Glow effect for active state */}
-                {!collapsed && (
-                  <motion.div
-                    className="absolute inset-0 rounded-lg opacity-0 bg-gradient-to-r from-purple-500/30 to-indigo-500/30 blur-md -z-10"
-                    initial={false}
-                    animate={{ opacity: 0.5 }}
-                    transition={{ duration: 0.3 }}
-                  />
-                )}
-              </NavLink>
-            </li>
-          ))}
-        </ul>
-      </nav>
-      
-      {/* Sign out button at bottom */}
-      <div className="p-4 border-t border-white/10 z-10 relative">
-        <button
-          onClick={signOut}
-          className={cn(
-            "flex items-center w-full py-3 px-4 rounded-lg text-white transition-all duration-200 hover:bg-white/10",
-            collapsed ? "justify-center" : "justify-start"
-          )}
-        >
-          <LogOut size={collapsed ? 24 : 20} />
-          {!collapsed && <span className="ml-3">Sign Out</span>}
-        </button>
-      </div>
-    </div>
+          
+          {/* Navigation */}
+          <nav className="flex-1">
+            <ul className="space-y-2">
+              {navItems.map((item, index) => (
+                <motion.li key={item.path} variants={navItemVariants}>
+                  <Link 
+                    to={item.path}
+                    className={`flex items-center px-4 py-3 rounded-md transition-colors ${
+                      location.pathname === item.path 
+                        ? 'bg-gray-700 text-tiptop-purple'
+                        : 'hover:bg-gray-700'
+                    }`}
+                  >
+                    {item.icon}
+                    <span>{item.label}</span>
+                  </Link>
+                </motion.li>
+              ))}
+              
+              {/* Admin Dashboard Link (conditionally rendered) */}
+              {isAdmin && (
+                <motion.li variants={navItemVariants}>
+                  <Link 
+                    to="/dashboard/admin"
+                    className={`flex items-center px-4 py-3 rounded-md transition-colors ${
+                      location.pathname === '/dashboard/admin' 
+                        ? 'bg-gray-700 text-tiptop-purple'
+                        : 'hover:bg-gray-700'
+                    }`}
+                  >
+                    <Lock className="h-5 w-5 mr-3" />
+                    <span>Admin Panel</span>
+                  </Link>
+                </motion.li>
+              )}
+            </ul>
+          </nav>
+          
+          {/* User Actions */}
+          <div className="mt-auto space-y-2">
+            <Link 
+              to="/dashboard/account"
+              className={`flex items-center px-4 py-3 rounded-md transition-colors ${
+                location.pathname === '/dashboard/account' 
+                  ? 'bg-gray-700 text-tiptop-purple'
+                  : 'hover:bg-gray-700'
+              }`}
+            >
+              <UserCircle className="h-5 w-5 mr-3" />
+              <span>Account</span>
+            </Link>
+            <Link 
+              to="/options"
+              className={`flex items-center px-4 py-3 rounded-md transition-colors ${
+                location.pathname === '/options' 
+                  ? 'bg-gray-700 text-tiptop-purple'
+                  : 'hover:bg-gray-700'
+              }`}
+            >
+              <Settings className="h-5 w-5 mr-3" />
+              <span>Settings</span>
+            </Link>
+            <button
+              onClick={handleLogout}
+              className="flex w-full items-center px-4 py-3 rounded-md text-red-400 hover:bg-gray-700 transition-colors"
+            >
+              <LogOut className="h-5 w-5 mr-3" />
+              <span>Logout</span>
+            </button>
+          </div>
+          
+          {/* User Info */}
+          <div className="mt-4 border-t border-gray-700 pt-4">
+            <div className="flex items-center px-4">
+              <div className="w-8 h-8 rounded-full bg-tiptop-purple/20 flex items-center justify-center">
+                {user?.user_metadata?.full_name?.charAt(0) || 
+                 user?.email?.charAt(0) || 'U'}
+              </div>
+              <div className="ml-3 truncate">
+                <p className="text-sm">{user?.user_metadata?.full_name || 'User'}</p>
+                <p className="text-xs text-gray-400 truncate">{user?.email}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </motion.aside>
+    </>
   );
 };
 
