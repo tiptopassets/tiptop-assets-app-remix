@@ -1,0 +1,53 @@
+
+{
+  "name": "TipTop Affiliate Sync",
+  "version": "1.0.0",
+  "manifest_version": 3,
+  "description": "Syncs affiliate earnings from various services to TipTop",
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "permissions": [
+    "storage",
+    "activeTab",
+    "scripting"
+  ],
+  "host_permissions": [
+    "https://*.honeygain.com/*",
+    "https://*.mysteriumnetwork.com/*",
+    "https://*.swimply.com/*",
+    "https://*.neighbor.com/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": ["https://*.honeygain.com/dashboard*"],
+      "js": ["content-scripts/honeygain.js"]
+    },
+    {
+      "matches": ["https://*.mysteriumnetwork.com/dashboard*"],
+      "js": ["content-scripts/mysterium.js"]
+    },
+    {
+      "matches": ["https://*.swimply.com/dashboard*"],
+      "js": ["content-scripts/swimply.js"]
+    },
+    {
+      "matches": ["https://*.neighbor.com/dashboard*"],
+      "js": ["content-scripts/neighbor.js"]
+    }
+  ],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  }
+}

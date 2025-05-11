@@ -1,0 +1,147 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+  <title>TipTop Affiliate Sync</title>
+  <meta charset="UTF-8">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      width: 320px;
+      padding: 16px;
+      background-color: #1a1a1a;
+      color: #ffffff;
+    }
+    .header {
+      display: flex;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+    .logo {
+      font-size: 20px;
+      font-weight: bold;
+      color: #b055e9;
+      margin-right: 8px;
+    }
+    h1 {
+      font-size: 16px;
+      margin: 0;
+    }
+    .service-card {
+      background-color: #2a2a2a;
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 12px;
+      border-left: 4px solid #b055e9;
+    }
+    .service-name {
+      font-weight: bold;
+      margin-bottom: 8px;
+    }
+    .service-status {
+      display: flex;
+      align-items: center;
+      margin-bottom: 8px;
+      font-size: 14px;
+    }
+    .status-indicator {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      margin-right: 8px;
+    }
+    .status-active {
+      background-color: #4caf50;
+    }
+    .status-inactive {
+      background-color: #f44336;
+    }
+    .status-pending {
+      background-color: #ff9800;
+    }
+    button {
+      background-color: #b055e9;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      padding: 8px 12px;
+      cursor: pointer;
+      font-size: 14px;
+      width: 100%;
+    }
+    button:hover {
+      background-color: #9d44d6;
+    }
+    button:disabled {
+      background-color: #666666;
+      cursor: not-allowed;
+    }
+    .login-form {
+      margin-top: 12px;
+    }
+    input {
+      width: 100%;
+      padding: 8px;
+      margin-bottom: 8px;
+      border-radius: 4px;
+      border: 1px solid #444444;
+      background-color: #333333;
+      color: #ffffff;
+      box-sizing: border-box;
+    }
+    .settings {
+      margin-top: 20px;
+      font-size: 14px;
+    }
+    .settings a {
+      color: #b055e9;
+      text-decoration: none;
+    }
+    .message {
+      margin-top: 12px;
+      padding: 8px;
+      border-radius: 4px;
+      font-size: 14px;
+    }
+    .success {
+      background-color: rgba(76, 175, 80, 0.2);
+      color: #4caf50;
+    }
+    .error {
+      background-color: rgba(244, 67, 54, 0.2);
+      color: #f44336;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="logo">TipTop</div>
+    <h1>Affiliate Sync</h1>
+  </div>
+  
+  <div id="current-site-card" style="display: none;" class="service-card">
+    <div class="service-name">Current Site</div>
+    <div id="current-site-info">Detecting...</div>
+    <button id="sync-current-btn">Sync Earnings</button>
+  </div>
+  
+  <div id="login-card" style="display: none;" class="service-card">
+    <div class="service-name">TipTop Account</div>
+    <div id="login-info">Please log in to sync your earnings</div>
+    <div class="login-form">
+      <input type="text" id="api-url" placeholder="TipTop API URL">
+      <input type="text" id="user-id" placeholder="User ID">
+      <input type="text" id="api-key" placeholder="API Key">
+      <button id="login-btn">Save Settings</button>
+    </div>
+  </div>
+  
+  <div id="message" class="message" style="display: none;"></div>
+  
+  <div class="settings">
+    <a href="#" id="settings-link">Open Settings</a>
+  </div>
+  
+  <script src="popup.js"></script>
+</body>
+</html>
