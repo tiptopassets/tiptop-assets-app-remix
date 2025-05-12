@@ -4,6 +4,7 @@ import { useGoogleMap } from '@/contexts/GoogleMapContext';
 import { useAddressSearch } from '@/hooks/use-address-search';
 import ClearSearchButton from './search/ClearSearchButton';
 import GeoLocationButton from './search/GeoLocationButton';
+import { useModelGeneration } from '@/contexts/ModelGenerationContext';
 
 type SearchBarProps = {
   isCollapsed: boolean;
@@ -30,6 +31,8 @@ const SearchBar = ({ isCollapsed }: SearchBarProps) => {
     setAnalysisError,
     startAnalysis
   } = useAddressSearch();
+  
+  const { resetGeneration, capturePropertyImages } = useModelGeneration();
 
   // Clear search and reset analysis state
   const clearSearch = () => {
@@ -38,6 +41,7 @@ const SearchBar = ({ isCollapsed }: SearchBarProps) => {
     setAnalysisComplete(false);
     setAnalysisResults(null);
     setAnalysisError(null);
+    resetGeneration();
     
     if (mapInstance) {
       mapInstance.setCenter({ lat: 37.7749, lng: -122.4194 });
@@ -46,9 +50,15 @@ const SearchBar = ({ isCollapsed }: SearchBarProps) => {
   };
 
   // Handle geolocation success
-  const handleLocationFound = (formattedAddress: string) => {
+  const handleLocationFound = (formattedAddress: string, coordinates: google.maps.LatLngLiteral) => {
     setAddress(formattedAddress);
     setHasSelectedAddress(true);
+    setAddressCoordinates(coordinates);
+    
+    // Capture property images for 3D model 
+    capturePropertyImages(formattedAddress, coordinates);
+    
+    // Start analysis
     startAnalysis();
   };
 

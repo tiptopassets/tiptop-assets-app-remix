@@ -1,112 +1,97 @@
 
 import { useState } from 'react';
 import { MapPin } from 'lucide-react';
-import { useGoogleMap } from '@/contexts/GoogleMapContext';
 import { useToast } from '@/hooks/use-toast';
 
 type GeoLocationButtonProps = {
-  onLocationFound: (address: string) => void;
+  onLocationFound: (address: string, coordinates: google.maps.LatLngLiteral) => void;
   disabled?: boolean;
 };
 
 const GeoLocationButton = ({ onLocationFound, disabled = false }: GeoLocationButtonProps) => {
-  const { 
-    mapInstance,
-    setAddressCoordinates,
-  } = useGoogleMap();
-  
   const [isLocating, setIsLocating] = useState(false);
   const { toast } = useToast();
 
-  // Get user's current location
-  const getUserLocation = () => {
+  const handleGetCurrentLocation = () => {
+    if (disabled || isLocating) return;
+    
+    setIsLocating(true);
+    
     if (!navigator.geolocation) {
       toast({
-        title: "Error",
+        title: "Geolocation Error",
         description: "Geolocation is not supported by your browser",
         variant: "destructive"
       });
+      setIsLocating(false);
       return;
     }
-
-    setIsLocating(true);
     
     navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const { latitude, longitude } = position.coords;
-        
-        // Update map to center on user location
-        if (mapInstance) {
-          const userLocation = new google.maps.LatLng(latitude, longitude);
-          mapInstance.setCenter(userLocation);
-          mapInstance.setZoom(18);
+      async (position) => {
+        try {
+          const { latitude, longitude } = position.coords;
+          const coordinates = { lat: latitude, lng: longitude };
           
-          // Save coordinates
-          setAddressCoordinates({ lat: latitude, lng: longitude });
-          
-          // Use Geocoder to get address from coordinates
+          // Use Google's Geocoder to get address from coordinates
           const geocoder = new google.maps.Geocoder();
-          geocoder.geocode({ location: { lat: latitude, lng: longitude } }, (results, status) => {
-            setIsLocating(false);
-            
-            if (status === "OK" && results && results[0]) {
-              const formattedAddress = results[0].formatted_address;
-              onLocationFound(formattedAddress);
+          geocoder.geocode({ location: coordinates }, (results, status) => {
+            if (status === 'OK' && results?.[0]) {
+              onLocationFound(results[0].formatted_address, coordinates);
             } else {
               toast({
-                title: "Location Found",
-                description: "Address could not be determined, but location has been set.",
+                title: "Geocoding Error",
+                description: "Could not find an address for your location",
+                variant: "destructive"
               });
             }
+            setIsLocating(false);
           });
-        } else {
-          setIsLocating(false);
+        } catch (error) {
+          console.error('Error getting location:', error);
           toast({
-            title: "Error",
-            description: "Map is not loaded yet. Please try again.",
+            title: "Location Error",
+            description: "Failed to get your current location",
             variant: "destructive"
           });
+          setIsLocating(false);
         }
       },
       (error) => {
-        setIsLocating(false);
+        console.error('Geolocation error:', error);
         
-        let errorMessage = "Unknown error occurred while getting your location.";
-        switch (error.code) {
-          case error.PERMISSION_DENIED:
-            errorMessage = "Location permission denied. Please allow location access.";
-            break;
-          case error.POSITION_UNAVAILABLE:
-            errorMessage = "Location information is unavailable.";
-            break;
-          case error.TIMEOUT:
-            errorMessage = "Location request timed out.";
-            break;
+        let message = "Failed to get your current location";
+        if (error.code === 1) {
+          message = "Location access was denied. Please allow location access to use this feature.";
+        } else if (error.code === 2) {
+          message = "Your location is unavailable. Please try again later.";
+        } else if (error.code === 3) {
+          message = "Location request timed out. Please try again.";
         }
         
         toast({
-          title: "Geolocation Error",
-          description: errorMessage,
+          title: "Location Error",
+          description: message,
           variant: "destructive"
         });
+        setIsLocating(false);
       },
-      {
-        enableHighAccuracy: true,
-        timeout: 10000,
-        maximumAge: 0
-      }
+      { timeout: 10000, enableHighAccuracy: true }
     );
   };
 
   return (
-    <button 
-      onClick={getUserLocation}
-      disabled={isLocating || disabled}
-      className={`flex items-center justify-center h-10 w-10 rounded-full mr-1 transition-all
-        ${isLocating || disabled ? 'bg-purple-500/30' : 'bg-purple-500/20 hover:bg-purple-500/40'}`}
-      title="Use current location"
+    <button
+      onClick={handleGetCurrentLocation}
+      className={`flex items-center justify-center h-10 w-10 rounded-full text-white/70 hover:text-white transition-colors ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+      title="Use my current location"
+      disabled={disabled || isLocating}
     >
-      <MapPin className={`h-5 w-5 text-white ${isLocating ? 'animate-pulse' : ''}`} />
+      {isLocating ? (
+        <span className="animate-spin h-5 w-5 border-2 border-white/70 border-t-transparent rounded-full" />
+      ) : (
+        <MapPin className="h-5 w-5" />
+      )}
     </button>
   );
 };

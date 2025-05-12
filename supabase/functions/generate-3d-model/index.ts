@@ -16,7 +16,17 @@ serve(async (req: Request) => {
 
   try {
     const body = await req.json();
-    const { satelliteImage, streetViewImage, taskId } = body;
+    const { satelliteImage, streetViewImage, taskId, outputFormat = "glb", quality = "standard" } = body;
+
+    // Log request details for debugging (without sensitive data)
+    console.log(`Received request: ${taskId ? 'Check Task Status' : 'Create New Task'}`);
+    console.log(`Output Format: ${outputFormat}, Quality: ${quality}`);
+    
+    if (taskId) {
+      console.log(`Checking task status for ID: ${taskId}`);
+    } else {
+      console.log(`Creating new task with satellite image: ${!!satelliteImage}, street view image: ${!!streetViewImage}`);
+    }
 
     // Create a Supabase client with the Auth context from the request
     const supabaseClient = createClient(
@@ -34,7 +44,7 @@ serve(async (req: Request) => {
     
     if (!meshyApiKey) {
       console.error("Meshy API key not configured");
-      throw new Error("Meshy API key not configured");
+      throw new Error("Meshy API key not configured in server environment");
     }
 
     // If taskId is provided, check task status
@@ -49,6 +59,7 @@ serve(async (req: Request) => {
 
       if (!taskStatusResponse.ok) {
         const errorData = await taskStatusResponse.json();
+        console.error("Meshy API error while checking task:", errorData);
         throw new Error(`Meshy API returned error: ${JSON.stringify(errorData)}`);
       }
 
@@ -61,7 +72,8 @@ serve(async (req: Request) => {
           status: statusData.status,
           progress: statusData.progress,
           modelUrl: statusData.model_url || null,
-          taskId: statusData.id
+          taskId: statusData.id,
+          error: statusData.error || null
         }),
         {
           headers: corsHeaders,
@@ -77,6 +89,7 @@ serve(async (req: Request) => {
         JSON.stringify({
           success: false,
           error: "No satellite image available for 3D model generation",
+          details: "A satellite or aerial image is required to generate a 3D model"
         }),
         {
           headers: corsHeaders,
@@ -85,7 +98,8 @@ serve(async (req: Request) => {
       );
     }
 
-    let requestBody, meshyEndpoint;
+    let requestBody: any;
+    let meshyEndpoint: string;
     
     // Choose API endpoint based on available images
     if (satelliteImage && streetViewImage) {
@@ -95,7 +109,8 @@ serve(async (req: Request) => {
       requestBody = {
         images: [satelliteImage, streetViewImage],
         imageType: "aerial",
-        outputFormat: "glb",
+        outputFormat: outputFormat,
+        quality: quality
       };
     } else {
       // Use single image endpoint when only satellite image is available
@@ -104,25 +119,59 @@ serve(async (req: Request) => {
       requestBody = {
         image: satelliteImage,
         imageType: "aerial",
-        outputFormat: "glb",
+        outputFormat: outputFormat,
+        quality: quality
       };
     }
       
     // Make request to Meshy API to create a task
     console.log("Creating Meshy task...");
-    const meshyResponse = await fetch(meshyEndpoint, {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${meshyApiKey}`,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify(requestBody)
-    });
+    
+    // Add retry logic for better reliability
+    let meshyResponse;
+    let retries = 0;
+    const maxRetries = 3;
+    
+    while (retries < maxRetries) {
+      try {
+        meshyResponse = await fetch(meshyEndpoint, {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${meshyApiKey}`,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(requestBody)
+        });
+        
+        // If successful, break out of retry loop
+        if (meshyResponse.ok) break;
+        
+        // If we get a rate limit error, wait longer before retrying
+        if (meshyResponse.status === 429) {
+          console.log("Rate limited by Meshy API, waiting before retry");
+          await new Promise(resolve => setTimeout(resolve, 2000 * (retries + 1)));
+        }
+        
+        retries++;
+        console.log(`Retry attempt ${retries}/${maxRetries}`);
+      } catch (error) {
+        console.error("Network error on Meshy API request:", error);
+        retries++;
+        if (retries >= maxRetries) throw error;
+        await new Promise(resolve => setTimeout(resolve, 1000 * retries));
+      }
+    }
 
-    if (!meshyResponse.ok) {
-      const errorData = await meshyResponse.json();
-      console.error("Meshy API error:", errorData);
-      throw new Error(`Meshy API returned error: ${JSON.stringify(errorData)}`);
+    if (!meshyResponse || !meshyResponse.ok) {
+      let errorMessage = "Unknown error from Meshy API";
+      try {
+        const errorData = await meshyResponse?.json();
+        console.error("Meshy API error:", errorData);
+        errorMessage = `Meshy API error: ${JSON.stringify(errorData)}`;
+      } catch (e) {
+        console.error("Failed to parse Meshy API error response");
+      }
+      throw new Error(errorMessage);
     }
 
     const meshyData = await meshyResponse.json();
@@ -149,6 +198,7 @@ serve(async (req: Request) => {
       JSON.stringify({
         success: false,
         error: error.message || "An unknown error occurred",
+        details: error.stack || "No additional details available"
       }),
       {
         headers: corsHeaders,

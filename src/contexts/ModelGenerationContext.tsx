@@ -2,6 +2,7 @@
 import { createContext, useContext, useState, ReactNode, useRef, useEffect } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from '@/hooks/use-toast';
+import { API_KEY } from '@/utils/googleMapsLoader';
 
 export type ModelGenerationStatus = 'idle' | 'initializing' | 'capturing' | 'generating' | 'completed' | 'error';
 
@@ -81,46 +82,86 @@ export const ModelGenerationProvider = ({ children }: { children: ReactNode }) =
     });
   };
 
+  // Helper function to convert image URL to base64
+  const imageUrlToBase64 = async (url: string): Promise<string | null> => {
+    try {
+      const response = await fetch(url);
+      if (!response.ok) throw new Error('Network response was not ok');
+      
+      const blob = await response.blob();
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+    } catch (error) {
+      console.error('Error converting image URL to base64:', error);
+      return null;
+    }
+  };
+
   // Capture property images using Google Maps Static API and Street View API
   const capturePropertyImages = async (address: string, coordinates: google.maps.LatLngLiteral) => {
     try {
       setStatus('capturing');
       setProgress(10);
+      console.log("Capturing property images for:", address, coordinates);
       
-      // In a real implementation, this would make API calls to get the images
-      // For now, we'll simulate the image capture with a timeout
-      
-      // Simulate satellite image capture
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      // Use Google Maps Static API for satellite image
+      const satelliteImageUrl = `https://maps.googleapis.com/maps/api/staticmap?center=${coordinates.lat},${coordinates.lng}&zoom=19&size=800x800&maptype=satellite&key=${API_KEY}`;
       setProgress(40);
       
-      // Use Google Maps Static API (this would be an actual API call in production)
-      const satelliteImageUrl = `https://maps.googleapis.com/maps/api/staticmap?center=${coordinates.lat},${coordinates.lng}&zoom=19&size=800x800&maptype=satellite&key=YOUR_API_KEY`;
+      // Use Google Street View API for street view image
+      const streetViewImageUrl = `https://maps.googleapis.com/maps/api/streetview?size=800x400&location=${coordinates.lat},${coordinates.lng}&key=${API_KEY}`;
       
-      // Simulate street view image capture
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      setProgress(70);
+      // Attempt to fetch both images
+      const [satelliteBase64, streetViewBase64] = await Promise.all([
+        imageUrlToBase64(satelliteImageUrl),
+        imageUrlToBase64(streetViewImageUrl)
+      ]);
       
-      // Use Google Street View API (this would be an actual API call in production)
-      const streetViewImageUrl = `https://maps.googleapis.com/maps/api/streetview?size=800x400&location=${coordinates.lat},${coordinates.lng}&key=YOUR_API_KEY`;
-      
-      // For demo purposes, we'll use placeholder images
+      // Set the images in state
       setPropertyImages({
-        satellite: '/lovable-uploads/b2f01532-85bb-44ee-98c1-afa2d7ae2620.png', // Replace with actual satellite image
-        streetView: '/lovable-uploads/76f34c86-decf-4d23-aeee-b23ba55c1be1.png', // Replace with actual street view image
+        satellite: satelliteBase64,
+        streetView: streetViewBase64
       });
       
       setProgress(100);
+      console.log("Successfully captured property images");
+      
+      // If successful, automatically move to generate model
+      if (satelliteBase64) {
+        // Wait a moment before moving to the next step
+        setTimeout(() => {
+          generateModel();
+        }, 1000);
+      } else {
+        throw new Error("Failed to capture satellite image for 3D model generation");
+      }
     } catch (error) {
       console.error('Error capturing property images:', error);
       setStatus('error');
-      setErrorMessage('Failed to capture property images. Please try again.');
+      setErrorMessage(error instanceof Error ? error.message : 'Failed to capture property images. Please try again.');
+      
+      // Use fallback images for demos/testing
+      setPropertyImages({
+        satellite: '/lovable-uploads/b2f01532-85bb-44ee-98c1-afa2d7ae2620.png',
+        streetView: '/lovable-uploads/76f34c86-decf-4d23-aeee-b23ba55c1be1.png'
+      });
+      
+      toast({
+        title: "Image Capture Failed",
+        description: "Using demo images instead. You can still generate a 3D model.",
+        variant: "warning"
+      });
     }
   };
 
   // Poll task status using the edge function
   const pollTaskStatus = async (taskId: string) => {
     try {
+      console.log("Polling task status for:", taskId);
       const { data, error } = await supabase.functions.invoke('generate-3d-model', {
         body: { taskId },
       });
@@ -128,14 +169,22 @@ export const ModelGenerationProvider = ({ children }: { children: ReactNode }) =
       if (error) throw new Error(error.message);
       if (!data.success) throw new Error(data.error || 'Failed to check task status');
       
+      console.log("Task status update:", data);
+      
       // Update progress and status
       updateProgress(data.progress || progress);
       
       // If the task is completed, set the model URL
       if (data.status === 'SUCCEEDED' && data.modelUrl) {
+        console.log("Model generation succeeded! URL:", data.modelUrl);
         setModelUrl(data.modelUrl);
         setStatus('completed');
         setProgress(100);
+        
+        toast({
+          title: "3D Model Generated",
+          description: "Your property model is ready to view",
+        });
         return true; // Task completed
       } else if (data.status === 'FAILED' || data.status === 'CANCELED') {
         throw new Error(`Task ${data.status.toLowerCase()}: ${data.error || 'Unknown error'}`);
@@ -175,19 +224,25 @@ export const ModelGenerationProvider = ({ children }: { children: ReactNode }) =
         eventSourceRef.current = null;
       }
       
+      console.log("Starting 3D model generation");
+      
       // Call the Supabase Edge Function to start the 3D model generation task
       const { data, error } = await supabase.functions.invoke('generate-3d-model', {
         body: {
           satelliteImage: propertyImages.satellite,
           streetViewImage: propertyImages.streetView,
+          outputFormat: 'glb', // Default format
+          quality: 'standard', // Default quality
         },
       });
       
       if (error) {
+        console.error("Edge function error:", error);
         throw new Error(error.message || 'Failed to start 3D model generation');
       }
       
       if (!data.success || !data.taskId) {
+        console.error("Invalid response from edge function:", data);
         throw new Error(data.error || 'Failed to start 3D model generation task');
       }
       
@@ -205,7 +260,7 @@ export const ModelGenerationProvider = ({ children }: { children: ReactNode }) =
         if (isCompleted) {
           clearInterval(intervalId);
         }
-      }, 2000); // Poll every 2 seconds
+      }, 5000); // Poll every 5 seconds - increased from 2s to reduce API calls
       
       // Cleanup interval on component unmount or error
       setTimeout(() => {

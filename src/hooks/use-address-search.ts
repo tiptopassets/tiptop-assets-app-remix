@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useGoogleMap } from '@/contexts/GoogleMapContext';
 import { useToast } from '@/hooks/use-toast';
+import { useModelGeneration } from '@/contexts/ModelGenerationContext';
 
 export const useAddressSearch = () => {
   const { 
@@ -19,6 +20,7 @@ export const useAddressSearch = () => {
   const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
   const { toast } = useToast();
   const [hasSelectedAddress, setHasSelectedAddress] = useState(false);
+  const { capturePropertyImages } = useModelGeneration();
 
   // Start analysis when an address is selected
   const startAnalysis = () => {
@@ -59,11 +61,15 @@ export const useAddressSearch = () => {
           // Save coordinates
           const lat = place.geometry.location.lat();
           const lng = place.geometry.location.lng();
-          setAddressCoordinates({ lat, lng });
+          const coordinates = { lat, lng };
+          setAddressCoordinates(coordinates);
           
           // Center map to selected address
           mapInstance.setCenter(place.geometry.location);
           mapInstance.setZoom(18);
+          
+          // Capture property images for 3D model generation
+          capturePropertyImages(place.formatted_address || '', coordinates);
           
           // Auto trigger analysis when address is selected
           startAnalysis();
@@ -83,7 +89,7 @@ export const useAddressSearch = () => {
         google.maps.event.clearInstanceListeners(autocompleteRef.current);
       }
     };
-  }, [mapLoaded, mapInstance, setAddress, toast, setAddressCoordinates]);
+  }, [mapLoaded, mapInstance, setAddress, toast, setAddressCoordinates, capturePropertyImages]);
 
   return {
     searchInputRef,
