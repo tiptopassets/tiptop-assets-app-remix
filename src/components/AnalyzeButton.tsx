@@ -5,7 +5,7 @@ import { useGoogleMap } from '@/contexts/GoogleMapContext';
 import { useToast } from '@/hooks/use-toast';
 
 const AnalyzeButton = () => {
-  const { address, generatePropertyAnalysis, isGeneratingAnalysis } = useGoogleMap();
+  const { address, generatePropertyAnalysis, isGeneratingAnalysis, analysisError, setAnalysisError } = useGoogleMap();
   const { toast } = useToast();
   
   const handleAnalyze = () => {
@@ -16,6 +16,11 @@ const AnalyzeButton = () => {
         variant: "destructive"
       });
       return;
+    }
+    
+    // Clear any previous error state
+    if (analysisError) {
+      setAnalysisError(null);
     }
     
     // Use our new GPT-powered property analysis function
@@ -35,7 +40,7 @@ const AnalyzeButton = () => {
     >
       <Sparkles className="h-5 w-5 text-tiptop-purple" />
       <span className="font-medium">
-        {isGeneratingAnalysis ? 'Analyzing with AI...' : 'Analyze Property'}
+        {isGeneratingAnalysis ? 'Analyzing with AI...' : analysisError ? 'Try Again' : 'Analyze Property'}
       </span>
       
       {isGeneratingAnalysis && (

@@ -1,5 +1,6 @@
+
 import { useState, useEffect, useRef } from 'react';
-import { Search, MapPin } from 'lucide-react';
+import { Search, MapPin, XCircle } from 'lucide-react';
 import { useGoogleMap } from '@/contexts/GoogleMapContext';
 import { useToast } from '@/hooks/use-toast';
 
@@ -19,7 +20,9 @@ const SearchBar = ({ isCollapsed }: SearchBarProps) => {
     analysisComplete,
     setAddressCoordinates,
     generatePropertyAnalysis,
-    isGeneratingAnalysis
+    isGeneratingAnalysis,
+    analysisError,
+    setAnalysisError
   } = useGoogleMap();
   
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -34,7 +37,12 @@ const SearchBar = ({ isCollapsed }: SearchBarProps) => {
       return;
     }
 
-    // Use the GPT-powered analysis instead of the mock data
+    // Clear previous errors
+    if (analysisError) {
+      setAnalysisError(null);
+    }
+
+    // Use the GPT-powered analysis 
     generatePropertyAnalysis(address);
   }
 
@@ -122,6 +130,20 @@ const SearchBar = ({ isCollapsed }: SearchBarProps) => {
     );
   };
 
+  // Clear search and reset analysis state
+  const clearSearch = () => {
+    setAddress('');
+    setHasSelectedAddress(false);
+    setAnalysisComplete(false);
+    setAnalysisResults(null);
+    setAnalysisError(null);
+    
+    if (mapInstance) {
+      mapInstance.setCenter({ lat: 37.7749, lng: -122.4194 });
+      mapInstance.setZoom(18);
+    }
+  };
+
   useEffect(() => {
     if (!mapLoaded || !searchInputRef.current || !window.google) return;
 
@@ -183,9 +205,25 @@ const SearchBar = ({ isCollapsed }: SearchBarProps) => {
           onChange={(e) => {
             setAddress(e.target.value);
             setHasSelectedAddress(false);
+            
+            // Clear error state when user starts typing again
+            if (analysisError) {
+              setAnalysisError(null);
+            }
           }}
           className="flex-1 bg-transparent outline-none text-white placeholder-gray-300"
         />
+        
+        {/* Clear button - only show when has address */}
+        {address && (
+          <button
+            onClick={clearSearch}
+            className="flex items-center justify-center h-10 w-10 rounded-full text-white/70 hover:text-white transition-colors"
+            title="Clear search"
+          >
+            <XCircle className="h-5 w-5" />
+          </button>
+        )}
         
         {/* Geolocation button */}
         <button 

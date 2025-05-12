@@ -2,7 +2,7 @@
 import { useEffect, useRef } from 'react';
 import { useGoogleMap } from '@/contexts/GoogleMapContext';
 import { useToast } from '@/hooks/use-toast';
-import { MapPinIcon } from 'lucide-react';
+import { MapPinIcon, AlertCircle } from 'lucide-react';
 import { initializeGoogleMaps } from '@/utils/googleMapsLoader';
 import { mapStyles } from '@/utils/mapStyles';
 import MapMarker from './map/MapMarker';
@@ -23,7 +23,8 @@ const GoogleMap = () => {
     setMapLoaded,
     mapInstance,
     addressCoordinates,
-    setAddressCoordinates
+    setAddressCoordinates,
+    analysisError
   } = useGoogleMap();
   const { toast } = useToast();
 
@@ -103,6 +104,19 @@ const GoogleMap = () => {
           mapInstance={mapInstance}
           coordinates={addressCoordinates}
         />
+      )}
+      
+      {/* Error overlay when analysis fails */}
+      {analysisError && !isAnalyzing && address && (
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+          <div className="bg-red-500/90 max-w-md p-6 rounded-lg backdrop-blur-sm shadow-xl pointer-events-auto">
+            <div className="flex items-center gap-3 mb-2">
+              <AlertCircle className="h-6 w-6 text-white" />
+              <h3 className="text-xl font-bold text-white">Analysis Failed</h3>
+            </div>
+            <p className="text-white/90">{analysisError}</p>
+          </div>
+        </div>
       )}
       
       {/* Enhanced gradient overlay with glowing effect */}

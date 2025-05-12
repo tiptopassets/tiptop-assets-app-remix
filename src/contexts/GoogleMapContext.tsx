@@ -20,6 +20,8 @@ interface GoogleMapContextType {
   setAddressCoordinates: (coords: google.maps.LatLngLiteral | null) => void;
   generatePropertyAnalysis: (address: string) => Promise<void>;
   isGeneratingAnalysis: boolean;
+  analysisError: string | null;
+  setAnalysisError: (error: string | null) => void;
 }
 
 export interface AssetOpportunity {
@@ -81,6 +83,7 @@ export const GoogleMapProvider = ({ children }: { children: ReactNode }) => {
   const [mapLoaded, setMapLoaded] = useState(false);
   const [addressCoordinates, setAddressCoordinates] = useState<google.maps.LatLngLiteral | null>(null);
   const [isGeneratingAnalysis, setIsGeneratingAnalysis] = useState(false);
+  const [analysisError, setAnalysisError] = useState<string | null>(null);
 
   // Generate property analysis using GPT
   const generatePropertyAnalysis = async (propertyAddress: string) => {
@@ -94,6 +97,8 @@ export const GoogleMapProvider = ({ children }: { children: ReactNode }) => {
     }
 
     try {
+      // Reset error state when starting a new analysis
+      setAnalysisError(null);
       setIsGeneratingAnalysis(true);
       setIsAnalyzing(true);
       
@@ -117,6 +122,9 @@ export const GoogleMapProvider = ({ children }: { children: ReactNode }) => {
       
     } catch (error) {
       console.error("Error generating property analysis:", error);
+      setAnalysisError("We couldn't analyze this property. Please try again later.");
+      setAnalysisComplete(false);
+      
       toast({
         title: "Analysis Failed",
         description: "We couldn't analyze this property. Please try again later.",
@@ -147,6 +155,8 @@ export const GoogleMapProvider = ({ children }: { children: ReactNode }) => {
         setAddressCoordinates,
         generatePropertyAnalysis,
         isGeneratingAnalysis,
+        analysisError,
+        setAnalysisError,
       }}
     >
       {children}
