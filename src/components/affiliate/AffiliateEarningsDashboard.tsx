@@ -14,17 +14,18 @@ const AffiliateEarningsDashboard: React.FC = () => {
 
   // Check if Chrome extension is installed
   useEffect(() => {
-    // Only check for extension in browser environment and if window object exists
+    // Only check for extension in browser environment
     const checkExtension = () => {
-      if (typeof window !== 'undefined' && window.chrome) {
+      if (typeof window !== 'undefined') {
         try {
-          // Check if chrome.runtime exists
-          if (window.chrome && 'runtime' in window.chrome) {
-            window.chrome.runtime.sendMessage(
+          // Safe check for chrome object and its properties
+          const chromeObj = window as any;
+          if (chromeObj.chrome && chromeObj.chrome.runtime) {
+            chromeObj.chrome.runtime.sendMessage(
               'extension-id-here', // Replace with actual extension ID
               { action: 'checkInstalled' },
               (response: any) => {
-                if (response && !chrome.runtime.lastError) {
+                if (response && !chromeObj.chrome.runtime.lastError) {
                   setExtensionInstalled(true);
                 }
               }
