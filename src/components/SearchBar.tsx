@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from 'react';
 import { Search, MapPin } from 'lucide-react';
 import { useGoogleMap } from '@/contexts/GoogleMapContext';
@@ -18,101 +17,25 @@ const SearchBar = ({ isCollapsed }: SearchBarProps) => {
     setAnalysisComplete,
     setAnalysisResults,
     analysisComplete,
-    setAddressCoordinates
+    setAddressCoordinates,
+    generatePropertyAnalysis,
+    isGeneratingAnalysis
   } = useGoogleMap();
+  
   const searchInputRef = useRef<HTMLInputElement>(null);
   const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
   const { toast } = useToast();
   const [hasSelectedAddress, setHasSelectedAddress] = useState(false);
   const [isLocating, setIsLocating] = useState(false);
 
-  // Mock analysis results
-  const mockAnalysisResults = {
-    propertyType: "single-family",
-    amenities: ["rooftop", "garden", "parking", "storage"],
-    rooftop: {
-      area: 1200,
-      solarCapacity: 18,
-      revenue: 72
-    },
-    garden: {
-      area: 500,
-      opportunity: "High",
-      revenue: 30
-    },
-    parking: {
-      spaces: 2,
-      rate: 15,
-      revenue: 900
-    },
-    pool: {
-      present: false,
-      area: 0,
-      type: "none",
-      revenue: 0
-    },
-    storage: {
-      volume: 50,
-      revenue: 100
-    },
-    bandwidth: {
-      available: 250,
-      revenue: 20
-    },
-    shortTermRental: {
-      nightlyRate: 120,
-      monthlyProjection: 2500
-    },
-    permits: ["solar installation", "commercial parking"],
-    restrictions: "No short-term rentals under 30 days by HOA rules",
-    topOpportunities: [
-      {
-        icon: "parking",
-        title: "Parking Space",
-        monthlyRevenue: 900,
-        description: "2 spaces available for rent"
-      },
-      {
-        icon: "solar",
-        title: "Rooftop Solar",
-        monthlyRevenue: 72,
-        description: "1200 sq ft usable with 18kW potential"
-      },
-      {
-        icon: "storage",
-        title: "Storage Space",
-        monthlyRevenue: 100,
-        description: "50 cubic meters available"
-      },
-      {
-        icon: "wifi",
-        title: "Internet Bandwidth",
-        monthlyRevenue: 20,
-        description: "250 Mbps available for sharing"
-      }
-    ] 
-  };
-
   // Start analysis when an address is selected
   const startAnalysis = () => {
     if (!address) {
-      // Removed the toast notification for address requirement
       return;
     }
 
-    setIsAnalyzing(true);
-
-    // Simulate API call with timeout
-    setTimeout(() => {
-      setAnalysisResults(mockAnalysisResults);
-      setIsAnalyzing(false);
-      setAnalysisComplete(true);
-      
-      toast({
-        title: "Analysis Complete",
-        description: "We've identified 4 monetization opportunities for your property",
-      });
-    }, 3000);
+    // Use the GPT-powered analysis instead of the mock data
+    generatePropertyAnalysis(address);
   }
 
   // Get user's current location
@@ -267,9 +190,9 @@ const SearchBar = ({ isCollapsed }: SearchBarProps) => {
         {/* Geolocation button */}
         <button 
           onClick={getUserLocation}
-          disabled={isLocating || !mapLoaded}
+          disabled={isLocating || !mapLoaded || isGeneratingAnalysis}
           className={`flex items-center justify-center h-10 w-10 rounded-full mr-1 transition-all
-            ${isLocating ? 'bg-purple-500/30' : 'bg-purple-500/20 hover:bg-purple-500/40'}`}
+            ${isLocating || isGeneratingAnalysis ? 'bg-purple-500/30' : 'bg-purple-500/20 hover:bg-purple-500/40'}`}
           title="Use current location"
         >
           <MapPin className={`h-5 w-5 text-white ${isLocating ? 'animate-pulse' : ''}`} />

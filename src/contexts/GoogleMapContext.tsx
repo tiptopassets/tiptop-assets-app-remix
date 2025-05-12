@@ -1,5 +1,7 @@
 
 import { createContext, useContext, useState, ReactNode } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/hooks/use-toast';
 
 interface GoogleMapContextType {
   mapInstance: google.maps.Map | null;
@@ -16,6 +18,8 @@ interface GoogleMapContextType {
   setMapLoaded: (loaded: boolean) => void;
   addressCoordinates: google.maps.LatLngLiteral | null;
   setAddressCoordinates: (coords: google.maps.LatLngLiteral | null) => void;
+  generatePropertyAnalysis: (address: string) => Promise<void>;
+  isGeneratingAnalysis: boolean;
 }
 
 export interface AssetOpportunity {
@@ -76,6 +80,53 @@ export const GoogleMapProvider = ({ children }: { children: ReactNode }) => {
   const [analysisResults, setAnalysisResults] = useState<AnalysisResults | null>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
   const [addressCoordinates, setAddressCoordinates] = useState<google.maps.LatLngLiteral | null>(null);
+  const [isGeneratingAnalysis, setIsGeneratingAnalysis] = useState(false);
+
+  // Generate property analysis using GPT
+  const generatePropertyAnalysis = async (propertyAddress: string) => {
+    if (!propertyAddress) {
+      toast({
+        title: "Address Required",
+        description: "Please enter a property address to analyze",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      setIsGeneratingAnalysis(true);
+      setIsAnalyzing(true);
+      
+      // Call Supabase Edge Function to generate property analysis with GPT
+      const { data, error } = await supabase.functions.invoke('analyze-property', {
+        body: { 
+          address: propertyAddress,
+          coordinates: addressCoordinates
+        }
+      });
+      
+      if (error) throw new Error(error.message);
+      
+      if (data && data.analysis) {
+        // Set the analysis results from GPT
+        setAnalysisResults(data.analysis);
+        setAnalysisComplete(true);
+      } else {
+        throw new Error("No analysis data received");
+      }
+      
+    } catch (error) {
+      console.error("Error generating property analysis:", error);
+      toast({
+        title: "Analysis Failed",
+        description: "We couldn't analyze this property. Please try again later.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsGeneratingAnalysis(false);
+      setIsAnalyzing(false);
+    }
+  };
 
   return (
     <GoogleMapContext.Provider
@@ -94,6 +145,8 @@ export const GoogleMapProvider = ({ children }: { children: ReactNode }) => {
         setMapLoaded,
         addressCoordinates,
         setAddressCoordinates,
+        generatePropertyAnalysis,
+        isGeneratingAnalysis,
       }}
     >
       {children}

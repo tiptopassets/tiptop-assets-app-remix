@@ -1,166 +1,47 @@
 
+import { motion } from 'framer-motion';
+import { Sparkles } from 'lucide-react';
 import { useGoogleMap } from '@/contexts/GoogleMapContext';
-import { useModelGeneration } from '@/contexts/ModelGenerationContext';
-import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { AssetOpportunity } from '@/contexts/GoogleMapContext';
 
 const AnalyzeButton = () => {
-  const { 
-    address, 
-    setIsAnalyzing, 
-    setAnalysisComplete, 
-    setAnalysisResults,
-    addressCoordinates
-  } = useGoogleMap();
-  const {
-    capturePropertyImages,
-    generateModel,
-    setStatus
-  } = useModelGeneration();
-  const [isDisabled, setIsDisabled] = useState(false);
+  const { address, generatePropertyAnalysis, isGeneratingAnalysis } = useGoogleMap();
   const { toast } = useToast();
-
-  // Mock analysis results
-  const mockAnalysisResults = {
-    propertyType: "single-family",
-    amenities: ["rooftop", "garden", "parking", "storage"],
-    rooftop: {
-      area: 1200,
-      solarCapacity: 18,
-      revenue: 72
-    },
-    garden: {
-      area: 500,
-      opportunity: "High",
-      revenue: 30
-    },
-    parking: {
-      spaces: 2,
-      rate: 15,
-      revenue: 900
-    },
-    pool: {
-      present: false,
-      area: 0,
-      type: "none",
-      revenue: 0
-    },
-    storage: {
-      volume: 50,
-      revenue: 100
-    },
-    bandwidth: {
-      available: 250,
-      revenue: 20
-    },
-    shortTermRental: {
-      nightlyRate: 120,
-      monthlyProjection: 2500
-    },
-    permits: ["solar installation", "commercial parking"],
-    restrictions: "No short-term rentals under 30 days by HOA rules",
-    topOpportunities: [
-      {
-        icon: "parking",
-        title: "Parking Space",
-        monthlyRevenue: 900,
-        description: "2 spaces available for rent"
-      },
-      {
-        icon: "solar",
-        title: "Rooftop Solar",
-        monthlyRevenue: 72,
-        description: "1200 sq ft usable with 18kW potential"
-      },
-      {
-        icon: "storage",
-        title: "Storage Space",
-        monthlyRevenue: 100,
-        description: "50 cubic meters available"
-      },
-      {
-        icon: "wifi",
-        title: "Internet Bandwidth",
-        monthlyRevenue: 20,
-        description: "250 Mbps available for sharing"
-      }
-    ] as AssetOpportunity[]
+  
+  const handleAnalyze = () => {
+    if (!address) {
+      toast({
+        title: "Address Required",
+        description: "Please enter a property address to analyze",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    // Use our new GPT-powered property analysis function
+    generatePropertyAnalysis(address);
   };
   
-  const handleAnalyze = async () => {
-    if (!address) {
-      return;
-    }
-
-    if (!addressCoordinates) {
-      toast({
-        title: "Missing Location Data",
-        description: "We couldn't determine the exact location of this address. Please try a different address.",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    setIsDisabled(true);
-    setIsAnalyzing(true);
-    
-    // Start the 3D model generation process in parallel
-    setStatus('initializing');
-
-    try {
-      // Start property image capture
-      await capturePropertyImages(address, addressCoordinates);
-      
-      // Generate the 3D model
-      await generateModel();
-
-      // While the 3D model is being generated, also perform the property analysis
-      setTimeout(() => {
-        setAnalysisResults(mockAnalysisResults);
-        setIsAnalyzing(false);
-        setAnalysisComplete(true);
-        setIsDisabled(false);
-        
-        toast({
-          title: "Analysis Complete",
-          description: "We've identified 4 monetization opportunities for your property",
-        });
-      }, 3000);
-    } catch (error) {
-      console.error('Error during analysis:', error);
-      setIsDisabled(false);
-      setIsAnalyzing(false);
-      
-      toast({
-        title: "Analysis Failed",
-        description: "We encountered an error analyzing your property. Please try again.",
-        variant: "destructive"
-      });
-    }
-  };
-
   return (
-    <button
+    <motion.button
       onClick={handleAnalyze}
-      disabled={isDisabled}
-      className={`glass-effect glow-effect px-8 py-3 rounded-full flex items-center justify-center text-white font-medium text-lg
-        bg-tiptop-purple
-        ${isDisabled ? 'opacity-70 cursor-not-allowed' : 'animate-pulse-glow hover:scale-105 transition-transform'}`}
-      style={{ 
-        boxShadow: '0 0 20px rgba(155, 135, 245, 0.5)',
-        background: 'linear-gradient(135deg, #9b87f5 0%, #8a70fd 100%)'
-      }}
+      disabled={isGeneratingAnalysis || !address}
+      whileHover={{ scale: 1.03 }}
+      whileTap={{ scale: 0.97 }}
+      className={`glass-effect px-6 py-3 rounded-full flex items-center gap-2 text-white glow-effect ${!address ? 'opacity-70 cursor-not-allowed' : ''}`}
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.2 }}
     >
-      {isDisabled ? (
-        <>
-          <div className="h-5 w-5 mr-2 rounded-full border-2 border-white border-t-transparent animate-spin"></div>
-          Analyzing...
-        </>
-      ) : (
-        'Analyze now'
+      <Sparkles className="h-5 w-5 text-tiptop-purple" />
+      <span className="font-medium">
+        {isGeneratingAnalysis ? 'Analyzing with AI...' : 'Analyze Property'}
+      </span>
+      
+      {isGeneratingAnalysis && (
+        <div className="ml-2 h-5 w-5 rounded-full border-t-2 border-r-2 border-tiptop-purple animate-spin" />
       )}
-    </button>
+    </motion.button>
   );
 };
 
