@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useAffiliateEarnings } from '@/hooks/useAffiliateEarnings';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -7,26 +8,28 @@ import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
 const AffiliateEarningsDashboard: React.FC = () => {
-  const { earnings, isLoading, error, refetch } = useAffiliateEarnings();
+  const { earnings, services, loading, error, refreshData } = useAffiliateEarnings();
   const [isSyncing, setIsSyncing] = useState(false);
   const [extensionInstalled, setExtensionInstalled] = useState(false);
 
   // Check if Chrome extension is installed
   useEffect(() => {
-    // Only check for extension in browser environment and if window.chrome exists
+    // Only check for extension in browser environment and if window object exists
     const checkExtension = () => {
-      if (typeof window !== 'undefined' && 'chrome' in window && window.chrome?.runtime) {
+      if (typeof window !== 'undefined' && window.chrome) {
         try {
-          // @ts-ignore - Chrome extension API
-          window.chrome.runtime.sendMessage(
-            'extension-id-here', // Replace with actual extension ID
-            { action: 'checkInstalled' },
-            (response: any) => {
-              if (response && !chrome.runtime.lastError) {
-                setExtensionInstalled(true);
+          // Check if chrome.runtime exists
+          if (window.chrome && 'runtime' in window.chrome) {
+            window.chrome.runtime.sendMessage(
+              'extension-id-here', // Replace with actual extension ID
+              { action: 'checkInstalled' },
+              (response: any) => {
+                if (response && !chrome.runtime.lastError) {
+                  setExtensionInstalled(true);
+                }
               }
-            }
-          );
+            );
+          }
         } catch (err) {
           console.log('Extension not installed or error checking:', err);
         }
@@ -58,7 +61,7 @@ const AffiliateEarningsDashboard: React.FC = () => {
       });
       
       // Refetch data to show updated earnings
-      refetch();
+      refreshData();
       
     } catch (err) {
       console.error('Error syncing earnings:', err);
@@ -73,7 +76,7 @@ const AffiliateEarningsDashboard: React.FC = () => {
   };
 
   // Render loading state
-  if (isLoading) {
+  if (loading) {
     return (
       <Card className="w-full max-w-md glass-effect">
         <CardHeader>
@@ -100,7 +103,7 @@ const AffiliateEarningsDashboard: React.FC = () => {
           {error.message || 'An unexpected error occurred.'}
         </CardContent>
         <CardFooter>
-          <Button onClick={() => refetch()}>
+          <Button onClick={() => refreshData()}>
             <RefreshCw className="mr-2 h-4 w-4" />
             Retry
           </Button>
@@ -108,6 +111,19 @@ const AffiliateEarningsDashboard: React.FC = () => {
       </Card>
     );
   }
+
+  // Calculate total earnings
+  const totalEarnings = earnings.reduce((sum, earning) => sum + (earning.earnings || 0), 0);
+  
+  // Get the most recent update time
+  const lastUpdated = earnings.length > 0 
+    ? earnings.reduce((latest, earning) => {
+        if (!latest || (earning.updated_at && new Date(earning.updated_at) > new Date(latest))) {
+          return earning.updated_at;
+        }
+        return latest;
+      }, '')
+    : 'N/A';
 
   // Render earnings data
   return (
@@ -118,12 +134,12 @@ const AffiliateEarningsDashboard: React.FC = () => {
       </CardHeader>
       <CardContent>
         <div className="space-y-2">
-          <p className="text-lg font-semibold">Total Earnings: ${earnings?.total_earnings || 0}</p>
-          <p className="text-sm text-gray-500">Last Updated: {earnings?.last_updated || 'N/A'}</p>
+          <p className="text-lg font-semibold">Total Earnings: ${totalEarnings.toFixed(2)}</p>
+          <p className="text-sm text-gray-500">Last Updated: {lastUpdated || 'N/A'}</p>
         </div>
       </CardContent>
       <CardFooter className="flex justify-between items-center">
-        <Button onClick={() => refetch()} disabled={isSyncing}>
+        <Button onClick={() => refreshData()} disabled={isSyncing}>
           {isSyncing ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
