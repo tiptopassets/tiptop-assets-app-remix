@@ -153,7 +153,7 @@ export const ModelGenerationProvider = ({ children }: { children: ReactNode }) =
       toast({
         title: "Image Capture Failed",
         description: "Using demo images instead. You can still generate a 3D model.",
-        variant: "warning"
+        variant: "destructive"  // Changed from "warning" to "destructive" to fix the TypeScript error
       });
     }
   };
