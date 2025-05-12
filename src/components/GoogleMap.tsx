@@ -57,7 +57,7 @@ const GoogleMap = () => {
         if (mapRef.current && window.google) {
           const newMap = new google.maps.Map(mapRef.current, {
             center: { lat: 37.7749, lng: -122.4194 },  // Default to San Francisco
-            zoom: 12,
+            zoom: 18, // Changed from 12 to 18 for a closer view
             mapTypeId: 'satellite',
             disableDefaultUI: true,
             zoomControl: true,
