@@ -107,7 +107,7 @@ const PropertySubmissionForm: React.FC<PropertySubmissionFormProps> = ({
             }) => <FormItem>
                     <FormLabel className="text-white">Property Address</FormLabel>
                     <FormControl>
-                      <Input placeholder="Enter your property address" className="glass-effect border-white/20 text-white" {...field} />
+                      <Input placeholder="Enter your property address" className="glass-effect border-white/20 text-purple" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>} />
