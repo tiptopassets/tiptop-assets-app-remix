@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import SearchBar from '@/components/SearchBar';
 import AnalyzeButton from '@/components/AnalyzeButton';
 import GoogleMap from '@/components/GoogleMap';
@@ -9,7 +9,7 @@ import AssetResultList from '@/components/AssetResultList';
 import ModelGenerationSheet from '@/components/ModelGenerationSheet';
 import HomeModelViewer from '@/components/HomeModelViewer';
 import { GoogleMapProvider, useGoogleMap } from '@/contexts/GoogleMapContext';
-import { LogIn, PlusCircle } from 'lucide-react';
+import { PlusCircle } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import FooterCarousel from '@/components/FooterCarousel';
 import { motion } from 'framer-motion';
@@ -21,34 +21,12 @@ const HomeContent = () => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const isMobile = useIsMobile();
   const hasAddress = !!address;
-  const navigate = useNavigate();
-  const { user, signInWithGoogle, loading } = useAuth();
+  const { user } = useAuth();
 
   // Collapse UI elements when analysis is complete
   useEffect(() => {
     setIsCollapsed(analysisComplete);
   }, [analysisComplete]);
-
-  const handleSignIn = async () => {
-    try {
-      console.log("Initiating Google sign-in");
-      await signInWithGoogle();
-    } catch (error) {
-      console.error('Sign in error:', error);
-      toast({
-        title: "Authentication Error",
-        description: "There was a problem signing in. Please try again.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  // If user is already authenticated, redirect to dashboard
-  useEffect(() => {
-    if (user && !loading) {
-      navigate('/dashboard');
-    }
-  }, [user, loading, navigate]);
 
   return (
     <div className="min-h-screen relative overflow-hidden">
@@ -73,17 +51,15 @@ const HomeContent = () => {
               {/* Glow effect for hover */}
               <div className="absolute -inset-0.5 bg-gradient-to-r from-purple-500/20 to-violet-500/20 rounded-full blur-sm -z-10"></div>
             </Link>
-            <button 
-              onClick={handleSignIn}
-              disabled={loading}
+            <Link 
+              to="/dashboard" 
               className="glass-effect px-3 py-1 md:px-4 md:py-2 rounded-full flex items-center gap-2 text-white hover:scale-105 transition-transform text-sm md:text-base"
             >
-              <LogIn size={isMobile ? 16 : 20} />
-              <span className="text-gray-100">Sign in with Google</span>
+              <span className="text-gray-100">Dashboard</span>
               
               {/* Glow effect for hover */}
               <div className="absolute -inset-0.5 bg-gradient-to-r from-purple-500/20 to-violet-500/20 rounded-full blur-sm -z-10"></div>
-            </button>
+            </Link>
           </div>
         </header>
 

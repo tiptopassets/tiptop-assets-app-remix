@@ -1,5 +1,13 @@
 
-// Re-export from the toast component
-import { toast, useToast } from "../ui/toast";
+// Re-export from the toast-primitive component
+import {
+  Toast,
+  ToastClose,
+  ToastDescription,
+  ToastProvider,
+  ToastTitle,
+  ToastViewport,
+} from "@/components/ui/toast";
+import { useToast } from "@/hooks/use-toast";
 
-export { toast, useToast };
+export { useToast, Toast, ToastClose, ToastDescription, ToastProvider, ToastTitle, ToastViewport };

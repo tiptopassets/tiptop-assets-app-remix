@@ -1,6 +1,5 @@
 
 import { ReactNode } from 'react';
-import { Navigate } from 'react-router-dom';
 import DashboardSidebar from './DashboardSidebar';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -11,7 +10,7 @@ interface DashboardLayoutProps {
 const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   const { user, loading } = useAuth();
 
-  // Show loading state
+  // Show loading state if authentication is still loading
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-50">
@@ -20,11 +19,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
     );
   }
 
-  // Redirect if not authenticated
-  if (!user && !loading) {
-    return <Navigate to="/" replace />;
-  }
-
+  // No longer redirect if not authenticated
   return (
     <div className="flex min-h-screen">
       <DashboardSidebar />
