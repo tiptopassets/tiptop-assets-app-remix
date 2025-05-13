@@ -1,7 +1,6 @@
-
 import { createContext, useContext, useState, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from '@/hooks/use-toast';
+import { useToast } from '@/hooks/use-toast';
 
 interface GoogleMapContextType {
   mapInstance: google.maps.Map | null;
@@ -84,6 +83,7 @@ export const GoogleMapProvider = ({ children }: { children: ReactNode }) => {
   const [addressCoordinates, setAddressCoordinates] = useState<google.maps.LatLngLiteral | null>(null);
   const [isGeneratingAnalysis, setIsGeneratingAnalysis] = useState(false);
   const [analysisError, setAnalysisError] = useState<string | null>(null);
+  const { toast } = useToast();
 
   // Generate property analysis using GPT
   const generatePropertyAnalysis = async (propertyAddress: string) => {

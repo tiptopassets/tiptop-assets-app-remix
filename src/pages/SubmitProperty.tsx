@@ -1,9 +1,8 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Building, WifiIcon, Waves } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from '@/hooks/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import { generatePropertyReportPDF } from '@/utils/pdfGenerator';
 
 import PropertySubmissionForm, { FormValues } from '@/components/property/PropertySubmissionForm';
@@ -17,6 +16,7 @@ const SubmitProperty = () => {
   const [services, setServices] = useState<ServiceCardProps[]>([]);
   const [totalEarnings, setTotalEarnings] = useState(0);
   const [formData, setFormData] = useState<FormValues | null>(null);
+  const { toast } = useToast();
   
   const handleSubmit = async (values: FormValues) => {
     try {

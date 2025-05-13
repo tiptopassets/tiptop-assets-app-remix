@@ -23,6 +23,7 @@ const ModelViewer = () => {
   const [viewMode, setViewMode] = useState<'satellite' | 'streetView'>('satellite');
   const [enableAutoRotate, setEnableAutoRotate] = useState(true);
   const [zoomLevel, setZoomLevel] = useState(1);
+  const { toast } = useToast();
   
   useEffect(() => {
     // Redirect if no model is available
@@ -34,7 +35,7 @@ const ModelViewer = () => {
       });
       navigate('/');
     }
-  }, [status, modelUrl, navigate]);
+  }, [status, modelUrl, navigate, toast]);
 
   // Handle reset view button click
   const handleResetView = () => {

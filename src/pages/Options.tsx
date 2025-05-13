@@ -1,16 +1,16 @@
-
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { CheckCircle2, Upload, User, LogIn } from 'lucide-react';
-import { toast } from '@/hooks/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 
 const Options = () => {
   const navigate = useNavigate();
   const [selectedOption, setSelectedOption] = useState<'manual' | 'concierge' | null>(null);
   const { signInWithGoogle } = useAuth();
+  const { toast } = useToast();
 
   const handleOptionSelect = (option: 'manual' | 'concierge') => {
     setSelectedOption(option);

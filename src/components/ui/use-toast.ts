@@ -8,6 +8,6 @@ import {
   ToastTitle,
   ToastViewport,
 } from "@/components/ui/toast";
-import { useToast } from "@/hooks/use-toast";
+import { useToast, toast } from "@/hooks/use-toast";
 
-export { useToast, Toast, ToastClose, ToastDescription, ToastProvider, ToastTitle, ToastViewport };
+export { useToast, toast, Toast, ToastClose, ToastDescription, ToastProvider, ToastTitle, ToastViewport };

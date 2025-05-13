@@ -1,7 +1,6 @@
-
 import { createContext, useContext, useState, ReactNode, useRef, useEffect } from 'react';
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from '@/hooks/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import { API_KEY } from '@/utils/googleMapsLoader';
 
 export type ModelGenerationStatus = 'idle' | 'initializing' | 'capturing' | 'generating' | 'completed' | 'error';
@@ -46,6 +45,7 @@ export const ModelGenerationProvider = ({ children }: { children: ReactNode }) =
   const [isHomeModelVisible, setHomeModelVisible] = useState(false);
   const [currentTaskId, setCurrentTaskId] = useState<string | null>(null);
   const eventSourceRef = useRef<EventSource | null>(null);
+  const { toast } = useToast();
 
   // Cleanup event source on unmount or status change
   useEffect(() => {

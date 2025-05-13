@@ -110,6 +110,7 @@ const reducer = (state: State, action: Action): State => {
   }
 }
 
+// Create a singleton instance that can be imported directly
 const useToast = () => {
   const [state, dispatch] = React.useReducer(reducer, {
     toasts: [],
@@ -164,6 +165,12 @@ const useToast = () => {
   return toast
 }
 
-// Export the useToast function and create a single instance of it
-export { useToast }
-// Remove the invalid toast export that was causing the error
+// Create a singleton instance for direct imports
+const toast = (props: Omit<ToasterToast, "id">) => {
+  const { toast: toastFunction } = useToast()
+  return toastFunction(props)
+}
+
+// Export both the hook and the singleton function
+export { useToast, toast }
+export type { ToasterToast }

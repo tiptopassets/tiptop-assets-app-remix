@@ -1,8 +1,7 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { toast } from '@/hooks/use-toast';
+import { useToast } from '@/hooks/use-toast';
 
 export type AffiliateEarning = {
   id: string;
@@ -29,6 +28,7 @@ export const useAffiliateEarnings = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const { user } = useAuth();
+  const { toast } = useToast();
 
   // Function to load both services and earnings
   const loadData = useCallback(async () => {
