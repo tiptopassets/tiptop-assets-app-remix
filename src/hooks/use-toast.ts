@@ -1,8 +1,6 @@
 
-// Import directly from the UI components instead of creating a circular import
-import { toast as uiToast, type ToastProps } from "@/components/ui/toast";
-import { useToast as useUiToast } from "@/components/ui/use-toast";
+// Import from UI components to avoid circular dependencies
+import { toast, useToast } from "@/components/ui/toast";
 
-// Export the toast functions
-export const toast = uiToast;
-export const useToast = useUiToast;
+// Re-export the toast functions
+export { toast, useToast };

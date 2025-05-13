@@ -39,8 +39,8 @@ serve(async (req: Request) => {
       }
     );
 
-    // Get the Meshy API key from Supabase secrets
-    const meshyApiKey = Deno.env.get("MESHY_API_KEY");
+    // Get the Meshy API key from Supabase secrets or use the provided one
+    const meshyApiKey = Deno.env.get("MESHY_API_KEY") || "msy_1zRq34WPBQB7tK22mu2hDvdPRO5DskEO0WRR";
     
     if (!meshyApiKey) {
       console.error("Meshy API key not configured");
