@@ -113,12 +113,23 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const signInWithGoogle = async () => {
     try {
-      await supabase.auth.signInWithOAuth({
+      console.log("Starting Google sign-in process");
+      const origin = window.location.origin;
+      console.log("Current origin:", origin);
+      
+      const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/dashboard`
+          redirectTo: origin + '/dashboard'
         }
       });
+      
+      if (error) {
+        console.error('Google sign in error:', error);
+        throw error;
+      }
+      
+      console.log("Sign in initiated:", data);
     } catch (error) {
       console.error('Google sign in error:', error);
       toast({
@@ -130,7 +141,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    try {
+      await supabase.auth.signOut();
+    } catch (error) {
+      console.error('Sign out error:', error);
+      toast({
+        title: "Sign Out Error",
+        description: "Failed to sign out. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
 
   return (

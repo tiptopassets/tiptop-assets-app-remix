@@ -31,6 +31,7 @@ const HomeContent = () => {
 
   const handleSignIn = async () => {
     try {
+      console.log("Initiating Google sign-in");
       await signInWithGoogle();
     } catch (error) {
       console.error('Sign in error:', error);

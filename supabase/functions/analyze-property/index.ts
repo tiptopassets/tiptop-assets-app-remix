@@ -79,12 +79,13 @@ Deno.serve(async (req) => {
       }
     }
     
-    // Use GPT to analyze the property
+    // Check if we have the OpenAI API key
     if (!GPT_API_KEY) {
+      console.error('OpenAI API key not found');
       return new Response(
         JSON.stringify({ 
           success: false, 
-          error: 'GPT API key not configured' 
+          error: 'OpenAI API key not configured' 
         }),
         {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -99,6 +100,8 @@ Deno.serve(async (req) => {
       coordinates: propertyCoordinates,
       details: propertyDetails
     });
+    
+    console.log('Using OpenAI API key to analyze property');
     
     const systemPrompt = `You are a real estate and property monetization expert. Analyze this property information and identify potential monetization opportunities for the owner. Focus on:
 1. Rooftop solar potential
@@ -129,6 +132,7 @@ Your analysis should be data-driven and realistic.`;
 }`;
 
     // Call OpenAI API
+    console.log('Calling OpenAI API...');
     const gptResponse = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -146,7 +150,14 @@ Your analysis should be data-driven and realistic.`;
       })
     });
     
+    if (!gptResponse.ok) {
+      const errorData = await gptResponse.json();
+      console.error('OpenAI API error:', errorData);
+      throw new Error(`OpenAI API error: ${JSON.stringify(errorData)}`);
+    }
+    
     const gptData = await gptResponse.json();
+    console.log('OpenAI response received');
     
     if (!gptData.choices || gptData.choices.length === 0) {
       throw new Error('Failed to generate property analysis');
@@ -157,6 +168,7 @@ Your analysis should be data-driven and realistic.`;
     try {
       // Get the content from GPT response and parse as JSON
       const content = gptData.choices[0].message.content;
+      console.log('Raw GPT response:', content);
       
       // Extract JSON from the response (in case GPT adds extra text)
       const jsonMatch = content.match(/\{[\s\S]*\}/);
@@ -165,6 +177,8 @@ Your analysis should be data-driven and realistic.`;
       } else {
         analysis = JSON.parse(content);
       }
+      
+      console.log('Parsed analysis:', analysis);
     } catch (e) {
       console.error('Error parsing GPT response:', e);
       throw new Error('Failed to parse property analysis');

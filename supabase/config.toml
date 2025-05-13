@@ -23,8 +23,8 @@ pop3_port = 54326
 file_size_limit = "50MiB"
 
 [auth]
-site_url = "http://localhost:3000"
-additional_redirect_urls = ["https://localhost:3000"]
+site_url = "https://demo.gotiptop.org"
+additional_redirect_urls = ["https://demo.gotiptop.org", "http://localhost:3000", "https://b6dab32e-1ff5-48a5-8b91-b7e478a5089a.lovableproject.com"]
 jwt_expiry = 3600
 enable_refresh_token_rotation = true
 refresh_token_reuse_interval = 10
