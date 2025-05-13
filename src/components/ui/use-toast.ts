@@ -1,3 +1,5 @@
-import { useToast, toast } from "@/hooks/use-toast";
 
-export { useToast, toast };
+// Re-export directly from the toast component
+import { toast, useToast } from "@/components/ui/toast";
+
+export { toast, useToast };

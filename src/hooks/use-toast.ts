@@ -1,6 +1,8 @@
 
-// Re-export from @/components/ui/use-toast so we have a single source of truth
-import { toast, useToast } from '@/components/ui/use-toast';
+// Import directly from the UI components instead of creating a circular import
+import { toast as uiToast, type ToastProps } from "@/components/ui/toast";
+import { useToast as useUiToast } from "@/components/ui/use-toast";
 
 // Export the toast functions
-export { toast, useToast };
+export const toast = uiToast;
+export const useToast = useUiToast;

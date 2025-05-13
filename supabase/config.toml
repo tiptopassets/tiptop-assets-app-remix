@@ -32,8 +32,8 @@ enable_signup = true
 
 [auth.external.google]
 enabled = true
-client_id = "env(GOOGLE_CLIENT_ID)"
-secret = "env(GOOGLE_CLIENT_SECRET)"
+client_id = "592061431126-m5gvlnd35mm8ndj2mn06nisoklosskal.apps.googleusercontent.com"
+secret = "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"
 
 [analytics]
 enabled = false
