@@ -7,7 +7,7 @@ import { Loader, CheckCircle, AlertTriangle, X } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 const ModelGenerationSheet = () => {
   const {
@@ -137,17 +137,29 @@ const ModelGenerationSheet = () => {
           <div>
             <h3 className="text-lg font-semibold text-gray-900">Failed to generate 3D model. Please try again.</h3>
             <p className="text-gray-600 mt-1">{errorMessage || 'There was a problem generating your property model'}</p>
+            {modelUrl && <p className="text-green-600 mt-1">A demo model has been loaded for you to explore.</p>}
           </div>
         </div>
         
         {renderImages()}
         
-        <Button 
-          className="mt-6 w-full bg-red-500 hover:bg-red-600 text-white"
-          onClick={handleRetry}
-        >
-          Try Again
-        </Button>
+        <div className="mt-6 grid grid-cols-2 gap-4">
+          <Button 
+            className="bg-red-500 hover:bg-red-600 text-white"
+            onClick={handleRetry}
+          >
+            Try Again
+          </Button>
+          
+          {modelUrl && (
+            <Button 
+              className="bg-tiptop-purple hover:bg-tiptop-purple/90 text-white"
+              onClick={handleViewModel}
+            >
+              View Demo Model
+            </Button>
+          )}
+        </div>
       </motion.div>
     );
   };
@@ -156,14 +168,22 @@ const ModelGenerationSheet = () => {
   const NoSatelliteErrorDialog = () => (
     <Dialog open={showErrorDialog} onOpenChange={setShowErrorDialog}>
       <DialogContent className="sm:max-w-md">
-        <div className="flex flex-col items-center gap-4">
+        <DialogHeader>
+          <DialogTitle>No satellite image available</DialogTitle>
+          <DialogDescription>
+            We couldn't capture a satellite image for your property. This might be due to:
+            <ul className="list-disc pl-5 mt-2">
+              <li>Google Maps API restrictions</li>
+              <li>The address being outside of covered regions</li>
+              <li>Temporary service disruption</li>
+            </ul>
+          </DialogDescription>
+        </DialogHeader>
+        
+        <div className="flex flex-col items-center gap-4 mt-4">
           <div className="rounded-full bg-red-100 p-3">
             <AlertTriangle className="h-6 w-6 text-red-500" />
           </div>
-          
-          <h2 className="text-xl font-semibold text-center">No satellite image available for 3D model generation</h2>
-          
-          <p className="text-gray-600 text-center">There was a problem generating your property model</p>
           
           <div className="w-full grid grid-cols-2 gap-4 mt-2">
             <div className="bg-gray-100 rounded-lg p-4 relative">
@@ -193,12 +213,22 @@ const ModelGenerationSheet = () => {
             </div>
           </div>
           
-          <Button 
-            onClick={handleRetry}
-            className="w-full py-6 bg-red-500 hover:bg-red-600 text-white text-lg font-medium"
-          >
-            Try Again
-          </Button>
+          <div className="grid grid-cols-2 gap-4 w-full mt-2">
+            <Button
+              onClick={handleClose}
+              variant="outline"
+              className="w-full py-6"
+            >
+              Cancel
+            </Button>
+            
+            <Button 
+              onClick={handleRetry}
+              className="w-full py-6 bg-red-500 hover:bg-red-600 text-white text-lg font-medium"
+            >
+              Try Again
+            </Button>
+          </div>
         </div>
       </DialogContent>
     </Dialog>

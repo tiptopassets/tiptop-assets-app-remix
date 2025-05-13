@@ -50,7 +50,7 @@ serve(async (req: Request) => {
     // If taskId is provided, check task status
     if (taskId) {
       console.log("Checking status for task:", taskId);
-      const taskStatusResponse = await fetch(`https://api.meshy.ai/v1/tasks/${taskId}`, {
+      const taskStatusResponse = await fetch(`https://api.meshy.ai/v2/tasks/${taskId}`, {
         headers: {
           "Authorization": `Bearer ${meshyApiKey}`,
           "Content-Type": "application/json"
@@ -60,7 +60,7 @@ serve(async (req: Request) => {
       if (!taskStatusResponse.ok) {
         const errorData = await taskStatusResponse.json();
         console.error("Meshy API error while checking task:", errorData);
-        throw new Error(`Meshy API returned error: ${JSON.stringify(errorData)}`);
+        throw new Error(`Meshy API error: ${JSON.stringify(errorData)}`);
       }
 
       const statusData = await taskStatusResponse.json();
@@ -105,7 +105,7 @@ serve(async (req: Request) => {
     if (satelliteImage && streetViewImage) {
       // Use multi-image endpoint when both images are available
       console.log("Using multi-image Meshy API endpoint");
-      meshyEndpoint = "https://api.meshy.ai/v1/multi-view-to-3d";
+      meshyEndpoint = "https://api.meshy.ai/v2/multi-view-to-3d";
       requestBody = {
         images: [satelliteImage, streetViewImage],
         imageType: "aerial",
@@ -115,7 +115,7 @@ serve(async (req: Request) => {
     } else {
       // Use single image endpoint when only satellite image is available
       console.log("Using single-image Meshy API endpoint");
-      meshyEndpoint = "https://api.meshy.ai/v1/image-to-3d";
+      meshyEndpoint = "https://api.meshy.ai/v2/image-to-3d";
       requestBody = {
         image: satelliteImage,
         imageType: "aerial",
