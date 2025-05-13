@@ -14,7 +14,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import FooterCarousel from '@/components/FooterCarousel';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
-import { toast } from '@/hooks/use-toast';
+import { useToast } from '@/hooks/use-toast';
 
 const HomeContent = () => {
   const { isAnalyzing, analysisComplete, address } = useGoogleMap();

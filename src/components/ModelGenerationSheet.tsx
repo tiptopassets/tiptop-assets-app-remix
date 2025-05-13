@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useModelGeneration, ModelGenerationStatus } from '@/contexts/ModelGenerationContext';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
@@ -8,6 +7,7 @@ import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { useToast } from '@/hooks/use-toast';
 
 const ModelGenerationSheet = () => {
   const {
@@ -22,6 +22,7 @@ const ModelGenerationSheet = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [showErrorDialog, setShowErrorDialog] = useState(false);
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   useEffect(() => {
     // Open the sheet when status changes from idle to any active state

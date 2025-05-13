@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useModelGeneration } from '@/contexts/ModelGenerationContext';
 import { useNavigate } from 'react-router-dom';
-import { toast } from '@/hooks/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import { Slider } from '@/components/ui/slider';
 import { Button } from '@/components/ui/button';
 import { ZoomIn, ZoomOut, RotateCw, X, Download } from 'lucide-react';

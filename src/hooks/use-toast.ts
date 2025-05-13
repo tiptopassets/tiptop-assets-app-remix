@@ -164,5 +164,6 @@ const useToast = () => {
   return toast
 }
 
-export { useToast, toast }
-export type { ToasterToast }
+// Export the useToast function and create a single instance of it
+export { useToast }
+// Remove the invalid toast export that was causing the error
