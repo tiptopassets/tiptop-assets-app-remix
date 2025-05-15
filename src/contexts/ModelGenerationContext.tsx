@@ -1,5 +1,5 @@
-import { createContext, useContext, useState, ReactNode, useRef, useEffect } from 'react';
-import { supabase } from "@/integrations/supabase/client";
+
+import { createContext, useContext, useState, ReactNode } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { API_KEY } from '@/utils/googleMapsLoader';
 
@@ -10,8 +10,6 @@ interface ModelGenerationContextType {
   setStatus: (status: ModelGenerationStatus) => void;
   progress: number;
   setProgress: (progress: number) => void;
-  modelUrl: string | null;
-  setModelUrl: (url: string | null) => void;
   propertyImages: {
     satellite: string | null;
     streetView: string | null;
@@ -33,7 +31,6 @@ const ModelGenerationContext = createContext<ModelGenerationContextType | undefi
 export const ModelGenerationProvider = ({ children }: { children: ReactNode }) => {
   const [status, setStatus] = useState<ModelGenerationStatus>('idle');
   const [progress, setProgress] = useState(0);
-  const [modelUrl, setModelUrl] = useState<string | null>(null);
   const [propertyImages, setPropertyImages] = useState<{
     satellite: string | null;
     streetView: string | null;
@@ -44,19 +41,7 @@ export const ModelGenerationProvider = ({ children }: { children: ReactNode }) =
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isHomeModelVisible, setHomeModelVisible] = useState(false);
   const [currentTaskId, setCurrentTaskId] = useState<string | null>(null);
-  const eventSourceRef = useRef<EventSource | null>(null);
   const { toast } = useToast();
-
-  // Cleanup event source on unmount or status change
-  useEffect(() => {
-    return () => {
-      if (eventSourceRef.current) {
-        console.log("Closing EventSource connection");
-        eventSourceRef.current.close();
-        eventSourceRef.current = null;
-      }
-    };
-  }, []);
 
   // Reset the generation state
   const resetGeneration = () => {
@@ -64,14 +49,6 @@ export const ModelGenerationProvider = ({ children }: { children: ReactNode }) =
     setProgress(0);
     setErrorMessage(null);
     setCurrentTaskId(null);
-    
-    // Close any active EventSource connection
-    if (eventSourceRef.current) {
-      eventSourceRef.current.close();
-      eventSourceRef.current = null;
-    }
-    
-    // We don't reset the property images to allow for retry without recapturing
   };
 
   // Update progress with smooth animation
@@ -139,21 +116,9 @@ export const ModelGenerationProvider = ({ children }: { children: ReactNode }) =
       setProgress(100);
       console.log("Successfully captured property images");
       
-      // If successful, automatically move to generate model
-      if (satelliteBase64) {
-        // Wait a moment before moving to the next step
-        setTimeout(() => {
-          generateModel();
-        }, 1000);
-      } else {
-        // Use fallback image for satellite if we couldn't get one
-        setPropertyImages(prev => ({
-          ...prev,
-          satellite: '/lovable-uploads/b2f01532-85bb-44ee-98c1-afa2d7ae2620.png'
-        }));
-        
-        throw new Error("Failed to capture satellite image for 3D model generation. Using fallback image instead.");
-      }
+      // Complete the process (no model generation)
+      setStatus('completed');
+      
     } catch (error) {
       console.error('Error capturing property images:', error);
       setStatus('error');
@@ -167,73 +132,21 @@ export const ModelGenerationProvider = ({ children }: { children: ReactNode }) =
       
       toast({
         title: "Image Capture Failed",
-        description: "Using demo images instead. You can still generate a 3D model.",
+        description: "Using demo images instead.",
         variant: "destructive"
       });
     }
   };
 
-  // Poll task status using the edge function
-  const pollTaskStatus = async (taskId: string) => {
-    try {
-      console.log("Polling task status for:", taskId);
-      const { data, error } = await supabase.functions.invoke('generate-3d-model', {
-        body: { taskId },
-      });
-      
-      if (error) {
-        console.error('Error invoking generate-3d-model function:', error);
-        throw new Error(error.message);
-      }
-      
-      if (!data.success) {
-        console.error('Error in generate-3d-model function response:', data.error);
-        throw new Error(data.error || 'Failed to check task status');
-      }
-      
-      console.log("Task status update:", data);
-      
-      // Update progress and status
-      updateProgress(data.progress || progress);
-      
-      // If the task is completed, set the model URL
-      if (data.status === 'SUCCEEDED' && data.modelUrl) {
-        console.log("Model generation succeeded! URL:", data.modelUrl);
-        setModelUrl(data.modelUrl);
-        setStatus('completed');
-        setProgress(100);
-        
-        toast({
-          title: "3D Model Generated",
-          description: "Your property model is ready to view",
-        });
-        return true; // Task completed
-      } else if (data.status === 'FAILED' || data.status === 'CANCELED') {
-        throw new Error(`Task ${data.status.toLowerCase()}: ${data.error || 'Unknown error'}`);
-      }
-      
-      return false; // Task still in progress
-    } catch (error) {
-      console.error('Error polling task status:', error);
-      setStatus('error');
-      setErrorMessage(error instanceof Error ? error.message : 'Failed to check task status');
-      
-      // For demo purposes - set a demo model URL so the UI still works
-      setModelUrl('https://models.readyplayer.me/65a8fefc7ccd39d6fd268b92.glb');
-      
-      return true; // Stop polling on error
-    }
-  };
-
-  // Generate 3D model using Supabase Edge Function and track progress with SSE
+  // Modified to simply complete the process
   const generateModel = async () => {
     try {
       if (!propertyImages.satellite) {
         setStatus('error');
-        setErrorMessage('No satellite image available for 3D model generation');
+        setErrorMessage('No satellite image available for property analysis');
         toast({
-          title: "3D Model Generation Failed",
-          description: "No satellite image available for 3D model generation",
+          title: "Property Analysis Failed",
+          description: "No satellite image available for analysis",
           variant: "destructive",
         });
         return;
@@ -244,82 +157,36 @@ export const ModelGenerationProvider = ({ children }: { children: ReactNode }) =
       setErrorMessage(null);
       setHomeModelVisible(true);
       
-      // Close any existing EventSource
-      if (eventSourceRef.current) {
-        eventSourceRef.current.close();
-        eventSourceRef.current = null;
-      }
-      
-      console.log("Starting 3D model generation");
-      
-      // Call the Supabase Edge Function to start the 3D model generation task
-      const { data, error } = await supabase.functions.invoke('generate-3d-model', {
-        body: {
-          satelliteImage: propertyImages.satellite,
-          streetViewImage: propertyImages.streetView,
-          outputFormat: 'glb', // Default format
-          quality: 'standard', // Default quality
-        },
-      });
-      
-      if (error) {
-        console.error("Edge function error:", error);
-        throw new Error(error.message || 'Failed to start 3D model generation');
-      }
-      
-      if (!data.success || !data.taskId) {
-        console.error("Invalid response from edge function:", data);
-        
-        // For demo purposes - set a demo model URL so the UI still works
-        setTimeout(() => {
-          setModelUrl('https://models.readyplayer.me/65a8fefc7ccd39d6fd268b92.glb');
-          setStatus('completed');
-          setProgress(100);
-          toast({
-            title: "3D Model Generated", 
-            description: "Using demo model due to Meshy API issues"
-          });
-        }, 5000);
-        
-        throw new Error(data.error || 'Failed to start 3D model generation task');
-      }
-      
-      // Save the task ID for status polling
-      setCurrentTaskId(data.taskId);
-      console.log('Model generation task started:', data.taskId);
-      
-      // Set initial progress
-      updateProgress(data.progress || 0);
-      
-      // For demo purposes, we'll use polling mechanism
-      // In a production environment with proper CORS, you would use SSE to get real-time updates
-      const intervalId = setInterval(async () => {
-        const isCompleted = await pollTaskStatus(data.taskId);
-        if (isCompleted) {
-          clearInterval(intervalId);
-        }
-      }, 5000); // Poll every 5 seconds - increased from 2s to reduce API calls
-      
-      // Cleanup interval on component unmount or error
+      // Simulate progress
+      const interval = setInterval(() => {
+        updateProgress(prev => {
+          if (prev >= 100) {
+            clearInterval(interval);
+            return 100;
+          }
+          return prev + 10;
+        });
+      }, 500);
+
+      // Complete after a short delay
       setTimeout(() => {
-        clearInterval(intervalId);
-      }, 300000); // Stop polling after 5 minutes as a safety measure
-      
-    } catch (error) {
-      console.error('Error generating 3D model:', error);
-      setStatus('error');
-      setErrorMessage(error instanceof Error ? error.message : 'Failed to generate 3D model. Please try again.');
-      
-      // For demo purposes - set a demo model URL after an error so users can still see something
-      setTimeout(() => {
-        setModelUrl('https://models.readyplayer.me/65a8fefc7ccd39d6fd268b92.glb');
-        setStatus('completed');
+        clearInterval(interval);
         setProgress(100);
+        setStatus('completed');
+        toast({
+          title: "Property Analysis Complete", 
+          description: "View your property's monetization opportunities below"
+        });
       }, 3000);
       
+    } catch (error) {
+      console.error('Error during property analysis:', error);
+      setStatus('error');
+      setErrorMessage(error instanceof Error ? error.message : 'Failed to analyze property. Please try again.');
+      
       toast({
-        title: "3D Model Generation Failed",
-        description: error instanceof Error ? error.message : "There was a problem generating your property model",
+        title: "Property Analysis Failed",
+        description: error instanceof Error ? error.message : "There was a problem analyzing your property",
         variant: "destructive",
       });
     }
@@ -332,8 +199,6 @@ export const ModelGenerationProvider = ({ children }: { children: ReactNode }) =
         setStatus,
         progress,
         setProgress,
-        modelUrl,
-        setModelUrl,
         propertyImages,
         setPropertyImages,
         errorMessage,
