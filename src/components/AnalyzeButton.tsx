@@ -1,11 +1,19 @@
 
 import { motion } from 'framer-motion';
-import { Sparkles } from 'lucide-react';
+import { Sparkles, CloudOff } from 'lucide-react';
 import { useGoogleMap } from '@/contexts/GoogleMapContext';
 import { useToast } from '@/hooks/use-toast';
 
 const AnalyzeButton = () => {
-  const { address, generatePropertyAnalysis, isGeneratingAnalysis, analysisError, setAnalysisError } = useGoogleMap();
+  const { 
+    address, 
+    generatePropertyAnalysis, 
+    isGeneratingAnalysis, 
+    analysisError, 
+    setAnalysisError,
+    useLocalAnalysis,
+    setUseLocalAnalysis
+  } = useGoogleMap();
   const { toast } = useToast();
   
   const handleAnalyze = () => {
@@ -23,30 +31,60 @@ const AnalyzeButton = () => {
       setAnalysisError(null);
     }
     
-    // Use our new GPT-powered property analysis function
+    // Use our property analysis function
     generatePropertyAnalysis(address);
   };
   
+  const toggleAnalysisMode = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setUseLocalAnalysis(!useLocalAnalysis);
+    toast({
+      title: useLocalAnalysis ? "Using AI Analysis" : "Using Demo Mode",
+      description: useLocalAnalysis 
+        ? "Switched to AI-powered analysis for accurate results" 
+        : "Switched to demo mode - results are simulated"
+    });
+  };
+  
   return (
-    <motion.button
-      onClick={handleAnalyze}
-      disabled={isGeneratingAnalysis || !address}
-      whileHover={{ scale: 1.03 }}
-      whileTap={{ scale: 0.97 }}
-      className={`glass-effect px-6 py-3 rounded-full flex items-center gap-2 text-white glow-effect ${!address ? 'opacity-70 cursor-not-allowed' : ''}`}
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.2 }}
-    >
-      <Sparkles className="h-5 w-5 text-tiptop-purple" />
-      <span className="font-medium">
-        {isGeneratingAnalysis ? 'Analyzing with AI...' : analysisError ? 'Try Again' : 'Analyze Property'}
-      </span>
+    <div className="flex flex-col items-center gap-2">
+      <motion.button
+        onClick={handleAnalyze}
+        disabled={isGeneratingAnalysis || !address}
+        whileHover={{ scale: 1.03 }}
+        whileTap={{ scale: 0.97 }}
+        className={`glass-effect px-6 py-3 rounded-full flex items-center gap-2 text-white glow-effect ${!address ? 'opacity-70 cursor-not-allowed' : ''}`}
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2 }}
+      >
+        {useLocalAnalysis ? (
+          <CloudOff className="h-5 w-5 text-amber-400" />
+        ) : (
+          <Sparkles className="h-5 w-5 text-tiptop-purple" />
+        )}
+        <span className="font-medium">
+          {isGeneratingAnalysis 
+            ? 'Analyzing with AI...' 
+            : analysisError 
+              ? 'Try Again' 
+              : useLocalAnalysis 
+                ? 'Analyze Property (Demo Mode)' 
+                : 'Analyze Property'}
+        </span>
+        
+        {isGeneratingAnalysis && (
+          <div className="ml-2 h-5 w-5 rounded-full border-t-2 border-r-2 border-tiptop-purple animate-spin" />
+        )}
+      </motion.button>
       
-      {isGeneratingAnalysis && (
-        <div className="ml-2 h-5 w-5 rounded-full border-t-2 border-r-2 border-tiptop-purple animate-spin" />
-      )}
-    </motion.button>
+      <button 
+        onClick={toggleAnalysisMode}
+        className="text-xs text-white/70 hover:text-white underline flex items-center gap-1"
+      >
+        {useLocalAnalysis ? 'Try AI Analysis' : 'Switch to Demo Mode'}
+      </button>
+    </div>
   );
 };
 
