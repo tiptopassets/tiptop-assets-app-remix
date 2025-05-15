@@ -5,7 +5,7 @@ import SearchBar from '@/components/SearchBar';
 import AnalyzeButton from '@/components/AnalyzeButton';
 import GoogleMap from '@/components/GoogleMap';
 import AssetIcons from '@/components/AssetIcons';
-import AssetResultList from '@/components/AssetResultList';
+import AssetResultList from '@/components/asset-results/AssetResultList';
 import ModelGenerationSheet from '@/components/ModelGenerationSheet';
 import HomeModelViewer from '@/components/HomeModelViewer';
 import { GoogleMapProvider, useGoogleMap } from '@/contexts/GoogleMapContext';

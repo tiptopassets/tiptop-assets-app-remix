@@ -1,88 +1,26 @@
+
 import { useState } from 'react';
 import { useGoogleMap } from '@/contexts/GoogleMapContext';
 import { motion } from "framer-motion";
 import { toast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
-import { AdditionalOpportunity, SelectedAsset } from '@/types/analysis';
-import { LogIn } from 'lucide-react';
+import { SelectedAsset } from '@/types/analysis';
 
 // Refactored Components
-import PropertySummaryCard from './asset-results/PropertySummaryCard';
-import AssetOpportunitiesGrid from './asset-results/AssetOpportunitiesGrid';
-import AdditionalAssetsCarousel from './asset-results/AdditionalAssetsCarousel';
-import ContinueButton from './asset-results/ContinueButton';
-import AssetFormSection from './asset-results/AssetFormSection';
-import SpacerBlock from './asset-results/SpacerBlock';
-
-// Sample additional asset opportunities
-const additionalOpportunities: AdditionalOpportunity[] = [
-  {
-    title: "Smart Home Hub",
-    icon: "wifi",
-    monthlyRevenue: 25,
-    description: "Rent smart home management system access to tenants.",
-    formFields: [
-      { type: "select", name: "hubType", label: "Hub Type", value: "Basic", options: ["Basic", "Premium", "Advanced"] },
-      { type: "number", name: "connections", label: "Max Connections", value: 10 }
-    ]
-  },
-  {
-    title: "Bike Storage",
-    icon: "storage",
-    monthlyRevenue: 15,
-    description: "Secure bike storage for apartment residents.",
-    formFields: [
-      { type: "number", name: "capacity", label: "Storage Capacity", value: 4 },
-      { type: "select", name: "storageType", label: "Storage Type", value: "Outdoor", options: ["Indoor", "Outdoor", "Covered"] }
-    ]
-  },
-  {
-    title: "Laundry Space",
-    icon: "storage",
-    monthlyRevenue: 80,
-    description: "Convert unused space to laundry facilities.",
-    formFields: [
-      { type: "number", name: "machines", label: "Number of Machines", value: 2 },
-      { type: "select", name: "paymentSystem", label: "Payment System", value: "Coin", options: ["Coin", "App-based", "Card"] }
-    ]
-  },
-  {
-    title: "Pet Amenities",
-    icon: "garden",
-    monthlyRevenue: 40,
-    description: "Pet-friendly areas with services for residents.",
-    formFields: [
-      { type: "select", name: "amenityType", label: "Amenity Type", value: "Play Area", options: ["Play Area", "Washing Station", "Both"] },
-      { type: "number", name: "areaSize", label: "Area Size (sq ft)", value: 100 }
-    ]
-  },
-  {
-    title: "Workshop Space",
-    icon: "storage",
-    monthlyRevenue: 120,
-    description: "Shared workshop for DIY projects and repairs.",
-    formFields: [
-      { type: "number", name: "toolsProvided", label: "Tools Provided", value: 5 },
-      { type: "select", name: "workspaceType", label: "Workspace Type", value: "General", options: ["General", "Woodworking", "Automotive", "Electronics"] }
-    ]
-  },
-  {
-    title: "Event Space",
-    icon: "garden",
-    monthlyRevenue: 200,
-    description: "Dedicated space for community events and gatherings.",
-    formFields: [
-      { type: "number", name: "capacity", label: "Capacity (people)", value: 30 },
-      { type: "select", name: "amenities", label: "Included Amenities", value: "Basic", options: ["Basic", "Standard", "Premium"] }
-    ]
-  }
-];
+import PropertySummaryCard from './PropertySummaryCard';
+import AssetOpportunitiesGrid from './AssetOpportunitiesGrid';
+import AdditionalAssetsCarousel from './AdditionalAssetsCarousel';
+import ContinueButton from './ContinueButton';
+import AssetFormSection from './AssetFormSection';
+import SpacerBlock from './SpacerBlock';
+import { useAdditionalOpportunities } from '@/hooks/useAdditionalOpportunities';
 
 const AssetResultList = () => {
   const { analysisComplete, analysisResults, isAnalyzing } = useGoogleMap();
   const [selectedAssets, setSelectedAssets] = useState<string[]>([]);
   const [showFormSection, setShowFormSection] = useState(false);
   const navigate = useNavigate();
+  const { additionalOpportunities } = useAdditionalOpportunities();
 
   // Don't show results until analysis is complete and not analyzing
   if (!analysisComplete || isAnalyzing || !analysisResults) return null;
@@ -153,10 +91,8 @@ const AssetResultList = () => {
 
   return (
     <div className="w-full px-4 md:px-0 md:max-w-3xl">
-      {/* Increased spacing to push property summary card even lower */}
       <SpacerBlock />
       
-      {/* Property Summary Card */}
       <PropertySummaryCard 
         analysisResults={analysisResults}
         totalMonthlyIncome={totalMonthlyIncome}
@@ -164,21 +100,18 @@ const AssetResultList = () => {
         isCollapsed={false}
       />
 
-      {/* Asset Opportunities Grid */}
       <AssetOpportunitiesGrid
         opportunities={analysisResults.topOpportunities}
         selectedAssets={selectedAssets}
         onAssetToggle={handleAssetToggle}
       />
       
-      {/* Additional Asset Opportunities Carousel */}
       <AdditionalAssetsCarousel 
         opportunities={additionalOpportunities} 
         selectedAssets={selectedAssets}
         onAssetToggle={handleAssetToggle}
       />
       
-      {/* Continue Button - Only show when at least one asset is selected and form section is not visible */}
       {!showFormSection && (
         <ContinueButton
           selectedAssetsCount={selectedAssets.length}
@@ -186,7 +119,6 @@ const AssetResultList = () => {
         />
       )}
       
-      {/* Additional Information Form Section */}
       {showFormSection && (
         <div id="asset-form-section">
           <AssetFormSection 
