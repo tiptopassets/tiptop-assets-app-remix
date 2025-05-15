@@ -128,14 +128,35 @@ Deno.serve(async (req) => {
             messages: [
               { 
                 role: 'system', 
-                content: 'You are a property analyst specializing in satellite imagery analysis. Analyze this satellite image of a property and extract key measurements and features that could be monetized.' 
+                content: `You are a property analysis expert specializing in satellite imagery analysis for monetization opportunities. 
+                Analyze satellite images with precision and extract key measurements and features that could be monetized.
+                Pay special attention to:
+                1. Roof size and type (flat, pitched, etc.) with accurate square footage
+                2. Solar panel potential based on roof orientation and shading
+                3. Swimming pool dimensions, condition, and type (in-ground or above-ground)
+                4. Garden/yard areas suitable for urban farming or rental
+                5. Parking spaces count and dimensions
+                6. Storage potential areas
+                7. Accessibility features for monetization
+                
+                Provide all measurements in square feet with high precision. For each feature, estimate the monetization potential in dollars per month.`
               },
               { 
                 role: 'user', 
                 content: [
                   { 
                     type: 'text', 
-                    text: 'Analyze this satellite image of a property. Estimate: 1) Roof size in square feet, 2) Available parking spaces, 3) Garden/yard area in square feet, 4) Any other monetizable features you can identify. Use pixel measurements and known scaling to make your best estimates.' 
+                    text: `Analyze this satellite image of a property located at ${address}. Extract and measure with high precision:
+                    
+                    1) Roof size in square feet and roof type (flat, pitched, etc.)
+                    2) Solar potential based on roof orientation and shadow patterns
+                    3) Available parking spaces and their dimensions
+                    4) Garden/yard area in square feet and its suitability for urban farming
+                    5) Swimming pool dimensions and type if present
+                    6) Any other monetizable features you can identify
+                    
+                    For each feature, estimate the monthly revenue potential based on industry standards.
+                    Organize your response in a structured format that's easy to parse.` 
                   },
                   { 
                     type: 'image_url', 
@@ -144,7 +165,7 @@ Deno.serve(async (req) => {
                 ]
               }
             ],
-            max_tokens: 1000
+            max_tokens: 1500
           })
         });
         
@@ -164,6 +185,14 @@ Deno.serve(async (req) => {
               const roofSizeMatch = visionContent.match(/roof\s*(?:size|area)?\s*[^0-9]*([0-9,.]+)\s*(?:sq\s*(?:ft|feet)|square\s*feet)/i);
               const roofSize = roofSizeMatch ? parseFloat(roofSizeMatch[1].replace(/,/g, '')) : null;
               
+              // Extract roof type
+              const roofTypeMatch = visionContent.match(/roof\s*(?:type|style|is)?[^a-zA-Z]*(flat|pitched|gabled|hip|shed|mansard|gambrel|butterfly|dome|pyramid|skillion)/i);
+              const roofType = roofTypeMatch ? roofTypeMatch[1].toLowerCase() : null;
+              
+              // Extract solar potential
+              const solarPotentialMatch = visionContent.match(/solar\s*(?:potential|capacity|suitability)[^a-zA-Z]*(excellent|good|moderate|poor|high|medium|low)/i);
+              const solarPotential = solarPotentialMatch ? solarPotentialMatch[1].toLowerCase() : null;
+              
               // Extract parking spaces estimate
               const parkingMatch = visionContent.match(/(?:parking|park|car)\s*(?:spaces?|spots?)?[^0-9]*([0-9]+)/i);
               const parkingSpaces = parkingMatch ? parseInt(parkingMatch[1]) : null;
@@ -172,10 +201,32 @@ Deno.serve(async (req) => {
               const gardenMatch = visionContent.match(/(?:garden|yard|outdoor)[^0-9]*([0-9,.]+)\s*(?:sq\s*(?:ft|feet)|square\s*feet)/i);
               const gardenArea = gardenMatch ? parseFloat(gardenMatch[1].replace(/,/g, '')) : null;
               
+              // Extract garden potential
+              const gardenPotentialMatch = visionContent.match(/garden\s*(?:potential|suitability)[^a-zA-Z]*(excellent|good|moderate|poor|high|medium|low)/i);
+              const gardenPotential = gardenPotentialMatch ? gardenPotentialMatch[1].toLowerCase() : null;
+              
+              // Extract pool information
+              const poolPresentMatch = visionContent.match(/(?:swimming|pool)[^a-zA-Z]*(present|visible|identified|detected|exists|yes)/i);
+              const poolPresent = !!poolPresentMatch;
+              
+              // Extract pool size if present
+              const poolSizeMatch = poolPresent ? visionContent.match(/pool\s*(?:size|area|dimensions)?[^0-9]*([0-9,.]+)\s*(?:sq\s*(?:ft|feet)|square\s*feet)/i) : null;
+              const poolSize = poolSizeMatch ? parseFloat(poolSizeMatch[1].replace(/,/g, '')) : null;
+              
+              // Extract pool type
+              const poolTypeMatch = poolPresent ? visionContent.match(/pool\s*(?:type|is)[^a-zA-Z]*(in-ground|inground|above-ground|aboveground)/i) : null;
+              const poolType = poolTypeMatch ? poolTypeMatch[1].toLowerCase() : null;
+              
               imageAnalysis = {
                 roofSize,
+                roofType,
+                solarPotential,
                 parkingSpaces,
                 gardenArea,
+                gardenPotential,
+                poolPresent,
+                poolSize,
+                poolType,
                 fullAnalysis: visionContent
               };
             } catch (e) {
@@ -190,35 +241,137 @@ Deno.serve(async (req) => {
       }
     }
 
-    const systemPrompt = `You are a real estate and property monetization expert. Analyze this property information and identify potential monetization opportunities for the owner. Focus on:
+    const systemPrompt = `You are a real estate and property monetization expert with deep knowledge of service providers. Analyze this property information and identify specific monetization opportunities for the owner. Focus on:
+
 1. Rooftop solar potential - use the roof size estimate from image analysis if available
+   - Calculate potential solar capacity in kW (approx. 15 sq ft per 1 kW)
+   - Estimate monthly revenue from solar panels (use $100-150 per kW)
+   - Consider roof type and orientation from image analysis
+   - Recommend specific solar providers like SunRun, Tesla Solar, Sunpower
+
 2. Parking spaces rental - use the parking space count from image analysis if available
+   - Estimate daily rental rates based on location
+   - Calculate monthly revenue potential
+   - Suggest specific platforms like Neighbor, ParkingPanda, SpotHero
+
 3. Storage space rental
+   - Identify areas suitable for storage based on property layout
+   - Calculate monthly revenue potential ($1-2 per sq ft)
+   - Recommend services like Neighbor, STOW IT
+
 4. Garden/yard rental or urban farming - use the garden size estimate from image analysis if available
-5. Internet bandwidth sharing
-6. Swimming pool rental (if applicable)
-7. Short-term rental potential
-Your analysis should be data-driven and realistic. Use the satellite image analysis results to make more accurate estimates.`;
+   - Assess suitability for urban farming based on image analysis
+   - Calculate rental potential
+   - Recommend platforms like Peerspace, YardYum
+
+5. Swimming pool rental if present - use pool information from image analysis
+   - Estimate hourly/daily rental rates based on pool size and type
+   - Calculate monthly revenue during swimming season
+   - Suggest platforms like Swimply
+
+6. Short-term rental potential
+   - Estimate nightly rates for whole or partial property
+   - Calculate monthly projection accounting for occupancy rates
+   - Recommend platforms like Airbnb, VRBO
+
+7. Internet bandwidth sharing
+   - Estimate potential revenue
+   - Recommend services like Honeygain
+
+For each opportunity, provide specific estimates of:
+- Installation/setup costs where applicable
+- Monthly revenue potential with realistic ranges
+- Recommended service providers with URLs
+- Any regulatory considerations or permits required
+
+Your analysis should be data-driven, realistic, and actionable with specific recommendations.`;
 
     const userPrompt = `Here is the property information: ${propertyInfo}
     
 Here is the satellite image analysis: ${JSON.stringify(imageAnalysis)}
 
-Please analyze this property and generate a comprehensive assessment of monetization opportunities. Return your analysis as a JSON object with the following structure:
+Please analyze this property and generate a comprehensive assessment of monetization opportunities with specific service provider recommendations. Return your analysis as a JSON object with the following structure:
 {
   "propertyType": "residential/commercial/etc",
   "amenities": ["array", "of", "amenities"],
-  "rooftop": { "area": number_in_sqft, "solarCapacity": kilowatts, "revenue": dollars_per_month },
-  "garden": { "area": number_in_sqft, "opportunity": "Low/Medium/High", "revenue": dollars_per_month },
-  "parking": { "spaces": number, "rate": dollars_per_day, "revenue": dollars_per_month },
-  "pool": { "present": boolean, "area": number_in_sqft, "type": "inground/above-ground", "revenue": dollars_per_month },
-  "storage": { "volume": cubic_feet, "revenue": dollars_per_month },
-  "bandwidth": { "available": mbps, "revenue": dollars_per_month },
-  "shortTermRental": { "nightlyRate": dollars, "monthlyProjection": dollars },
+  "rooftop": { 
+    "area": number_in_sqft, 
+    "type": "flat/pitched/etc",
+    "solarCapacity": kilowatts, 
+    "solarPotential": boolean,
+    "revenue": dollars_per_month,
+    "providers": [
+      {"name": "Provider Name", "setupCost": dollars, "roi": months, "url": "provider_url"}
+    ]
+  },
+  "garden": { 
+    "area": number_in_sqft, 
+    "opportunity": "Low/Medium/High", 
+    "revenue": dollars_per_month,
+    "providers": [
+      {"name": "Provider Name", "setupCost": dollars, "roi": months, "url": "provider_url"}
+    ]
+  },
+  "parking": { 
+    "spaces": number, 
+    "rate": dollars_per_day, 
+    "revenue": dollars_per_month,
+    "evChargerPotential": boolean,
+    "providers": [
+      {"name": "Provider Name", "setupCost": dollars, "roi": months, "url": "provider_url"}
+    ]
+  },
+  "pool": { 
+    "present": boolean, 
+    "area": number_in_sqft, 
+    "type": "inground/above-ground", 
+    "revenue": dollars_per_month,
+    "providers": [
+      {"name": "Provider Name", "setupCost": dollars, "fee": percentage, "url": "provider_url"}
+    ]
+  },
+  "storage": { 
+    "volume": cubic_feet, 
+    "revenue": dollars_per_month,
+    "providers": [
+      {"name": "Provider Name", "setupCost": dollars, "fee": percentage, "url": "provider_url"}
+    ]
+  },
+  "bandwidth": { 
+    "available": mbps, 
+    "revenue": dollars_per_month,
+    "providers": [
+      {"name": "Provider Name", "setupCost": dollars, "fee": percentage, "url": "provider_url"}
+    ]
+  },
+  "shortTermRental": { 
+    "nightlyRate": dollars, 
+    "monthlyProjection": dollars,
+    "providers": [
+      {"name": "Provider Name", "setupCost": dollars, "fee": percentage, "url": "provider_url"}
+    ]
+  },
   "permits": ["array", "of", "required", "permits"],
   "restrictions": "summary of restrictions",
   "topOpportunities": [
-    { "icon": "icon_name", "title": "Opportunity Name", "monthlyRevenue": number, "description": "short description" }
+    { 
+      "icon": "icon_name", 
+      "title": "Opportunity Name", 
+      "monthlyRevenue": number, 
+      "description": "short description",
+      "provider": "Recommended Provider",
+      "setupCost": dollars,
+      "roi": months,
+      "formFields": [
+        {
+          "type": "text/number/select",
+          "name": "field_name",
+          "label": "Field Label",
+          "value": "default value",
+          "options": ["option1", "option2"] // for select type only
+        }
+      ]
+    }
   ],
   "imageAnalysisSummary": "summary of what was detected in the satellite image"
 }`;
@@ -238,7 +391,7 @@ Please analyze this property and generate a comprehensive assessment of monetiza
           { role: 'user', content: userPrompt }
         ],
         temperature: 0.5,
-        max_tokens: 2000
+        max_tokens: 2500
       })
     });
     

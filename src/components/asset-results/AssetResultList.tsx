@@ -44,6 +44,25 @@ const AssetResultList = () => {
 
   const totalMonthlyIncome = calculateTotalMonthlyIncome();
 
+  // Calculate setup costs for selected assets
+  const calculateTotalSetupCost = () => {
+    let total = 0;
+    
+    // Add from main opportunities
+    analysisResults.topOpportunities
+      .filter(opportunity => selectedAssets.includes(opportunity.title) && opportunity.setupCost)
+      .forEach(opportunity => total += opportunity.setupCost || 0);
+    
+    // Add from additional opportunities
+    additionalOpportunities
+      .filter(opportunity => selectedAssets.includes(opportunity.title) && opportunity.setupCost)
+      .forEach(opportunity => total += opportunity.setupCost || 0);
+      
+    return total;
+  };
+
+  const totalSetupCost = calculateTotalSetupCost();
+
   const handleAssetToggle = (assetTitle: string) => {
     setSelectedAssets(prev => {
       if (prev.includes(assetTitle)) {
@@ -96,6 +115,7 @@ const AssetResultList = () => {
       <PropertySummaryCard 
         analysisResults={analysisResults}
         totalMonthlyIncome={totalMonthlyIncome}
+        totalSetupCost={totalSetupCost}
         selectedAssetsCount={selectedAssets.length}
         isCollapsed={false}
       />

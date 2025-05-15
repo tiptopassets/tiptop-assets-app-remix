@@ -1,84 +1,125 @@
 
-import { motion } from "framer-motion";
-import { Card, CardContent } from "@/components/ui/card";
-import { AnalysisResults } from '@/types/analysis';
+import React, { useState } from 'react';
+import { motion } from 'framer-motion';
+import { AnalysisResults } from '@/contexts/GoogleMapContext/types';
+import { Button } from '@/components/ui/button';
+import { ChevronDown, ChevronUp } from 'lucide-react';
 
 interface PropertySummaryCardProps {
   analysisResults: AnalysisResults;
   totalMonthlyIncome: number;
+  totalSetupCost?: number;
   selectedAssetsCount: number;
   isCollapsed: boolean;
 }
 
-const PropertySummaryCard = ({
+const PropertySummaryCard: React.FC<PropertySummaryCardProps> = ({
   analysisResults,
   totalMonthlyIncome,
+  totalSetupCost = 0,
   selectedAssetsCount,
-  isCollapsed
-}: PropertySummaryCardProps) => {
-  // Calculate total potential income
-  const calculateTotalPotential = () => {
-    let total = 0;
-    analysisResults.topOpportunities.forEach(opportunity => {
-      total += opportunity.monthlyRevenue;
-    });
-    return total;
+  isCollapsed: initialCollapsed
+}) => {
+  const [isCollapsed, setIsCollapsed] = useState(initialCollapsed);
+
+  const toggleCollapse = () => {
+    setIsCollapsed(!isCollapsed);
   };
-  
-  const totalPotentialIncome = calculateTotalPotential();
 
   return (
     <motion.div
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      className="mb-8 z-10 relative"
+      className="w-full mb-8"
     >
-      <Card className="glass-effect overflow-hidden border-none relative">
-        {/* Enhanced background gradients for glossy effect */}
-        <div className="absolute inset-0 bg-gradient-to-r from-tiptop-purple/80 to-purple-600/70 rounded-lg"></div>
-        <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-white/20 rounded-lg"></div>
-        
-        {/* Additional light reflection effect */}
-        <div className="absolute top-0 left-0 right-0 h-1/4 bg-gradient-to-b from-white/30 to-transparent rounded-t-lg"></div>
-        <div className="absolute bottom-0 left-0 right-0 h-1/6 bg-gradient-to-t from-black/20 to-transparent rounded-b-lg"></div>
-        
-        <CardContent className="p-6 relative z-10">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-2xl md:text-3xl font-bold text-white drop-shadow-md">Property Summary</h2>
-            <div className="text-right">
-              <div className="text-lg text-gray-200">Selected Monthly Income</div>
-              <div className="text-2xl md:text-3xl font-bold text-white drop-shadow-lg">
-                ${selectedAssetsCount ? totalMonthlyIncome : 0} <span className="text-base text-gray-300">out of ${totalPotentialIncome} possible</span>
-              </div>
-            </div>
-          </div>
-          
-          <div className="bg-white/20 backdrop-blur-sm rounded-lg p-4 border border-white/30">
-            <h3 className="text-lg font-medium text-white mb-2">Property Details:</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="bg-black/40 backdrop-blur-md rounded-lg border border-white/10 p-4 md:p-6">
+        <div className="flex justify-between items-start">
+          <div>
+            <h2 className="text-xl md:text-2xl font-bold text-white mb-2">{analysisResults.propertyType} Property</h2>
+            <div className="grid grid-cols-2 gap-4">
               <div>
-                <p className="text-gray-200"><span className="font-medium">Type:</span> {analysisResults.propertyType}</p>
-                <p className="text-gray-200"><span className="font-medium">Amenities:</span> {analysisResults.amenities.join(', ')}</p>
+                <p className="text-sm text-gray-400">Selected Assets</p>
+                <p className="text-xl font-semibold text-white">{selectedAssetsCount}</p>
               </div>
               <div>
-                <p className="text-gray-200"><span className="font-medium">Roof Area:</span> {analysisResults.rooftop.area} sq ft</p>
-                <p className="text-gray-200"><span className="font-medium">Parking Spaces:</span> {analysisResults.parking.spaces}</p>
+                <p className="text-sm text-gray-400">Monthly Revenue</p>
+                <p className="text-xl font-semibold text-tiptop-purple">${totalMonthlyIncome}</p>
               </div>
+              {totalSetupCost > 0 && (
+                <div>
+                  <p className="text-sm text-gray-400">Setup Cost</p>
+                  <p className="text-xl font-semibold text-yellow-400">${totalSetupCost}</p>
+                </div>
+              )}
+              {totalMonthlyIncome > 0 && totalSetupCost > 0 && (
+                <div>
+                  <p className="text-sm text-gray-400">ROI</p>
+                  <p className="text-xl font-semibold text-green-400">
+                    {totalMonthlyIncome > 0 ? Math.ceil(totalSetupCost / totalMonthlyIncome) : 0} months
+                  </p>
+                </div>
+              )}
             </div>
           </div>
-          
-          <div className="mt-4">
-            <p className="mb-2 text-gray-100">This {analysisResults.propertyType} property offers excellent monetization potential through multiple assets.</p>
-            <p className="text-lg font-medium text-white/90 bg-white/10 backdrop-blur-md p-3 rounded-lg mt-3 border border-white/20 shadow-lg glow-text">
-              Select the opportunities below that you'd like to pursue to calculate your potential income.
-            </p>
-          </div>
-          
-          {/* Outer glow effect */}
-          <div className="absolute -inset-1 bg-gradient-to-r from-purple-500/20 to-violet-500/20 rounded-xl blur-lg -z-10"></div>
-        </CardContent>
-      </Card>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={toggleCollapse}
+            className="text-white"
+          >
+            {isCollapsed ? <ChevronDown size={20} /> : <ChevronUp size={20} />}
+          </Button>
+        </div>
+
+        {!isCollapsed && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.3 }}
+            className="mt-4 pt-4 border-t border-white/10"
+          >
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              {analysisResults.rooftop && (
+                <div className="bg-white/5 p-3 rounded">
+                  <h4 className="text-xs text-gray-400">Roof Area</h4>
+                  <p className="text-white font-semibold">{analysisResults.rooftop.area} sq ft</p>
+                  <p className="text-xs text-tiptop-purple">${analysisResults.rooftop.revenue}/mo</p>
+                </div>
+              )}
+              {analysisResults.parking && (
+                <div className="bg-white/5 p-3 rounded">
+                  <h4 className="text-xs text-gray-400">Parking</h4>
+                  <p className="text-white font-semibold">{analysisResults.parking.spaces} spaces</p>
+                  <p className="text-xs text-tiptop-purple">${analysisResults.parking.revenue}/mo</p>
+                </div>
+              )}
+              {analysisResults.garden && (
+                <div className="bg-white/5 p-3 rounded">
+                  <h4 className="text-xs text-gray-400">Garden</h4>
+                  <p className="text-white font-semibold">{analysisResults.garden.area} sq ft</p>
+                  <p className="text-xs text-tiptop-purple">${analysisResults.garden.revenue}/mo</p>
+                </div>
+              )}
+              {analysisResults.pool && analysisResults.pool.present && (
+                <div className="bg-white/5 p-3 rounded">
+                  <h4 className="text-xs text-gray-400">Pool</h4>
+                  <p className="text-white font-semibold">{analysisResults.pool.area} sq ft</p>
+                  <p className="text-xs text-tiptop-purple">${analysisResults.pool.revenue}/mo</p>
+                </div>
+              )}
+            </div>
+
+            {analysisResults.restrictions && (
+              <div className="mt-4 bg-yellow-900/20 p-3 rounded text-sm">
+                <h4 className="text-yellow-200 text-xs font-medium">Important Considerations:</h4>
+                <p className="text-gray-300 text-xs">{analysisResults.restrictions}</p>
+              </div>
+            )}
+          </motion.div>
+        )}
+      </div>
     </motion.div>
   );
 };

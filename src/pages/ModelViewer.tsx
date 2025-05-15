@@ -9,8 +9,9 @@ import ImageGrid from '@/components/model-viewer/ImageGrid';
 import ActionButtons from '@/components/model-viewer/ActionButtons';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
-import { Check, Info } from 'lucide-react';
+import { Check, Info, ExternalLink } from 'lucide-react';
 import './ModelViewer.css';
+import { Button } from '@/components/ui/button';
 
 const ModelViewer = () => {
   const { propertyImages, status } = useModelGeneration();
@@ -38,6 +39,11 @@ const ModelViewer = () => {
     );
   }
 
+  // Calculate the total potential monthly income from all opportunities
+  const totalPotentialIncome = analysisResults.topOpportunities.reduce(
+    (sum, opp) => sum + opp.monthlyRevenue, 0
+  );
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black text-white">
       {/* Header */}
@@ -49,6 +55,11 @@ const ModelViewer = () => {
         <div className="mb-6 text-center">
           <h2 className="text-2xl font-bold">{address}</h2>
           <p className="text-gray-400">Property Analysis Results</p>
+          <div className="mt-2">
+            <Badge className="bg-tiptop-purple text-white">
+              Potential Income: ${totalPotentialIncome}/month
+            </Badge>
+          </div>
         </div>
         
         {/* Image Grid */}
@@ -83,15 +94,46 @@ const ModelViewer = () => {
             </div>
             
             {/* Key Metrics Grid */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
               {/* Rooftop */}
               <Card className="bg-black/50 border-white/5 p-4">
                 <h3 className="text-sm font-medium text-gray-400">Rooftop</h3>
                 <p className="text-xl font-bold">{analysisResults.rooftop.area} sq ft</p>
                 <div className="mt-1 text-sm">
+                  {analysisResults.rooftop.type && <p>Type: {analysisResults.rooftop.type}</p>}
                   <p>Solar: {analysisResults.rooftop.solarCapacity}kW</p>
-                  <p className="text-green-400">${analysisResults.rooftop.revenue}/month</p>
+                  <div className="flex justify-between items-center">
+                    <p className="text-green-400">${analysisResults.rooftop.revenue}/month</p>
+                    {analysisResults.rooftop.solarPotential && (
+                      <Badge variant="outline" className="text-xs bg-green-500/20 text-green-300 border-green-500/30">
+                        Solar Ready
+                      </Badge>
+                    )}
+                  </div>
                 </div>
+                
+                {/* Provider Recommendations */}
+                {analysisResults.rooftop?.providers && analysisResults.rooftop.providers.length > 0 && (
+                  <div className="mt-3 pt-2 border-t border-white/10">
+                    <p className="text-xs text-gray-400 mb-1">Recommended Providers:</p>
+                    {analysisResults.rooftop.providers.slice(0, 2).map((provider, idx) => (
+                      <div key={idx} className="flex justify-between text-xs mb-1">
+                        <span>{provider.name}</span>
+                        {provider.url && (
+                          <a 
+                            href={provider.url} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="text-tiptop-purple hover:underline flex items-center"
+                          >
+                            <span className="mr-1">Visit</span>
+                            <ExternalLink size={10} />
+                          </a>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </Card>
               
               {/* Garden */}
@@ -99,9 +141,37 @@ const ModelViewer = () => {
                 <h3 className="text-sm font-medium text-gray-400">Garden</h3>
                 <p className="text-xl font-bold">{analysisResults.garden.area} sq ft</p>
                 <div className="mt-1 text-sm">
-                  <p>Opportunity: {analysisResults.garden.opportunity}</p>
+                  <div className="flex justify-between items-center">
+                    <p>Opportunity: {analysisResults.garden.opportunity}</p>
+                    <Badge variant="outline" className="text-xs bg-yellow-500/20 text-yellow-300 border-yellow-500/30">
+                      {analysisResults.garden.opportunity}
+                    </Badge>
+                  </div>
                   <p className="text-green-400">${analysisResults.garden.revenue}/month</p>
                 </div>
+                
+                {/* Provider Recommendations */}
+                {analysisResults.garden?.providers && analysisResults.garden.providers.length > 0 && (
+                  <div className="mt-3 pt-2 border-t border-white/10">
+                    <p className="text-xs text-gray-400 mb-1">Recommended Platforms:</p>
+                    {analysisResults.garden.providers.slice(0, 2).map((provider, idx) => (
+                      <div key={idx} className="flex justify-between text-xs mb-1">
+                        <span>{provider.name}</span>
+                        {provider.url && (
+                          <a 
+                            href={provider.url} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="text-tiptop-purple hover:underline flex items-center"
+                          >
+                            <span className="mr-1">Visit</span>
+                            <ExternalLink size={10} />
+                          </a>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </Card>
               
               {/* Parking */}
@@ -109,10 +179,75 @@ const ModelViewer = () => {
                 <h3 className="text-sm font-medium text-gray-400">Parking</h3>
                 <p className="text-xl font-bold">{analysisResults.parking.spaces} spaces</p>
                 <div className="mt-1 text-sm">
-                  <p>Rate: ${analysisResults.parking.rate}/day</p>
+                  <div className="flex justify-between items-center">
+                    <p>Rate: ${analysisResults.parking.rate}/day</p>
+                    {analysisResults.parking.evChargerPotential && (
+                      <Badge variant="outline" className="text-xs bg-blue-500/20 text-blue-300 border-blue-500/30">
+                        EV Ready
+                      </Badge>
+                    )}
+                  </div>
                   <p className="text-green-400">${analysisResults.parking.revenue}/month</p>
                 </div>
+                
+                {/* Provider Recommendations */}
+                {analysisResults.parking?.providers && analysisResults.parking.providers.length > 0 && (
+                  <div className="mt-3 pt-2 border-t border-white/10">
+                    <p className="text-xs text-gray-400 mb-1">Recommended Platforms:</p>
+                    {analysisResults.parking.providers.slice(0, 2).map((provider, idx) => (
+                      <div key={idx} className="flex justify-between text-xs mb-1">
+                        <span>{provider.name}</span>
+                        {provider.url && (
+                          <a 
+                            href={provider.url} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="text-tiptop-purple hover:underline flex items-center"
+                          >
+                            <span className="mr-1">Visit</span>
+                            <ExternalLink size={10} />
+                          </a>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </Card>
+              
+              {/* Pool (if present) */}
+              {analysisResults.pool && analysisResults.pool.present && (
+                <Card className="bg-black/50 border-white/5 p-4">
+                  <h3 className="text-sm font-medium text-gray-400">Swimming Pool</h3>
+                  <p className="text-xl font-bold">{analysisResults.pool.area} sq ft</p>
+                  <div className="mt-1 text-sm">
+                    <p>Type: {analysisResults.pool.type}</p>
+                    <p className="text-green-400">${analysisResults.pool.revenue}/month</p>
+                  </div>
+                  
+                  {/* Provider Recommendations */}
+                  {analysisResults.pool?.providers && analysisResults.pool.providers.length > 0 && (
+                    <div className="mt-3 pt-2 border-t border-white/10">
+                      <p className="text-xs text-gray-400 mb-1">Rental Platforms:</p>
+                      {analysisResults.pool.providers.slice(0, 2).map((provider, idx) => (
+                        <div key={idx} className="flex justify-between text-xs mb-1">
+                          <span>{provider.name}</span>
+                          {provider.url && (
+                            <a 
+                              href={provider.url} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="text-tiptop-purple hover:underline flex items-center"
+                            >
+                              <span className="mr-1">Visit</span>
+                              <ExternalLink size={10} />
+                            </a>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </Card>
+              )}
               
               {/* Storage */}
               <Card className="bg-black/50 border-white/5 p-4">
@@ -121,6 +256,61 @@ const ModelViewer = () => {
                 <div className="mt-1 text-sm">
                   <p className="text-green-400">${analysisResults.storage.revenue}/month</p>
                 </div>
+                
+                {/* Provider Recommendations */}
+                {analysisResults.storage?.providers && analysisResults.storage.providers.length > 0 && (
+                  <div className="mt-3 pt-2 border-t border-white/10">
+                    <p className="text-xs text-gray-400 mb-1">Recommended Platforms:</p>
+                    {analysisResults.storage.providers.slice(0, 2).map((provider, idx) => (
+                      <div key={idx} className="flex justify-between text-xs mb-1">
+                        <span>{provider.name}</span>
+                        {provider.url && (
+                          <a 
+                            href={provider.url} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="text-tiptop-purple hover:underline flex items-center"
+                          >
+                            <span className="mr-1">Visit</span>
+                            <ExternalLink size={10} />
+                          </a>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </Card>
+              
+              {/* Short-term Rental */}
+              <Card className="bg-black/50 border-white/5 p-4">
+                <h3 className="text-sm font-medium text-gray-400">Short-Term Rental</h3>
+                <p className="text-xl font-bold">${analysisResults.shortTermRental.nightlyRate}/night</p>
+                <div className="mt-1 text-sm">
+                  <p className="text-green-400">${analysisResults.shortTermRental.monthlyProjection}/month</p>
+                </div>
+                
+                {/* Provider Recommendations */}
+                {analysisResults.shortTermRental?.providers && analysisResults.shortTermRental.providers.length > 0 && (
+                  <div className="mt-3 pt-2 border-t border-white/10">
+                    <p className="text-xs text-gray-400 mb-1">Recommended Platforms:</p>
+                    {analysisResults.shortTermRental.providers.slice(0, 2).map((provider, idx) => (
+                      <div key={idx} className="flex justify-between text-xs mb-1">
+                        <span>{provider.name}</span>
+                        {provider.url && (
+                          <a 
+                            href={provider.url} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="text-tiptop-purple hover:underline flex items-center"
+                          >
+                            <span className="mr-1">Visit</span>
+                            <ExternalLink size={10} />
+                          </a>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </Card>
             </div>
             
@@ -129,12 +319,43 @@ const ModelViewer = () => {
               <h3 className="text-lg font-semibold mb-3">Top Monetization Opportunities</h3>
               <div className="space-y-2">
                 {analysisResults.topOpportunities.map((opp, i) => (
-                  <div key={i} className="bg-white/10 rounded p-3 flex justify-between items-center">
-                    <div>
-                      <h4 className="font-medium">{opp.title}</h4>
-                      <p className="text-sm text-gray-400">{opp.description}</p>
+                  <div key={i} className="bg-white/10 rounded p-3">
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <h4 className="font-medium flex items-center">
+                          {opp.title}
+                          {opp.provider && (
+                            <span className="text-xs bg-tiptop-purple/30 text-tiptop-purple rounded px-2 py-0.5 ml-2">
+                              {opp.provider}
+                            </span>
+                          )}
+                        </h4>
+                        <p className="text-sm text-gray-400">{opp.description}</p>
+                      </div>
+                      <div className="text-right">
+                        {opp.setupCost > 0 && (
+                          <p className="text-xs text-gray-400">Setup: ${opp.setupCost}</p>
+                        )}
+                        {opp.roi > 0 && (
+                          <p className="text-xs text-gray-400">ROI: {opp.roi} months</p>
+                        )}
+                        <span className="text-green-400 font-bold">${opp.monthlyRevenue}/mo</span>
+                      </div>
                     </div>
-                    <span className="text-green-400 font-bold">${opp.monthlyRevenue}/mo</span>
+                    
+                    {opp.formFields && opp.formFields.length > 0 && (
+                      <div className="mt-2 pt-2 border-t border-white/10">
+                        <p className="text-xs text-gray-400 mb-1">Required Setup Information:</p>
+                        <div className="grid grid-cols-2 gap-2 text-xs">
+                          {opp.formFields.slice(0, 4).map((field, idx) => (
+                            <div key={idx} className="bg-white/5 p-1 rounded">
+                              <span className="text-gray-300">{field.label}: </span>
+                              <span className="text-white">{field.value}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>

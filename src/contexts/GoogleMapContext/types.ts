@@ -24,41 +24,60 @@ export interface GoogleMapContextType {
   setUseLocalAnalysis: (useLocal: boolean) => void;
 }
 
+export interface ProviderInfo {
+  name: string;
+  setupCost?: number;
+  fee?: number;
+  roi?: number;
+  url?: string;
+}
+
 export interface AnalysisResults {
   propertyType: string;
   amenities: string[];
   rooftop: {
     area: number;
+    type?: string;
     solarCapacity: number;
+    solarPotential?: boolean;
     revenue: number;
+    providers?: ProviderInfo[];
   };
   garden: {
     area: number;
     opportunity: string;
     revenue: number;
+    providers?: ProviderInfo[];
   };
   parking: {
     spaces: number;
     rate: number;
     revenue: number;
+    evChargerPotential?: boolean;
+    parkingType?: string;
+    providers?: ProviderInfo[];
   };
   pool: {
     present: boolean;
     area: number;
     type: string;
     revenue: number;
+    providers?: ProviderInfo[];
   };
   storage: {
     volume: number;
     revenue: number;
+    providers?: ProviderInfo[];
   };
   bandwidth: {
     available: number;
     revenue: number;
+    providers?: ProviderInfo[];
   };
   shortTermRental: {
     nightlyRate: number;
     monthlyProjection: number;
+    providers?: ProviderInfo[];
   };
   permits: string[];
   restrictions: string;
