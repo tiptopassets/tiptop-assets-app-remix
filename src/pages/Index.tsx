@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import SearchBar from '@/components/SearchBar';
@@ -7,7 +6,7 @@ import GoogleMap from '@/components/GoogleMap';
 import AssetIcons from '@/components/AssetIcons';
 import AssetResultList from '@/components/asset-results/AssetResultList';
 import ModelGenerationSheet from '@/components/ModelGenerationSheet';
-import HomeModelViewer from '@/components/HomeModelViewer';
+import HomeModelViewer from '@/components/home-model-viewer';
 import { GoogleMapProvider, useGoogleMap } from '@/contexts/GoogleMapContext';
 import { PlusCircle } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
