@@ -51,9 +51,9 @@ export const ModelGenerationProvider = ({ children }: { children: ReactNode }) =
     setCurrentTaskId(null);
   };
 
-  // Update progress with smooth animation
+  // Update progress with smooth animation - fixed type error
   const updateProgress = (newProgress: number) => {
-    setProgress(prev => {
+    setProgress((prev: number) => {
       if (newProgress <= prev) return prev;
       return newProgress;
     });
@@ -224,3 +224,4 @@ export const useModelGeneration = () => {
   }
   return context;
 };
+

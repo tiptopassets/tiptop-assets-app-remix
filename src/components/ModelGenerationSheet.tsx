@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useModelGeneration, ModelGenerationStatus } from '@/contexts/ModelGenerationContext';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
@@ -15,7 +16,6 @@ const ModelGenerationSheet = () => {
     progress,
     errorMessage,
     propertyImages,
-    modelUrl,
     resetGeneration,
     generateModel
   } = useModelGeneration();
@@ -138,7 +138,6 @@ const ModelGenerationSheet = () => {
           <div>
             <h3 className="text-lg font-semibold text-gray-900">Failed to generate 3D model. Please try again.</h3>
             <p className="text-gray-600 mt-1">{errorMessage || 'There was a problem generating your property model'}</p>
-            {modelUrl && <p className="text-green-600 mt-1">A demo model has been loaded for you to explore.</p>}
           </div>
         </div>
         
@@ -152,14 +151,12 @@ const ModelGenerationSheet = () => {
             Try Again
           </Button>
           
-          {modelUrl && (
-            <Button 
-              className="bg-tiptop-purple hover:bg-tiptop-purple/90 text-white"
-              onClick={handleViewModel}
-            >
-              View Demo Model
-            </Button>
-          )}
+          <Button 
+            className="bg-tiptop-purple hover:bg-tiptop-purple/90 text-white"
+            onClick={handleViewModel}
+          >
+            View Property Images
+          </Button>
         </div>
       </motion.div>
     );
@@ -277,7 +274,7 @@ const ModelGenerationSheet = () => {
                   className="bg-tiptop-purple hover:bg-tiptop-purple/80 text-white"
                   size="lg"
                 >
-                  View 3D Model
+                  View Property Images
                 </Button>
               </motion.div>
             )}
