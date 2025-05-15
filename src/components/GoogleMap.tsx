@@ -46,10 +46,17 @@ const GoogleMap = () => {
           
           // Store coordinates in context
           setAddressCoordinates(coordinates);
+        } else {
+          console.error('Geocode was not successful:', status);
+          toast({
+            title: "Location Error",
+            description: "Could not find exact location for this address",
+            variant: "destructive"
+          });
         }
       });
     }
-  }, [address, mapInstance, analysisComplete, isAnalyzing, addressCoordinates, setAddressCoordinates]);
+  }, [address, mapInstance, analysisComplete, isAnalyzing, addressCoordinates, setAddressCoordinates, toast]);
 
   useEffect(() => {
     const loadMap = async () => {
@@ -62,7 +69,8 @@ const GoogleMap = () => {
             mapTypeId: 'satellite',
             disableDefaultUI: true,
             zoomControl: true,
-            styles: mapStyles
+            styles: mapStyles,
+            tilt: 45 // Add a 45-degree tilt for better building visualization
           });
           setMapInstance(newMap);
           setMapLoaded(true);
