@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import { AlertTriangle, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import PropertyImages from './PropertyImages';
-import { PropertyImages as PropertyImagesType } from '@/contexts/ModelGeneration';
+import { PropertyImages as PropertyImagesType } from '@/contexts/ModelGeneration/types';
 
 interface ErrorUIProps {
   errorMessage: string | null;

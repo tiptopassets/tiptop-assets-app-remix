@@ -20,6 +20,6 @@ export interface ModelGenerationContextType {
   resetGeneration: () => void;
   isHomeModelVisible: boolean;
   setHomeModelVisible: (visible: boolean) => void;
-  updateProgress: (newProgress: number) => void;
+  updateProgress: (newProgress: (prev: number) => number) => void;
   currentTaskId: string | null;
 }

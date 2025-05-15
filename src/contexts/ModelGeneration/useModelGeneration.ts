@@ -32,7 +32,7 @@ export const usePropertyAnalysis = (
       
       // Simulate progress
       const interval = setInterval(() => {
-        updateProgress(prev => {
+        updateProgress((prev: number) => {
           if (prev >= 100) {
             clearInterval(interval);
             return 100;

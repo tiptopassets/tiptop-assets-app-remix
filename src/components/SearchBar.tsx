@@ -1,10 +1,11 @@
-
-import { Search } from 'lucide-react';
-import { useGoogleMap } from '@/contexts/GoogleMapContext';
+import { useState, useEffect, useRef } from 'react';
+import { Search, X, MapPin, Loader2 } from 'lucide-react';
 import { useAddressSearch } from '@/hooks/use-address-search';
+import { useGoogleMap } from '@/contexts/GoogleMapContext';
+import { Button } from '@/components/ui/button';
+import { useModelGeneration } from '@/contexts/ModelGeneration';
 import ClearSearchButton from './search/ClearSearchButton';
 import GeoLocationButton from './search/GeoLocationButton';
-import { useModelGeneration } from '@/contexts/ModelGenerationContext';
 
 type SearchBarProps = {
   isCollapsed: boolean;

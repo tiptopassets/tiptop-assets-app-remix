@@ -26,11 +26,8 @@ export const ModelGenerationProvider = ({ children }: { children: ReactNode }) =
   };
 
   // Update progress with smooth animation - fixed type error
-  const updateProgress = (newProgress: number) => {
-    setProgress((prevProgress: number) => {
-      if (newProgress <= prevProgress) return prevProgress;
-      return newProgress;
-    });
+  const updateProgress = (newProgressFn: (prev: number) => number) => {
+    setProgress(newProgressFn);
   };
 
   // Use the image capture hook
