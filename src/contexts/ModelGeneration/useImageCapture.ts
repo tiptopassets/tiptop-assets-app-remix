@@ -15,9 +15,9 @@ export const useImageCapture = (
     try {
       setStatus('capturing');
       setProgress(10);
-      console.log("Capturing property images for:", address, coordinates);
+      console.log("Capturing high resolution property images for:", address, coordinates);
       
-      // Generate image URLs
+      // Generate high resolution image URLs
       const { satelliteImageUrl, streetViewImageUrl } = generateMapImageUrls(coordinates);
       setProgress(40);
       
@@ -40,10 +40,15 @@ export const useImageCapture = (
       });
       
       setProgress(100);
-      console.log("Successfully captured property images");
+      console.log("Successfully captured high resolution property images");
       
-      // Complete the process (no model generation)
+      // Complete the process
       setStatus('completed');
+      
+      toast({
+        title: "Image Capture Complete",
+        description: "High resolution property images ready for analysis.",
+      });
       
     } catch (error) {
       console.error('Error capturing property images:', error);

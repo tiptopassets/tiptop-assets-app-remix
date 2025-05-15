@@ -1,6 +1,8 @@
+
 import { createContext, useContext, useState, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { imageUrlToBase64, generateMapImageUrls } from '@/contexts/ModelGeneration/utils';
 
 interface GoogleMapContextType {
   mapInstance: google.maps.Map | null;
@@ -69,6 +71,7 @@ export interface AnalysisResults {
   permits: string[];
   restrictions: string;
   topOpportunities: AssetOpportunity[];
+  imageAnalysisSummary?: string;
 }
 
 const GoogleMapContext = createContext<GoogleMapContextType | undefined>(undefined);
@@ -85,7 +88,7 @@ export const GoogleMapProvider = ({ children }: { children: ReactNode }) => {
   const [analysisError, setAnalysisError] = useState<string | null>(null);
   const { toast } = useToast();
 
-  // Generate property analysis using GPT
+  // Generate property analysis using GPT with satellite image
   const generatePropertyAnalysis = async (propertyAddress: string) => {
     if (!propertyAddress) {
       toast({
@@ -102,11 +105,32 @@ export const GoogleMapProvider = ({ children }: { children: ReactNode }) => {
       setIsGeneratingAnalysis(true);
       setIsAnalyzing(true);
       
+      // Get satellite image if we have coordinates
+      let satelliteImage = null;
+      if (addressCoordinates) {
+        try {
+          const { satelliteImageUrl } = generateMapImageUrls(addressCoordinates);
+          satelliteImage = await imageUrlToBase64(satelliteImageUrl);
+          console.log("Captured satellite image for analysis");
+        } catch (err) {
+          console.error("Failed to capture satellite image:", err);
+        }
+      }
+      
+      // Show toast notification about image analysis
+      if (satelliteImage) {
+        toast({
+          title: "Processing Images",
+          description: "Using AI to analyze satellite imagery for your property",
+        });
+      }
+      
       // Call Supabase Edge Function to generate property analysis with GPT
       const { data, error } = await supabase.functions.invoke('analyze-property', {
         body: { 
           address: propertyAddress,
-          coordinates: addressCoordinates
+          coordinates: addressCoordinates,
+          satelliteImage: satelliteImage
         }
       });
       
@@ -116,6 +140,12 @@ export const GoogleMapProvider = ({ children }: { children: ReactNode }) => {
         // Set the analysis results from GPT
         setAnalysisResults(data.analysis);
         setAnalysisComplete(true);
+        
+        // Show toast with insight summary
+        toast({
+          title: "Analysis Complete",
+          description: `Found ${data.analysis.topOpportunities.length} monetization opportunities for your property`,
+        });
       } else {
         throw new Error("No analysis data received");
       }

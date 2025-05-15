@@ -23,10 +23,10 @@ export const imageUrlToBase64 = async (url: string): Promise<string | null> => {
   }
 };
 
-// Generate URLs for Google Maps Static API images
+// Generate URLs for Google Maps Static API images with higher zoom levels
 export const generateMapImageUrls = (coordinates: google.maps.LatLngLiteral) => {
   return {
-    satelliteImageUrl: `https://maps.googleapis.com/maps/api/staticmap?center=${coordinates.lat},${coordinates.lng}&zoom=19&size=800x800&maptype=satellite&key=${API_KEY}`,
+    satelliteImageUrl: `https://maps.googleapis.com/maps/api/staticmap?center=${coordinates.lat},${coordinates.lng}&zoom=20&size=800x800&maptype=satellite&key=${API_KEY}`,
     streetViewImageUrl: `https://maps.googleapis.com/maps/api/streetview?size=800x400&location=${coordinates.lat},${coordinates.lng}&key=${API_KEY}`
   };
 };

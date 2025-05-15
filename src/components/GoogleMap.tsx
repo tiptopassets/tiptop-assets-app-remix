@@ -57,8 +57,8 @@ const GoogleMap = () => {
         await initializeGoogleMaps();
         if (mapRef.current && window.google) {
           const newMap = new google.maps.Map(mapRef.current, {
-            center: { lat: 37.7749, lng: -122.4194 },  // Default to San Francisco
-            zoom: 18, // Changed from 12 to 18 for a closer view
+            center: { lat: 37.7749, lng: -122.4194 },
+            zoom: 20, // Increased zoom level for better property detail
             mapTypeId: 'satellite',
             disableDefaultUI: true,
             zoomControl: true,
