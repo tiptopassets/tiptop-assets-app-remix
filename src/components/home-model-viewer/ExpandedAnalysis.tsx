@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { PropertyAnalysis } from '@/types/analysis';
+import { AnalysisResults as PropertyAnalysis } from '@/types/analysis';
 import ServiceProviders from './ServiceProviders';
 
 interface ExpandedAnalysisProps {
