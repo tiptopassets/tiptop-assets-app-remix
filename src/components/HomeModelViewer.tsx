@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { Loader, X } from 'lucide-react';
-import { useModelGeneration } from '@/contexts/ModelGenerationContext';
+import { useModelGeneration } from '@/contexts/ModelGeneration';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { motion } from 'framer-motion';

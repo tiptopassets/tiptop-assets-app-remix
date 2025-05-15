@@ -2,7 +2,7 @@
 import { createRoot } from 'react-dom/client'
 import App from './App.tsx'
 import './index.css'
-import { ModelGenerationProvider } from './contexts/ModelGenerationContext.tsx'
+import { ModelGenerationProvider } from './contexts/ModelGeneration'
 
 createRoot(document.getElementById("root")!).render(
   <ModelGenerationProvider>

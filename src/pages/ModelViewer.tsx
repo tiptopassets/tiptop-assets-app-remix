@@ -1,6 +1,6 @@
 
 import { useEffect } from 'react';
-import { useModelGeneration } from '@/contexts/ModelGenerationContext';
+import { useModelGeneration } from '@/contexts/ModelGeneration';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';

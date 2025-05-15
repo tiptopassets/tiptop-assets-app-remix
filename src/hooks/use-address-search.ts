@@ -1,8 +1,7 @@
-
 import { useState, useEffect, useRef } from 'react';
 import { useGoogleMap } from '@/contexts/GoogleMapContext';
 import { useToast } from '@/hooks/use-toast';
-import { useModelGeneration } from '@/contexts/ModelGenerationContext';
+import { useModelGeneration } from '@/contexts/ModelGeneration';
 
 export const useAddressSearch = () => {
   const { 
