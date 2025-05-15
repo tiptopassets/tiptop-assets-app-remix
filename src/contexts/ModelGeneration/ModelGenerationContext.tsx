@@ -16,6 +16,8 @@ export const ModelGenerationProvider = ({ children }: { children: ReactNode }) =
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isHomeModelVisible, setHomeModelVisible] = useState(false);
   const [currentTaskId, setCurrentTaskId] = useState<string | null>(null);
+  const [contentFromGPT, setContentFromGPT] = useState<string | null>(null);
+  const [googleImages, setGoogleImages] = useState<string[]>([]);
 
   // Reset the generation state
   const resetGeneration = () => {
@@ -23,6 +25,8 @@ export const ModelGenerationProvider = ({ children }: { children: ReactNode }) =
     setProgress(0);
     setErrorMessage(null);
     setCurrentTaskId(null);
+    setContentFromGPT(null);
+    setGoogleImages([]);
   };
 
   // Update progress with smooth animation - fixed type signature to match usage in hook
@@ -45,7 +49,9 @@ export const ModelGenerationProvider = ({ children }: { children: ReactNode }) =
     updateProgress,
     setErrorMessage,
     propertyImages,
-    setHomeModelVisible
+    setHomeModelVisible,
+    setContentFromGPT,
+    setGoogleImages
   );
 
   return (
@@ -66,6 +72,10 @@ export const ModelGenerationProvider = ({ children }: { children: ReactNode }) =
         setHomeModelVisible,
         updateProgress,
         currentTaskId,
+        contentFromGPT,
+        setContentFromGPT,
+        googleImages,
+        setGoogleImages
       }}
     >
       {children}
