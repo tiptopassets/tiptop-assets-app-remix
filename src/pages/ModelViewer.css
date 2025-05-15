@@ -1,136 +1,63 @@
 
-.model-viewer {
-  width: 100%;
-  height: 100%;
+/* Remove any existing 3D model-specific styling */
+.model-viewer-container {
   position: relative;
+  height: 60vh;
+  min-height: 400px;
+  width: 100%;
+  background-color: rgba(0, 0, 0, 0.2);
+  border-radius: 0.5rem;
   overflow: hidden;
-  background-color: #090909;
 }
 
-.model-controls {
-  position: absolute;
-  bottom: 1rem;
-  right: 1rem;
-  display: flex;
-  gap: 0.5rem;
-  z-index: 10;
+/* Style for property analysis cards */
+.analysis-card {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  border-radius: 0.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.2s ease-in-out;
 }
 
-.model-loading {
-  position: absolute;
-  top: 0;
-  left: 0;
+.analysis-card:hover {
+  border-color: rgba(255, 255, 255, 0.2);
+  box-shadow: 0 0 15px rgba(138, 75, 255, 0.2);
+}
+
+/* Image gallery styling */
+.image-gallery {
+  display: grid;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+@media (min-width: 640px) {
+  .image-gallery {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.image-item {
+  position: relative;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  aspect-ratio: 16 / 9;
+  background-color: rgba(0, 0, 0, 0.2);
+}
+
+.image-item img {
+  object-fit: cover;
   width: 100%;
   height: 100%;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  background: rgba(0, 0, 0, 0.7);
+}
+
+.image-item .image-label {
+  position: absolute;
+  top: 0.5rem;
+  left: 0.5rem;
+  background-color: rgba(0, 0, 0, 0.5);
   color: white;
-  z-index: 20;
-}
-
-.loading-spinner {
-  width: 50px;
-  height: 50px;
-  border: 4px solid rgba(255, 255, 255, 0.1);
-  border-radius: 50%;
-  border-top-color: #9b87f5;
-  animation: spin 1s ease-in-out infinite;
-}
-
-@keyframes spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-.model-info-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  padding: 1rem;
-  background: rgba(0, 0, 0, 0.5);
-  color: white;
-  max-width: 300px;
-  border-radius: 0 0 0.5rem 0;
-}
-
-.view-mode-button {
-  position: absolute;
-  top: 1rem;
-  right: 1rem;
-  z-index: 10;
-}
-
-.fullscreen-button {
-  position: absolute;
-  bottom: 1rem;
-  left: 1rem;
-  z-index: 10;
-}
-
-.hotspot {
-  position: absolute;
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  background: rgba(155, 135, 245, 0.6);
-  border: 2px solid white;
-  cursor: pointer;
-  transform: translate(-50%, -50%);
-  transition: all 0.2s ease;
-}
-
-.hotspot:hover {
-  transform: translate(-50%, -50%) scale(1.2);
-  background: rgba(155, 135, 245, 1);
-}
-
-.hotspot-tooltip {
-  position: absolute;
-  background: rgba(0, 0, 0, 0.8);
-  color: white;
-  padding: 0.5rem;
+  font-size: 0.75rem;
+  padding: 0.25rem 0.5rem;
   border-radius: 0.25rem;
-  font-size: 0.8rem;
-  white-space: nowrap;
-  pointer-events: none;
-  transform: translateY(-100%);
-  margin-top: -10px;
-}
-
-/* Animation for model loading */
-.model-appear {
-  animation: appear 0.5s ease forwards;
-}
-
-@keyframes appear {
-  from {
-    opacity: 0;
-    transform: scale(0.95);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-/* Glow effect for highlighted areas */
-.highlight-glow {
-  filter: drop-shadow(0 0 10px rgba(155, 135, 245, 0.8));
-  animation: glow 1.5s ease-in-out infinite alternate;
-}
-
-@keyframes glow {
-  from {
-    filter: drop-shadow(0 0 5px rgba(155, 135, 245, 0.6));
-  }
-  to {
-    filter: drop-shadow(0 0 15px rgba(155, 135, 245, 1));
-  }
 }
