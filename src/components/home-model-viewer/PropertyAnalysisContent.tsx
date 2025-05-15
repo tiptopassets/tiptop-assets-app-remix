@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { PropertyAnalysis } from '@/types/analysis';
+import { AnalysisResults as PropertyAnalysis } from '@/types/analysis';
 import PropertyTypeDisplay from './PropertyTypeDisplay';
 import MetricsGrid from './MetricsGrid';
 import ExpandedAnalysis from './ExpandedAnalysis';

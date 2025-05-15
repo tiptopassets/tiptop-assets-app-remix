@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
-import { PropertyAnalysis } from '@/types/analysis';
+import { AnalysisResults as PropertyAnalysis } from '@/types/analysis';
 
 interface PropertyTypeDisplayProps {
   analysisResults: PropertyAnalysis;
