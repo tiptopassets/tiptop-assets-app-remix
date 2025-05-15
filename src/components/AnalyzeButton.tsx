@@ -78,12 +78,20 @@ const AnalyzeButton = () => {
         )}
       </motion.button>
       
-      <button 
+      <motion.button 
         onClick={toggleAnalysisMode}
-        className="text-xs text-white/70 hover:text-white underline flex items-center gap-1"
+        className="text-xs text-white/80 hover:text-white underline flex items-center gap-1 bg-black/20 px-3 py-1 rounded-full border border-white/10 backdrop-blur-sm"
+        whileHover={{ scale: 1.05 }}
+        animate={{ opacity: 1, y: 0 }}
+        initial={{ opacity: 0, y: 5 }}
+        transition={{ delay: 0.3 }}
       >
-        {useLocalAnalysis ? 'Try AI Analysis' : 'Switch to Demo Mode'}
-      </button>
+        {useLocalAnalysis ? (
+          <>Try AI Analysis (Requires API Key)</>
+        ) : (
+          <>Switch to Demo Mode (No API Key Needed)</>
+        )}
+      </motion.button>
     </div>
   );
 };
