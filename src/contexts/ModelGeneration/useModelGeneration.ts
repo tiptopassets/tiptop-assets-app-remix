@@ -5,7 +5,7 @@ import { PropertyImages } from './types';
 export const usePropertyAnalysis = (
   setStatus: (status: any) => void,
   setProgress: (progress: number) => void,
-  updateProgress: (newProgress: number) => void,
+  updateProgress: (newProgress: (prev: number) => number) => void,
   setErrorMessage: (message: string | null) => void,
   propertyImages: PropertyImages,
   setHomeModelVisible: (visible: boolean) => void

@@ -25,9 +25,9 @@ export const ModelGenerationProvider = ({ children }: { children: ReactNode }) =
     setCurrentTaskId(null);
   };
 
-  // Update progress with smooth animation - fixed type error
-  const updateProgress = (newProgress: number) => {
-    setProgress(newProgress);
+  // Update progress with smooth animation - fixed type signature to match usage in hook
+  const updateProgress = (newProgress: (prev: number) => number) => {
+    setProgress(prev => newProgress(prev));
   };
 
   // Use the image capture hook
