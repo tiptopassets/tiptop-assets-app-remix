@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { imageUrlToBase64, generateMapImageUrls } from '@/contexts/ModelGeneration/utils';
 import { AnalysisResults } from './types';
 import { generateLocalMockAnalysis } from './mockAnalysisGenerator';
-import { Toast } from '@/hooks/use-toast';
+import { toast } from '@/hooks/use-toast';
 
 interface AnalysisParams {
   propertyAddress: string;
@@ -15,7 +15,7 @@ interface AnalysisParams {
   setAnalysisComplete: (value: boolean) => void;
   setUseLocalAnalysis: (value: boolean) => void;
   setAnalysisError: (error: string | null) => void;
-  toast: typeof Toast;
+  toast: typeof toast;
 }
 
 export const generatePropertyAnalysis = async ({
