@@ -41,8 +41,8 @@ export const usePropertyAnalysis = (
       // Only get satellite image if it's not already captured
       let satelliteImageBase64 = propertyImages.satellite;
       if (!satelliteImageBase64 && addressCoordinates) {
-        const { satelliteImageUrl } = generateMapImageUrls(addressCoordinates);
-        satelliteImageBase64 = await imageUrlToBase64(satelliteImageUrl);
+        const mapUrls = await generateMapImageUrls(addressCoordinates);
+        satelliteImageBase64 = await imageUrlToBase64(mapUrls.satelliteImageUrl);
       }
 
       // Process the property with GPT analysis

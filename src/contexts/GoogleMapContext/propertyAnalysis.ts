@@ -66,8 +66,8 @@ export const generatePropertyAnalysis = async ({
     let satelliteImage = null;
     if (addressCoordinates) {
       try {
-        const { satelliteImageUrl } = generateMapImageUrls(addressCoordinates);
-        satelliteImage = await imageUrlToBase64(satelliteImageUrl);
+        const mapUrls = await generateMapImageUrls(addressCoordinates);
+        satelliteImage = await imageUrlToBase64(mapUrls.satelliteImageUrl);
         console.log("Captured satellite image for analysis");
       } catch (err) {
         console.error("Failed to capture satellite image:", err);

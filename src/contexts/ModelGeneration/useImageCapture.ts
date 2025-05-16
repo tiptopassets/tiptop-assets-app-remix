@@ -18,16 +18,16 @@ export const useImageCapture = (
       console.log("Capturing high resolution property images for:", address, coordinates);
       
       // Generate high resolution image URLs
-      const { satelliteImageUrl, streetViewImageUrl } = generateMapImageUrls(coordinates);
+      const mapUrls = await generateMapImageUrls(coordinates);
       setProgress(40);
       
       // Attempt to fetch both images
       const [satelliteBase64, streetViewBase64] = await Promise.all([
-        imageUrlToBase64(satelliteImageUrl).catch(err => {
+        imageUrlToBase64(mapUrls.satelliteImageUrl).catch(err => {
           console.error('Error fetching satellite image:', err);
           return null;
         }),
-        imageUrlToBase64(streetViewImageUrl).catch(err => {
+        imageUrlToBase64(mapUrls.streetViewImageUrl).catch(err => {
           console.error('Error fetching street view image:', err);
           return null;
         })
