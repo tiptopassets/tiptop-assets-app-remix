@@ -5,6 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { ServiceProviderProvider } from "@/contexts/ServiceProviders";
 import Index from "./pages/Index";
 import Options from "./pages/Options";
 import NotFound from "./pages/NotFound";
@@ -32,25 +33,27 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <BrowserRouter>
       <AuthProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/options" element={<Options />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/dashboard/rooftop" element={<RooftopDashboard />} />
-            <Route path="/dashboard/internet" element={<InternetDashboard />} />
-            <Route path="/dashboard/ev-charging" element={<EVChargingDashboard />} />
-            <Route path="/dashboard/add-asset" element={<AddAsset />} />
-            <Route path="/dashboard/account" element={<AccountPage />} />
-            <Route path="/dashboard/admin" element={<AdminDashboard />} />
-            <Route path="/dashboard/affiliate" element={<AffiliateEarningsDashboard />} />
-            <Route path="/model-viewer" element={<ModelViewer />} />
-            <Route path="/submit-property" element={<SubmitProperty />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </TooltipProvider>
+        <ServiceProviderProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/options" element={<Options />} />
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/dashboard/rooftop" element={<RooftopDashboard />} />
+              <Route path="/dashboard/internet" element={<InternetDashboard />} />
+              <Route path="/dashboard/ev-charging" element={<EVChargingDashboard />} />
+              <Route path="/dashboard/add-asset" element={<AddAsset />} />
+              <Route path="/dashboard/account" element={<AccountPage />} />
+              <Route path="/dashboard/admin" element={<AdminDashboard />} />
+              <Route path="/dashboard/affiliate" element={<AffiliateEarningsDashboard />} />
+              <Route path="/model-viewer" element={<ModelViewer />} />
+              <Route path="/submit-property" element={<SubmitProperty />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </TooltipProvider>
+        </ServiceProviderProvider>
       </AuthProvider>
     </BrowserRouter>
   </QueryClientProvider>

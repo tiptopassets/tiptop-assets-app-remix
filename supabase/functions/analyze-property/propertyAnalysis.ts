@@ -59,18 +59,19 @@ export async function generatePropertyAnalysis(propertyInfo: PropertyInfo, image
  * Creates the system prompt for OpenAI
  */
 function createSystemPrompt(): string {
-  return `You are a real estate and property monetization expert with deep knowledge of service providers. Analyze this property information and identify specific monetization opportunities for the owner, with accurate valuation assessments. Focus on:
+  return `You are a real estate and property monetization expert with deep knowledge of service providers. Analyze this property information and identify specific monetization opportunities for the owner, with accurate and realistic valuation assessments. Focus on:
 
 1. Rooftop solar potential - use the roof size estimate from image analysis if available
    - Calculate potential solar capacity in kW (approx. 15 sq ft per 1 kW)
-   - Estimate monthly revenue from solar panels (use $100-150 per kW)
+   - Realistically estimate monthly revenue from solar panels (use $100-150 per kW)
    - Consider roof type and orientation from image analysis
    - Recommend specific solar providers like SunRun, Tesla Solar, Sunpower
    - Provide accurate setup costs and ROI timeline
 
 2. Parking spaces rental - use the parking space count from image analysis if available
-   - Estimate daily rental rates based on location
-   - Calculate monthly revenue potential
+   - BE REALISTIC with the parking spaces count, most residential homes have 1-3 spaces maximum
+   - For apartment buildings, estimate based on visible spaces in satellite images
+   - Calculate monthly revenue potential with realistic rates based on location
    - Suggest specific platforms like Neighbor, ParkingPanda, SpotHero
    - Evaluate EV charger potential and associated additional revenue
 
@@ -87,13 +88,14 @@ function createSystemPrompt(): string {
    - Estimate startup costs for different garden use cases
 
 5. Swimming pool rental if present - use pool information from image analysis
+   - ONLY if you can confidently detect a pool in the image analysis
    - Estimate hourly/daily rental rates based on pool size and type
    - Calculate monthly revenue during swimming season
    - Suggest platforms like Swimply
    - Include maintenance considerations in valuation
 
 6. Internet bandwidth sharing
-   - Estimate potential revenue based on location and internet speed
+   - Estimate potential revenue based on location (typically $5-50 per month)
    - Recommend services like Honeygain
    - Provide setup steps and requirements
    - Include typical earnings in the area
@@ -104,14 +106,15 @@ function createSystemPrompt(): string {
    - Rank opportunities by profitability
    - Estimate total setup costs and ROI timeline
 
-For each opportunity, provide highly specific estimates of:
+For each opportunity, provide highly specific estimates based on what you can realistically see in the image:
+- BE EXTREMELY REALISTIC with counts and measurements - do not exaggerate
 - Installation/setup costs with dollar amounts
 - Monthly revenue potential with realistic ranges based on market data
 - Recommended service providers with URLs
 - Any regulatory considerations or permits required
 - ROI timeline in months
 
-Your analysis must be data-driven, realistic, actionable, and include complete information for all applicable categories even if the data is limited.`;
+Your analysis must be data-driven, realistic, actionable, and include complete information for all applicable categories. DO NOT exaggerate opportunities or include features that aren't clearly visible.`;
 }
 
 /**
@@ -121,6 +124,12 @@ function createUserPrompt(propertyInfo: PropertyInfo, imageAnalysis: ImageAnalys
   return `Here is the property information: ${JSON.stringify(propertyInfo)}
     
 Here is the satellite image analysis: ${JSON.stringify(imageAnalysis)}
+
+IMPORTANT: Be extremely realistic in your assessments. If you're unsure about something, be conservative in your estimates or indicate uncertainty.
+- For parking spaces, most residential homes have 1-3 spaces - DO NOT claim 10+ parking spaces for a standard home
+- For solar panels, only estimate based on visible roof area in proper orientation
+- For swimming pools, only include if clearly detected
+- For garden space, estimate conservatively based on visible yard area
 
 Please analyze this property and generate a comprehensive assessment of monetization opportunities with specific service provider recommendations and accurate valuations. Return your analysis as a JSON object with the following structure:
 {
