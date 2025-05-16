@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import SearchBar from '@/components/SearchBar';
@@ -7,7 +8,7 @@ import AssetIcons from '@/components/AssetIcons';
 import AssetResultList from '@/components/asset-results/AssetResultList';
 import ModelGenerationSheet from '@/components/ModelGenerationSheet';
 import HomeModelViewer from '@/components/home-model-viewer';
-import { GoogleMapProvider, useGoogleMap } from '@/contexts/GoogleMapContext';
+import { useGoogleMap } from '@/contexts/GoogleMapContext';
 import { PlusCircle } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import FooterCarousel from '@/components/FooterCarousel';
@@ -15,7 +16,7 @@ import { motion } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 
-const HomeContent = () => {
+const Index = () => {
   const { isAnalyzing, analysisComplete, address } = useGoogleMap();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const isMobile = useIsMobile();
@@ -109,14 +110,6 @@ const HomeContent = () => {
       {/* Model Generation Progress Sheet */}
       <ModelGenerationSheet />
     </div>
-  );
-};
-
-const Index = () => {
-  return (
-    <GoogleMapProvider>
-      <HomeContent />
-    </GoogleMapProvider>
   );
 };
 
