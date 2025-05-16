@@ -75,27 +75,41 @@ export const usePropertyAnalysis = (
         setAnalysisResults(analysisData.analysis);
         
         // Generate GPT content about the property's monetization potential
-        const contentSummary = `Based on our analysis of ${address}, we've identified several monetization opportunities:
+        const contentSummary = `Based on our comprehensive analysis of ${address}, we've identified several monetization opportunities with detailed valuation:
         
-1. Solar potential: The property has approximately ${analysisData.analysis.rooftop.area} sq ft of roof space with ${analysisData.analysis.rooftop.solarPotential ? 'excellent' : 'moderate'} solar potential, capable of generating $${analysisData.analysis.rooftop.revenue}/month.
+1. Solar potential: The property has approximately ${analysisData.analysis.rooftop.area} sq ft of roof space with ${analysisData.analysis.rooftop.solarPotential ? 'excellent' : 'moderate'} solar potential. 
+   - Solar capacity: ${analysisData.analysis.rooftop.solarCapacity || 'N/A'} kW
+   - Monthly revenue: $${analysisData.analysis.rooftop.revenue}
+   - Setup costs: ${analysisData.analysis.rooftop.providers && analysisData.analysis.rooftop.providers[0] ? '$' + analysisData.analysis.rooftop.providers[0].setupCost : 'Variable'}
 
-2. Parking: With ${analysisData.analysis.parking.spaces} parking spaces available at $${analysisData.analysis.parking.rate}/day, you could earn up to $${analysisData.analysis.parking.revenue}/month.
+2. Parking: With ${analysisData.analysis.parking.spaces} parking spaces available at $${analysisData.analysis.parking.rate}/day.
+   - Monthly revenue: $${analysisData.analysis.parking.revenue}
+   - EV charger potential: ${analysisData.analysis.parking.evChargerPotential ? 'Yes (additional revenue opportunity)' : 'No'}
 
-3. Garden/Yard: The property features ${analysisData.analysis.garden.area} sq ft of outdoor space with ${analysisData.analysis.garden.opportunity} potential for urban farming, with estimated revenue of $${analysisData.analysis.garden.revenue}/month.
+3. Garden/Yard: The property features ${analysisData.analysis.garden.area} sq ft of outdoor space with ${analysisData.analysis.garden.opportunity} potential.
+   - Monthly revenue: $${analysisData.analysis.garden.revenue}
+   - Opportunity level: ${analysisData.analysis.garden.opportunity}
 
 ${analysisData.analysis.pool && analysisData.analysis.pool.present ? `4. Swimming Pool: Your ${analysisData.analysis.pool.type} pool (${analysisData.analysis.pool.area} sq ft) could generate $${analysisData.analysis.pool.revenue}/month when rented out during swimming season.` : ''}
 
-Total monthly potential: $${analysisData.analysis.topOpportunities.reduce((sum, opp) => sum + opp.monthlyRevenue, 0)}/month.`;
+${analysisData.analysis.bandwidth ? `5. Internet Bandwidth Sharing: With ${analysisData.analysis.bandwidth.available} Mbps available, you could earn approximately $${analysisData.analysis.bandwidth.revenue}/month through bandwidth sharing services.` : ''}
+
+Property valuation summary:
+- Total monthly potential: $${analysisData.analysis.topOpportunities.reduce((sum, opp) => sum + opp.monthlyRevenue, 0)}/month
+- Most profitable opportunity: ${analysisData.analysis.topOpportunities[0]?.title || 'N/A'} ($${analysisData.analysis.topOpportunities[0]?.monthlyRevenue || 0}/month)
+- ROI timeline: ${analysisData.analysis.topOpportunities[0]?.roi || 'Varies'} months for primary opportunity
+${analysisData.analysis.restrictions ? `\nImportant note: ${analysisData.analysis.restrictions}` : ''}`;
 
         setContentFromGPT(contentSummary);
 
-        // Simulate fetching Google Images related to the property type
-        // In a real implementation, you would call a Google Images API or similar service
+        // Use placeholder images until we can implement a real Google Images API connection
+        // In a production app, this would be replaced with an actual Google Image search API
         const sampleImages = [
           'https://lovable.dev/opengraph-image-p98pqg.png',
           'https://picsum.photos/id/1018/800/600',
           'https://picsum.photos/id/1015/800/600',
         ];
+        
         setGoogleImages(sampleImages);
 
         // Complete the process

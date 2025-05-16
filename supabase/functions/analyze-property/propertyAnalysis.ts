@@ -59,50 +59,59 @@ export async function generatePropertyAnalysis(propertyInfo: PropertyInfo, image
  * Creates the system prompt for OpenAI
  */
 function createSystemPrompt(): string {
-  return `You are a real estate and property monetization expert with deep knowledge of service providers. Analyze this property information and identify specific monetization opportunities for the owner. Focus on:
+  return `You are a real estate and property monetization expert with deep knowledge of service providers. Analyze this property information and identify specific monetization opportunities for the owner, with accurate valuation assessments. Focus on:
 
 1. Rooftop solar potential - use the roof size estimate from image analysis if available
    - Calculate potential solar capacity in kW (approx. 15 sq ft per 1 kW)
    - Estimate monthly revenue from solar panels (use $100-150 per kW)
    - Consider roof type and orientation from image analysis
    - Recommend specific solar providers like SunRun, Tesla Solar, Sunpower
+   - Provide accurate setup costs and ROI timeline
 
 2. Parking spaces rental - use the parking space count from image analysis if available
    - Estimate daily rental rates based on location
    - Calculate monthly revenue potential
    - Suggest specific platforms like Neighbor, ParkingPanda, SpotHero
+   - Evaluate EV charger potential and associated additional revenue
 
 3. Storage space rental
    - Identify areas suitable for storage based on property layout
    - Calculate monthly revenue potential ($1-2 per sq ft)
    - Recommend services like Neighbor, STOW IT
+   - Include setup costs and barriers to entry
 
 4. Garden/yard rental or urban farming - use the garden size estimate from image analysis if available
    - Assess suitability for urban farming based on image analysis
-   - Calculate rental potential
+   - Calculate rental potential with specific dollar amounts
    - Recommend platforms like Peerspace, YardYum
+   - Estimate startup costs for different garden use cases
 
 5. Swimming pool rental if present - use pool information from image analysis
    - Estimate hourly/daily rental rates based on pool size and type
    - Calculate monthly revenue during swimming season
    - Suggest platforms like Swimply
+   - Include maintenance considerations in valuation
 
-6. Short-term rental potential
-   - Estimate nightly rates for whole or partial property
-   - Calculate monthly projection accounting for occupancy rates
-   - Recommend platforms like Airbnb, VRBO
-
-7. Internet bandwidth sharing
-   - Estimate potential revenue
+6. Internet bandwidth sharing
+   - Estimate potential revenue based on location and internet speed
    - Recommend services like Honeygain
+   - Provide setup steps and requirements
+   - Include typical earnings in the area
 
-For each opportunity, provide specific estimates of:
-- Installation/setup costs where applicable
-- Monthly revenue potential with realistic ranges
+7. Property valuation
+   - Provide a comprehensive valuation of the entire property's monetization potential
+   - Calculate total monthly and annual revenue potential
+   - Rank opportunities by profitability
+   - Estimate total setup costs and ROI timeline
+
+For each opportunity, provide highly specific estimates of:
+- Installation/setup costs with dollar amounts
+- Monthly revenue potential with realistic ranges based on market data
 - Recommended service providers with URLs
 - Any regulatory considerations or permits required
+- ROI timeline in months
 
-Your analysis should be data-driven, realistic, and actionable with specific recommendations.`;
+Your analysis must be data-driven, realistic, actionable, and include complete information for all applicable categories even if the data is limited.`;
 }
 
 /**
@@ -113,7 +122,7 @@ function createUserPrompt(propertyInfo: PropertyInfo, imageAnalysis: ImageAnalys
     
 Here is the satellite image analysis: ${JSON.stringify(imageAnalysis)}
 
-Please analyze this property and generate a comprehensive assessment of monetization opportunities with specific service provider recommendations. Return your analysis as a JSON object with the following structure:
+Please analyze this property and generate a comprehensive assessment of monetization opportunities with specific service provider recommendations and accurate valuations. Return your analysis as a JSON object with the following structure:
 {
   "propertyType": "residential/commercial/etc",
   "amenities": ["array", "of", "amenities"],
@@ -196,6 +205,15 @@ Please analyze this property and generate a comprehensive assessment of monetiza
       ]
     }
   ],
-  "imageAnalysisSummary": "summary of what was detected in the satellite image"
-}`;
+  "imageAnalysisSummary": "summary of what was detected in the satellite image",
+  "propertyValuation": {
+    "totalMonthlyRevenue": dollars,
+    "totalAnnualRevenue": dollars,
+    "totalSetupCosts": dollars,
+    "averageROI": months,
+    "bestOpportunity": "name of best opportunity"
+  }
+}
+
+IMPORTANT: Make sure to provide complete information for ALL applicable categories. If data is limited, use reasonable estimates based on location and property type. Don't omit any relevant fields.`;
 }

@@ -1,25 +1,32 @@
 
 import React from 'react';
-import { ModelGenerationStatus } from '@/contexts/ModelGeneration';
-import { Loader, CheckCircle, AlertTriangle } from 'lucide-react';
+import { CircleCheck, Loader2 } from 'lucide-react';
+import { ModelGenerationStatus } from '@/contexts/ModelGeneration/types';
 
 interface StatusIndicatorProps {
   status: ModelGenerationStatus;
 }
 
-const StatusIndicator = ({ status }: StatusIndicatorProps) => {
-  switch (status) {
-    case 'initializing':
-    case 'capturing':
-    case 'generating':
-      return <Loader className="h-8 w-8 animate-spin text-tiptop-purple" />;
-    case 'completed':
-      return <CheckCircle className="h-8 w-8 text-green-500" />;
-    case 'error':
-      return <AlertTriangle className="h-8 w-8 text-red-500" />;
-    default:
-      return null;
+export const StatusIndicator = ({ status }: StatusIndicatorProps) => {
+  if (status === 'idle') {
+    return null;
   }
-};
 
-export default StatusIndicator;
+  if (status === 'initializing' || status === 'capturing' || status === 'generating') {
+    return (
+      <div className="animate-spin text-tiptop-purple">
+        <Loader2 size={24} />
+      </div>
+    );
+  }
+
+  if (status === 'completed') {
+    return (
+      <div className="text-green-500">
+        <CircleCheck size={24} />
+      </div>
+    );
+  }
+
+  return null;
+};

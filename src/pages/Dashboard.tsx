@@ -56,6 +56,10 @@ const Dashboard = () => {
     if (analysisResults.pool && analysisResults.pool.present) {
       assetDistributionData.push({ name: 'Pool', value: analysisResults.pool.revenue });
     }
+
+    if (analysisResults.bandwidth && analysisResults.bandwidth.revenue) {
+      assetDistributionData.push({ name: 'Internet', value: analysisResults.bandwidth.revenue });
+    }
     
     // Monthly revenue data
     const monthlyData = [
@@ -84,7 +88,23 @@ const Dashboard = () => {
   const getPropertyDescription = () => {
     if (!analysisResults) return "";
     
-    return `${analysisResults.propertyType} with ${analysisResults.rooftop.area} sq ft roof area, ${analysisResults.parking.spaces} parking spaces, and ${analysisResults.garden.area} sq ft garden space. Potential monthly revenue: $${analysisResults.topOpportunities.reduce((sum, opp) => sum + opp.monthlyRevenue, 0)}.`;
+    let description = `${analysisResults.propertyType} with ${analysisResults.rooftop.area} sq ft roof area`;
+    
+    if (analysisResults.parking.spaces > 0) {
+      description += `, ${analysisResults.parking.spaces} parking spaces`;
+    }
+    
+    if (analysisResults.garden.area > 0) {
+      description += `, and ${analysisResults.garden.area} sq ft garden space`;
+    }
+    
+    if (analysisResults.pool && analysisResults.pool.present) {
+      description += `, includes a ${analysisResults.pool.type} pool`;
+    }
+    
+    description += `. Potential monthly revenue: $${analysisResults.topOpportunities.reduce((sum, opp) => sum + opp.monthlyRevenue, 0)}.`;
+    
+    return description;
   };
 
   return (

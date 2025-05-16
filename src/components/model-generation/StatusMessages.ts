@@ -1,20 +1,22 @@
 
-import { ModelGenerationStatus } from '@/contexts/ModelGeneration';
+import { ModelGenerationStatus } from '@/contexts/ModelGeneration/types';
 
+// Define the messages for each status
 export const statusMessages: Record<ModelGenerationStatus, string> = {
-  idle: 'Ready to start',
-  initializing: 'Preparing property analysis...',
-  capturing: 'Capturing property images...',
-  generating: 'Generating 3D model...',
-  completed: '3D model generation complete!',
-  error: 'Failed to generate 3D model. Please try again.'
+  idle: 'Ready to analyze property',
+  initializing: 'Initializing property analysis...',
+  capturing: 'Capturing satellite imagery...',
+  generating: 'Generating property analysis...',
+  completed: 'Analysis complete! Explore your property\'s potential.',
+  error: 'An error occurred during analysis.',
 };
 
-export const statusDescriptions: Record<ModelGenerationStatus, string> = {
-  idle: '',
-  initializing: 'Setting up the analysis environment',
-  capturing: 'Taking satellite and street view images of your property',
-  generating: 'Creating a detailed 3D model based on property images',
-  completed: 'Your property model is ready to view',
-  error: 'There was a problem generating your property model'
+// Define the sub-messages for each status
+export const statusSubMessages: Record<ModelGenerationStatus, string> = {
+  idle: 'Enter an address to begin.',
+  initializing: 'Preparing to analyze your property...',
+  capturing: 'Capturing high-resolution images of your property...',
+  generating: 'Our AI is analyzing your property\'s monetization potential...',
+  completed: 'We found several ways you can monetize your property!',
+  error: 'Please try again or contact support if the problem persists.',
 };
