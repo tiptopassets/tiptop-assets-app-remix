@@ -2,10 +2,10 @@
 import React, { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import DashboardLayout from '@/components/dashboard/DashboardLayout';
-import PropertyOverviewCard from '@/components/dashboard/PropertyOverviewCard';
-import StatsCard from '@/components/dashboard/StatsCard';
-import AssetsTable from '@/components/dashboard/AssetsTable';
-import RevenueCharts from '@/components/dashboard/RevenueCharts';
+import { PropertyOverviewCard } from '@/components/dashboard/PropertyOverviewCard';
+import { StatsCard } from '@/components/dashboard/StatsCard';
+import { AssetsTable } from '@/components/dashboard/AssetsTable';
+import { AssetDistributionChart, TodayRevenueChart, RevenueOverTimeChart } from '@/components/dashboard/RevenueCharts';
 import { useAuth } from '@/contexts/AuthContext';
 import { useGoogleMap } from '@/contexts/GoogleMapContext';
 import { useModelGeneration } from '@/contexts/ModelGeneration';
@@ -42,6 +42,51 @@ const Dashboard = () => {
     );
   }
 
+  // Generate dummy data for charts if we have analysis results
+  const getChartData = () => {
+    if (!analysisResults) return null;
+    
+    // Asset distribution data for pie chart
+    const assetDistributionData = [
+      { name: 'Rooftop', value: analysisResults.rooftop.revenue },
+      { name: 'Parking', value: analysisResults.parking.revenue },
+      { name: 'Garden', value: analysisResults.garden.revenue },
+    ];
+    
+    if (analysisResults.pool && analysisResults.pool.present) {
+      assetDistributionData.push({ name: 'Pool', value: analysisResults.pool.revenue });
+    }
+    
+    // Monthly revenue data
+    const monthlyData = [
+      { name: 'Jan', Rooftop: 400, Parking: 240, Garden: 180 },
+      { name: 'Feb', Rooftop: 420, Parking: 280, Garden: 190 },
+      { name: 'Mar', Rooftop: 450, Parking: 300, Garden: 220 },
+      { name: 'Apr', Rooftop: 470, Parking: 290, Garden: 230 },
+      { name: 'May', Rooftop: 500, Parking: 310, Garden: 240 },
+      { name: 'Jun', Rooftop: 520, Parking: 340, Garden: 260 },
+    ];
+    
+    const assetKeys = ['Rooftop', 'Parking', 'Garden'];
+    
+    return {
+      assetDistribution: assetDistributionData,
+      monthlyData,
+      assetKeys,
+      todayRevenue: 45.2,
+      increasePercentage: 12.5
+    };
+  };
+
+  const chartData = getChartData();
+  
+  // Generate property description
+  const getPropertyDescription = () => {
+    if (!analysisResults) return "";
+    
+    return `${analysisResults.propertyType} with ${analysisResults.rooftop.area} sq ft roof area, ${analysisResults.parking.spaces} parking spaces, and ${analysisResults.garden.area} sq ft garden space. Potential monthly revenue: $${analysisResults.topOpportunities.reduce((sum, opp) => sum + opp.monthlyRevenue, 0)}.`;
+  };
+
   return (
     <DashboardLayout>
       <div className="px-6 py-8">
@@ -52,10 +97,21 @@ const Dashboard = () => {
             {/* Property Overview */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
               <div className="lg:col-span-2">
-                <PropertyOverviewCard address={address} analysisResults={analysisResults} />
+                <PropertyOverviewCard 
+                  address={address} 
+                  description={getPropertyDescription()} 
+                  imageUrl={analysisResults ? "https://picsum.photos/id/1048/600/400" : undefined} 
+                />
               </div>
               <div>
-                <StatsCard analysisResults={analysisResults} />
+                <StatsCard 
+                  title="Monthly Revenue Potential"
+                  value={`$${analysisResults.topOpportunities.reduce((sum, opp) => sum + opp.monthlyRevenue, 0)}`}
+                  description="Based on your property analysis"
+                  trend="up"
+                  trendValue="12.5%"
+                  variant="purple"
+                />
               </div>
             </div>
             
@@ -87,10 +143,26 @@ const Dashboard = () => {
               </div>
             )}
             
-            {/* Revenue Charts */}
-            <div className="mb-8">
-              <RevenueCharts analysisResults={analysisResults} />
-            </div>
+            {/* Charts Grid */}
+            {chartData && (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div>
+                  <AssetDistributionChart data={chartData.assetDistribution} />
+                </div>
+                <div>
+                  <TodayRevenueChart 
+                    amount={chartData.todayRevenue} 
+                    increasePercentage={chartData.increasePercentage} 
+                  />
+                </div>
+                <div className="md:col-span-1">
+                  <RevenueOverTimeChart 
+                    data={chartData.monthlyData}
+                    keys={chartData.assetKeys}
+                  />
+                </div>
+              </div>
+            )}
             
             {/* Assets Table */}
             <div className="bg-white rounded-lg shadow-md p-6 dark:bg-gray-800">

@@ -1,5 +1,5 @@
 
-export type ModelGenerationStatus = 'idle' | 'capturing' | 'generating' | 'completed' | 'error';
+export type ModelGenerationStatus = 'idle' | 'initializing' | 'capturing' | 'generating' | 'completed' | 'error';
 
 export interface PropertyImages {
   satellite: string | null;

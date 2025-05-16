@@ -14,10 +14,10 @@ export const usePropertyAnalysis = (
   setContentFromGPT: (content: string | null) => void,
   setGoogleImages: (images: string[]) => void
 ) => {
-  const { address, coordinates, setAnalysisResults } = useGoogleMap();
+  const { address, addressCoordinates, setAnalysisResults } = useGoogleMap();
 
   const generateModel = async () => {
-    if (!address || !coordinates) {
+    if (!address || !addressCoordinates) {
       setErrorMessage('Please enter a valid address first.');
       return;
     }
@@ -40,8 +40,8 @@ export const usePropertyAnalysis = (
 
       // Only get satellite image if it's not already captured
       let satelliteImageBase64 = propertyImages.satellite;
-      if (!satelliteImageBase64 && coordinates) {
-        const { satelliteImageUrl } = generateMapImageUrls(coordinates);
+      if (!satelliteImageBase64 && addressCoordinates) {
+        const { satelliteImageUrl } = generateMapImageUrls(addressCoordinates);
         satelliteImageBase64 = await imageUrlToBase64(satelliteImageUrl);
       }
 
@@ -54,7 +54,7 @@ export const usePropertyAnalysis = (
         {
           body: {
             address,
-            coordinates,
+            coordinates: addressCoordinates,
             satelliteImage: satelliteImageBase64,
           },
         }
