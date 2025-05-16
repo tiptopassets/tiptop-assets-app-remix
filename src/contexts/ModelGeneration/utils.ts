@@ -1,5 +1,5 @@
 
-import { API_KEY } from '@/utils/googleMapsLoader';
+import { getGoogleMapsApiKey } from '@/utils/googleMapsLoader';
 
 // Helper function to convert image URL to base64
 export const imageUrlToBase64 = async (url: string): Promise<string | null> => {
@@ -24,9 +24,11 @@ export const imageUrlToBase64 = async (url: string): Promise<string | null> => {
 };
 
 // Generate URLs for Google Maps Static API images with higher zoom levels
-export const generateMapImageUrls = (coordinates: google.maps.LatLngLiteral) => {
+export const generateMapImageUrls = async (coordinates: google.maps.LatLngLiteral) => {
+  const apiKey = await getGoogleMapsApiKey();
+  
   return {
-    satelliteImageUrl: `https://maps.googleapis.com/maps/api/staticmap?center=${coordinates.lat},${coordinates.lng}&zoom=20&size=800x800&maptype=satellite&key=${API_KEY}`,
-    streetViewImageUrl: `https://maps.googleapis.com/maps/api/streetview?size=800x400&location=${coordinates.lat},${coordinates.lng}&key=${API_KEY}`
+    satelliteImageUrl: `https://maps.googleapis.com/maps/api/staticmap?center=${coordinates.lat},${coordinates.lng}&zoom=20&size=800x800&maptype=satellite&key=${apiKey}`,
+    streetViewImageUrl: `https://maps.googleapis.com/maps/api/streetview?size=800x400&location=${coordinates.lat},${coordinates.lng}&key=${apiKey}`
   };
 };
