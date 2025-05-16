@@ -10,7 +10,7 @@ import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 
 // Import refactored components
-import StatusIndicator from './model-generation/StatusIndicator';
+import { StatusIndicator } from './model-generation/StatusIndicator';
 import PropertyImages from './model-generation/PropertyImages';
 import ErrorUI from './model-generation/ErrorUI';
 import NoSatelliteErrorDialog from './model-generation/NoSatelliteErrorDialog';
