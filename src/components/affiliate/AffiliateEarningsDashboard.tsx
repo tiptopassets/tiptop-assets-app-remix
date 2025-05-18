@@ -3,14 +3,17 @@ import React, { useEffect, useState } from 'react';
 import { useAffiliateEarnings } from '@/hooks/useAffiliateEarnings';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, RefreshCw, AlertCircle } from 'lucide-react';
+import { Loader2, RefreshCw, AlertCircle, ExternalLink } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { useServiceProviders } from '@/contexts/ServiceProviders';
 
 const AffiliateEarningsDashboard: React.FC = () => {
   const { earnings, services, loading, error, refreshData } = useAffiliateEarnings();
+  const { connectedProviders } = useServiceProviders();
   const [isSyncing, setIsSyncing] = useState(false);
   const [extensionInstalled, setExtensionInstalled] = useState(false);
+  const [flexoffersSubId, setFlexoffersSubId] = useState<string | null>(null);
 
   // Check if Chrome extension is installed
   useEffect(() => {
@@ -43,6 +46,26 @@ const AffiliateEarningsDashboard: React.FC = () => {
     } catch (err) {
       console.log('Error checking extension status:', err);
     }
+  }, []);
+
+  // Check if user has FlexOffers sub-affiliate ID
+  useEffect(() => {
+    const checkFlexOffersMapping = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('flexoffers_user_mapping')
+          .select('sub_affiliate_id')
+          .single();
+          
+        if (data?.sub_affiliate_id) {
+          setFlexoffersSubId(data.sub_affiliate_id);
+        }
+      } catch (err) {
+        console.error('Error checking FlexOffers mapping:', err);
+      }
+    };
+    
+    checkFlexOffersMapping();
   }, []);
 
   // Function to trigger earnings sync
@@ -116,6 +139,9 @@ const AffiliateEarningsDashboard: React.FC = () => {
   // Calculate total earnings
   const totalEarnings = earnings.reduce((sum, earning) => sum + (earning.earnings || 0), 0);
   
+  // Check if FlexOffers is connected
+  const hasFlexOffers = connectedProviders.some(p => p.id.toLowerCase() === 'flexoffers');
+  
   // Get the most recent update time
   const lastUpdated = earnings.length > 0 
     ? earnings.reduce((latest, earning) => {
@@ -134,9 +160,41 @@ const AffiliateEarningsDashboard: React.FC = () => {
         <CardDescription>Your total affiliate earnings across all platforms.</CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="space-y-2">
+        <div className="space-y-4">
           <p className="text-lg font-semibold">Total Earnings: ${totalEarnings.toFixed(2)}</p>
-          <p className="text-sm text-gray-500">Last Updated: {lastUpdated || 'N/A'}</p>
+          <p className="text-sm text-gray-500">Last Updated: {lastUpdated ? new Date(lastUpdated).toLocaleString() : 'N/A'}</p>
+          
+          {/* Show earnings breakdown by service */}
+          <div className="mt-4">
+            <h4 className="text-sm font-medium mb-2">Earnings By Service</h4>
+            <div className="space-y-2">
+              {earnings.length > 0 ? (
+                earnings.map(earning => (
+                  <div key={earning.id} className="flex justify-between items-center py-1 border-b border-gray-100">
+                    <span>{earning.service}</span>
+                    <span className="font-medium">${earning.earnings.toFixed(2)}</span>
+                  </div>
+                ))
+              ) : (
+                <p className="text-sm text-gray-500">No earnings data available yet.</p>
+              )}
+            </div>
+          </div>
+          
+          {/* FlexOffers section */}
+          {hasFlexOffers && (
+            <div className="mt-4 p-3 bg-violet-50 rounded-md">
+              <h4 className="text-sm font-medium mb-1">FlexOffers Integration</h4>
+              {flexoffersSubId ? (
+                <div className="text-xs text-gray-600">
+                  <p>Your Sub-Affiliate ID: <span className="font-mono bg-gray-100 px-1 rounded">{flexoffersSubId}</span></p>
+                  <p className="mt-1">Use this ID when creating affiliate links or when receiving postbacks.</p>
+                </div>
+              ) : (
+                <p className="text-xs text-gray-600">FlexOffers integration set up. Contact support to get your sub-affiliate ID.</p>
+              )}
+            </div>
+          )}
         </div>
       </CardContent>
       <CardFooter className="flex justify-between items-center">
@@ -153,6 +211,11 @@ const AffiliateEarningsDashboard: React.FC = () => {
             </>
           )}
         </Button>
+        {hasFlexOffers && (
+          <Button variant="outline" onClick={() => window.open('https://publishers.flexoffers.com', '_blank')}>
+            FlexOffers Dashboard <ExternalLink className="ml-2 h-3 w-3" />
+          </Button>
+        )}
         {!extensionInstalled && (
           <Button variant="destructive">
             <AlertCircle className="mr-2 h-4 w-4" />

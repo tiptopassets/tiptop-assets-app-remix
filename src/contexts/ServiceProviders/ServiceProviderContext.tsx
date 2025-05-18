@@ -62,7 +62,11 @@ export const ServiceProviderProvider = ({ children }: ServiceProviderProviderPro
           loginUrl: service.login_url || `https://${service.name.toLowerCase()}.com/login`,
           assetTypes: getAssetTypesForService(service.name),
           connected: false,
-          setupInstructions: `To connect with ${service.name}, you'll need to create an account or sign in to your existing account.`
+          setupInstructions: `To connect with ${service.name}, you'll need to create an account or sign in to your existing account.`,
+          // Adding referral link template for FlexOffers
+          referralLinkTemplate: service.name === 'FlexOffers' ? 
+            'https://www.flexoffers.com/affiliate-link/?sid={{subAffiliateId}}&url={{destinationUrl}}' : 
+            undefined
         }));
 
         setAvailableProviders(formattedProviders);
@@ -75,8 +79,23 @@ export const ServiceProviderProvider = ({ children }: ServiceProviderProviderPro
 
         if (credentialsError) throw credentialsError;
 
+        // Check FlexOffers sub-affiliate mappings
+        const { data: flexoffersMapping, error: mappingError } = await supabase
+          .from('flexoffers_user_mapping')
+          .select('sub_affiliate_id')
+          .eq('user_id', user.id);
+        
+        if (mappingError && mappingError.code !== 'PGRST116') {
+          console.error("Error fetching FlexOffers mapping:", mappingError);
+        }
+
         // Mark which providers are connected
         const connected = new Set((credentialsData || []).map(cred => cred.service.toLowerCase()));
+        
+        // Add FlexOffers if mapping exists
+        if (flexoffersMapping && flexoffersMapping.length > 0) {
+          connected.add('flexoffers');
+        }
         
         const updatedProviders = formattedProviders.map(provider => ({
           ...provider,
@@ -136,6 +155,8 @@ export const ServiceProviderProvider = ({ children }: ServiceProviderProviderPro
       case 'sunrun':
       case 'tesla solar':
         return ['rooftop', 'solar'];
+      case 'flexoffers': // Added FlexOffers with multiple asset types
+        return ['internet', 'solar', 'pool', 'storage', 'parking'];
       default:
         return [];
     }
@@ -143,38 +164,301 @@ export const ServiceProviderProvider = ({ children }: ServiceProviderProviderPro
 
   // Connect to a service provider
   const connectToProvider = async (providerId: string) => {
-    // This will be implemented in the next phase
-    toast({
-      title: 'Coming Soon',
-      description: 'Provider connection functionality will be available soon',
-    });
+    if (!user) {
+      toast({
+        title: 'Authentication Required',
+        description: 'You need to be logged in to connect to service providers',
+        variant: 'destructive'
+      });
+      return;
+    }
+    
+    try {
+      // For FlexOffers, we'll generate a unique sub-affiliate ID for the user
+      if (providerId.toLowerCase() === 'flexoffers') {
+        // Generate a unique sub-affiliate ID using user ID and a timestamp
+        const subAffiliateId = `tipTop_${user.id.substring(0, 8)}_${Date.now().toString(36)}`;
+        
+        // Store the mapping
+        const { error } = await supabase
+          .from('flexoffers_user_mapping')
+          .insert({
+            user_id: user.id,
+            sub_affiliate_id: subAffiliateId
+          });
+        
+        if (error) {
+          throw error;
+        }
+        
+        // Create a placeholder in affiliate_earnings
+        await supabase
+          .from('affiliate_earnings')
+          .insert({
+            user_id: user.id,
+            service: 'FlexOffers',
+            earnings: 0,
+            last_sync_status: 'pending'
+          })
+          .single();
+        
+        toast({
+          title: 'FlexOffers Connected',
+          description: 'Your FlexOffers affiliate account is now linked.',
+        });
+        
+        // Refresh the providers list
+        const provider = availableProviders.find(p => p.id.toLowerCase() === providerId.toLowerCase());
+        if (provider) {
+          setConnectedProviders(prev => [...prev, {...provider, connected: true}]);
+          setAvailableProviders(prev => 
+            prev.map(p => 
+              p.id.toLowerCase() === providerId.toLowerCase() 
+                ? {...p, connected: true} 
+                : p
+            )
+          );
+        }
+        
+        return;
+      }
+      
+      // For other providers, we'll use the existing flow
+      toast({
+        title: 'Coming Soon',
+        description: 'Provider connection functionality will be available soon',
+      });
+    } catch (err) {
+      console.error('Error connecting to provider:', err);
+      toast({
+        title: 'Connection Failed',
+        description: 'Failed to connect to service provider',
+        variant: 'destructive'
+      });
+    }
   };
 
   // Register with a service provider
   const registerWithProvider = async (formData: RegisterServiceFormData) => {
-    // This will be implemented in the next phase
-    toast({
-      title: 'Coming Soon',
-      description: 'Provider registration functionality will be available soon',
-    });
+    if (!user) {
+      toast({
+        title: 'Authentication Required',
+        description: 'You need to be logged in to register with service providers',
+        variant: 'destructive'
+      });
+      return;
+    }
+    
+    try {
+      // For FlexOffers, we'll register the sub-affiliate ID
+      if (formData.service.toLowerCase() === 'flexoffers' && formData.subAffiliateId) {
+        // Store the mapping
+        const { error } = await supabase
+          .from('flexoffers_user_mapping')
+          .insert({
+            user_id: user.id,
+            sub_affiliate_id: formData.subAffiliateId
+          });
+        
+        if (error) {
+          throw error;
+        }
+        
+        // Create a placeholder in affiliate_earnings
+        await supabase
+          .from('affiliate_earnings')
+          .insert({
+            user_id: user.id,
+            service: 'FlexOffers',
+            earnings: 0,
+            last_sync_status: 'pending'
+          })
+          .single();
+        
+        toast({
+          title: 'FlexOffers Registered',
+          description: 'Your FlexOffers sub-affiliate ID has been registered.',
+        });
+        
+        // Refresh the providers list
+        const provider = availableProviders.find(p => p.id.toLowerCase() === formData.service.toLowerCase());
+        if (provider) {
+          setConnectedProviders(prev => [...prev, {...provider, connected: true}]);
+          setAvailableProviders(prev => 
+            prev.map(p => 
+              p.id.toLowerCase() === formData.service.toLowerCase() 
+                ? {...p, connected: true} 
+                : p
+            )
+          );
+        }
+        
+        return;
+      }
+      
+      // For other providers, use the default flow
+      toast({
+        title: 'Coming Soon',
+        description: 'Provider registration functionality will be available soon',
+      });
+    } catch (err) {
+      console.error('Error registering with provider:', err);
+      toast({
+        title: 'Registration Failed',
+        description: 'Failed to register with service provider',
+        variant: 'destructive'
+      });
+    }
   };
 
   // Disconnect from a service provider
   const disconnectProvider = async (providerId: string) => {
-    // This will be implemented in the next phase
-    toast({
-      title: 'Coming Soon',
-      description: 'Provider disconnection functionality will be available soon',
-    });
+    if (!user) {
+      toast({
+        title: 'Authentication Required',
+        description: 'You need to be logged in to disconnect from service providers',
+        variant: 'destructive'
+      });
+      return;
+    }
+    
+    try {
+      // For FlexOffers, remove the sub-affiliate mapping
+      if (providerId.toLowerCase() === 'flexoffers') {
+        const { error } = await supabase
+          .from('flexoffers_user_mapping')
+          .delete()
+          .eq('user_id', user.id);
+        
+        if (error) {
+          throw error;
+        }
+        
+        toast({
+          title: 'FlexOffers Disconnected',
+          description: 'Your FlexOffers integration has been removed.',
+        });
+        
+        // Update the UI
+        setConnectedProviders(prev => prev.filter(p => p.id.toLowerCase() !== providerId.toLowerCase()));
+        setAvailableProviders(prev => 
+          prev.map(p => 
+            p.id.toLowerCase() === providerId.toLowerCase() 
+              ? {...p, connected: false} 
+              : p
+          )
+        );
+        
+        return;
+      }
+      
+      // For other providers, use the default flow
+      toast({
+        title: 'Coming Soon',
+        description: 'Provider disconnection functionality will be available soon',
+      });
+    } catch (err) {
+      console.error('Error disconnecting provider:', err);
+      toast({
+        title: 'Disconnection Failed',
+        description: 'Failed to disconnect from service provider',
+        variant: 'destructive'
+      });
+    }
   };
 
   // Sync earnings data from a service provider
   const syncProviderEarnings = async (providerId: string) => {
-    // This will be implemented in the next phase
-    toast({
-      title: 'Coming Soon',
-      description: 'Provider earnings sync functionality will be available soon',
-    });
+    if (!user) {
+      toast({
+        title: 'Authentication Required',
+        description: 'You need to be logged in to sync earnings',
+        variant: 'destructive'
+      });
+      return;
+    }
+    
+    try {
+      if (providerId.toLowerCase() === 'flexoffers') {
+        // Get the user's sub-affiliate ID
+        const { data: mapping, error: mappingError } = await supabase
+          .from('flexoffers_user_mapping')
+          .select('sub_affiliate_id')
+          .eq('user_id', user.id)
+          .single();
+        
+        if (mappingError) {
+          throw mappingError;
+        }
+        
+        if (!mapping?.sub_affiliate_id) {
+          throw new Error('No FlexOffers sub-affiliate ID found');
+        }
+        
+        // Call the sync function with the FlexOffers data
+        const { error } = await supabase.functions.invoke('sync_affiliate_earnings', {
+          body: { 
+            service: 'FlexOffers',
+            user_id: user.id,
+            sub_affiliate_id: mapping.sub_affiliate_id
+          }
+        });
+        
+        if (error) {
+          throw error;
+        }
+        
+        toast({
+          title: 'Sync Initiated',
+          description: 'FlexOffers earnings sync has been initiated.',
+        });
+        
+        return;
+      }
+      
+      // For other providers, use the default flow
+      toast({
+        title: 'Coming Soon',
+        description: 'Provider earnings sync functionality will be available soon',
+      });
+    } catch (err) {
+      console.error('Error syncing provider earnings:', err);
+      toast({
+        title: 'Sync Failed',
+        description: 'Failed to sync earnings from provider',
+        variant: 'destructive'
+      });
+    }
+  };
+
+  // Generate a FlexOffers affiliate link
+  const generateReferralLink = (providerId: string, destinationUrl: string): string => {
+    const provider = availableProviders.find(p => p.id.toLowerCase() === providerId.toLowerCase());
+    
+    if (provider?.referralLinkTemplate && user) {
+      // Find the mapping asynchronously (this just kicks off the request, we'll use a placeholder for now)
+      supabase
+        .from('flexoffers_user_mapping')
+        .select('sub_affiliate_id')
+        .eq('user_id', user.id)
+        .single()
+        .then(({ data, error }) => {
+          if (error || !data?.sub_affiliate_id) {
+            console.error('Error fetching sub-affiliate ID:', error);
+          }
+        });
+      
+      // For immediate UI response, use a placeholder or cached value
+      // In a real app, you'd store this in state and update the UI once the query completes
+      const placeholderId = `tipTop_${user.id.substring(0, 8)}`;
+      
+      return provider.referralLinkTemplate
+        .replace('{{subAffiliateId}}', placeholderId)
+        .replace('{{destinationUrl}}', encodeURIComponent(destinationUrl));
+    }
+    
+    // If no template or user is not logged in, return the original URL
+    return destinationUrl;
   };
 
   const value: ServiceProviderContextType = {
@@ -186,7 +470,8 @@ export const ServiceProviderProvider = ({ children }: ServiceProviderProviderPro
     connectToProvider,
     registerWithProvider,
     disconnectProvider,
-    syncProviderEarnings
+    syncProviderEarnings,
+    generateReferralLink
   };
 
   return (

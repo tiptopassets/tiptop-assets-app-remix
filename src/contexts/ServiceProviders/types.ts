@@ -7,6 +7,7 @@ export interface ServiceProviderCredentials {
   encryptedPassword?: string;
   connected: boolean;
   lastSyncedAt?: Date;
+  subAffiliateId?: string; // Added for FlexOffers integration
 }
 
 export interface ServiceProviderInfo {
@@ -19,6 +20,7 @@ export interface ServiceProviderInfo {
   assetTypes: string[];
   connected: boolean;
   setupInstructions: string;
+  referralLinkTemplate?: string; // Added for FlexOffers integration
 }
 
 export interface ServiceProviderEarnings {
@@ -34,6 +36,7 @@ export interface RegisterServiceFormData {
   email: string;
   password: string;
   additionalFields?: Record<string, string>;
+  subAffiliateId?: string; // Added for FlexOffers integration
 }
 
 export interface ServiceProviderContextType {
@@ -47,4 +50,5 @@ export interface ServiceProviderContextType {
   registerWithProvider: (formData: RegisterServiceFormData) => Promise<void>;
   disconnectProvider: (providerId: string) => Promise<void>;
   syncProviderEarnings: (providerId: string) => Promise<void>;
+  generateReferralLink?: (providerId: string, destinationUrl: string) => string; // Added for FlexOffers integration
 }
