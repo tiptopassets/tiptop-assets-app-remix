@@ -52,3 +52,11 @@ export interface ServiceProviderContextType {
   syncProviderEarnings: (providerId: string) => Promise<void>;
   generateReferralLink?: (providerId: string, destinationUrl: string) => string; // Added for FlexOffers integration
 }
+
+// New interface to support the FlexOffers user mapping
+export interface FlexOffersUserMapping {
+  id: string;
+  user_id: string;
+  sub_affiliate_id: string;
+  created_at?: string;
+}
