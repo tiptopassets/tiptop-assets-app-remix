@@ -1,23 +1,19 @@
 
-import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
-import { 
-  FlexOffersSubIdResponse,
-  ServiceProviderInfo
-} from '../types';
+import { supabase } from "@/integrations/supabase/client";
+import { ServiceProviderInfo } from "../types";
+import { useToast } from "@/hooks/use-toast";
 
 export const connectToFlexOffers = async (
   userId: string,
   onSuccess: (provider: ServiceProviderInfo) => void,
   availableProviders: ServiceProviderInfo[]
-) => {
-  const { toast } = useToast();
-  
+): Promise<boolean> => {
   try {
-    // Generate a unique sub-affiliate ID using user ID and a timestamp
-    const subAffiliateId = `tipTop_${userId.substring(0, 8)}_${Date.now().toString(36)}`;
+    // Generate a pseudo-random sub-affiliate ID based on user ID
+    // In a real implementation, this would involve FlexOffers API calls
+    const subAffiliateId = `tiptop_${userId.substring(0, 8)}`;
     
-    // Store the mapping using RPC function
+    // Store the sub-affiliate ID mapping
     const { error } = await supabase.rpc(
       'create_flexoffers_mapping',
       {
@@ -26,12 +22,10 @@ export const connectToFlexOffers = async (
       }
     );
     
-    if (error) {
-      throw error;
-    }
+    if (error) throw error;
     
     // Create a placeholder in affiliate_earnings
-    await supabase
+    const { error: earningsError } = await supabase
       .from('affiliate_earnings')
       .insert({
         user_id: userId,
@@ -40,26 +34,17 @@ export const connectToFlexOffers = async (
         last_sync_status: 'pending'
       });
     
-    toast({
-      title: 'FlexOffers Connected',
-      description: 'Your FlexOffers affiliate account is now linked.',
-    });
+    if (earningsError) throw earningsError;
     
-    // Find and return the updated provider
-    const provider = availableProviders.find(p => p.id.toLowerCase() === 'flexoffers');
-    if (provider) {
-      onSuccess({...provider, connected: true});
+    // Find the FlexOffers provider and update UI
+    const flexoffersProvider = availableProviders.find(p => p.id.toLowerCase() === 'flexoffers');
+    if (flexoffersProvider) {
+      onSuccess({...flexoffersProvider, connected: true});
     }
     
     return true;
   } catch (err) {
     console.error('Error connecting to FlexOffers:', err);
-    toast({
-      title: 'Connection Failed',
-      description: 'Failed to connect to FlexOffers',
-      variant: 'destructive'
-    });
-    
     return false;
   }
 };
@@ -67,99 +52,80 @@ export const connectToFlexOffers = async (
 export const disconnectFlexOffers = async (
   userId: string,
   onSuccess: () => void
-) => {
-  const { toast } = useToast();
-  
+): Promise<boolean> => {
   try {
+    // Remove the sub-affiliate mapping
     const { error } = await supabase.rpc(
       'delete_flexoffers_mapping',
-      { user_id_param: userId }
+      {
+        user_id_param: userId
+      }
     );
     
-    if (error) {
-      throw error;
-    }
+    if (error) throw error;
     
-    toast({
-      title: 'FlexOffers Disconnected',
-      description: 'Your FlexOffers integration has been removed.',
-    });
+    // Delete the earnings record
+    await supabase
+      .from('affiliate_earnings')
+      .delete()
+      .eq('user_id', userId)
+      .eq('service', 'FlexOffers');
     
+    // Update UI
     onSuccess();
+    
     return true;
   } catch (err) {
     console.error('Error disconnecting from FlexOffers:', err);
-    toast({
-      title: 'Disconnection Failed',
-      description: 'Failed to disconnect from FlexOffers',
-      variant: 'destructive'
-    });
-    
     return false;
   }
 };
 
-export const syncFlexOffersEarnings = async (userId: string) => {
-  const { toast } = useToast();
-  
+export const syncFlexOffersEarnings = async (
+  userId: string
+): Promise<boolean> => {
   try {
-    // Get the user's sub-affiliate ID using RPC function
-    const { data, error } = await supabase.rpc<FlexOffersSubIdResponse>(
+    // Call the edge function to sync earnings
+    const { data, error } = await supabase.functions.invoke('sync_affiliate_earnings', {
+      body: {
+        user_id: userId,
+        service: 'FlexOffers'
+      }
+    });
+    
+    if (error) throw error;
+    
+    return data.success || false;
+  } catch (err) {
+    console.error('Error syncing FlexOffers earnings:', err);
+    return false;
+  }
+};
+
+export const getFlexOffersReferralLink = async (
+  userId: string,
+  destinationUrl: string
+): Promise<{ subAffiliateId: string; referralLink: string }> => {
+  try {
+    // Get the sub-affiliate ID for the user
+    const { data, error } = await supabase.rpc<{ sub_affiliate_id: string }>(
       'get_flexoffers_sub_id',
       { user_id_param: userId }
     );
     
-    if (error) {
-      throw error;
-    }
+    if (error) throw error;
     
-    if (!data || !data.sub_affiliate_id) {
-      throw new Error('No FlexOffers sub-affiliate ID found');
-    }
+    const subAffiliateId = data?.sub_affiliate_id || '';
     
-    // Call the sync function with the FlexOffers data
-    const { error: syncError } = await supabase.functions.invoke('sync_affiliate_earnings', {
-      body: { 
-        service: 'FlexOffers',
-        user_id: userId,
-        sub_affiliate_id: data.sub_affiliate_id
-      }
-    });
+    // Generate the referral link
+    // In a real implementation, this would involve FlexOffers API calls
+    const encodedUrl = encodeURIComponent(destinationUrl);
+    const referralLink = `https://track.flexoffers.com/a/${subAffiliateId}?url=${encodedUrl}`;
     
-    if (syncError) {
-      throw syncError;
-    }
-    
-    toast({
-      title: 'Sync Initiated',
-      description: 'FlexOffers earnings sync has been initiated.',
-    });
-    
-    return true;
+    return { subAffiliateId, referralLink };
   } catch (err) {
-    console.error('Error syncing FlexOffers earnings:', err);
-    toast({
-      title: 'Sync Failed',
-      description: 'Failed to sync earnings from FlexOffers',
-      variant: 'destructive'
-    });
-    
-    return false;
+    console.error('Error getting FlexOffers referral link:', err);
+    // Return original URL if there's an error
+    return { subAffiliateId: '', referralLink: destinationUrl };
   }
-};
-
-export const getFlexOffersReferralLink = async (userId: string, destinationUrl: string) => {
-  // Find the mapping asynchronously
-  const { data } = await supabase.rpc<FlexOffersSubIdResponse>(
-    'get_flexoffers_sub_id',
-    { user_id_param: userId }
-  );
-      
-  // For immediate UI response, use a placeholder or cached value if no data
-  const subAffiliateId = data?.sub_affiliate_id || `tipTop_${userId.substring(0, 8)}`;
-  
-  return {
-    subAffiliateId,
-    referralLink: `https://www.flexoffers.com/affiliate-link/?sid=${subAffiliateId}&url=${encodeURIComponent(destinationUrl)}`
-  };
 };

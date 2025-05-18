@@ -35,10 +35,10 @@ export const useProviderActions = (
         const success = await connectToFlexOffers(
           userId,
           (updatedProvider) => {
-            // Update the providers lists
-            setConnectedProviders(prev => [...prev, updatedProvider]);
-            setAvailableProviders(prev => 
-              prev.map(p => 
+            // Update the providers lists with type safety
+            setConnectedProviders([...connectedProviders, updatedProvider]);
+            setAvailableProviders(
+              availableProviders.map(p => 
                 p.id.toLowerCase() === providerId.toLowerCase() 
                   ? {...p, connected: true} 
                   : p
@@ -115,12 +115,13 @@ export const useProviderActions = (
           description: 'Your FlexOffers sub-affiliate ID has been registered.',
         });
         
-        // Refresh the providers list
+        // Refresh the providers list with type safety
         const provider = availableProviders.find(p => p.id.toLowerCase() === formData.service.toLowerCase());
         if (provider) {
-          setConnectedProviders(prev => [...prev, {...provider, connected: true}]);
-          setAvailableProviders(prev => 
-            prev.map(p => 
+          // Create new arrays instead of modifying existing ones
+          setConnectedProviders([...connectedProviders, {...provider, connected: true}]);
+          setAvailableProviders(
+            availableProviders.map(p => 
               p.id.toLowerCase() === formData.service.toLowerCase() 
                 ? {...p, connected: true} 
                 : p
@@ -166,10 +167,10 @@ export const useProviderActions = (
         const success = await disconnectFlexOffers(
           userId,
           () => {
-            // Update the UI
-            setConnectedProviders(prev => prev.filter(p => p.id.toLowerCase() !== providerId.toLowerCase()));
-            setAvailableProviders(prev => 
-              prev.map(p => 
+            // Update the UI with type safety
+            setConnectedProviders(connectedProviders.filter(p => p.id.toLowerCase() !== providerId.toLowerCase()));
+            setAvailableProviders(
+              availableProviders.map(p => 
                 p.id.toLowerCase() === providerId.toLowerCase() 
                   ? {...p, connected: false} 
                   : p
