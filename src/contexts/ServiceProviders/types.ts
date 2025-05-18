@@ -89,6 +89,9 @@ declare module '@supabase/supabase-js' {
           'get_flexoffers_sub_id',
       params?: object,
       options?: object
-    ): PostgrestFilterBuilder<T>;
+    ): {
+      data: T | null;
+      error: Error | null;
+    }
   }
 }
