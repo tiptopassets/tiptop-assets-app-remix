@@ -1,46 +1,36 @@
 
+# Supabase project configuration
 project_id = "cxvdcdatxewrvwbcnksg"
+
 [api]
+# Port to run the API on. Defaults to 54321.
 port = 54321
-schemas = ["public", "storage", "graphql_public"]
+schemas = ["public", "storage"]
 extra_search_path = ["public", "extensions"]
 max_rows = 1000
 
 [db]
+# Port to run the DB on. Defaults to 54322.
 port = 54322
-shadow_port = 54320
-major_version = 15
 
 [studio]
+# Port to run Studio on. Defaults to 54323.
 port = 54323
 
+[functions]
+[functions.flexoffers_webhook]
+verify_jwt = false
+
 [inbucket]
+# Port to run the SMTP server on. Defaults to 54324.
 port = 54324
-smtp_port = 54325
-pop3_port = 54326
+# Port to run the POP3 server on. Defaults to 54325.
+pop3_port = 54325
+# Port to run the inbucket UI on. Defaults to 54324.
+web_port = 54326
+# Web UI domain. Set to localhost by default.
+web_url = "http://localhost"
 
 [storage]
+# The maximum file size allowed (e.g. "5MB", "500KB").
 file_size_limit = "50MiB"
-
-[auth]
-site_url = "https://demo.gotiptop.org"
-additional_redirect_urls = ["https://demo.gotiptop.org", "http://localhost:3000", "https://b6dab32e-1ff5-48a5-8b91-b7e478a5089a.lovableproject.com", "https://preview--3d-or-version-36.lovable.app/"]
-jwt_expiry = 3600
-enable_refresh_token_rotation = true
-refresh_token_reuse_interval = 10
-enable_signup = true
-
-[auth.external.google]
-enabled = true
-client_id = "592061431126-m5gvlnd35mm8ndj2mn06nisoklosskal.apps.googleusercontent.com"
-secret = "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"
-
-[analytics]
-enabled = false
-
-[experimental]
-postgres_ssl = false
-
-[functions]
-[functions.flexoffers-webhook]
-verify_jwt = false

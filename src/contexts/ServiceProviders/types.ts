@@ -53,10 +53,42 @@ export interface ServiceProviderContextType {
   generateReferralLink?: (providerId: string, destinationUrl: string) => string; // Added for FlexOffers integration
 }
 
-// New interface to support the FlexOffers user mapping
+// Interface to support the FlexOffers user mapping
 export interface FlexOffersUserMapping {
   id: string;
   user_id: string;
   sub_affiliate_id: string;
   created_at?: string;
+}
+
+// Define RPC function response types
+export interface GetFlexOffersUserMappingResponse {
+  id: string;
+  user_id: string;
+  sub_affiliate_id: string;
+  created_at: string;
+}
+
+export interface HasFlexOffersMappingResponse {
+  has_mapping: boolean;
+}
+
+export interface FlexOffersSubIdResponse {
+  sub_affiliate_id: string;
+}
+
+// Declare custom RPC functions to extend Supabase types
+declare module '@supabase/supabase-js' {
+  interface SupabaseClient {
+    rpc<T = any>(
+      fn: 'sum_login_count' | 
+          'get_flexoffers_user_mapping' | 
+          'has_flexoffers_mapping' | 
+          'create_flexoffers_mapping' | 
+          'delete_flexoffers_mapping' | 
+          'get_flexoffers_sub_id',
+      params?: object,
+      options?: object
+    ): PostgrestFilterBuilder<T>;
+  }
 }

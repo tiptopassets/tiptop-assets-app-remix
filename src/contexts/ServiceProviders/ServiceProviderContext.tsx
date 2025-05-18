@@ -8,7 +8,9 @@ import {
   ServiceProviderInfo,
   ServiceProviderEarnings,
   RegisterServiceFormData,
-  FlexOffersUserMapping
+  FlexOffersUserMapping,
+  HasFlexOffersMappingResponse,
+  FlexOffersSubIdResponse
 } from './types';
 
 const ServiceProviderContext = createContext<ServiceProviderContextType | undefined>(undefined);
@@ -82,7 +84,7 @@ export const ServiceProviderProvider = ({ children }: ServiceProviderProviderPro
 
         // Check FlexOffers sub-affiliate mappings using RPC function
         const { data: flexoffersMapping, error: mappingError } = await supabase
-          .rpc('has_flexoffers_mapping', { user_id_param: user.id });
+          .rpc<HasFlexOffersMappingResponse>('has_flexoffers_mapping', { user_id_param: user.id });
         
         if (mappingError) {
           console.error("Error checking FlexOffers mapping:", mappingError);
@@ -92,7 +94,7 @@ export const ServiceProviderProvider = ({ children }: ServiceProviderProviderPro
         const connected = new Set((credentialsData || []).map(cred => cred.service.toLowerCase()));
         
         // Add FlexOffers if mapping exists
-        if (flexoffersMapping) {
+        if (flexoffersMapping && flexoffersMapping.has_mapping) {
           connected.add('flexoffers');
         }
         
@@ -375,13 +377,13 @@ export const ServiceProviderProvider = ({ children }: ServiceProviderProviderPro
       if (providerId.toLowerCase() === 'flexoffers') {
         // Get the user's sub-affiliate ID using RPC function
         const { data, error } = await supabase
-          .rpc('get_flexoffers_sub_id', { user_id_param: user.id });
+          .rpc<FlexOffersSubIdResponse>('get_flexoffers_sub_id', { user_id_param: user.id });
         
         if (error) {
           throw error;
         }
         
-        if (!data) {
+        if (!data || !data.sub_affiliate_id) {
           throw new Error('No FlexOffers sub-affiliate ID found');
         }
         
@@ -390,7 +392,7 @@ export const ServiceProviderProvider = ({ children }: ServiceProviderProviderPro
           body: { 
             service: 'FlexOffers',
             user_id: user.id,
-            sub_affiliate_id: data
+            sub_affiliate_id: data.sub_affiliate_id
           }
         });
         
@@ -428,9 +430,9 @@ export const ServiceProviderProvider = ({ children }: ServiceProviderProviderPro
     if (provider?.referralLinkTemplate && user) {
       // Find the mapping asynchronously (this just kicks off the request, we'll use a placeholder for now)
       supabase
-        .rpc('get_flexoffers_sub_id', { user_id_param: user.id })
+        .rpc<FlexOffersSubIdResponse>('get_flexoffers_sub_id', { user_id_param: user.id })
         .then(({ data, error }) => {
-          if (error || !data) {
+          if (error || !data || !data.sub_affiliate_id) {
             console.error('Error fetching sub-affiliate ID:', error);
           }
         });

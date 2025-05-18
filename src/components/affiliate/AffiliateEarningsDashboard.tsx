@@ -7,7 +7,10 @@ import { Loader2, RefreshCw, AlertCircle, ExternalLink } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useServiceProviders } from '@/contexts/ServiceProviders';
-import { FlexOffersUserMapping } from '@/contexts/ServiceProviders/types';
+import { 
+  FlexOffersUserMapping, 
+  GetFlexOffersUserMappingResponse 
+} from '@/contexts/ServiceProviders/types';
 
 const AffiliateEarningsDashboard: React.FC = () => {
   const { earnings, services, loading, error, refreshData } = useAffiliateEarnings();
@@ -53,12 +56,11 @@ const AffiliateEarningsDashboard: React.FC = () => {
   useEffect(() => {
     const checkFlexOffersMapping = async () => {
       try {
-        // Use RPC function instead of direct table access until types are updated
+        // Use RPC function to get user mapping
         const { data, error } = await supabase
-          .rpc('get_flexoffers_user_mapping')
-          .single();
+          .rpc<GetFlexOffersUserMappingResponse>('get_flexoffers_user_mapping');
           
-        if (!error && data?.sub_affiliate_id) {
+        if (!error && data && data.sub_affiliate_id) {
           setFlexoffersSubId(data.sub_affiliate_id);
         } else {
           console.log('No FlexOffers mapping found or error:', error);
