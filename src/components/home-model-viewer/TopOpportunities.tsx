@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { AnalysisResults as PropertyAnalysis } from '@/types/analysis';
+import { ExternalLink } from 'lucide-react';
 
 interface TopOpportunitiesProps {
   analysisResults: PropertyAnalysis;
@@ -28,9 +29,17 @@ const TopOpportunities = ({ analysisResults }: TopOpportunitiesProps) => {
                 <span className="text-xs text-gray-400 mr-2">${opp.setupCost} setup</span>
               )}
               <span className="text-sm text-green-400">${opp.monthlyRevenue}/mo</span>
+              {opp.provider && (
+                <a href="#" className="ml-2 text-gray-400 hover:text-white">
+                  <ExternalLink size={14} />
+                </a>
+              )}
             </div>
           </div>
         ))}
+      </div>
+      <div className="mt-2 text-xs text-gray-500 italic">
+        *These revenue estimates are based on AI analysis and market averages, not from Google Solar API measurements
       </div>
     </div>
   );
