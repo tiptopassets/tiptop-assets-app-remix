@@ -9,9 +9,8 @@ type AuthContextType = {
   session: Session | null;
   user: User | null;
   loading: boolean;
-  signInWithGoogle: (redirectTo?: string) => Promise<void>;
+  signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
-  setRedirectPath: (path: string) => void;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -20,7 +19,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [redirectPath, setRedirectPath] = useState<string>('/');
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -80,10 +78,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             updateLoginStats(currentSession.user.id);
           }, 0);
           
-          // Redirect to the specified path or default to homepage
+          // Redirect to dashboard if user is logged in
           setTimeout(() => {
-            console.log(`Redirecting to: ${redirectPath}`);
-            navigate(redirectPath);
+            navigate('/dashboard');
           }, 0);
         }
         
@@ -114,23 +111,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return () => {
       subscription.unsubscribe();
     };
-  }, [navigate, redirectPath]);
+  }, [navigate]);
 
-  const signInWithGoogle = async (redirectTo?: string) => {
+  const signInWithGoogle = async () => {
     try {
       console.log("Starting Google sign-in process");
       const origin = window.location.origin;
       console.log("Current origin:", origin);
       
-      // Update redirect path if provided
-      if (redirectTo) {
-        setRedirectPath(redirectTo);
-      }
-      
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: origin + '/auth-callback'
+          redirectTo: origin + '/dashboard'
         }
       });
       
@@ -164,14 +156,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ 
-      session, 
-      user, 
-      loading, 
-      signInWithGoogle, 
-      signOut,
-      setRedirectPath
-    }}>
+    <AuthContext.Provider value={{ session, user, loading, signInWithGoogle, signOut }}>
       {children}
     </AuthContext.Provider>
   );

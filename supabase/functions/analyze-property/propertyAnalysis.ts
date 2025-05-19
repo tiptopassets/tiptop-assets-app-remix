@@ -25,13 +25,13 @@ export async function generatePropertyAnalysis(propertyInfo: PropertyInfo, image
       'Authorization': `Bearer ${GPT_API_KEY}`
     },
     body: JSON.stringify({
-      model: 'gpt-4o', // Using a more powerful model for better analysis
+      model: 'gpt-4o-mini', // Using a more affordable model for text analysis
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userPrompt }
       ],
-      temperature: 0.2, // Lower temperature for more consistent results
-      max_tokens: 3000
+      temperature: 0.5,
+      max_tokens: 2500
     })
   });
   
@@ -61,58 +61,46 @@ export async function generatePropertyAnalysis(propertyInfo: PropertyInfo, image
 function createSystemPrompt(): string {
   return `You are a real estate and property monetization expert with deep knowledge of service providers. Analyze this property information and identify specific monetization opportunities for the owner, with accurate and realistic valuation assessments. Focus on:
 
-1. Accurately determine the property type first - differentiate between:
-   - Single-family home
-   - Apartment/Condominium (individual unit)
-   - Apartment building (multi-unit property)
-   - Commercial property
-   - Mixed-use property
-
-2. Rooftop solar potential - use the roof size estimate from image analysis if available
+1. Rooftop solar potential - use the roof size estimate from image analysis if available
    - Calculate potential solar capacity in kW (approx. 15 sq ft per 1 kW)
    - Realistically estimate monthly revenue from solar panels (use $100-150 per kW)
    - Consider roof type and orientation from image analysis
    - Recommend specific solar providers like SunRun, Tesla Solar, Sunpower
    - Provide accurate setup costs and ROI timeline
-   - IMPORTANT: Only include solar as an option for properties with own roofs (not apartment units)
 
-3. Parking spaces rental - use the parking space count from image analysis if available
+2. Parking spaces rental - use the parking space count from image analysis if available
    - BE REALISTIC with the parking spaces count, most residential homes have 1-3 spaces maximum
    - For apartment buildings, estimate based on visible spaces in satellite images
    - Calculate monthly revenue potential with realistic rates based on location
    - Suggest specific platforms like Neighbor, ParkingPanda, SpotHero
    - Evaluate EV charger potential and associated additional revenue
-   - Note: If the property is an apartment unit without dedicated parking, don't include this option
 
-4. Storage space rental
+3. Storage space rental
    - Identify areas suitable for storage based on property layout
    - Calculate monthly revenue potential ($1-2 per sq ft)
    - Recommend services like Neighbor, STOW IT
    - Include setup costs and barriers to entry
-   - IMPORTANT: Only include for properties that would have extra storage space
 
-5. Garden/yard rental or urban farming - use the garden size estimate from image analysis if available
+4. Garden/yard rental or urban farming - use the garden size estimate from image analysis if available
    - Assess suitability for urban farming based on image analysis
    - Calculate rental potential with specific dollar amounts
    - Recommend platforms like Peerspace, YardYum
    - Estimate startup costs for different garden use cases
-   - Note: If the property is an apartment unit without a garden, don't include this option
 
-6. Swimming pool rental if present - use pool information from image analysis
+5. Swimming pool rental if present - use pool information from image analysis
    - ONLY if you can confidently detect a pool in the image analysis
-   - CAREFULLY CHECK for pool features in the image analysis - look for blue rectangular shapes
    - Estimate hourly/daily rental rates based on pool size and type
    - Calculate monthly revenue during swimming season
    - Suggest platforms like Swimply
    - Include maintenance considerations in valuation
 
-7. Internet bandwidth sharing
+6. Internet bandwidth sharing
    - Estimate potential revenue based on location (typically $5-50 per month)
    - Recommend services like Honeygain
    - Provide setup steps and requirements
    - Include typical earnings in the area
 
-8. Property valuation
+7. Property valuation
    - Provide a comprehensive valuation of the entire property's monetization potential
    - Calculate total monthly and annual revenue potential
    - Rank opportunities by profitability
@@ -138,16 +126,14 @@ function createUserPrompt(propertyInfo: PropertyInfo, imageAnalysis: ImageAnalys
 Here is the satellite image analysis: ${JSON.stringify(imageAnalysis)}
 
 IMPORTANT: Be extremely realistic in your assessments. If you're unsure about something, be conservative in your estimates or indicate uncertainty.
-- First determine if this is a single-family home, an apartment unit, or an apartment building
 - For parking spaces, most residential homes have 1-3 spaces - DO NOT claim 10+ parking spaces for a standard home
 - For solar panels, only estimate based on visible roof area in proper orientation
-- For swimming pools, carefully look for blue rectangular shapes and only include if clearly detected
+- For swimming pools, only include if clearly detected
 - For garden space, estimate conservatively based on visible yard area
-- For apartment units specifically, do NOT include rooftop or other shared amenities unless specifically owned
 
 Please analyze this property and generate a comprehensive assessment of monetization opportunities with specific service provider recommendations and accurate valuations. Return your analysis as a JSON object with the following structure:
 {
-  "propertyType": "residential-house/residential-apartment-unit/residential-apartment-building/commercial/etc",
+  "propertyType": "residential/commercial/etc",
   "amenities": ["array", "of", "amenities"],
   "rooftop": { 
     "area": number_in_sqft, 
@@ -238,5 +224,5 @@ Please analyze this property and generate a comprehensive assessment of monetiza
   }
 }
 
-IMPORTANT: Make sure to provide complete information for ALL applicable categories and be extremely accurate about property type. If data is limited, use reasonable estimates based on location and property type. Don't omit any relevant fields.`;
+IMPORTANT: Make sure to provide complete information for ALL applicable categories. If data is limited, use reasonable estimates based on location and property type. Don't omit any relevant fields.`;
 }

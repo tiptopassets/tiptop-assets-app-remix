@@ -1,7 +1,6 @@
 
 import { Loader } from '@googlemaps/js-api-loader';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from '@/hooks/use-toast';
 
 // Get API key from environment or fallback to a publicly restricted key for development
 // In production, this should use the Supabase secret
@@ -9,10 +8,7 @@ export const getGoogleMapsApiKey = async (): Promise<string> => {
   try {
     // Try to get API key from Supabase edge function
     const { data, error } = await supabase.functions.invoke('get-google-maps-key', {
-      body: { 
-        origin: window.location.origin,
-        referrer: document.referrer || window.location.href
-      }
+      body: { origin: window.location.origin }
     });
     
     if (error || !data?.apiKey) {
@@ -29,7 +25,7 @@ export const getGoogleMapsApiKey = async (): Promise<string> => {
   }
 };
 
-export const initializeGoogleMaps = async (retryCount = 0) => {
+export const initializeGoogleMaps = async () => {
   try {
     const apiKey = await getGoogleMapsApiKey();
     
@@ -39,41 +35,19 @@ export const initializeGoogleMaps = async (retryCount = 0) => {
       version: 'weekly',
       libraries: ['places'],
       // Add authorized domains to solve RefererNotAllowedMapError
-      authReferrerPolicy: 'origin',
+      authReferrerPolicy: 'origin'
     });
 
     // Load Google Maps API
     return await loader.load();
-  } catch (error: any) {
+  } catch (error) {
     console.error("Failed to initialize Google Maps:", error);
-    
-    // Check if it's a referrer error
-    if (error.message?.includes('RefererNotAllowed') && retryCount < 2) {
-      console.log(`Retrying Google Maps initialization (attempt ${retryCount + 1})...`);
-      // Retrying with a short delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      return initializeGoogleMaps(retryCount + 1);
-    }
-    
-    // If we've exhausted retries or it's another error, show toast and throw
-    toast({
-      title: "Google Maps Error",
-      description: "Failed to load Google Maps. Switching to demo mode.",
-      variant: "destructive"
-    });
-    
     throw error;
   }
 };
 
 // Helper to generate higher resolution satellite images
 export const generateHighResolutionMapURL = async (coordinates: google.maps.LatLngLiteral) => {
-  try {
-    const apiKey = await getGoogleMapsApiKey();
-    return `https://maps.googleapis.com/maps/api/staticmap?center=${coordinates.lat},${coordinates.lng}&zoom=20&size=800x800&maptype=satellite&key=${apiKey}`;
-  } catch (error) {
-    console.error("Failed to generate satellite image URL:", error);
-    // Return a placeholder if there's an error
-    return null;
-  }
+  const apiKey = await getGoogleMapsApiKey();
+  return `https://maps.googleapis.com/maps/api/staticmap?center=${coordinates.lat},${coordinates.lng}&zoom=20&size=800x800&maptype=satellite&key=${apiKey}`;
 };
