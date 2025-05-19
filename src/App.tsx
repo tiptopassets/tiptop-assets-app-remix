@@ -19,6 +19,7 @@ import ModelViewer from "./pages/ModelViewer";
 import AdminDashboard from "./pages/AdminDashboard";
 import SubmitProperty from "./pages/SubmitProperty";
 import AffiliateEarningsDashboard from "./pages/AffiliateEarningsDashboard";
+import AuthCallback from "./pages/AuthCallback";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -50,6 +51,7 @@ const App = () => (
               <Route path="/dashboard/affiliate" element={<AffiliateEarningsDashboard />} />
               <Route path="/model-viewer" element={<ModelViewer />} />
               <Route path="/submit-property" element={<SubmitProperty />} />
+              <Route path="/auth-callback" element={<AuthCallback />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </TooltipProvider>
