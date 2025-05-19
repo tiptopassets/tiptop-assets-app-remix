@@ -63,6 +63,7 @@ const GoogleMap = () => {
   useEffect(() => {
     if (mapInstance && addressCoordinates) {
       mapInstance.setCenter(addressCoordinates);
+      mapInstance.setZoom(18); // Zoom in when we have an address
     }
   }, [mapInstance, addressCoordinates]);
 

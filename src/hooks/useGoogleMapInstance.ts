@@ -21,9 +21,12 @@ export const useGoogleMapInstance = (zoomLevel: number | undefined, setZoomLevel
           return null;
         }
         
+        // Initial San Francisco coordinates
+        const sanFrancisco = { lat: 37.7749, lng: -122.4194 };
+        
         const newMap = new google.maps.Map(mapRef.current, {
-          center: { lat: 37.7749, lng: -122.4194 },
-          zoom: zoomLevel || 20, // Use stored zoom level or default to 20
+          center: sanFrancisco,
+          zoom: 12, // Initial zoom level of 12 for city overview
           mapTypeId: 'satellite',
           disableDefaultUI: true,
           zoomControl: true,

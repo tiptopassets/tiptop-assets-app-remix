@@ -1,9 +1,10 @@
 
-import { XCircle } from 'lucide-react';
+import React from 'react';
+import { X } from 'lucide-react';
 
-type ClearSearchButtonProps = {
+interface ClearSearchButtonProps {
   onClear: () => void;
-};
+}
 
 const ClearSearchButton = ({ onClear }: ClearSearchButtonProps) => {
   return (
@@ -11,8 +12,9 @@ const ClearSearchButton = ({ onClear }: ClearSearchButtonProps) => {
       onClick={onClear}
       className="flex items-center justify-center h-10 w-10 rounded-full text-white/70 hover:text-white transition-colors"
       title="Clear search"
+      type="button"
     >
-      <XCircle className="h-5 w-5" />
+      <X className="h-5 w-5" />
     </button>
   );
 };

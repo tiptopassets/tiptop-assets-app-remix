@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from 'react';
 import { useGoogleMap } from '@/contexts/GoogleMapContext';
 import { useToast } from '@/hooks/use-toast';
@@ -63,7 +64,7 @@ export const useAddressSearch = () => {
           const coordinates = { lat, lng };
           setAddressCoordinates(coordinates);
           
-          // Center map to selected address
+          // Center map to selected address and zoom in to level 18
           mapInstance.setCenter(place.geometry.location);
           mapInstance.setZoom(18);
           
