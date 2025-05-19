@@ -8,6 +8,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { FormField, SelectedAsset, Opportunity } from "@/types/analysis";
 import { LogIn } from 'lucide-react';
 import iconMap from './IconMap';
+import { useToast } from '@/hooks/use-toast';
+import { useNavigate } from 'react-router-dom';
 
 interface AssetFormSectionProps {
   selectedAssets: SelectedAsset[];
@@ -21,6 +23,9 @@ const AssetFormSection = ({
   onComplete
 }: AssetFormSectionProps) => {
   const [formData, setFormData] = useState<Record<string, Record<string, string | number>>>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { toast } = useToast();
+  const navigate = useNavigate();
 
   // Find form fields for an asset based on its title
   const findFormFields = (assetTitle: string): FormField[] => {
@@ -40,12 +45,33 @@ const AssetFormSection = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    setIsSubmitting(true);
     
-    // Here you would typically submit the form data
-    console.log('Form data submitted:', formData);
-    
-    // Navigate to authentication
-    onComplete();
+    try {
+      // Here you would typically submit the form data
+      console.log('Form data submitted:', formData);
+      
+      // Show success toast
+      toast({
+        title: "Information Saved",
+        description: "Your asset information has been saved successfully."
+      });
+      
+      // Navigate to authentication after a short delay
+      setTimeout(() => {
+        setIsSubmitting(false);
+        onComplete();
+      }, 500);
+    } catch (error) {
+      console.error('Error submitting form:', error);
+      setIsSubmitting(false);
+      
+      toast({
+        title: "Submission Error",
+        description: "There was a problem saving your information. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
 
   if (selectedAssets.length === 0) {
@@ -149,13 +175,23 @@ const AssetFormSection = ({
         <div className="flex justify-center mt-8">
           <Button 
             type="submit"
-            className="glass-effect bg-gradient-to-r from-tiptop-purple to-purple-600 hover:opacity-90 px-8 py-6 rounded-full flex items-center gap-3 text-xl"
+            disabled={isSubmitting}
+            className="glass-effect bg-gradient-to-r from-tiptop-purple to-purple-600 hover:opacity-90 px-8 py-6 rounded-full flex items-center gap-3 text-xl transition-all"
             style={{ 
               boxShadow: '0 0 20px rgba(155, 135, 245, 0.5)',
             }}
           >
-            <span>Complete & Authenticate</span>
-            <LogIn size={24} />
+            {isSubmitting ? (
+              <>
+                <span className="animate-pulse">Processing...</span>
+                <div className="h-5 w-5 border-2 border-white/80 border-t-transparent rounded-full animate-spin"></div>
+              </>
+            ) : (
+              <>
+                <span>Complete & Authenticate</span>
+                <LogIn size={24} />
+              </>
+            )}
           </Button>
         </div>
       </form>

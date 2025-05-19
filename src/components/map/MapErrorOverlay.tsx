@@ -1,22 +1,44 @@
 
 import React from 'react';
 import { AlertCircle } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { useGoogleMap } from '@/contexts/GoogleMapContext';
 
 interface MapErrorOverlayProps {
   errorMessage: string | null;
 }
 
 const MapErrorOverlay = ({ errorMessage }: MapErrorOverlayProps) => {
+  const { setUseLocalAnalysis } = useGoogleMap();
+  
   if (!errorMessage) return null;
 
+  const isMapError = errorMessage.includes('Google Maps') || 
+                    errorMessage.includes('map') || 
+                    errorMessage.includes('Maps');
+  
+  const handleSwitchToDemo = () => {
+    setUseLocalAnalysis(true);
+  };
+
   return (
-    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+    <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
       <div className="bg-red-500/90 max-w-md p-6 rounded-lg backdrop-blur-sm shadow-xl pointer-events-auto">
         <div className="flex items-center gap-3 mb-2">
           <AlertCircle className="h-6 w-6 text-white" />
           <h3 className="text-xl font-bold text-white">Analysis Failed</h3>
         </div>
-        <p className="text-white/90">{errorMessage}</p>
+        <p className="text-white/90 mb-4">{errorMessage}</p>
+        
+        {isMapError && (
+          <Button 
+            onClick={handleSwitchToDemo} 
+            variant="secondary"
+            className="w-full"
+          >
+            Switch to Demo Mode
+          </Button>
+        )}
       </div>
     </div>
   );

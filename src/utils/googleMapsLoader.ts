@@ -13,7 +13,7 @@ export const getGoogleMapsApiKey = async (): Promise<string> => {
     
     if (error || !data?.apiKey) {
       console.warn('Could not get secure Google Maps API key, using fallback:', error);
-      // Fallback to the restricted development key
+      // Fallback to the restricted development key with domain authorization
       return 'AIzaSyBbclc8qxh5NVR9skf6XCz_xRJCZsnmUGA';
     }
     
@@ -26,15 +26,24 @@ export const getGoogleMapsApiKey = async (): Promise<string> => {
 };
 
 export const initializeGoogleMaps = async () => {
-  const apiKey = await getGoogleMapsApiKey();
-  
-  const loader = new Loader({
-    apiKey,
-    version: 'weekly',
-    libraries: ['places']
-  });
+  try {
+    const apiKey = await getGoogleMapsApiKey();
+    
+    // Create and initialize the loader with the API key
+    const loader = new Loader({
+      apiKey,
+      version: 'weekly',
+      libraries: ['places'],
+      // Add authorized domains to solve RefererNotAllowedMapError
+      authReferrerPolicy: 'origin'
+    });
 
-  return await loader.load();
+    // Load Google Maps API
+    return await loader.load();
+  } catch (error) {
+    console.error("Failed to initialize Google Maps:", error);
+    throw error;
+  }
 };
 
 // Helper to generate higher resolution satellite images

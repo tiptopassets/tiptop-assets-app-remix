@@ -6,6 +6,8 @@ import MapControls from './map/MapControls';
 import MapErrorOverlay from './map/MapErrorOverlay';
 import MapVisualEffects from './map/MapVisualEffects';
 import { useGoogleMapInstance } from '@/hooks/useGoogleMapInstance';
+import { Button } from '@/components/ui/button';
+import { AlertCircle, MapPin } from 'lucide-react';
 
 const GoogleMap = () => {
   const { 
@@ -18,10 +20,11 @@ const GoogleMap = () => {
     setAddressCoordinates,
     analysisError,
     zoomLevel,
-    setZoomLevel
+    setZoomLevel,
+    setUseLocalAnalysis
   } = useGoogleMap();
   
-  const { mapRef, mapInstance, handleZoomIn, handleZoomOut } = useGoogleMapInstance(zoomLevel, setZoomLevel);
+  const { mapRef, mapInstance, mapLoadError, handleZoomIn, handleZoomOut } = useGoogleMapInstance(zoomLevel, setZoomLevel);
 
   // Effect for updating the map instance in the context
   useEffect(() => {
@@ -62,6 +65,35 @@ const GoogleMap = () => {
       mapInstance.setCenter(addressCoordinates);
     }
   }, [mapInstance, addressCoordinates]);
+
+  // Handle map loading error
+  if (mapLoadError) {
+    return (
+      <div className="absolute inset-0 z-0 flex flex-col items-center justify-center bg-gradient-to-b from-gray-900 to-purple-900">
+        <div className="bg-black/40 backdrop-blur-md p-8 rounded-lg max-w-md text-center border border-white/10">
+          <AlertCircle className="h-12 w-12 text-red-400 mx-auto mb-4" />
+          <h2 className="text-xl font-bold text-white mb-2">Google Maps Error</h2>
+          <p className="text-white/80 mb-4">
+            {mapLoadError}
+          </p>
+          <Button 
+            onClick={() => setUseLocalAnalysis(true)} 
+            className="bg-tiptop-purple hover:bg-tiptop-purple/90"
+          >
+            Switch to Demo Mode
+          </Button>
+        </div>
+        
+        {/* Fallback visuals */}
+        <div className="absolute inset-0 -z-10 pointer-events-none overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-b from-purple-900/20 to-black/40"></div>
+          <div className="w-full h-full flex items-center justify-center">
+            <MapPin className="h-40 w-40 text-purple-400/10 animate-pulse" />
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div 
