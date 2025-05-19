@@ -1,87 +1,302 @@
 
+// Add this at the top where imports are defined
 import { AnalysisResults } from './types';
 
-// Generate local mock analysis for fallback use
-export const generateLocalMockAnalysis = (propertyAddress: string): AnalysisResults => {
-  // Create a stable pseudo-random number generator based on address string
-  const hashCode = (str: string) => {
-    let hash = 0;
-    for (let i = 0; i < str.length; i++) {
-      hash = ((hash << 5) - hash) + str.charCodeAt(i);
-      hash |= 0; // Convert to 32bit integer
-    }
-    return hash;
-  };
+// Update or add this function
+export const generateLocalMockAnalysis = (address: string): AnalysisResults => {
+  // Try to determine if it's likely a single-family home or apartment based on the address
+  const isLikelyApartment = /apt|unit|#|suite|apartment|flat|condo/i.test(address);
   
-  const addressHash = Math.abs(hashCode(propertyAddress));
-  const rand = (min: number, max: number) => Math.floor((addressHash % 1000) / 1000 * (max - min) + min);
+  // Create appropriate mock data based on likely property type
+  const propertyType = isLikelyApartment ? 'apartment' : 'single_family';
   
-  // Generate mock data with some deterministic variation based on address
+  // Set parking spaces based on property type
+  const parkingSpaces = isLikelyApartment ? 1 : 2;
+  
+  // Only houses have pools and gardens typically
+  const hasPool = !isLikelyApartment && Math.random() > 0.7;
+  const gardenSize = isLikelyApartment ? 0 : Math.floor(Math.random() * 800) + 200;
+  
+  // Generate mock solar potential
+  const roofSize = isLikelyApartment ? 
+    Math.floor(Math.random() * 300) + 200 : // smaller roof for apartment unit
+    Math.floor(Math.random() * 1000) + 800;  // larger for house
+    
+  const solarPotential = Math.random() > 0.3;
+  const solarCapacity = solarPotential ? Math.floor(roofSize / 15) : 0;
+  const solarRevenue = solarPotential ? solarCapacity * 120 : 0;
+  
+  // Calculate parking revenue
+  const parkingRate = isLikelyApartment ? 8 : 12;
+  const parkingRevenue = parkingSpaces * parkingRate * 30 * 0.8; // 80% occupancy
+  
+  // Garden revenue if applicable
+  const gardenRevenue = gardenSize > 0 ? Math.floor(gardenSize * 0.1) : 0;
+  
+  // Pool revenue if applicable
+  const poolSize = hasPool ? Math.floor(Math.random() * 300) + 200 : 0;
+  const poolRevenue = hasPool ? Math.floor(poolSize * 1.2) : 0;
+  
+  // Internet sharing potential
+  const internetRevenue = Math.floor(Math.random() * 30) + 10;
+  
+  // Generate mock analysis results
   const mockResults: AnalysisResults = {
-    propertyType: addressHash % 3 === 0 ? "Commercial" : "Residential",
-    amenities: ["Parking", "Garden", "Storage"],
+    propertyType: propertyType,
+    amenities: ["Internet"],
     rooftop: {
-      area: rand(500, 2000),
-      solarCapacity: rand(3, 15),
-      revenue: rand(80, 300)
+      area: roofSize,
+      type: "flat",
+      solarCapacity: solarCapacity,
+      solarPotential: solarPotential,
+      revenue: solarRevenue,
+      providers: [
+        {
+          name: "SunRun",
+          setupCost: solarCapacity * 1000,
+          roi: 96,
+          url: "https://www.sunrun.com"
+        },
+        {
+          name: "Tesla Solar",
+          setupCost: solarCapacity * 1100,
+          roi: 108,
+          url: "https://www.tesla.com/solarpanels"
+        }
+      ]
     },
     garden: {
-      area: rand(200, 1000),
-      opportunity: ["Low", "Medium", "High"][rand(0, 3)],
-      revenue: rand(30, 150)
+      area: gardenSize,
+      opportunity: gardenSize > 500 ? "High" : (gardenSize > 200 ? "Medium" : "Low"),
+      revenue: gardenRevenue,
+      providers: gardenSize > 0 ? [
+        {
+          name: "YardYum",
+          setupCost: 100,
+          roi: 1,
+          url: "https://www.yardyum.com"
+        }
+      ] : []
     },
     parking: {
-      spaces: rand(1, 5),
-      rate: rand(5, 20),
-      revenue: rand(50, 200)
+      spaces: parkingSpaces,
+      rate: parkingRate,
+      revenue: parkingRevenue,
+      evChargerPotential: !isLikelyApartment && Math.random() > 0.5,
+      providers: [
+        {
+          name: "Neighbor",
+          setupCost: 0,
+          roi: 1,
+          url: "https://www.neighbor.com"
+        },
+        {
+          name: "SpotHero",
+          setupCost: 0,
+          roi: 1,
+          url: "https://www.spothero.com"
+        }
+      ]
     },
-    pool: {
-      present: addressHash % 5 === 0,
-      area: rand(0, 400),
+    pool: hasPool ? {
+      present: true,
+      area: poolSize,
       type: "inground",
-      revenue: addressHash % 5 === 0 ? rand(100, 300) : 0
+      revenue: poolRevenue,
+      providers: [
+        {
+          name: "Swimply",
+          setupCost: 200,
+          fee: 15,
+          url: "https://www.swimply.com"
+        }
+      ]
+    } : {
+      present: false,
+      area: 0,
+      type: "",
+      revenue: 0,
+      providers: []
     },
-    storage: {
-      volume: rand(50, 300),
-      revenue: rand(40, 120)
+    storage: isLikelyApartment ? {
+      volume: 0,
+      revenue: 0,
+      providers: []
+    } : {
+      volume: 200,
+      revenue: 80,
+      providers: [
+        {
+          name: "Neighbor",
+          setupCost: 0,
+          fee: 10,
+          url: "https://www.neighbor.com"
+        }
+      ]
     },
     bandwidth: {
-      available: rand(50, 200),
-      revenue: rand(10, 50)
+      available: 100,
+      revenue: internetRevenue,
+      providers: [
+        {
+          name: "Honeygain",
+          setupCost: 0,
+          fee: 15,
+          url: "https://www.honeygain.com"
+        }
+      ]
     },
-    shortTermRental: {
-      nightlyRate: rand(50, 200),
-      monthlyProjection: rand(500, 2500)
+    shortTermRental: isLikelyApartment ? {
+      nightlyRate: 0,
+      monthlyProjection: 0,
+      providers: []
+    } : {
+      nightlyRate: 120,
+      monthlyProjection: 900,
+      providers: [
+        {
+          name: "Airbnb",
+          setupCost: 500,
+          fee: 15,
+          url: "https://www.airbnb.com"
+        }
+      ]
     },
-    permits: ["Zoning permit", "Business license"],
-    restrictions: "Check local regulations before monetizing your property.",
+    permits: [
+      isLikelyApartment ? "Check with landlord or HOA for permission" : "Check local zoning laws"
+    ],
+    restrictions: isLikelyApartment ? 
+      "Apartment units typically have restrictions set by landlords or HOAs on modifications and commercial activity." : 
+      "Single-family homes may have HOA or municipal restrictions on commercial activities.",
+    
     topOpportunities: [
-      {
+      // Always include solar for houses if there's potential
+      ...((!isLikelyApartment && solarPotential) ? [{
         icon: "solar",
-        title: "Solar Panels",
-        monthlyRevenue: rand(80, 250),
-        description: "Install solar panels on your rooftop."
-      },
+        title: "Solar Panel Installation",
+        monthlyRevenue: solarRevenue,
+        description: `Install solar panels on your ${roofSize} sq ft roof to generate green energy and income.`,
+        provider: "SunRun",
+        setupCost: solarCapacity * 1000,
+        roi: 96,
+        formFields: [
+          {
+            type: "text",
+            name: "roofType",
+            label: "Roof Type",
+            value: "Flat/Pitched"
+          }
+        ]
+      }] : []),
+      
+      // Parking opportunity
       {
         icon: "parking",
-        title: "Parking Space",
-        monthlyRevenue: rand(50, 200),
-        description: "Rent out your parking spaces."
+        title: "Parking Space Rental",
+        monthlyRevenue: parkingRevenue,
+        description: `Rent out ${parkingSpaces} parking spaces for extra income.`,
+        provider: "Neighbor",
+        setupCost: 0,
+        roi: 1,
+        formFields: [
+          {
+            type: "number",
+            name: "parkingSpaces",
+            label: "Number of Parking Spaces",
+            value: parkingSpaces.toString()
+          }
+        ]
       },
+      
+      // Internet sharing is always possible
       {
+        icon: "internet",
+        title: "Internet Bandwidth Sharing",
+        monthlyRevenue: internetRevenue,
+        description: "Share unused internet bandwidth for passive income.",
+        provider: "Honeygain",
+        setupCost: 0,
+        roi: 1,
+        formFields: [
+          {
+            type: "select",
+            name: "internetSpeed",
+            label: "Internet Speed",
+            value: "100 Mbps",
+            options: ["50 Mbps", "100 Mbps", "300 Mbps", "1 Gbps"]
+          }
+        ]
+      },
+      
+      // Garden opportunity for houses only
+      ...(gardenSize > 0 ? [{
+        icon: "garden",
+        title: "Garden/Yard Rental",
+        monthlyRevenue: gardenRevenue,
+        description: `Rent out ${gardenSize} sq ft garden space for urban farming.`,
+        provider: "YardYum",
+        setupCost: 100,
+        roi: 1,
+        formFields: [
+          {
+            type: "select",
+            name: "gardenType",
+            label: "Garden Type",
+            value: "Vegetable",
+            options: ["Vegetable", "Flower", "Fruit", "Mixed"]
+          }
+        ]
+      }] : []),
+      
+      // Pool opportunity if present
+      ...(hasPool ? [{
+        icon: "pool",
+        title: "Swimming Pool Rental",
+        monthlyRevenue: poolRevenue,
+        description: `Rent out your ${poolSize} sq ft pool during swim season.`,
+        provider: "Swimply",
+        setupCost: 200,
+        roi: 2,
+        formFields: [
+          {
+            type: "select",
+            name: "poolAvailability",
+            label: "Pool Availability",
+            value: "Weekends",
+            options: ["Weekdays", "Weekends", "Evenings", "Full-time"]
+          }
+        ]
+      }] : []),
+      
+      // Storage for houses
+      ...(!isLikelyApartment ? [{
         icon: "storage",
-        title: "Storage Space",
-        monthlyRevenue: rand(40, 120),
-        description: "Offer storage space rental."
-      },
-      {
-        icon: "wifi",
-        title: "Internet Sharing",
-        monthlyRevenue: rand(10, 50),
-        description: "Share your internet bandwidth."
-      }
+        title: "Storage Space Rental",
+        monthlyRevenue: 80,
+        description: "Rent out extra storage space in your garage or basement.",
+        provider: "Neighbor",
+        setupCost: 0,
+        roi: 1,
+        formFields: [
+          {
+            type: "number",
+            name: "storageVolume",
+            label: "Available Storage (cu ft)",
+            value: "200"
+          }
+        ]
+      }] : [])
     ],
-    imageAnalysisSummary: "This property appears to have good solar potential with an open rooftop area."
+    imageAnalysisSummary: isLikelyApartment ? 
+      "Property appears to be an apartment unit with limited private outdoor space." :
+      "Property appears to be a single-family home with standard amenities.",
+    propertyValuation: {
+      totalMonthlyRevenue: solarRevenue + parkingRevenue + gardenRevenue + poolRevenue + internetRevenue + (isLikelyApartment ? 0 : 80),
+      totalAnnualRevenue: (solarRevenue + parkingRevenue + gardenRevenue + poolRevenue + internetRevenue + (isLikelyApartment ? 0 : 80)) * 12,
+      totalSetupCosts: (solarPotential ? solarCapacity * 1000 : 0) + (hasPool ? 200 : 0) + (gardenSize > 0 ? 100 : 0),
+      averageROI: solarPotential ? 96 : 3,
+      bestOpportunity: solarPotential ? "Solar Panel Installation" : "Parking Space Rental"
+    }
   };
   
   return mockResults;

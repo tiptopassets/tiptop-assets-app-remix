@@ -22,12 +22,11 @@ serve(async (req) => {
       throw new Error("Google Maps API key not configured");
     }
 
-    // For production, you should implement domain validation here
-    // to ensure only your domain can use this key
-    
+    // Return a success response with the API key and usage instructions
     return new Response(
       JSON.stringify({
         apiKey,
+        instructions: "This key should be used with proper referrer restrictions in the client"
       }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -38,6 +37,8 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({
         error: error.message || "Failed to get Google Maps API key",
+        fallbackAvailable: true,
+        message: "Using fallback mode with local analysis is recommended."
       }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },

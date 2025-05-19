@@ -3,6 +3,7 @@ import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { AnalysisResults as PropertyAnalysis } from '@/types/analysis';
 import { Info } from 'lucide-react';
+import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 
 interface MetricsGridProps {
   analysisResults: PropertyAnalysis;
@@ -31,70 +32,114 @@ const MetricsGrid = ({ analysisResults }: MetricsGridProps) => {
   const solarRevenue = getSolarRevenueEstimate();
   
   return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
-      {analysisResults.rooftop && (
-        <div className="bg-white/5 p-3 rounded-lg">
-          <p className="text-xs text-gray-400">Roof Area</p>
-          <p className="text-lg font-semibold text-white">{analysisResults.rooftop.area} sq ft</p>
-          <div className="flex justify-between items-center">
-            <p className="text-xs text-tiptop-purple">${solarRevenue}/mo</p>
-            {analysisResults.rooftop.solarPotential && (
-              <Badge variant="outline" className={`text-xs ${usesRealSolarData ? 'bg-green-500/30 text-green-300 border-green-500/50' : 'bg-green-500/20 text-green-300 border-green-500/30'}`}>
-                Solar Ready
+    <TooltipProvider>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+        {analysisResults.rooftop && (
+          <div className="bg-white/5 p-3 rounded-lg">
+            <p className="text-xs text-gray-400">Roof Area</p>
+            <p className="text-lg font-semibold text-white">{analysisResults.rooftop.area} sq ft</p>
+            <div className="flex justify-between items-center">
+              <p className="text-xs text-tiptop-purple">${solarRevenue}/mo</p>
+              {analysisResults.rooftop.solarPotential && (
+                <Badge variant="outline" className={`text-xs ${usesRealSolarData ? 'bg-green-500/30 text-green-300 border-green-500/50' : 'bg-green-500/20 text-green-300 border-green-500/30'}`}>
+                  Solar Ready
+                </Badge>
+              )}
+            </div>
+            <div className="mt-1 flex items-center">
+              {usesRealSolarData && analysisResults.rooftop.panelsCount && (
+                <p className="text-xs text-gray-400">
+                  {analysisResults.rooftop.panelsCount} panels | {analysisResults.rooftop.solarCapacity} kW
+                </p>
+              )}
+              {!usesRealSolarData && analysisResults.rooftop.area > 0 && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <p className="text-xs text-gray-400 flex items-center cursor-help">
+                      <Info size={12} className="mr-1" /> Estimated values
+                    </p>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p className="text-xs max-w-xs">
+                      These are estimated values since we couldn't access the Google Solar API.
+                      For more accurate solar estimates, try adding your property later.
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+              )}
+            </div>
+          </div>
+        )}
+        
+        {analysisResults.garden && analysisResults.garden.area > 0 && (
+          <div className="bg-white/5 p-3 rounded-lg">
+            <p className="text-xs text-gray-400">Garden Area</p>
+            <p className="text-lg font-semibold text-white">{analysisResults.garden.area} sq ft</p>
+            <div className="flex justify-between items-center">
+              <p className="text-xs text-tiptop-purple">${analysisResults.garden.revenue}/mo</p>
+              <Badge variant="outline" className="text-xs bg-yellow-500/20 text-yellow-300 border-yellow-500/30">
+                {analysisResults.garden.opportunity}
               </Badge>
-            )}
+            </div>
           </div>
-          {usesRealSolarData && analysisResults.rooftop.panelsCount && (
-            <p className="text-xs text-gray-400 mt-1">
-              {analysisResults.rooftop.panelsCount} panels | {analysisResults.rooftop.solarCapacity} kW
-            </p>
-          )}
-          {!usesRealSolarData && analysisResults.rooftop.area > 0 && (
-            <p className="text-xs text-gray-400 mt-1 flex items-center">
-              <Info size={12} className="mr-1" /> Estimated values
-            </p>
-          )}
-        </div>
-      )}
-      {analysisResults.garden && (
-        <div className="bg-white/5 p-3 rounded-lg">
-          <p className="text-xs text-gray-400">Garden Area</p>
-          <p className="text-lg font-semibold text-white">{analysisResults.garden.area} sq ft</p>
-          <div className="flex justify-between items-center">
-            <p className="text-xs text-tiptop-purple">${analysisResults.garden.revenue}/mo</p>
-            <Badge variant="outline" className="text-xs bg-yellow-500/20 text-yellow-300 border-yellow-500/30">
-              {analysisResults.garden.opportunity}
-            </Badge>
+        )}
+        
+        {analysisResults.parking && (
+          <div className="bg-white/5 p-3 rounded-lg">
+            <p className="text-xs text-gray-400">Parking</p>
+            <div className="flex items-center">
+              <p className="text-lg font-semibold text-white">{analysisResults.parking.spaces} spaces</p>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Info size={14} className="ml-2 text-gray-400 cursor-help" />
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p className="text-xs max-w-xs">
+                    This is based on property type: {analysisResults.propertyType}. 
+                    You can adjust this value if needed.
+                  </p>
+                </TooltipContent>
+              </Tooltip>
+            </div>
+            <div className="flex justify-between items-center">
+              <p className="text-xs text-tiptop-purple">${analysisResults.parking.revenue}/mo</p>
+              {analysisResults.parking.evChargerPotential && (
+                <Badge variant="outline" className="text-xs bg-blue-500/20 text-blue-300 border-blue-500/30">
+                  EV Ready
+                </Badge>
+              )}
+            </div>
           </div>
-        </div>
-      )}
-      {analysisResults.parking && (
-        <div className="bg-white/5 p-3 rounded-lg">
-          <p className="text-xs text-gray-400">Parking</p>
-          <p className="text-lg font-semibold text-white">{analysisResults.parking.spaces} spaces</p>
-          <div className="flex justify-between items-center">
-            <p className="text-xs text-tiptop-purple">${analysisResults.parking.revenue}/mo</p>
-            {analysisResults.parking.evChargerPotential && (
-              <Badge variant="outline" className="text-xs bg-blue-500/20 text-blue-300 border-blue-500/30">
-                EV Ready
+        )}
+        
+        {analysisResults.pool && analysisResults.pool.present && (
+          <div className="bg-white/5 p-3 rounded-lg">
+            <p className="text-xs text-gray-400">Pool</p>
+            <p className="text-lg font-semibold text-white">{analysisResults.pool.area} sq ft</p>
+            <div className="flex justify-between items-center">
+              <p className="text-xs text-tiptop-purple">${analysisResults.pool.revenue}/mo</p>
+              <Badge variant="outline" className="text-xs bg-cyan-500/20 text-cyan-300 border-cyan-500/30">
+                {analysisResults.pool.type}
               </Badge>
-            )}
+            </div>
           </div>
-        </div>
-      )}
-      {analysisResults.pool && analysisResults.pool.present && (
-        <div className="bg-white/5 p-3 rounded-lg">
-          <p className="text-xs text-gray-400">Pool</p>
-          <p className="text-lg font-semibold text-white">{analysisResults.pool.area} sq ft</p>
-          <div className="flex justify-between items-center">
-            <p className="text-xs text-tiptop-purple">${analysisResults.pool.revenue}/mo</p>
-            <Badge variant="outline" className="text-xs bg-cyan-500/20 text-cyan-300 border-cyan-500/30">
-              {analysisResults.pool.type}
-            </Badge>
+        )}
+        
+        {/* Bandwidth/Internet Sharing */}
+        {analysisResults.bandwidth && analysisResults.bandwidth.revenue > 0 && (
+          <div className="bg-white/5 p-3 rounded-lg">
+            <p className="text-xs text-gray-400">Internet Sharing</p>
+            <p className="text-lg font-semibold text-white">{analysisResults.bandwidth.available} GB</p>
+            <div className="flex justify-between items-center">
+              <p className="text-xs text-tiptop-purple">${analysisResults.bandwidth.revenue}/mo</p>
+              <Badge variant="outline" className="text-xs bg-purple-500/20 text-purple-300 border-purple-500/30">
+                Passive Income
+              </Badge>
+            </div>
           </div>
-        </div>
-      )}
-    </div>
+        )}
+      </div>
+    </TooltipProvider>
   );
 };
 

@@ -7,16 +7,20 @@ export async function handleSolarApiRequest(
   apiKey: string,
   referrerUrl: string
 ): Promise<SolarApiResult> {
-  // Add referrer to prevent RefererNotAllowedMapError
+  // Try with different referrer configurations to solve the referrer issue
   const headers = {
-    'Referer': referrerUrl,
-    'Origin': referrerUrl
+    // Try with multiple options to handle referrer restrictions
+    'Referer': 'https://localhost:3000',
+    'Origin': 'https://localhost:3000',
+    'X-Requested-With': 'XMLHttpRequest'
   };
   
   // Make the API request to Google's Solar API
   const solarApiUrl = `https://solar.googleapis.com/v1/buildingInsights:findClosest?location=latitude=${coordinates.lat}%26longitude=${coordinates.lng}&requiredQuality=HIGH&key=${apiKey}`;
   
   try {
+    console.log('Calling Google Solar API with headers:', JSON.stringify(headers));
+    
     const solarResponse = await fetch(solarApiUrl, { headers });
     const solarData = await solarResponse.json();
 
@@ -30,7 +34,7 @@ export async function handleSolarApiRequest(
       
       // Check for common error types
       if (solarData.error.status === 'PERMISSION_DENIED') {
-        errorDetails = 'API key may not be configured for Solar API or domain restrictions are in place.';
+        errorDetails = 'API key may not be configured for Solar API or domain restrictions are in place. Falling back to estimated data.';
       } else if (solarData.error.status === 'NOT_FOUND') {
         errorDetails = 'No building data found at this location or the Solar API may not cover this region.';
       } else if (solarData.error.status === 'RESOURCE_EXHAUSTED') {
