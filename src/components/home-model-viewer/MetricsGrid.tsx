@@ -3,7 +3,7 @@ import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { AnalysisResults as PropertyAnalysis } from '@/types/analysis';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { InfoCircledIcon } from '@radix-ui/react-icons';
+import { Info } from 'lucide-react';
 
 interface MetricsGridProps {
   analysisResults: PropertyAnalysis;
@@ -71,7 +71,7 @@ const MetricsGrid = ({ analysisResults }: MetricsGridProps) => {
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger className="flex items-center">
-                    <InfoCircledIcon className="h-3 w-3 text-gray-400 mr-1" />
+                    <Info className="h-3 w-3 text-gray-400 mr-1" />
                     <span className="text-xs text-gray-400">Measurement Method</span>
                   </TooltipTrigger>
                   <TooltipContent className="bg-gray-900 text-white max-w-xs">
@@ -103,7 +103,7 @@ const MetricsGrid = ({ analysisResults }: MetricsGridProps) => {
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger className="flex items-center">
-                    <InfoCircledIcon className="h-3 w-3 text-gray-400 mr-1" />
+                    <Info className="h-3 w-3 text-gray-400 mr-1" />
                     <span className="text-xs text-gray-400">Measurement Method</span>
                   </TooltipTrigger>
                   <TooltipContent className="bg-gray-900 text-white max-w-xs">
@@ -137,7 +137,7 @@ const MetricsGrid = ({ analysisResults }: MetricsGridProps) => {
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger className="flex items-center">
-                    <InfoCircledIcon className="h-3 w-3 text-gray-400 mr-1" />
+                    <Info className="h-3 w-3 text-gray-400 mr-1" />
                     <span className="text-xs text-gray-400">Dimensions</span>
                   </TooltipTrigger>
                   <TooltipContent className="bg-gray-900 text-white">
@@ -171,7 +171,7 @@ const MetricsGrid = ({ analysisResults }: MetricsGridProps) => {
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger className="flex items-center">
-                    <InfoCircledIcon className="h-3 w-3 text-gray-400 mr-1" />
+                    <Info className="h-3 w-3 text-gray-400 mr-1" />
                     <span className="text-xs text-gray-400">Dimensions</span>
                   </TooltipTrigger>
                   <TooltipContent className="bg-gray-900 text-white">
