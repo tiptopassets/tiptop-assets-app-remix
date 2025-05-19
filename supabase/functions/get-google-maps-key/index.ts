@@ -21,12 +21,17 @@ serve(async (req) => {
     if (!apiKey) {
       throw new Error("Google Maps API key not configured");
     }
+    
+    // Get the current hostname (for domain allowlisting purposes)
+    const hostname = origin || req.headers.get("Origin") || "https://tiptop-app.com";
+    console.log("Request origin:", hostname);
 
-    // Return a success response with the API key and usage instructions
+    // Return a success response with the API key and domain information
     return new Response(
       JSON.stringify({
         apiKey,
-        instructions: "This key should be used with proper referrer restrictions in the client"
+        domain: hostname,
+        instructions: "This key should be used with the origin domain in API requests"
       }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },

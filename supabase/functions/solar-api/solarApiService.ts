@@ -7,11 +7,12 @@ export async function handleSolarApiRequest(
   apiKey: string,
   referrerUrl: string
 ): Promise<SolarApiResult> {
-  // Try with different referrer configurations to solve the referrer issue
+  // Configure headers to address referrer restrictions
+  // Note: Different APIs have different requirements for referrer handling
   const headers = {
-    // Try with multiple options to handle referrer restrictions
-    'Referer': 'https://localhost:3000',
-    'Origin': 'https://localhost:3000',
+    // Use dynamic referrer based on the environment
+    'Referer': referrerUrl || 'https://tiptop-app.com',
+    'Origin': referrerUrl || 'https://tiptop-app.com',
     'X-Requested-With': 'XMLHttpRequest'
   };
   
@@ -19,8 +20,9 @@ export async function handleSolarApiRequest(
   const solarApiUrl = `https://solar.googleapis.com/v1/buildingInsights:findClosest?location=latitude=${coordinates.lat}%26longitude=${coordinates.lng}&requiredQuality=HIGH&key=${apiKey}`;
   
   try {
-    console.log('Calling Google Solar API with headers:', JSON.stringify(headers));
+    console.log('Calling Google Solar API with coordinates:', JSON.stringify(coordinates));
     
+    // Attempt API call with headers
     const solarResponse = await fetch(solarApiUrl, { headers });
     const solarData = await solarResponse.json();
 
@@ -34,7 +36,11 @@ export async function handleSolarApiRequest(
       
       // Check for common error types
       if (solarData.error.status === 'PERMISSION_DENIED') {
-        errorDetails = 'API key may not be configured for Solar API or domain restrictions are in place. Falling back to estimated data.';
+        if (solarData.error.message?.includes('API_KEY_HTTP_REFERRER_BLOCKED')) {
+          errorDetails = 'API key referrer restriction is blocking requests. Check API key configuration.';
+        } else {
+          errorDetails = 'API key may not be configured for Solar API. Falling back to estimated data.';
+        }
       } else if (solarData.error.status === 'NOT_FOUND') {
         errorDetails = 'No building data found at this location or the Solar API may not cover this region.';
       } else if (solarData.error.status === 'RESOURCE_EXHAUSTED') {
