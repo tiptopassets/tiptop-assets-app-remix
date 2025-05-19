@@ -21,7 +21,7 @@ const ServiceProviders = ({ title, providers }: ServiceProvidersProps) => {
                 {provider.setupCost ? `$${provider.setupCost}` : ''}
                 {provider.setupCost && provider.roi ? ' • ' : ''}
                 {provider.roi ? `ROI: ${provider.roi} mo` : ''}
-                {provider.fee ? `${provider.fee}% fee` : ''}
+                {provider.fee ? `${provider.fee}${typeof provider.fee === 'number' ? '%' : ''} fee` : ''}
               </span>
               {provider.url && (
                 <a 

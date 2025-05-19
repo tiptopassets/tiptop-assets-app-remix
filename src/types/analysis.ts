@@ -1,8 +1,9 @@
+
 // Define types for the asset analysis
 export interface ProviderInfo {
   name: string;
   setupCost?: number;
-  fee?: number;
+  fee?: string | number; // Updated to match GoogleMapContext/types.ts
   roi?: number;
   url?: string;
 }
