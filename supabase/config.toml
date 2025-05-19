@@ -1,36 +1,51 @@
 
-# Supabase project configuration
 project_id = "cxvdcdatxewrvwbcnksg"
 
 [api]
-# Port to run the API on. Defaults to 54321.
+enabled = true
 port = 54321
-schemas = ["public", "storage"]
-extra_search_path = ["public", "extensions"]
-max_rows = 1000
+schemas = ["public", "storage", "graphql_public"]
 
 [db]
-# Port to run the DB on. Defaults to 54322.
 port = 54322
 
+[realtime]
+enabled = true
+
 [studio]
-# Port to run Studio on. Defaults to 54323.
+enabled = true
 port = 54323
 
-[functions]
-[functions.flexoffers_webhook]
-verify_jwt = false
-
 [inbucket]
-# Port to run the SMTP server on. Defaults to 54324.
+enabled = true
 port = 54324
-# Port to run the POP3 server on. Defaults to 54325.
-pop3_port = 54325
-# Port to run the inbucket UI on. Defaults to 54324.
-web_port = 54326
-# Web UI domain. Set to localhost by default.
-web_url = "http://localhost"
+
+[auth]
+enabled = true
+port = 54325
 
 [storage]
-# The maximum file size allowed (e.g. "5MB", "500KB").
-file_size_limit = "50MiB"
+enabled = true
+port = 54326
+
+[functions]
+enabled = true
+port = 54327
+
+[functions.analyze-property]
+verify_jwt = false
+
+[functions.generate-3d-model]
+verify_jwt = false
+
+[functions.get-google-maps-key]
+verify_jwt = false
+
+[functions.flexoffers-webhook]
+verify_jwt = false
+
+[functions.process-submission]
+verify_jwt = false
+
+[functions.solar-api]
+verify_jwt = false

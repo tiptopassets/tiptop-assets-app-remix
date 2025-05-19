@@ -2,13 +2,15 @@
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { AnalysisResults as PropertyAnalysis } from '@/types/analysis';
-import { Info } from 'lucide-react';
+import { Info, CheckCircle2 } from 'lucide-react';
 
 interface PropertyTypeDisplayProps {
   analysisResults: PropertyAnalysis;
 }
 
 const PropertyTypeDisplay = ({ analysisResults }: PropertyTypeDisplayProps) => {
+  const usesRealSolarData = analysisResults.rooftop.usingRealSolarData;
+  
   return (
     <div className="mb-4">
       <h3 className="text-lg font-medium text-white border-b border-white/10 pb-2 mb-2">Property Analysis</h3>
@@ -21,8 +23,17 @@ const PropertyTypeDisplay = ({ analysisResults }: PropertyTypeDisplayProps) => {
       
       {/* Data source indicator */}
       <div className="flex items-center gap-2 mt-2 mb-2 p-2 bg-white/5 rounded text-xs text-gray-400">
-        <Info size={14} className="text-tiptop-purple" />
-        <span>Using AI-based estimates. For precise solar data, we recommend professional assessment.</span>
+        {usesRealSolarData ? (
+          <>
+            <CheckCircle2 size={14} className="text-green-500" />
+            <span>Using real Google Solar API data for solar calculations.</span>
+          </>
+        ) : (
+          <>
+            <Info size={14} className="text-tiptop-purple" />
+            <span>Using AI-based estimates. For precise solar data, we recommend professional assessment.</span>
+          </>
+        )}
       </div>
       
       {analysisResults.imageAnalysisSummary && (

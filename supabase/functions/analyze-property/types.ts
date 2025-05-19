@@ -1,4 +1,3 @@
-
 export interface AnalysisRequest {
   address: string;
   coordinates?: { lat: number; lng: number } | null;
@@ -9,6 +8,7 @@ export interface PropertyInfo {
   address: string;
   coordinates?: { lat: number; lng: number } | null;
   details: any;
+  solarData?: SolarApiData | null;
 }
 
 export interface ImageAnalysis {
@@ -22,6 +22,24 @@ export interface ImageAnalysis {
   poolSize?: number | null;
   poolType?: string | null;
   fullAnalysis?: string;
+}
+
+export interface SolarApiData {
+  roofTotalAreaSqFt: number;
+  solarPotential: boolean;
+  maxSolarCapacityKW: number;
+  yearlyEnergyKWh: number;
+  panelsCount: number;
+  averageHoursOfSunPerYear: number;
+  carbonOffsetKg: number;
+  monthlyRevenue: number;
+  setupCost: number;
+  roofSegments: any[];
+  financialAnalysis?: {
+    initialYearlyProduction: number;
+    federalIncentiveValue: number;
+    panelLifetimeYears: number;
+  };
 }
 
 export interface ProviderInfo {

@@ -1,0 +1,318 @@
+
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.43.1';
+import { corsHeaders } from '../_shared/cors.ts';
+
+const GOOGLE_MAPS_API_KEY = Deno.env.get('GOOGLE_MAPS_API_KEY') || '';
+const SUPABASE_URL = Deno.env.get('SUPABASE_URL') || '';
+const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY') || '';
+
+// Define interfaces for the response types
+interface SolarPanelConfig {
+  panelsCount: number;
+  yearlyEnergyDcKwh: number;
+  pitchDegrees: number;
+  azimuthDegrees: number;
+}
+
+interface SolarPotentialResponse {
+  solarPotential: {
+    maxArrayPanelsCount: number;
+    panelCapacityWatts: number;
+    panelHeightMeters: number;
+    panelWidthMeters: number;
+    maxArrayAreaMeters2: number;
+    maxSunshineHoursPerYear: number;
+    carbonOffsetFactorKgPerMwh: number;
+    panels: {
+      center: {
+        latitude: number;
+        longitude: number;
+      };
+      orientation: string;
+      yearlyEnergyDcKwh: number;
+    }[];
+    solarPanelConfigs: SolarPanelConfig[];
+    financialAnalysis: {
+      initialAcKwhPerYear: number;
+      remainingLifetimeUtilityBill: {
+        currencyCode: string;
+        units: string;
+        nanos: number;
+      };
+      federalIncentiveValue: {
+        currencyCode: string;
+        units: string;
+        nanos: number;
+      };
+      panelLifetimeYears: number;
+    };
+  };
+  roofs: {
+    areaMeters2: number;
+    centerPoint: {
+      latitude: number;
+      longitude: number;
+    };
+    pitchDegrees: number;
+    azimuthDegrees: number;
+    sunshineQuantiles: number[];
+    boundingBox: {
+      sw: {
+        latitude: number;
+        longitude: number;
+      };
+      ne: {
+        latitude: number;
+        longitude: number;
+      };
+    };
+  }[];
+}
+
+interface SolarApiRequest {
+  address?: string;
+  coordinates?: {
+    lat: number;
+    lng: number;
+  };
+}
+
+Deno.serve(async (req: Request) => {
+  // Handle CORS preflight requests
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    const { address, coordinates }: SolarApiRequest = await req.json();
+    
+    if (!address && !coordinates) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: 'Either address or coordinates must be provided'
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 400
+        }
+      );
+    }
+
+    if (!GOOGLE_MAPS_API_KEY) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: 'Google Maps API key is not configured'
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 500
+        }
+      );
+    }
+
+    // Create Supabase client
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    // First get coordinates if only address was provided
+    let locationCoordinates = coordinates;
+    if (!locationCoordinates && address) {
+      try {
+        // Geocode the address to get coordinates
+        const geocodeResponse = await fetch(
+          `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${GOOGLE_MAPS_API_KEY}`
+        );
+        
+        const geocodeData = await geocodeResponse.json();
+        
+        if (geocodeData.results && geocodeData.results.length > 0) {
+          const location = geocodeData.results[0].geometry.location;
+          locationCoordinates = { lat: location.lat, lng: location.lng };
+        } else {
+          throw new Error('Could not geocode the provided address');
+        }
+      } catch (error) {
+        console.error('Geocoding error:', error);
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: 'Could not geocode the provided address'
+          }),
+          {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 400
+          }
+        );
+      }
+    }
+
+    // Call Google Solar API with coordinates
+    console.log('Calling Google Solar API with coordinates:', locationCoordinates);
+    
+    // Make the API request to Google's Solar API
+    const solarApiUrl = `https://solar.googleapis.com/v1/buildingInsights:findClosest?location=latitude=${locationCoordinates.lat}%26longitude=${locationCoordinates.lng}&requiredQuality=HIGH&key=${GOOGLE_MAPS_API_KEY}`;
+    
+    const solarResponse = await fetch(solarApiUrl);
+    const solarData = await solarResponse.json();
+
+    // Check for errors in the Solar API response
+    if (solarData.error) {
+      console.error('Solar API error:', solarData.error);
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: solarData.error.message || 'Error fetching solar data'
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 400
+        }
+      );
+    }
+
+    // Extract relevant solar data for our use case
+    const formattedSolarData = formatSolarData(solarData);
+
+    // Store the API response in the database for future reference
+    if (locationCoordinates) {
+      try {
+        // Store the raw API response in a table for reference
+        // This is optional but useful for debugging and analysis
+        await supabase
+          .from('solar_api_cache')
+          .upsert({
+            coordinates: `POINT(${locationCoordinates.lng} ${locationCoordinates.lat})`,
+            raw_response: solarData,
+            formatted_data: formattedSolarData,
+            requested_at: new Date().toISOString()
+          })
+          .select();
+      } catch (dbError) {
+        console.log('Database storage error (non-critical):', dbError);
+        // Continue execution even if database storage fails
+      }
+    }
+
+    return new Response(
+      JSON.stringify({
+        success: true,
+        solarData: formattedSolarData,
+        coordinates: locationCoordinates
+      }),
+      {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200
+      }
+    );
+  } catch (error) {
+    console.error('Error in solar-api function:', error);
+    return new Response(
+      JSON.stringify({
+        success: false,
+        error: error.message || 'An unknown error occurred'
+      }),
+      {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 500
+      }
+    );
+  }
+});
+
+// Helper function to format the Solar API response into our app's data model
+function formatSolarData(apiResponse: SolarPotentialResponse) {
+  // Default values in case the API response is incomplete
+  const defaultData = {
+    roofTotalAreaSqFt: 0,
+    solarPotential: true,
+    maxSolarCapacityKW: 0,
+    yearlyEnergyKWh: 0,
+    panelsCount: 0,
+    averageHoursOfSunPerYear: 0,
+    carbonOffsetKg: 0,
+    monthlyRevenue: 0,
+    setupCost: 0,
+    roofSegments: [],
+    financialAnalysis: {
+      initialYearlyProduction: 0,
+      federalIncentiveValue: 0,
+      panelLifetimeYears: 25
+    }
+  };
+
+  if (!apiResponse.solarPotential) {
+    return defaultData;
+  }
+
+  try {
+    // Convert square meters to square feet for roof area
+    const totalRoofAreaSqFt = apiResponse.roofs.reduce(
+      (total, roof) => total + convertSquareMetersToSquareFeet(roof.areaMeters2),
+      0
+    );
+
+    // Get the best configuration (usually the one with the most panels)
+    const bestConfig = apiResponse.solarPotential.solarPanelConfigs.reduce(
+      (best, current) => (current.panelsCount > best.panelsCount ? current : best),
+      apiResponse.solarPotential.solarPanelConfigs[0] || { panelsCount: 0, yearlyEnergyDcKwh: 0 }
+    );
+
+    // Calculate max solar capacity in kW
+    const maxSolarCapacityKW = 
+      (apiResponse.solarPotential.panelCapacityWatts * bestConfig.panelsCount) / 1000;
+
+    // Calculate monthly revenue (simplified estimate)
+    // Average electricity rate of $0.15 per kWh
+    const electricityRate = 0.15;
+    const yearlyRevenue = bestConfig.yearlyEnergyDcKwh * electricityRate;
+    const monthlyRevenue = Math.round(yearlyRevenue / 12);
+
+    // Estimate setup cost ($2.5 per watt is a common industry estimate)
+    const setupCostPerWatt = 2.5;
+    const setupCost = Math.round(
+      apiResponse.solarPotential.panelCapacityWatts * 
+      bestConfig.panelsCount * 
+      setupCostPerWatt
+    );
+
+    // Format financial analysis
+    const financialAnalysis = {
+      initialYearlyProduction: apiResponse.solarPotential.financialAnalysis?.initialAcKwhPerYear || 0,
+      federalIncentiveValue: 
+        apiResponse.solarPotential.financialAnalysis?.federalIncentiveValue?.units || 0,
+      panelLifetimeYears: 
+        apiResponse.solarPotential.financialAnalysis?.panelLifetimeYears || 25
+    };
+
+    // Build the response
+    return {
+      roofTotalAreaSqFt: Math.round(totalRoofAreaSqFt),
+      solarPotential: true,
+      maxSolarCapacityKW: parseFloat(maxSolarCapacityKW.toFixed(2)),
+      yearlyEnergyKWh: Math.round(bestConfig.yearlyEnergyDcKwh),
+      panelsCount: bestConfig.panelsCount,
+      averageHoursOfSunPerYear: 
+        apiResponse.solarPotential.maxSunshineHoursPerYear || 0,
+      carbonOffsetKg: 
+        (apiResponse.solarPotential.carbonOffsetFactorKgPerMwh * bestConfig.yearlyEnergyDcKwh) / 1000,
+      monthlyRevenue: monthlyRevenue,
+      setupCost: setupCost,
+      roofSegments: apiResponse.roofs.map(roof => ({
+        areaSqFt: Math.round(convertSquareMetersToSquareFeet(roof.areaMeters2)),
+        pitchDegrees: roof.pitchDegrees,
+        azimuthDegrees: roof.azimuthDegrees,
+        sunshineQuantiles: roof.sunshineQuantiles
+      })),
+      financialAnalysis: financialAnalysis
+    };
+  } catch (error) {
+    console.error('Error formatting solar data:', error);
+    return defaultData;
+  }
+}
+
+// Helper function to convert square meters to square feet
+function convertSquareMetersToSquareFeet(squareMeters: number): number {
+  return squareMeters * 10.764;
+}

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { AnalysisResults as PropertyAnalysis } from '@/types/analysis';
@@ -8,6 +7,8 @@ interface MetricsGridProps {
 }
 
 const MetricsGrid = ({ analysisResults }: MetricsGridProps) => {
+  const usesRealSolarData = analysisResults.rooftop.usingRealSolarData;
+  
   return (
     <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
       {analysisResults.rooftop && (
@@ -17,11 +18,16 @@ const MetricsGrid = ({ analysisResults }: MetricsGridProps) => {
           <div className="flex justify-between items-center">
             <p className="text-xs text-tiptop-purple">${analysisResults.rooftop.revenue}/mo</p>
             {analysisResults.rooftop.solarPotential && (
-              <Badge variant="outline" className="text-xs bg-green-500/20 text-green-300 border-green-500/30">
+              <Badge variant="outline" className={`text-xs ${usesRealSolarData ? 'bg-green-500/30 text-green-300 border-green-500/50' : 'bg-green-500/20 text-green-300 border-green-500/30'}`}>
                 Solar Ready
               </Badge>
             )}
           </div>
+          {usesRealSolarData && analysisResults.rooftop.panelsCount && (
+            <p className="text-xs text-gray-400 mt-1">
+              {analysisResults.rooftop.panelsCount} panels | {analysisResults.rooftop.solarCapacity} kW
+            </p>
+          )}
         </div>
       )}
       {analysisResults.garden && (

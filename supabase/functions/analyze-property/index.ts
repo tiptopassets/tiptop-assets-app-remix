@@ -39,32 +39,91 @@ Deno.serve(async (req) => {
     const { propertyCoordinates, propertyDetails, satelliteImageUrl } = 
       await fetchPropertyDetails(address, coordinates, GOOGLE_MAPS_API_KEY);
     
-    // Use provided satellite image if available, otherwise use the URL we generated
-    const imageForAnalysis = satelliteImage || satelliteImageUrl;
+    console.log('Starting property analysis');
     
+    // Get Solar API data instead of using image analysis
+    let solarData = null;
+    let imageAnalysis: ImageAnalysis = {};
+    
+    try {
+      console.log('Fetching solar data from Solar API...');
+      // Call the Solar API edge function
+      const { data: solarResponse, error } = await supabase.functions.invoke('solar-api', {
+        body: { 
+          address: address,
+          coordinates: propertyCoordinates
+        }
+      });
+      
+      if (error) {
+        console.error('Error calling Solar API:', error);
+        // Fall back to image analysis if Solar API fails
+        if (satelliteImage && satelliteImage.startsWith('data:image')) {
+          console.log('Falling back to image analysis...');
+          imageAnalysis = await analyzeImage(satelliteImage, address);
+        }
+      } else if (solarResponse.success && solarResponse.solarData) {
+        console.log('Received solar data:', solarResponse.solarData);
+        solarData = solarResponse.solarData;
+        
+        // Use solar data to enhance the image analysis
+        imageAnalysis = {
+          ...imageAnalysis,
+          roofSize: solarData.roofTotalAreaSqFt,
+          solarPotential: solarData.solarPotential ? 'High' : 'Low'
+        };
+      }
+    } catch (error) {
+      console.error('Error fetching solar data:', error);
+      
+      // Fall back to image analysis if needed for non-solar data
+      if (satelliteImage && satelliteImage.startsWith('data:image')) {
+        console.log('Falling back to image analysis for non-solar data...');
+        imageAnalysis = await analyzeImage(satelliteImage, address);
+      }
+    }
+
     // Create property info for analysis
     const propertyInfo: PropertyInfo = {
       address: address,
       coordinates: propertyCoordinates,
-      details: propertyDetails
+      details: propertyDetails,
+      solarData: solarData // Add solar data to the property info
     };
     
-    console.log('Starting property analysis');
-    
-    // First analyze the satellite image if available
-    let imageAnalysis: ImageAnalysis = {};
-    if (imageForAnalysis && imageForAnalysis.startsWith('data:image')) {
-      try {
-        console.log('Analyzing satellite image...');
-        imageAnalysis = await analyzeImage(imageForAnalysis, address);
-      } catch (error) {
-        console.error('Error analyzing image:', error);
-        // Continue without image analysis
-      }
-    }
-
     // Generate property analysis using AI
     const analysis = await generatePropertyAnalysis(propertyInfo, imageAnalysis);
+    
+    // If we have solar data, enhance the analysis with it
+    if (solarData) {
+      analysis.rooftop = {
+        ...analysis.rooftop,
+        area: solarData.roofTotalAreaSqFt,
+        solarCapacity: solarData.maxSolarCapacityKW,
+        solarPotential: solarData.solarPotential,
+        yearlyEnergyKWh: solarData.yearlyEnergyKWh,
+        panelsCount: solarData.panelsCount,
+        revenue: solarData.monthlyRevenue,
+        setupCost: solarData.setupCost,
+        usingRealSolarData: true
+      };
+      
+      // Update the top opportunity for solar if it exists
+      const solarOpportunityIndex = analysis.topOpportunities.findIndex(
+        opp => opp.title.toLowerCase().includes('solar')
+      );
+      
+      if (solarOpportunityIndex >= 0) {
+        analysis.topOpportunities[solarOpportunityIndex] = {
+          ...analysis.topOpportunities[solarOpportunityIndex],
+          monthlyRevenue: solarData.monthlyRevenue,
+          setupCost: solarData.setupCost,
+          roi: Math.ceil(solarData.setupCost / solarData.monthlyRevenue),
+          description: `Install ${solarData.panelsCount} solar panels producing ${solarData.yearlyEnergyKWh} kWh/year on your ${solarData.roofTotalAreaSqFt} sq ft roof.`,
+          usingRealSolarData: true
+        };
+      }
+    }
     
     return new Response(
       JSON.stringify({
@@ -74,7 +133,8 @@ Deno.serve(async (req) => {
           address: propertyDetails.formattedAddress || address,
           coordinates: propertyCoordinates
         },
-        imageAnalysis: imageAnalysis
+        imageAnalysis: imageAnalysis,
+        solarData: solarData
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

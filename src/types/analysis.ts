@@ -1,4 +1,3 @@
-
 // Define types for the asset analysis
 export interface ProviderInfo {
   name: string;
@@ -18,6 +17,10 @@ export interface AnalysisResults {
     solarPotential?: boolean;
     revenue: number;
     providers?: ProviderInfo[];
+    usingRealSolarData?: boolean;
+    yearlyEnergyKWh?: number;
+    panelsCount?: number;
+    setupCost?: number;
   };
   garden: {
     area: number;
@@ -78,6 +81,7 @@ export interface Opportunity {
   setupCost?: number;
   roi?: number;
   formFields?: FormField[];
+  usingRealSolarData?: boolean;
 }
 
 export interface AdditionalOpportunity {
