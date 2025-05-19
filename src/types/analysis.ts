@@ -14,15 +14,20 @@ export interface AnalysisResults {
   rooftop: {
     area: number;
     type?: string;
+    orientation?: string;
     solarCapacity: number;
     solarPotential?: boolean;
     revenue: number;
+    confidenceScore?: number | null;
+    methodology?: string | null;
     providers?: ProviderInfo[];
   };
   garden: {
     area: number;
     opportunity: string;
     revenue: number;
+    confidenceScore?: number | null;
+    methodology?: string | null;
     providers?: ProviderInfo[];
   };
   parking: {
@@ -31,6 +36,9 @@ export interface AnalysisResults {
     revenue: number;
     evChargerPotential?: boolean;
     parkingType?: string;
+    dimensions?: {length: number | null, width: number | null};
+    confidenceScore?: number | null;
+    methodology?: string | null;
     providers?: ProviderInfo[];
   };
   pool: {
@@ -38,11 +46,16 @@ export interface AnalysisResults {
     area: number;
     type: string;
     revenue: number;
+    dimensions?: {length: number | null, width: number | null};
+    confidenceScore?: number | null;
+    methodology?: string | null;
     providers?: ProviderInfo[];
   };
   storage: {
     volume: number;
     revenue: number;
+    confidenceScore?: number | null;
+    methodology?: string | null;
     providers?: ProviderInfo[];
   };
   bandwidth: {
@@ -59,6 +72,7 @@ export interface AnalysisResults {
   restrictions: string | null;
   topOpportunities: Opportunity[];
   imageAnalysisSummary?: string;
+  overallReliability?: number | null;
 }
 
 export interface FormField {
@@ -77,6 +91,7 @@ export interface Opportunity {
   provider?: string;
   setupCost?: number;
   roi?: number;
+  confidenceScore?: number;
   formFields?: FormField[];
 }
 
@@ -88,6 +103,7 @@ export interface AdditionalOpportunity {
   provider?: string;
   setupCost?: number;
   roi?: number;
+  confidenceScore?: number;
   formFields?: FormField[];
 }
 
@@ -98,5 +114,6 @@ export interface SelectedAsset {
   provider?: string;
   setupCost?: number;
   roi?: number;
+  confidenceScore?: number;
   formData?: Record<string, string | number>;
 }
