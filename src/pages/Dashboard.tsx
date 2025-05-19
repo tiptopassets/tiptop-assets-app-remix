@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import DashboardLayout from '@/components/dashboard/DashboardLayout';
@@ -35,47 +34,6 @@ const Dashboard = () => {
     navigate('/');
   };
 
-  if (!user) {
-    return (
-      <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black text-white flex flex-col items-center justify-center p-4">
-        <h1 className="text-3xl font-bold mb-6">Authentication Required</h1>
-        <p className="mb-8 text-gray-300">Please sign in to access your dashboard</p>
-        <Link 
-          to="/" 
-          className="bg-tiptop-purple hover:bg-purple-700 text-white px-6 py-3 rounded-full transition-colors"
-        >
-          Go to Home Page
-        </Link>
-      </div>
-    );
-  }
-
-  // Generate sample data for displaying in the dashboard when no analysis exists
-  const getSampleData = () => {
-    return {
-      assetDistribution: [
-        { name: 'Rooftop', value: 500 },
-        { name: 'Parking', value: 300 },
-        { name: 'Garden', value: 200 },
-        { name: 'Pool', value: 100 },
-      ],
-      monthlyData: [
-        { name: 'Jan', Rooftop: 400, Parking: 240, Garden: 180 },
-        { name: 'Feb', Rooftop: 420, Parking: 280, Garden: 190 },
-        { name: 'Mar', Rooftop: 450, Parking: 300, Garden: 220 },
-        { name: 'Apr', Rooftop: 470, Parking: 290, Garden: 230 },
-        { name: 'May', Rooftop: 500, Parking: 310, Garden: 240 },
-        { name: 'Jun', Rooftop: 520, Parking: 340, Garden: 260 },
-      ],
-      assetKeys: ['Rooftop', 'Parking', 'Garden'],
-      todayRevenue: 45.2,
-      increasePercentage: 12.5
-    };
-  };
-
-  // If we have analysis results, use them. Otherwise, use sample data
-  const chartData = analysisResults ? getChartData() : getSampleData();
-  
   // Generate chart data from analysis results
   const getChartData = () => {
     if (!analysisResults) return null;
@@ -115,6 +73,47 @@ const Dashboard = () => {
       increasePercentage: 12.5
     };
   };
+
+  // Generate sample data for displaying in the dashboard when no analysis exists
+  const getSampleData = () => {
+    return {
+      assetDistribution: [
+        { name: 'Rooftop', value: 500 },
+        { name: 'Parking', value: 300 },
+        { name: 'Garden', value: 200 },
+        { name: 'Pool', value: 100 },
+      ],
+      monthlyData: [
+        { name: 'Jan', Rooftop: 400, Parking: 240, Garden: 180 },
+        { name: 'Feb', Rooftop: 420, Parking: 280, Garden: 190 },
+        { name: 'Mar', Rooftop: 450, Parking: 300, Garden: 220 },
+        { name: 'Apr', Rooftop: 470, Parking: 290, Garden: 230 },
+        { name: 'May', Rooftop: 500, Parking: 310, Garden: 240 },
+        { name: 'Jun', Rooftop: 520, Parking: 340, Garden: 260 },
+      ],
+      assetKeys: ['Rooftop', 'Parking', 'Garden'],
+      todayRevenue: 45.2,
+      increasePercentage: 12.5
+    };
+  };
+
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black text-white flex flex-col items-center justify-center p-4">
+        <h1 className="text-3xl font-bold mb-6">Authentication Required</h1>
+        <p className="mb-8 text-gray-300">Please sign in to access your dashboard</p>
+        <Link 
+          to="/" 
+          className="bg-tiptop-purple hover:bg-purple-700 text-white px-6 py-3 rounded-full transition-colors"
+        >
+          Go to Home Page
+        </Link>
+      </div>
+    );
+  }
+
+  // If we have analysis results, use them. Otherwise, use sample data
+  const chartData = analysisResults ? getChartData() : getSampleData();
   
   // Generate property description
   const getPropertyDescription = () => {
