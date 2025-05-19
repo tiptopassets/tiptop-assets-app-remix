@@ -16,18 +16,6 @@ const PropertyTypeDisplay = ({ analysisResults }: PropertyTypeDisplayProps) => {
         {analysisResults.amenities && analysisResults.amenities.slice(0, 3).map((amenity, i) => (
           <Badge key={i} variant="outline" className="text-gray-300">{amenity}</Badge>
         ))}
-        {analysisResults.overallReliability && (
-          <Badge 
-            variant="outline" 
-            className={`text-xs ${
-              analysisResults.overallReliability >= 80 ? 'bg-green-500/20 text-green-300 border-green-500/30' : 
-              analysisResults.overallReliability >= 60 ? 'bg-blue-500/20 text-blue-300 border-blue-500/30' : 
-              'bg-yellow-500/20 text-yellow-300 border-yellow-500/30'
-            }`}
-          >
-            {analysisResults.overallReliability}% reliable
-          </Badge>
-        )}
       </div>
       
       {analysisResults.imageAnalysisSummary && (
