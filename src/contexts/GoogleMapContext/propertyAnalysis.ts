@@ -80,6 +80,11 @@ export const generatePropertyAnalysis = async ({
         title: "Processing Images",
         description: "Using AI to analyze satellite imagery for your property",
       });
+    } else {
+      toast({
+        title: "Processing Address",
+        description: "Using address data for property analysis",
+      });
     }
     
     // Call Supabase Edge Function to generate property analysis with GPT
@@ -87,7 +92,8 @@ export const generatePropertyAnalysis = async ({
       body: { 
         address: propertyAddress,
         coordinates: addressCoordinates,
-        satelliteImage: satelliteImage
+        satelliteImage: satelliteImage,
+        forceLocalAnalysis: false
       }
     });
     
@@ -134,17 +140,19 @@ export const generatePropertyAnalysis = async ({
   } catch (error) {
     console.error("Error generating property analysis:", error);
     
-    // If we encounter an OpenAI API error, fall back to local analysis
+    // If we encounter any API error, fall back to local analysis
     if (error instanceof Error && 
         (error.message.includes('OpenAI') || 
          error.message.includes('quota') || 
-         error.message.includes('insufficient_quota'))) {
+         error.message.includes('insufficient_quota') ||
+         error.message.includes('geocode') ||
+         error.message.includes('coordinates'))) {
       
-      console.log("OpenAI API error, switching to fallback mode");
+      console.log("API error, switching to fallback mode");
       setUseLocalAnalysis(true);
       toast({
         title: "API Connection Issue",
-        description: "Switching to demo mode. Results will be approximate.",
+        description: "Switching to demo mode. Results will be approximate. You can manually adjust values.",
       });
       
       // Try again with local analysis
@@ -162,12 +170,12 @@ export const generatePropertyAnalysis = async ({
       });
     }
     
-    setAnalysisError("We couldn't analyze this property. Please try again later.");
+    setAnalysisError("We couldn't analyze this property. Please try again later or switch to manual mode.");
     setAnalysisComplete(false);
     
     toast({
       title: "Analysis Failed",
-      description: "We couldn't analyze this property. Please try again later.",
+      description: "We couldn't analyze this property automatically. Try manual entry mode.",
       variant: "destructive"
     });
   } finally {

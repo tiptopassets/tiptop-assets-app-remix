@@ -17,7 +17,7 @@ Deno.serve(async (req) => {
   }
   
   try {
-    const { address, coordinates, satelliteImage }: AnalysisRequest = await req.json();
+    const { address, coordinates, satelliteImage, forceLocalAnalysis }: AnalysisRequest = await req.json();
     
     if (!address) {
       return new Response(
@@ -36,8 +36,61 @@ Deno.serve(async (req) => {
     const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     
     // Get property details from Google Maps API if coordinates aren't provided
-    const { propertyCoordinates, propertyDetails, satelliteImageUrl } = 
-      await fetchPropertyDetails(address, coordinates, GOOGLE_MAPS_API_KEY);
+    let propertyCoordinates = coordinates;
+    let propertyDetails: any = {};
+    let satelliteImageUrl = '';
+    
+    if (!propertyCoordinates && GOOGLE_MAPS_API_KEY) {
+      try {
+        // Geocode the address to get coordinates
+        const geocodeResponse = await fetch(
+          `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${GOOGLE_MAPS_API_KEY}`
+        );
+        
+        const geocodeData = await geocodeResponse.json();
+        console.log('Google geocode response status:', geocodeData.status);
+        
+        if (geocodeData.results && geocodeData.results.length > 0) {
+          const location = geocodeData.results[0].geometry.location;
+          propertyCoordinates = { lat: location.lat, lng: location.lng };
+          
+          // Get additional property details
+          propertyDetails = {
+            formattedAddress: geocodeData.results[0].formatted_address,
+            placeId: geocodeData.results[0].place_id,
+            addressComponents: geocodeData.results[0].address_components || []
+          };
+          
+          // Get satellite imagery with high zoom level (20)
+          satelliteImageUrl = `https://maps.googleapis.com/maps/api/staticmap?center=${propertyCoordinates.lat},${propertyCoordinates.lng}&zoom=20&size=800x800&maptype=satellite&key=${GOOGLE_MAPS_API_KEY}`;
+          
+          // Get more details using Places API
+          if (propertyDetails.placeId) {
+            try {
+              const placeResponse = await fetch(
+                `https://maps.googleapis.com/maps/api/place/details/json?place_id=${propertyDetails.placeId}&fields=name,geometry,formatted_address,type,vicinity,building_levels&key=${GOOGLE_MAPS_API_KEY}`
+              );
+              
+              const placeData = await placeResponse.json();
+              if (placeData.result) {
+                propertyDetails.type = placeData.result.types;
+                propertyDetails.vicinity = placeData.result.vicinity;
+                propertyDetails.buildingLevels = placeData.result.building_levels;
+              }
+            } catch (placeError) {
+              console.error('Places API error:', placeError);
+              // Continue without places data
+            }
+          }
+        } else {
+          console.error('Geocoding failed:', geocodeData.status, geocodeData.error_message);
+          throw new Error(`Could not geocode the address: ${geocodeData.status}`);
+        }
+      } catch (error) {
+        console.error('Google Maps API error:', error);
+        throw new Error('Failed to geocode address. Please provide valid coordinates.');
+      }
+    }
     
     console.log('Starting property analysis');
     
@@ -45,41 +98,43 @@ Deno.serve(async (req) => {
     let solarData = null;
     let imageAnalysis: ImageAnalysis = {};
     
-    try {
-      console.log('Fetching solar data from Solar API...');
-      // Call the Solar API edge function
-      const { data: solarResponse, error } = await supabase.functions.invoke('solar-api', {
-        body: { 
-          address: address,
-          coordinates: propertyCoordinates
+    if (!forceLocalAnalysis) {
+      try {
+        console.log('Fetching solar data from Solar API...');
+        // Call the Solar API edge function
+        const { data: solarResponse, error } = await supabase.functions.invoke('solar-api', {
+          body: { 
+            address: address,
+            coordinates: propertyCoordinates
+          }
+        });
+        
+        if (error) {
+          console.error('Error calling Solar API:', error);
+          // Fall back to image analysis if Solar API fails
+          if (satelliteImage && satelliteImage.startsWith('data:image')) {
+            console.log('Falling back to image analysis...');
+            imageAnalysis = await analyzeImage(satelliteImage, address);
+          }
+        } else if (solarResponse.success && solarResponse.solarData) {
+          console.log('Received solar data:', solarResponse.solarData);
+          solarData = solarResponse.solarData;
+          
+          // Use solar data to enhance the image analysis
+          imageAnalysis = {
+            ...imageAnalysis,
+            roofSize: solarData.roofTotalAreaSqFt,
+            solarPotential: solarData.solarPotential ? 'High' : 'Low'
+          };
         }
-      });
-      
-      if (error) {
-        console.error('Error calling Solar API:', error);
-        // Fall back to image analysis if Solar API fails
+      } catch (error) {
+        console.error('Error fetching solar data:', error);
+        
+        // Fall back to image analysis if needed for non-solar data
         if (satelliteImage && satelliteImage.startsWith('data:image')) {
-          console.log('Falling back to image analysis...');
+          console.log('Falling back to image analysis for non-solar data...');
           imageAnalysis = await analyzeImage(satelliteImage, address);
         }
-      } else if (solarResponse.success && solarResponse.solarData) {
-        console.log('Received solar data:', solarResponse.solarData);
-        solarData = solarResponse.solarData;
-        
-        // Use solar data to enhance the image analysis
-        imageAnalysis = {
-          ...imageAnalysis,
-          roofSize: solarData.roofTotalAreaSqFt,
-          solarPotential: solarData.solarPotential ? 'High' : 'Low'
-        };
-      }
-    } catch (error) {
-      console.error('Error fetching solar data:', error);
-      
-      // Fall back to image analysis if needed for non-solar data
-      if (satelliteImage && satelliteImage.startsWith('data:image')) {
-        console.log('Falling back to image analysis for non-solar data...');
-        imageAnalysis = await analyzeImage(satelliteImage, address);
       }
     }
 
@@ -155,60 +210,3 @@ Deno.serve(async (req) => {
     );
   }
 });
-
-/**
- * Fetches property details from Google Maps API if coordinates aren't provided
- */
-async function fetchPropertyDetails(
-  address: string, 
-  coordinates: { lat: number; lng: number } | null | undefined,
-  apiKey: string
-) {
-  let propertyCoordinates = coordinates;
-  let propertyDetails: any = {};
-  let satelliteImageUrl = '';
-  
-  if (!propertyCoordinates && apiKey) {
-    try {
-      // Geocode the address to get coordinates
-      const geocodeResponse = await fetch(
-        `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${apiKey}`
-      );
-      
-      const geocodeData = await geocodeResponse.json();
-      
-      if (geocodeData.results && geocodeData.results.length > 0) {
-        const location = geocodeData.results[0].geometry.location;
-        propertyCoordinates = { lat: location.lat, lng: location.lng };
-        
-        // Get additional property details
-        propertyDetails = {
-          formattedAddress: geocodeData.results[0].formatted_address,
-          placeId: geocodeData.results[0].place_id
-        };
-        
-        // Get satellite imagery with high zoom level (20)
-        satelliteImageUrl = `https://maps.googleapis.com/maps/api/staticmap?center=${propertyCoordinates.lat},${propertyCoordinates.lng}&zoom=20&size=800x800&maptype=satellite&key=${apiKey}`;
-        
-        // Get more details using Places API
-        if (propertyDetails.placeId) {
-          const placeResponse = await fetch(
-            `https://maps.googleapis.com/maps/api/place/details/json?place_id=${propertyDetails.placeId}&fields=name,geometry,formatted_address,type,vicinity,building_levels&key=${apiKey}`
-          );
-          
-          const placeData = await placeResponse.json();
-          if (placeData.result) {
-            propertyDetails.type = placeData.result.types;
-            propertyDetails.vicinity = placeData.result.vicinity;
-            propertyDetails.buildingLevels = placeData.result.building_levels;
-          }
-        }
-      }
-    } catch (error) {
-      console.error('Google Maps API error:', error);
-      // Continue with just the address if geocoding fails
-    }
-  }
-  
-  return { propertyCoordinates, propertyDetails, satelliteImageUrl };
-}

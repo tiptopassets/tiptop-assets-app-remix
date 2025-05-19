@@ -6,6 +6,7 @@ import { Info, CheckCircle2, Edit2, Save } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useGoogleMap } from '@/contexts/GoogleMapContext';
+import { useToast } from '@/hooks/use-toast';
 
 interface PropertyTypeDisplayProps {
   analysisResults: PropertyAnalysis;
@@ -14,6 +15,7 @@ interface PropertyTypeDisplayProps {
 const PropertyTypeDisplay = ({ analysisResults }: PropertyTypeDisplayProps) => {
   const usesRealSolarData = analysisResults.rooftop.usingRealSolarData;
   const { setAnalysisResults } = useGoogleMap();
+  const { toast } = useToast();
   const [editingRoofSize, setEditingRoofSize] = useState(false);
   const [roofSize, setRoofSize] = useState(analysisResults.rooftop.area.toString());
   
@@ -29,8 +31,40 @@ const PropertyTypeDisplay = ({ analysisResults }: PropertyTypeDisplayProps) => {
         }
       };
       
+      // Recalculate solar potential if we don't have real data
+      if (!usesRealSolarData && newSize > 0) {
+        // Simple estimation based on roof area: 
+        // Average solar production is around 15W per sq ft, at $0.15/kWh
+        const usableRoofPercent = 0.7; // Assume 70% of roof can be used for solar
+        const wattsPerSqFt = 15;
+        const kwhPerMonth = (newSize * usableRoofPercent * wattsPerSqFt * 4 * 0.8) / 1000;
+        const ratePerKwh = 0.15;
+        
+        const newRevenue = Math.round(kwhPerMonth * ratePerKwh);
+        
+        // Update the revenue in the rooftop section
+        updatedResults.rooftop.revenue = newRevenue;
+        
+        // Also update in top opportunities if solar is one of them
+        const solarOpportunityIndex = updatedResults.topOpportunities.findIndex(
+          opp => opp.title.toLowerCase().includes('solar')
+        );
+        
+        if (solarOpportunityIndex >= 0) {
+          updatedResults.topOpportunities[solarOpportunityIndex] = {
+            ...updatedResults.topOpportunities[solarOpportunityIndex],
+            monthlyRevenue: newRevenue
+          };
+        }
+      }
+      
       setAnalysisResults(updatedResults);
       setEditingRoofSize(false);
+      
+      toast({
+        title: "Roof Size Updated",
+        description: `Roof area set to ${newSize} sq ft and revenue calculations updated.`
+      });
     }
   };
   
@@ -90,6 +124,7 @@ const PropertyTypeDisplay = ({ analysisResults }: PropertyTypeDisplayProps) => {
             <span>
               Using AI-based estimates. Google Solar API may not be available for this region. 
               For precise data, we recommend manual measurement or professional assessment.
+              You can edit the roof size manually.
             </span>
           </>
         )}
