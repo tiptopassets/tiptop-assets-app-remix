@@ -12,7 +12,8 @@ const AnalyzeButton = () => {
     analysisError, 
     setAnalysisError,
     useLocalAnalysis,
-    setUseLocalAnalysis
+    setUseLocalAnalysis,
+    addressCoordinates
   } = useGoogleMap();
   const { toast } = useToast();
   
@@ -30,6 +31,10 @@ const AnalyzeButton = () => {
     if (analysisError) {
       setAnalysisError(null);
     }
+    
+    console.log("Starting analysis for address:", address);
+    console.log("Coordinates available:", addressCoordinates);
+    console.log("Using local analysis mode:", useLocalAnalysis);
     
     // Use our property analysis function
     generatePropertyAnalysis(address);

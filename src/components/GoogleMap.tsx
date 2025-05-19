@@ -36,10 +36,10 @@ const GoogleMap = () => {
 
   // Effect for adding marker when analysis is complete
   useEffect(() => {
-    if (!mapInstance || !address || !analysisComplete || isAnalyzing || !addressCoordinates) return;
+    if (!mapInstance || !address || !analysisComplete || isAnalyzing) return;
 
     // Create the geocoder to convert address to coordinates if not already available
-    if (!addressCoordinates) {
+    if (!addressCoordinates && address) {
       const geocoder = new google.maps.Geocoder();
       
       geocoder.geocode({ address }, (results, status) => {
@@ -50,8 +50,10 @@ const GoogleMap = () => {
             lng: location.lng()
           };
           
-          // Store coordinates in context
+          // Store coordinates in context and center map
           setAddressCoordinates(coordinates);
+          mapInstance.setCenter(coordinates);
+          mapInstance.setZoom(18);
         } else {
           console.error('Geocode was not successful:', status);
         }

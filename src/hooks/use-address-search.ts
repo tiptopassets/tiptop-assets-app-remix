@@ -91,6 +91,26 @@ export const useAddressSearch = () => {
     };
   }, [mapLoaded, mapInstance, setAddress, toast, setAddressCoordinates, capturePropertyImages]);
 
+  // Effect to center map on address when typed (even before selection)
+  useEffect(() => {
+    if (address && mapLoaded && mapInstance && !hasSelectedAddress) {
+      // Use geocoder to get coordinates from address string
+      const geocoder = new google.maps.Geocoder();
+      const debounceTimeout = setTimeout(() => {
+        geocoder.geocode({ address }, (results, status) => {
+          if (status === 'OK' && results && results[0]) {
+            const location = results[0].geometry.location;
+            mapInstance.setCenter(location);
+            // Use a zoom level of 16 for partial matches (not as zoomed as full selection)
+            mapInstance.setZoom(16);
+          }
+        });
+      }, 1000); // Debounce for 1 second
+
+      return () => clearTimeout(debounceTimeout);
+    }
+  }, [address, mapInstance, mapLoaded, hasSelectedAddress]);
+
   return {
     searchInputRef,
     address,

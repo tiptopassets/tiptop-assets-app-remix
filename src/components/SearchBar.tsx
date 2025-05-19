@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from 'react';
 import { Search, X, MapPin, Loader2 } from 'lucide-react';
 import { useAddressSearch } from '@/hooks/use-address-search';
@@ -35,6 +36,34 @@ const SearchBar = ({ isCollapsed }: SearchBarProps) => {
   
   const { resetGeneration, capturePropertyImages } = useModelGeneration();
 
+  // Effect to geocode address when it changes
+  useEffect(() => {
+    if (address && mapInstance && !hasSelectedAddress) {
+      // Use a delay to avoid too many geocode requests while typing
+      const debounceTimeout = setTimeout(() => {
+        const geocoder = new google.maps.Geocoder();
+        
+        geocoder.geocode({ address }, (results, status) => {
+          if (status === 'OK' && results && results[0]) {
+            const location = results[0].geometry.location;
+            const coordinates = {
+              lat: location.lat(),
+              lng: location.lng()
+            };
+            
+            // Don't set as selected address since user is still typing
+            // but update coordinates for map centering
+            setAddressCoordinates(coordinates);
+            mapInstance.setCenter(coordinates);
+            mapInstance.setZoom(16); // Less zoom than when fully selected
+          }
+        });
+      }, 800); // 800ms debounce
+      
+      return () => clearTimeout(debounceTimeout);
+    }
+  }, [address, mapInstance, hasSelectedAddress, setAddressCoordinates]);
+
   // Clear search and reset analysis state
   const clearSearch = () => {
     setAddress('');
@@ -46,7 +75,7 @@ const SearchBar = ({ isCollapsed }: SearchBarProps) => {
     
     if (mapInstance) {
       mapInstance.setCenter({ lat: 37.7749, lng: -122.4194 });
-      mapInstance.setZoom(18);
+      mapInstance.setZoom(12);
     }
   };
 
