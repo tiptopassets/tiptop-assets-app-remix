@@ -129,6 +129,21 @@ Deno.serve(async (req: Request) => {
         if (geocodeData.results && geocodeData.results.length > 0) {
           const location = geocodeData.results[0].geometry.location;
           locationCoordinates = { lat: location.lat, lng: location.lng };
+          
+          // Check if the country is supported by Google Solar API
+          const addressComponents = geocodeData.results[0].address_components || [];
+          const countryComponent = addressComponents.find(
+            (component: any) => component.types.includes('country')
+          );
+          
+          // Google Solar API currently only supports certain countries fully
+          // As of 2025, primarily US with limited support in other regions
+          if (countryComponent) {
+            const countryCode = countryComponent.short_name;
+            if (countryCode !== 'US') {
+              console.log(`Country detected: ${countryCode}. Google Solar API may have limited support.`);
+            }
+          }
         } else {
           throw new Error('Could not geocode the provided address');
         }
@@ -150,61 +165,98 @@ Deno.serve(async (req: Request) => {
     // Call Google Solar API with coordinates
     console.log('Calling Google Solar API with coordinates:', locationCoordinates);
     
+    // Add referrer to prevent RefererNotAllowedMapError
+    const headers = {
+      'Referer': SUPABASE_URL,
+      'Origin': SUPABASE_URL
+    };
+    
     // Make the API request to Google's Solar API
     const solarApiUrl = `https://solar.googleapis.com/v1/buildingInsights:findClosest?location=latitude=${locationCoordinates.lat}%26longitude=${locationCoordinates.lng}&requiredQuality=HIGH&key=${GOOGLE_MAPS_API_KEY}`;
     
-    const solarResponse = await fetch(solarApiUrl);
-    const solarData = await solarResponse.json();
+    try {
+      const solarResponse = await fetch(solarApiUrl, { headers });
+      const solarData = await solarResponse.json();
 
-    // Check for errors in the Solar API response
-    if (solarData.error) {
-      console.error('Solar API error:', solarData.error);
+      // Check for errors in the Solar API response
+      if (solarData.error) {
+        console.error('Solar API error:', solarData.error);
+        
+        // Handle specific error cases
+        let errorMessage = solarData.error.message || 'Error fetching solar data';
+        let errorDetails = '';
+        
+        // Check for common error types
+        if (solarData.error.status === 'PERMISSION_DENIED') {
+          errorDetails = 'API key may not be configured for Solar API or domain restrictions are in place.';
+        } else if (solarData.error.status === 'NOT_FOUND') {
+          errorDetails = 'No building data found at this location or the Solar API may not cover this region.';
+        } else if (solarData.error.status === 'RESOURCE_EXHAUSTED') {
+          errorDetails = 'API quota exceeded for Google Solar API.';
+        }
+        
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: errorMessage,
+            details: errorDetails,
+            apiError: solarData.error
+          }),
+          {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 400
+          }
+        );
+      }
+
+      // Extract relevant solar data for our use case
+      const formattedSolarData = formatSolarData(solarData);
+
+      // Store the API response in the database for future reference
+      if (locationCoordinates) {
+        try {
+          // Store the raw API response in a table for reference
+          await supabase
+            .from('solar_api_cache')
+            .upsert({
+              coordinates: `POINT(${locationCoordinates.lng} ${locationCoordinates.lat})`,
+              raw_response: solarData,
+              formatted_data: formattedSolarData,
+              requested_at: new Date().toISOString()
+            })
+            .select();
+        } catch (dbError) {
+          console.log('Database storage error (non-critical):', dbError);
+          // Continue execution even if database storage fails
+        }
+      }
+
       return new Response(
         JSON.stringify({
-          success: false,
-          error: solarData.error.message || 'Error fetching solar data'
+          success: true,
+          solarData: formattedSolarData,
+          coordinates: locationCoordinates
         }),
         {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 400
+          status: 200
+        }
+      );
+    } catch (apiError) {
+      console.error('Error calling Google Solar API:', apiError);
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: 'Failed to connect to Google Solar API',
+          details: 'The API may not be available for this region or there might be configuration issues.',
+          message: apiError.message
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 500
         }
       );
     }
-
-    // Extract relevant solar data for our use case
-    const formattedSolarData = formatSolarData(solarData);
-
-    // Store the API response in the database for future reference
-    if (locationCoordinates) {
-      try {
-        // Store the raw API response in a table for reference
-        // This is optional but useful for debugging and analysis
-        await supabase
-          .from('solar_api_cache')
-          .upsert({
-            coordinates: `POINT(${locationCoordinates.lng} ${locationCoordinates.lat})`,
-            raw_response: solarData,
-            formatted_data: formattedSolarData,
-            requested_at: new Date().toISOString()
-          })
-          .select();
-      } catch (dbError) {
-        console.log('Database storage error (non-critical):', dbError);
-        // Continue execution even if database storage fails
-      }
-    }
-
-    return new Response(
-      JSON.stringify({
-        success: true,
-        solarData: formattedSolarData,
-        coordinates: locationCoordinates
-      }),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 200
-      }
-    );
   } catch (error) {
     console.error('Error in solar-api function:', error);
     return new Response(

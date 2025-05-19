@@ -2,7 +2,7 @@
 import { useEffect, useRef } from 'react';
 import { useGoogleMap } from '@/contexts/GoogleMapContext';
 import { useToast } from '@/hooks/use-toast';
-import { MapPinIcon, AlertCircle } from 'lucide-react';
+import { MapPinIcon, AlertCircle, ZoomIn, ZoomOut } from 'lucide-react';
 import { initializeGoogleMaps } from '@/utils/googleMapsLoader';
 import { mapStyles } from '@/utils/mapStyles';
 import MapMarker from './map/MapMarker';
@@ -24,7 +24,9 @@ const GoogleMap = () => {
     mapInstance,
     addressCoordinates,
     setAddressCoordinates,
-    analysisError
+    analysisError,
+    zoomLevel,
+    setZoomLevel
   } = useGoogleMap();
   const { toast } = useToast();
 
@@ -65,13 +67,21 @@ const GoogleMap = () => {
         if (mapRef.current && window.google) {
           const newMap = new google.maps.Map(mapRef.current, {
             center: { lat: 37.7749, lng: -122.4194 },
-            zoom: 20, // Increased zoom level for better property detail
+            zoom: zoomLevel || 20, // Use stored zoom level or default to 20
             mapTypeId: 'satellite',
             disableDefaultUI: true,
             zoomControl: true,
             styles: mapStyles,
             tilt: 45 // Add a 45-degree tilt for better building visualization
           });
+
+          // Update zoom level when map changes zoom
+          newMap.addListener('zoom_changed', () => {
+            if (setZoomLevel) {
+              setZoomLevel(newMap.getZoom());
+            }
+          });
+          
           setMapInstance(newMap);
           setMapLoaded(true);
         }
@@ -90,7 +100,35 @@ const GoogleMap = () => {
     return () => {
       setMapInstance(null);
     };
-  }, [setMapInstance, setMapLoaded, toast]);
+  }, [setMapInstance, setMapLoaded, toast, zoomLevel, setZoomLevel]);
+
+  // When we have coordinates, center and zoom the map
+  useEffect(() => {
+    if (mapInstance && addressCoordinates) {
+      mapInstance.setCenter(addressCoordinates);
+    }
+  }, [mapInstance, addressCoordinates]);
+
+  // Handle zoom controls
+  const handleZoomIn = () => {
+    if (mapInstance) {
+      const newZoom = mapInstance.getZoom() + 1;
+      mapInstance.setZoom(newZoom);
+      if (setZoomLevel) {
+        setZoomLevel(newZoom);
+      }
+    }
+  };
+
+  const handleZoomOut = () => {
+    if (mapInstance) {
+      const newZoom = mapInstance.getZoom() - 1;
+      mapInstance.setZoom(newZoom);
+      if (setZoomLevel) {
+        setZoomLevel(newZoom);
+      }
+    }
+  };
 
   return (
     <div 
@@ -105,6 +143,26 @@ const GoogleMap = () => {
         id="map" 
         className="h-full w-full"
       />
+      
+      {/* Custom zoom controls */}
+      {addressCoordinates && (
+        <div className="absolute right-4 top-24 z-10 flex flex-col gap-2">
+          <button
+            onClick={handleZoomIn}
+            className="p-2 bg-black/70 text-white rounded-full hover:bg-black/90 transition-colors"
+            aria-label="Zoom in"
+          >
+            <ZoomIn size={24} />
+          </button>
+          <button
+            onClick={handleZoomOut}
+            className="p-2 bg-black/70 text-white rounded-full hover:bg-black/90 transition-colors"
+            aria-label="Zoom out"
+          >
+            <ZoomOut size={24} />
+          </button>
+        </div>
+      )}
       
       {/* Render marker if we have coordinates and analysis is complete */}
       {mapInstance && addressCoordinates && analysisComplete && !isAnalyzing && (

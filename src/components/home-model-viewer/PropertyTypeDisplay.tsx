@@ -1,8 +1,11 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { AnalysisResults as PropertyAnalysis } from '@/types/analysis';
-import { Info, CheckCircle2 } from 'lucide-react';
+import { Info, CheckCircle2, Edit2, Save } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { useGoogleMap } from '@/contexts/GoogleMapContext';
 
 interface PropertyTypeDisplayProps {
   analysisResults: PropertyAnalysis;
@@ -10,6 +13,26 @@ interface PropertyTypeDisplayProps {
 
 const PropertyTypeDisplay = ({ analysisResults }: PropertyTypeDisplayProps) => {
   const usesRealSolarData = analysisResults.rooftop.usingRealSolarData;
+  const { setAnalysisResults } = useGoogleMap();
+  const [editingRoofSize, setEditingRoofSize] = useState(false);
+  const [roofSize, setRoofSize] = useState(analysisResults.rooftop.area.toString());
+  
+  const handleSaveRoofSize = () => {
+    const newSize = parseInt(roofSize);
+    if (!isNaN(newSize) && newSize > 0) {
+      // Create a new analysis results object with updated roof size
+      const updatedResults = {
+        ...analysisResults,
+        rooftop: {
+          ...analysisResults.rooftop,
+          area: newSize
+        }
+      };
+      
+      setAnalysisResults(updatedResults);
+      setEditingRoofSize(false);
+    }
+  };
   
   return (
     <div className="mb-4">
@@ -19,6 +42,39 @@ const PropertyTypeDisplay = ({ analysisResults }: PropertyTypeDisplayProps) => {
         {analysisResults.amenities && analysisResults.amenities.slice(0, 3).map((amenity, i) => (
           <Badge key={i} variant="outline" className="text-gray-300">{amenity}</Badge>
         ))}
+      </div>
+      
+      {/* Roof size editor */}
+      <div className="mt-2 mb-2 p-2 bg-white/5 rounded">
+        <div className="flex items-center justify-between">
+          <span className="text-sm text-gray-300">Roof Size:</span>
+          {editingRoofSize ? (
+            <div className="flex items-center gap-2">
+              <Input 
+                type="number" 
+                value={roofSize} 
+                onChange={(e) => setRoofSize(e.target.value)}
+                className="w-24 h-8 bg-black/30 border-white/20 text-white"
+              />
+              <span className="text-xs text-gray-400">sq ft</span>
+              <Button size="sm" variant="outline" onClick={handleSaveRoofSize}>
+                <Save size={14} className="mr-1" /> Save
+              </Button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              <span className="font-medium text-white">{analysisResults.rooftop.area} sq ft</span>
+              <Button 
+                size="sm" 
+                variant="ghost" 
+                onClick={() => setEditingRoofSize(true)}
+                className="h-6 px-2 text-xs"
+              >
+                <Edit2 size={12} className="mr-1" /> Edit
+              </Button>
+            </div>
+          )}
+        </div>
       </div>
       
       {/* Data source indicator */}
@@ -31,7 +87,10 @@ const PropertyTypeDisplay = ({ analysisResults }: PropertyTypeDisplayProps) => {
         ) : (
           <>
             <Info size={14} className="text-tiptop-purple" />
-            <span>Using AI-based estimates. For precise solar data, we recommend professional assessment.</span>
+            <span>
+              Using AI-based estimates. Google Solar API may not be available for this region. 
+              For precise data, we recommend manual measurement or professional assessment.
+            </span>
           </>
         )}
       </div>

@@ -1,6 +1,8 @@
+
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { AnalysisResults as PropertyAnalysis } from '@/types/analysis';
+import { Info } from 'lucide-react';
 
 interface MetricsGridProps {
   analysisResults: PropertyAnalysis;
@@ -9,6 +11,25 @@ interface MetricsGridProps {
 const MetricsGrid = ({ analysisResults }: MetricsGridProps) => {
   const usesRealSolarData = analysisResults.rooftop.usingRealSolarData;
   
+  // Estimated solar revenue based on roof size if we don't have real data
+  const getSolarRevenueEstimate = () => {
+    if (usesRealSolarData) {
+      return analysisResults.rooftop.revenue;
+    }
+    
+    // Simple estimation based on roof area: 
+    // Average solar production is around 15W per sq ft, at $0.15/kWh
+    const roofArea = analysisResults.rooftop.area || 0;
+    const usableRoofPercent = 0.7; // Assume 70% of roof can be used for solar
+    const wattsPerSqFt = 15;
+    const kwhPerMonth = (roofArea * usableRoofPercent * wattsPerSqFt * 4 * 0.8) / 1000;
+    const ratePerKwh = 0.15;
+    
+    return Math.round(kwhPerMonth * ratePerKwh);
+  };
+
+  const solarRevenue = getSolarRevenueEstimate();
+  
   return (
     <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
       {analysisResults.rooftop && (
@@ -16,7 +37,7 @@ const MetricsGrid = ({ analysisResults }: MetricsGridProps) => {
           <p className="text-xs text-gray-400">Roof Area</p>
           <p className="text-lg font-semibold text-white">{analysisResults.rooftop.area} sq ft</p>
           <div className="flex justify-between items-center">
-            <p className="text-xs text-tiptop-purple">${analysisResults.rooftop.revenue}/mo</p>
+            <p className="text-xs text-tiptop-purple">${solarRevenue}/mo</p>
             {analysisResults.rooftop.solarPotential && (
               <Badge variant="outline" className={`text-xs ${usesRealSolarData ? 'bg-green-500/30 text-green-300 border-green-500/50' : 'bg-green-500/20 text-green-300 border-green-500/30'}`}>
                 Solar Ready
@@ -26,6 +47,11 @@ const MetricsGrid = ({ analysisResults }: MetricsGridProps) => {
           {usesRealSolarData && analysisResults.rooftop.panelsCount && (
             <p className="text-xs text-gray-400 mt-1">
               {analysisResults.rooftop.panelsCount} panels | {analysisResults.rooftop.solarCapacity} kW
+            </p>
+          )}
+          {!usesRealSolarData && analysisResults.rooftop.area > 0 && (
+            <p className="text-xs text-gray-400 mt-1 flex items-center">
+              <Info size={12} className="mr-1" /> Estimated values
             </p>
           )}
         </div>

@@ -1,37 +1,4 @@
 
-import { AssetOpportunity } from './assetTypes';
-
-export interface GoogleMapContextType {
-  mapInstance: google.maps.Map | null;
-  setMapInstance: (map: google.maps.Map | null) => void;
-  address: string;
-  setAddress: (address: string) => void;
-  isAnalyzing: boolean;
-  setIsAnalyzing: (analyzing: boolean) => void;
-  analysisComplete: boolean;
-  setAnalysisComplete: (complete: boolean) => void;
-  analysisResults: AnalysisResults | null;
-  setAnalysisResults: (results: AnalysisResults | null) => void;
-  mapLoaded: boolean;
-  setMapLoaded: (loaded: boolean) => void;
-  addressCoordinates: google.maps.LatLngLiteral | null;
-  setAddressCoordinates: (coords: google.maps.LatLngLiteral | null) => void;
-  generatePropertyAnalysis: (address: string) => Promise<void>;
-  isGeneratingAnalysis: boolean;
-  analysisError: string | null;
-  setAnalysisError: (error: string | null) => void;
-  useLocalAnalysis: boolean;
-  setUseLocalAnalysis: (useLocal: boolean) => void;
-}
-
-export interface ProviderInfo {
-  name: string;
-  setupCost?: number;
-  fee?: number;
-  roi?: number;
-  url?: string;
-}
-
 export interface AnalysisResults {
   propertyType: string;
   amenities: string[];
@@ -42,6 +9,10 @@ export interface AnalysisResults {
     solarPotential?: boolean;
     revenue: number;
     providers?: ProviderInfo[];
+    usingRealSolarData?: boolean;
+    yearlyEnergyKWh?: number;
+    panelsCount?: number;
+    setupCost?: number;
   };
   garden: {
     area: number;
@@ -80,7 +51,60 @@ export interface AnalysisResults {
     providers?: ProviderInfo[];
   };
   permits: string[];
-  restrictions: string;
-  topOpportunities: AssetOpportunity[];
+  restrictions: string | null;
+  topOpportunities: Opportunity[];
   imageAnalysisSummary?: string;
+}
+
+export interface ProviderInfo {
+  name: string;
+  setupCost?: number;
+  fee?: string | number;
+  roi?: number;
+  url?: string;
+}
+
+export interface Opportunity {
+  icon: string;
+  title: string;
+  monthlyRevenue: number;
+  description: string;
+  provider?: string;
+  setupCost?: number;
+  roi?: number;
+  formFields?: FormField[];
+  usingRealSolarData?: boolean;
+}
+
+export interface FormField {
+  type: "text" | "number" | "select";
+  name: string;
+  label: string;
+  value: string | number;
+  options?: string[];
+}
+
+export interface GoogleMapContextType {
+  mapInstance: google.maps.Map | null;
+  setMapInstance: React.Dispatch<React.SetStateAction<google.maps.Map | null>>;
+  address: string;
+  setAddress: React.Dispatch<React.SetStateAction<string>>;
+  isAnalyzing: boolean;
+  setIsAnalyzing: React.Dispatch<React.SetStateAction<boolean>>;
+  analysisComplete: boolean;
+  setAnalysisComplete: React.Dispatch<React.SetStateAction<boolean>>;
+  analysisResults: AnalysisResults | null;
+  setAnalysisResults: React.Dispatch<React.SetStateAction<AnalysisResults | null>>;
+  mapLoaded: boolean;
+  setMapLoaded: React.Dispatch<React.SetStateAction<boolean>>;
+  addressCoordinates: google.maps.LatLngLiteral | null;
+  setAddressCoordinates: React.Dispatch<React.SetStateAction<google.maps.LatLngLiteral | null>>;
+  generatePropertyAnalysis: (propertyAddress: string) => Promise<void>;
+  isGeneratingAnalysis: boolean;
+  analysisError: string | null;
+  setAnalysisError: React.Dispatch<React.SetStateAction<string | null>>;
+  useLocalAnalysis: boolean;
+  setUseLocalAnalysis: React.Dispatch<React.SetStateAction<boolean>>;
+  zoomLevel?: number;
+  setZoomLevel?: React.Dispatch<React.SetStateAction<number>>;
 }

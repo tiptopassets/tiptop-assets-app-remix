@@ -17,6 +17,7 @@ export const GoogleMapProvider = ({ children }: { children: ReactNode }) => {
   const [isGeneratingAnalysis, setIsGeneratingAnalysis] = useState(false);
   const [analysisError, setAnalysisError] = useState<string | null>(null);
   const [useLocalAnalysis, setUseLocalAnalysis] = useState(false);
+  const [zoomLevel, setZoomLevel] = useState(20); // Default zoom level
   const { toast } = useToast();
 
   const handlePropertyAnalysis = async (propertyAddress: string) => {
@@ -57,6 +58,8 @@ export const GoogleMapProvider = ({ children }: { children: ReactNode }) => {
         setAnalysisError,
         useLocalAnalysis,
         setUseLocalAnalysis,
+        zoomLevel,
+        setZoomLevel
       }}
     >
       {children}
