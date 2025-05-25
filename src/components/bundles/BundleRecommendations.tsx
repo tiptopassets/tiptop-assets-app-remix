@@ -15,9 +15,9 @@ const BundleRecommendations: React.FC<BundleRecommendationsProps> = ({
   detectedAssets,
   onSelectBundle
 }) => {
-  const { recommendations, loading, error } = useBundleRecommendations(detectedAssets);
+  const { recommendations, isLoading, error } = useBundleRecommendations(detectedAssets);
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center py-8">
         <Loader2 className="h-8 w-8 animate-spin text-tiptop-purple" />

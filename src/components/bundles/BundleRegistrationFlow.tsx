@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { BundleRecommendation, ServiceProvider } from '@/contexts/ServiceProviders/types';
-import { useServiceProviders } from '@/hooks/useServiceProviders';
+import { useServiceProviders } from '@/contexts/ServiceProviders';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { CheckCircle, ExternalLink, Loader2 } from 'lucide-react';
@@ -57,16 +57,6 @@ const BundleRegistrationFlow: React.FC<BundleRegistrationFlowProps> = ({
     setRegistering(true);
 
     try {
-      // Create bundle selection record
-      const bundleSelectionData = {
-        user_id: user.id,
-        bundle_id: selectedBundle.bundle.id,
-        property_address: propertyAddress,
-        selected_assets: selectedBundle.matchingAssets,
-        selected_providers: selectedProviders,
-        status: 'pending' as const
-      };
-
       // Register with each selected provider
       for (const providerId of selectedProviders) {
         const provider = selectedBundle.providers.find(p => p.id === providerId);

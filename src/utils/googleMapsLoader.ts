@@ -1,3 +1,4 @@
+
 import { Loader } from '@googlemaps/js-api-loader';
 
 const GOOGLE_MAPS_API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '';
@@ -18,6 +19,14 @@ export const loadGoogleMaps = (): Promise<typeof google.maps> => {
     });
   }
   return googleMapsPromise;
+};
+
+// Alias for backward compatibility
+export const initializeGoogleMaps = loadGoogleMaps;
+
+// Function to get the API key
+export const getGoogleMapsApiKey = async (): Promise<string> => {
+  return GOOGLE_MAPS_API_KEY;
 };
 
 export const geocodeAddress = async (address: string): Promise<google.maps.LatLngLiteral | null> => {
@@ -42,7 +51,6 @@ export const geocodeAddress = async (address: string): Promise<google.maps.LatLn
   }
 };
 
-// Add the missing function
 export const getPropertyTypeFromPlaces = async (coordinates: google.maps.LatLngLiteral): Promise<string> => {
   if (!window.google?.maps) {
     throw new Error('Google Maps not loaded');
@@ -56,7 +64,7 @@ export const getPropertyTypeFromPlaces = async (coordinates: google.maps.LatLngL
     const request = {
       location: coordinates,
       radius: 50,
-      type: 'establishment' as google.maps.places.PlaceType
+      type: 'establishment' as any // Use 'any' to avoid type issues
     };
 
     service.nearbySearch(request, (results, status) => {
