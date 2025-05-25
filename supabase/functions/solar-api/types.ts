@@ -1,68 +1,4 @@
 
-// Define interfaces for the response types and requests
-
-export interface SolarPanelConfig {
-  panelsCount: number;
-  yearlyEnergyDcKwh: number;
-  pitchDegrees: number;
-  azimuthDegrees: number;
-}
-
-export interface SolarPotentialResponse {
-  solarPotential: {
-    maxArrayPanelsCount: number;
-    panelCapacityWatts: number;
-    panelHeightMeters: number;
-    panelWidthMeters: number;
-    maxArrayAreaMeters2: number;
-    maxSunshineHoursPerYear: number;
-    carbonOffsetFactorKgPerMwh: number;
-    panels: {
-      center: {
-        latitude: number;
-        longitude: number;
-      };
-      orientation: string;
-      yearlyEnergyDcKwh: number;
-    }[];
-    solarPanelConfigs: SolarPanelConfig[];
-    financialAnalysis: {
-      initialAcKwhPerYear: number;
-      remainingLifetimeUtilityBill: {
-        currencyCode: string;
-        units: string;
-        nanos: number;
-      };
-      federalIncentiveValue: {
-        currencyCode: string;
-        units: string;
-        nanos: number;
-      };
-      panelLifetimeYears: number;
-    };
-  };
-  roofs: {
-    areaMeters2: number;
-    centerPoint: {
-      latitude: number;
-      longitude: number;
-    };
-    pitchDegrees: number;
-    azimuthDegrees: number;
-    sunshineQuantiles: number[];
-    boundingBox: {
-      sw: {
-        latitude: number;
-        longitude: number;
-      };
-      ne: {
-        latitude: number;
-        longitude: number;
-      };
-    };
-  }[];
-}
-
 export interface SolarApiRequest {
   address?: string;
   coordinates?: {
@@ -71,29 +7,26 @@ export interface SolarApiRequest {
   };
 }
 
-export interface FormattedSolarData {
+export interface SolarData {
   roofTotalAreaSqFt: number;
-  solarPotential: boolean;
+  roofUsableAreaSqFt: number;
   maxSolarCapacityKW: number;
-  yearlyEnergyKWh: number;
   panelsCount: number;
-  averageHoursOfSunPerYear?: number;
-  carbonOffsetKg?: number;
+  yearlyEnergyKWh: number;
   monthlyRevenue: number;
   setupCost: number;
-  roofSegments?: Array<{
-    areaSqFt: number;
-    pitchDegrees: number;
-    azimuthDegrees: number;
-    sunshineQuantiles: number[];
-  }>;
-  financialAnalysis?: {
-    initialYearlyProduction: number;
-    federalIncentiveValue: number;
-    panelLifetimeYears: number;
-  };
-  estimatedData?: boolean;
-  solarEfficiency?: number;
+  paybackYears: number;
+  solarPotential: boolean;
+  panelCapacityWatts: number;
+  carbonOffsetKgCO2: number;
+}
+
+export interface SolarApiResult {
+  solarData?: SolarData;
+  rawResponse?: any;
+  error?: string;
+  details?: string;
+  apiError?: any;
 }
 
 export interface GeocodeResult {
@@ -107,10 +40,74 @@ export interface GeocodeResult {
   details?: string;
 }
 
-export interface SolarApiResult {
-  solarData?: FormattedSolarData;
-  rawResponse?: any;
-  error?: string;
-  details?: string;
-  apiError?: any;
+export interface SolarPotentialResponse {
+  solarPotential: {
+    maxArrayPanels: number;
+    panelCapacityWatts: number;
+    maxArrayAreaMeters2: number;
+    maxSunshineHoursPerYear: number;
+    carbonOffsetFactorKgPerMwh: number;
+    wholeRoofStats: {
+      areaMeters2: number;
+      sunshineQuantiles: number[];
+      groundAreaMeters2: number;
+    };
+    roofSegmentStats: Array<{
+      stats: {
+        areaMeters2: number;
+        sunshineQuantiles: number[];
+        groundAreaMeters2: number;
+      };
+      center: {
+        latitude: number;
+        longitude: number;
+      };
+      boundingBox: {
+        sw: { latitude: number; longitude: number };
+        ne: { latitude: number; longitude: number };
+      };
+    }>;
+    solarPanelConfigs: Array<{
+      panelsCount: number;
+      yearlyEnergyDcKwh: number;
+      roofSegmentSummaries: Array<{
+        panelsCount: number;
+        yearlyEnergyDcKwh: number;
+        segmentIndex: number;
+      }>;
+    }>;
+    financialAnalyses: Array<{
+      monthlyBill: {
+        currencyCode: string;
+        units: number;
+        nanos: number;
+      };
+      defaultBill: boolean;
+      averageKwhPerMonth: number;
+      panelConfigIndex: number;
+    }>;
+  };
+  buildingInsights: {
+    name: string;
+    center: {
+      latitude: number;
+      longitude: number;
+    };
+    boundingBox: {
+      sw: { latitude: number; longitude: number };
+      ne: { latitude: number; longitude: number };
+    };
+    imageryDate: {
+      year: number;
+      month: number;
+      day: number;
+    };
+    postalCode: string;
+    administrativeArea: string;
+    statisticalArea: {
+      areaMeters2: number;
+      groundAreaMeters2: number;
+    };
+    regionCode: string;
+  };
 }
