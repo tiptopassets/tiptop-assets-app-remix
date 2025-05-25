@@ -1,54 +1,90 @@
-import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
+
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.43.1';
 import { corsHeaders } from '../_shared/cors.ts';
-import { analyzeImage } from './image-analysis.ts';
-import { getSolarData } from '../solar-api/index.ts';
-import { SolarApiResult } from '../solar-api/types.ts';
-import { ImageAnalysis } from './types.ts';
+import { analyzeImage } from './imageAnalysis.ts';
+import { generatePropertyAnalysis } from './propertyAnalysis.ts';
+import { extractStructuredData } from './dataExtraction.ts';
+import { AnalysisRequest, PropertyInfo, ImageAnalysis } from './types.ts';
 
-import {
-  AnalysisRequest,
-  AnalysisResults,
-  PropertyInfo,
-} from './types.ts';
+const SUPABASE_URL = Deno.env.get('SUPABASE_URL') || '';
+const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY') || '';
+const GOOGLE_MAPS_API_KEY = Deno.env.get('GOOGLE_MAPS_API_KEY') || '';
 
-import { getLocationFromCoordinates, verifyAndFilterProviders, addServiceAvailabilityToAnalysis } from './serviceVerification.ts';
-
-const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
-
-export const handler = async (req: Request): Promise<Response> => {
+Deno.serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
-
+  
   try {
     const { address, coordinates, satelliteImage, forceLocalAnalysis }: AnalysisRequest = await req.json();
     
-    console.log('Starting property analysis');
+    if (!address) {
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: 'Property address is required' 
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 400
+        }
+      );
+    }
+
+    // Create Supabase client
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     
-    let finalCoordinates = coordinates;
-    let locationInfo;
+    // Get property details from Google Maps API if coordinates aren't provided
+    let propertyCoordinates = coordinates;
+    let propertyDetails: any = {};
+    let satelliteImageUrl = '';
     
-    // Enhanced coordinate handling with location detection
-    if (!finalCoordinates && address) {
+    if (!propertyCoordinates && GOOGLE_MAPS_API_KEY) {
       try {
+        // Geocode the address to get coordinates
         const geocodeResponse = await fetch(
-          `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${Deno.env.get('GOOGLE_MAPS_API_KEY')}`
+          `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${GOOGLE_MAPS_API_KEY}`
         );
         
         const geocodeData = await geocodeResponse.json();
         console.log('Google geocode response status:', geocodeData.status);
         
-        if (geocodeData.status === 'OK' && geocodeData.results?.length > 0) {
+        if (geocodeData.results && geocodeData.results.length > 0) {
           const location = geocodeData.results[0].geometry.location;
-          finalCoordinates = { lat: location.lat, lng: location.lng };
+          propertyCoordinates = { lat: location.lat, lng: location.lng };
+          
+          // Get additional property details
+          propertyDetails = {
+            formattedAddress: geocodeData.results[0].formatted_address,
+            placeId: geocodeData.results[0].place_id,
+            addressComponents: geocodeData.results[0].address_components || []
+          };
+          
+          // Get satellite imagery with high zoom level (20)
+          satelliteImageUrl = `https://maps.googleapis.com/maps/api/staticmap?center=${propertyCoordinates.lat},${propertyCoordinates.lng}&zoom=20&size=800x800&maptype=satellite&key=${GOOGLE_MAPS_API_KEY}`;
+          
+          // Get more details using Places API
+          if (propertyDetails.placeId) {
+            try {
+              const placeResponse = await fetch(
+                `https://maps.googleapis.com/maps/api/place/details/json?place_id=${propertyDetails.placeId}&fields=name,geometry,formatted_address,type,vicinity,building_levels&key=${GOOGLE_MAPS_API_KEY}`
+              );
+              
+              const placeData = await placeResponse.json();
+              if (placeData.result) {
+                propertyDetails.type = placeData.result.types;
+                propertyDetails.vicinity = placeData.result.vicinity;
+                propertyDetails.buildingLevels = placeData.result.building_levels;
+              }
+            } catch (placeError) {
+              console.error('Places API error:', placeError);
+              // Continue without places data
+            }
+          }
         } else {
-          console.error('Geocoding failed:', geocodeData.status, geocodeData.error_message || 'API keys with referer restrictions cannot be used with this API.');
-          throw new Error('Could not geocode the address: ' + geocodeData.status);
+          console.error('Geocoding failed:', geocodeData.status, geocodeData.error_message);
+          throw new Error(`Could not geocode the address: ${geocodeData.status}`);
         }
       } catch (error) {
         console.error('Google Maps API error:', error);
@@ -56,223 +92,121 @@ export const handler = async (req: Request): Promise<Response> => {
       }
     }
     
-    if (!finalCoordinates) {
-      throw new Error('Failed to geocode address. Please provide valid coordinates.');
-    }
-
-    // Get detailed location information
-    locationInfo = await getLocationFromCoordinates(finalCoordinates.lat, finalCoordinates.lng);
-    console.log('Location info:', locationInfo);
-
-    let solarData: SolarApiResult | undefined;
-    try {
-      solarData = await getSolarData({
-        address,
-        coordinates: finalCoordinates,
-      });
-      console.log('Solar API Result:', solarData);
-    } catch (solarError) {
-      console.error('Error fetching solar data:', solarError);
-    }
-
-    let imageAnalysis: string | undefined;
-    try {
-      if (satelliteImage) {
-        const analysis = await analyzeImage(satelliteImage);
-        imageAnalysis = JSON.stringify(analysis);
-        console.log('Image Analysis Result:', analysis);
-      } else {
-        console.warn('No satellite image provided, skipping image analysis.');
-      }
-    } catch (imageError) {
-      console.error('Error during image analysis:', imageError);
-    }
-
-    // Enhanced property analysis with location-aware logic
-    console.log('Calling OpenAI API for enhanced property analysis...');
+    console.log('Starting property analysis');
     
-    const propertyDetails = {
-      type: 'single-family', // This should be detected from analysis
-      size: undefined,
-      hasHOA: false
+    // Get Solar API data instead of using image analysis
+    let solarData = null;
+    let imageAnalysis: ImageAnalysis = {};
+    
+    if (!forceLocalAnalysis) {
+      try {
+        console.log('Fetching solar data from Solar API...');
+        // Call the Solar API edge function
+        const { data: solarResponse, error } = await supabase.functions.invoke('solar-api', {
+          body: { 
+            address: address,
+            coordinates: propertyCoordinates
+          }
+        });
+        
+        if (error) {
+          console.error('Error calling Solar API:', error);
+          // Fall back to image analysis if Solar API fails
+          if (satelliteImage && satelliteImage.startsWith('data:image')) {
+            console.log('Falling back to image analysis...');
+            imageAnalysis = await analyzeImage(satelliteImage, address);
+          }
+        } else if (solarResponse.success && solarResponse.solarData) {
+          console.log('Received solar data:', solarResponse.solarData);
+          solarData = solarResponse.solarData;
+          
+          // Use solar data to enhance the image analysis
+          imageAnalysis = {
+            ...imageAnalysis,
+            roofSize: solarData.roofTotalAreaSqFt,
+            solarPotential: solarData.solarPotential ? 'High' : 'Low'
+          };
+        }
+      } catch (error) {
+        console.error('Error fetching solar data:', error);
+        
+        // Fall back to image analysis if needed for non-solar data
+        if (satelliteImage && satelliteImage.startsWith('data:image')) {
+          console.log('Falling back to image analysis for non-solar data...');
+          imageAnalysis = await analyzeImage(satelliteImage, address);
+        }
+      }
+    }
+
+    // Create property info for analysis
+    const propertyInfo: PropertyInfo = {
+      address: address,
+      coordinates: propertyCoordinates,
+      details: propertyDetails,
+      solarData: solarData // Add solar data to the property info
     };
-
-    const analysisPrompt = `
-    You are a property monetization expert. Analyze this property and provide realistic revenue estimates based on the location: ${locationInfo.city || 'Unknown'}, ${locationInfo.state || locationInfo.country}.
-
-    Address: ${address || 'Unknown'}
-    Coordinates: ${finalCoordinates.lat}, ${finalCoordinates.lng}
-    Location: ${locationInfo.city}, ${locationInfo.state}, ${locationInfo.country}
     
-    Solar Data Available: ${solarData ? 'Yes' : 'No'}
-    ${solarData ? `Solar Details:
-    - Roof Area: ${solarData.roofTotalAreaSqFt} sq ft
-    - Usable Area: ${solarData.roofUsableAreaSqFt} sq ft
-    - Solar Capacity: ${solarData.maxSolarCapacityKW} kW
-    - Annual Energy: ${solarData.yearlyEnergyKWh} kWh
-    - Monthly Revenue: $${solarData.monthlyRevenue}
-    - Setup Cost: $${solarData.setupCost}` : ''}
+    // Generate property analysis using AI
+    const analysis = await generatePropertyAnalysis(propertyInfo, imageAnalysis);
     
-    Image Analysis: ${imageAnalysis}
-    
-    IMPORTANT: Consider location-specific factors:
-    1. Local market rates for rental properties, parking, pool rentals
-    2. Solar incentives and utility rates in ${locationInfo.state || locationInfo.country}
-    3. Regulatory environment (HOA restrictions, permits, zoning laws)
-    4. Climate considerations for pool rentals, solar efficiency
-    5. Urban density for parking demand, internet sharing
-    
-    Provide realistic estimates that reflect the actual market in this location. Don't use generic nationwide averages.
-    
-    Return a JSON response with this exact structure:
-    ${JSON.stringify({
-      propertyType: "single-family",
-      amenities: [],
-      rooftop: {
-        area: 0,
-        type: "unknown",
-        solarCapacity: 0,
-        solarPotential: false,
-        revenue: 0,
-        usingRealSolarData: false,
-        providers: []
-      },
-      garden: { area: 0, opportunity: "Low", revenue: 0, providers: [] },
-      parking: { spaces: 0, rate: 0, revenue: 0, evChargerPotential: false, providers: [] },
-      pool: { present: false, area: 0, type: "none", revenue: 0, providers: [] },
-      storage: { volume: 0, revenue: 0, providers: [] },
-      bandwidth: { available: 0, revenue: 0, providers: [] },
-      shortTermRental: { nightlyRate: 0, monthlyProjection: 0, providers: [] },
-      permits: [],
-      restrictions: null,
-      topOpportunities: [],
-      imageAnalysisSummary: "",
-      propertyValuation: {
-        totalMonthlyRevenue: 0,
-        totalAnnualRevenue: 0,
-        totalSetupCosts: 0,
-        averageROI: 0,
-        bestOpportunity: ""
+    // If we have solar data, enhance the analysis with it
+    if (solarData) {
+      analysis.rooftop = {
+        ...analysis.rooftop,
+        area: solarData.roofTotalAreaSqFt,
+        solarCapacity: solarData.maxSolarCapacityKW,
+        solarPotential: solarData.solarPotential,
+        yearlyEnergyKWh: solarData.yearlyEnergyKWh,
+        panelsCount: solarData.panelsCount,
+        revenue: solarData.monthlyRevenue,
+        setupCost: solarData.setupCost,
+        usingRealSolarData: true
+      };
+      
+      // Update the top opportunity for solar if it exists
+      const solarOpportunityIndex = analysis.topOpportunities.findIndex(
+        opp => opp.title.toLowerCase().includes('solar')
+      );
+      
+      if (solarOpportunityIndex >= 0) {
+        analysis.topOpportunities[solarOpportunityIndex] = {
+          ...analysis.topOpportunities[solarOpportunityIndex],
+          monthlyRevenue: solarData.monthlyRevenue,
+          setupCost: solarData.setupCost,
+          roi: Math.ceil(solarData.setupCost / solarData.monthlyRevenue),
+          description: `Install ${solarData.panelsCount} solar panels producing ${solarData.yearlyEnergyKWh} kWh/year on your ${solarData.roofTotalAreaSqFt} sq ft roof.`,
+          usingRealSolarData: true
+        };
       }
-    }, null, 2)}`;
-
-    console.log('Analysis Prompt:', analysisPrompt);
-
-    if (!OPENAI_API_KEY) {
-      throw new Error('OPENAI_API_KEY is not set');
     }
-
-    const openAIResponse = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${OPENAI_API_KEY}`,
-      },
-      body: JSON.stringify({
-        model: 'gpt-4-1106-preview',
-        messages: [{ role: 'user', content: analysisPrompt }],
-        temperature: 0.5,
-      }),
-    });
-
-    if (!openAIResponse.ok) {
-      const errorBody = await openAIResponse.text();
-      console.error('OpenAI API Error:', openAIResponse.status, errorBody);
-      throw new Error(`OpenAI API request failed with status ${openAIResponse.status}: ${errorBody}`);
-    }
-
-    const openAIData = await openAIResponse.json();
-    console.log('OpenAI Response:', openAIData);
-
-    const analysisResults: AnalysisResults = JSON.parse(openAIData.choices[0].message.content);
-
-    // Verify service availability for each asset type
-    if (analysisResults.rooftop?.providers) {
-      analysisResults.rooftop.providers = await verifyAndFilterProviders(
-        'solar',
-        analysisResults.rooftop.providers,
-        locationInfo,
-        { ...propertyDetails, type: analysisResults.propertyType || 'single-family' }
-      );
-    }
-
-    if (analysisResults.parking?.providers) {
-      analysisResults.parking.providers = await verifyAndFilterProviders(
-        'parking',
-        analysisResults.parking.providers,
-        locationInfo,
-        { ...propertyDetails, type: analysisResults.propertyType || 'single-family' }
-      );
-    }
-
-    if (analysisResults.storage?.providers) {
-      analysisResults.storage.providers = await verifyAndFilterProviders(
-        'storage',
-        analysisResults.storage.providers,
-        locationInfo,
-        { ...propertyDetails, type: analysisResults.propertyType || 'single-family' }
-      );
-    }
-
-    if (analysisResults.pool?.providers) {
-      analysisResults.pool.providers = await verifyAndFilterProviders(
-        'pool',
-        analysisResults.pool.providers,
-        locationInfo,
-        { ...propertyDetails, type: analysisResults.propertyType || 'single-family' }
-      );
-    }
-
-    if (analysisResults.bandwidth?.providers) {
-      analysisResults.bandwidth.providers = await verifyAndFilterProviders(
-        'bandwidth',
-        analysisResults.bandwidth.providers,
-        locationInfo,
-        { ...propertyDetails, type: analysisResults.propertyType || 'single-family' }
-      );
-    }
-
-    if (analysisResults.shortTermRental?.providers) {
-      analysisResults.shortTermRental.providers = await verifyAndFilterProviders(
-        'rental',
-        analysisResults.shortTermRental.providers,
-        locationInfo,
-        { ...propertyDetails, type: analysisResults.propertyType || 'single-family' }
-      );
-    }
-
-    // Add location and service availability info to the response
-    const enhancedResults = addServiceAvailabilityToAnalysis(
-      analysisResults,
-      locationInfo,
-      { ...propertyDetails, type: analysisResults.propertyType || 'single-family' }
-    );
-
-    if (solarData?.solarData) {
-      enhancedResults.rooftop.solarPotential = true;
-      enhancedResults.rooftop.area = solarData.solarData.roofTotalAreaSqFt;
-      enhancedResults.rooftop.solarCapacity = solarData.solarData.maxSolarCapacityKW;
-      enhancedResults.rooftop.revenue = solarData.solarData.monthlyRevenue;
-      enhancedResults.rooftop.usingRealSolarData = true;
-      enhancedResults.rooftop.yearlyEnergyKWh = solarData.solarData.yearlyEnergyKWh;
-      enhancedResults.rooftop.panelsCount = solarData.solarData.panelsCount;
-      enhancedResults.rooftop.setupCost = solarData.solarData.setupCost;
-    }
-
-    console.log('Analysis completed successfully');
     
-    return new Response(JSON.stringify(enhancedResults), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      status: 200
-    });
-
+    return new Response(
+      JSON.stringify({
+        success: true,
+        analysis: analysis,
+        propertyInfo: {
+          address: propertyDetails.formattedAddress || address,
+          coordinates: propertyCoordinates
+        },
+        imageAnalysis: imageAnalysis,
+        solarData: solarData
+      }),
+      {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200
+      }
+    );
   } catch (error) {
-    console.error('Analysis failed:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      status: 500,
-    });
+    console.error('Error in analyze-property function:', error);
+    return new Response(
+      JSON.stringify({ 
+        success: false, 
+        error: error.message || 'An error occurred during property analysis'
+      }),
+      {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 500
+      }
+    );
   }
-};
-
-Deno.serve(handler);
+});

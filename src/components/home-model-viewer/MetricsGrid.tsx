@@ -2,7 +2,7 @@
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { AnalysisResults as PropertyAnalysis } from '@/types/analysis';
-import { Info, CheckCircle, AlertCircle } from 'lucide-react';
+import { Info } from 'lucide-react';
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 
 interface MetricsGridProps {
@@ -12,23 +12,32 @@ interface MetricsGridProps {
 const MetricsGrid = ({ analysisResults }: MetricsGridProps) => {
   const usesRealSolarData = analysisResults.rooftop.usingRealSolarData;
   
-  // Get solar revenue from analysis (now more accurate)
-  const solarRevenue = analysisResults.rooftop.revenue || 0;
+  // Estimated solar revenue based on roof size if we don't have real data
+  const getSolarRevenueEstimate = () => {
+    if (usesRealSolarData) {
+      return analysisResults.rooftop.revenue;
+    }
+    
+    // Simple estimation based on roof area: 
+    // Average solar production is around 15W per sq ft, at $0.15/kWh
+    const roofArea = analysisResults.rooftop.area || 0;
+    const usableRoofPercent = 0.7; // Assume 70% of roof can be used for solar
+    const wattsPerSqFt = 15;
+    const kwhPerMonth = (roofArea * usableRoofPercent * wattsPerSqFt * 4 * 0.8) / 1000;
+    const ratePerKwh = 0.15;
+    
+    return Math.round(kwhPerMonth * ratePerKwh);
+  };
+
+  const solarRevenue = getSolarRevenueEstimate();
   
   return (
     <TooltipProvider>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
         {analysisResults.rooftop && (
           <div className="bg-white/5 p-3 rounded-lg">
-            <div className="flex items-center justify-between mb-1">
-              <p className="text-xs text-gray-400">Roof Area</p>
-              {usesRealSolarData ? (
-                <CheckCircle size={12} className="text-green-400" />
-              ) : (
-                <AlertCircle size={12} className="text-yellow-400" />
-              )}
-            </div>
-            <p className="text-lg font-semibold text-white">{analysisResults.rooftop.area.toLocaleString()} sq ft</p>
+            <p className="text-xs text-gray-400">Roof Area</p>
+            <p className="text-lg font-semibold text-white">{analysisResults.rooftop.area} sq ft</p>
             <div className="flex justify-between items-center">
               <p className="text-xs text-tiptop-purple">${solarRevenue}/mo</p>
               {analysisResults.rooftop.solarPotential && (
@@ -43,7 +52,7 @@ const MetricsGrid = ({ analysisResults }: MetricsGridProps) => {
                   {analysisResults.rooftop.panelsCount} panels | {analysisResults.rooftop.solarCapacity} kW
                 </p>
               )}
-              {!usesRealSolarData && (
+              {!usesRealSolarData && analysisResults.rooftop.area > 0 && (
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <p className="text-xs text-gray-400 flex items-center cursor-help">
@@ -52,10 +61,8 @@ const MetricsGrid = ({ analysisResults }: MetricsGridProps) => {
                   </TooltipTrigger>
                   <TooltipContent>
                     <p className="text-xs max-w-xs">
-                      {usesRealSolarData 
-                        ? 'These values are from Google Solar API with real satellite data analysis.'
-                        : 'These are estimated values. For more accurate solar estimates, we recommend a professional assessment.'
-                      }
+                      These are estimated values since we couldn't access the Google Solar API.
+                      For more accurate solar estimates, try adding your property later.
                     </p>
                   </TooltipContent>
                 </Tooltip>
@@ -67,7 +74,7 @@ const MetricsGrid = ({ analysisResults }: MetricsGridProps) => {
         {analysisResults.garden && analysisResults.garden.area > 0 && (
           <div className="bg-white/5 p-3 rounded-lg">
             <p className="text-xs text-gray-400">Garden Area</p>
-            <p className="text-lg font-semibold text-white">{analysisResults.garden.area.toLocaleString()} sq ft</p>
+            <p className="text-lg font-semibold text-white">{analysisResults.garden.area} sq ft</p>
             <div className="flex justify-between items-center">
               <p className="text-xs text-tiptop-purple">${analysisResults.garden.revenue}/mo</p>
               <Badge variant="outline" className="text-xs bg-yellow-500/20 text-yellow-300 border-yellow-500/30">
@@ -88,8 +95,8 @@ const MetricsGrid = ({ analysisResults }: MetricsGridProps) => {
                 </TooltipTrigger>
                 <TooltipContent>
                   <p className="text-xs max-w-xs">
-                    Estimated based on property type: {analysisResults.propertyType}. 
-                    Rate: ${analysisResults.parking.rate}/day based on local market data.
+                    This is based on property type: {analysisResults.propertyType}. 
+                    You can adjust this value if needed.
                   </p>
                 </TooltipContent>
               </Tooltip>
@@ -108,7 +115,7 @@ const MetricsGrid = ({ analysisResults }: MetricsGridProps) => {
         {analysisResults.pool && analysisResults.pool.present && (
           <div className="bg-white/5 p-3 rounded-lg">
             <p className="text-xs text-gray-400">Pool</p>
-            <p className="text-lg font-semibold text-white">{analysisResults.pool.area.toLocaleString()} sq ft</p>
+            <p className="text-lg font-semibold text-white">{analysisResults.pool.area} sq ft</p>
             <div className="flex justify-between items-center">
               <p className="text-xs text-tiptop-purple">${analysisResults.pool.revenue}/mo</p>
               <Badge variant="outline" className="text-xs bg-cyan-500/20 text-cyan-300 border-cyan-500/30">
@@ -122,7 +129,7 @@ const MetricsGrid = ({ analysisResults }: MetricsGridProps) => {
         {analysisResults.bandwidth && analysisResults.bandwidth.revenue > 0 && (
           <div className="bg-white/5 p-3 rounded-lg">
             <p className="text-xs text-gray-400">Internet Sharing</p>
-            <p className="text-lg font-semibold text-white">{analysisResults.bandwidth.available} Mbps</p>
+            <p className="text-lg font-semibold text-white">{analysisResults.bandwidth.available} GB</p>
             <div className="flex justify-between items-center">
               <p className="text-xs text-tiptop-purple">${analysisResults.bandwidth.revenue}/mo</p>
               <Badge variant="outline" className="text-xs bg-purple-500/20 text-purple-300 border-purple-500/30">
@@ -131,26 +138,6 @@ const MetricsGrid = ({ analysisResults }: MetricsGridProps) => {
             </div>
           </div>
         )}
-      </div>
-      
-      {/* Data Accuracy Indicator */}
-      <div className="mb-4 p-3 bg-black/20 rounded-lg border border-white/10">
-        <div className="flex items-center gap-2 mb-2">
-          {usesRealSolarData ? (
-            <CheckCircle size={16} className="text-green-400" />
-          ) : (
-            <AlertCircle size={16} className="text-yellow-400" />
-          )}
-          <span className="text-sm font-medium text-white">
-            Analysis Accuracy: {usesRealSolarData ? 'High' : 'Estimated'}
-          </span>
-        </div>
-        <p className="text-xs text-gray-400">
-          {usesRealSolarData 
-            ? 'This analysis uses real satellite data from Google Solar API for accurate roof measurements and solar calculations.'
-            : 'This analysis uses estimated values. For more accurate results, we recommend manual verification of property features.'
-          }
-        </p>
       </div>
     </TooltipProvider>
   );

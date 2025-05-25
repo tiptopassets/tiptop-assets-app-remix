@@ -8,27 +8,6 @@ export interface ProviderInfo {
   url?: string;
 }
 
-export interface ServiceAvailability {
-  verified: boolean;
-  location: string;
-  coverage: string;
-}
-
-export interface LocationInfo {
-  country: string;
-  state?: string;
-  city?: string;
-  zipCode?: string;
-}
-
-export interface PropertyValuation {
-  totalMonthlyRevenue: number;
-  totalAnnualRevenue: number;
-  totalSetupCosts: number;
-  averageROI: number;
-  bestOpportunity: string;
-}
-
 export interface AnalysisResults {
   propertyType: string;
   amenities: string[];
@@ -84,9 +63,6 @@ export interface AnalysisResults {
   restrictions: string | null;
   topOpportunities: Opportunity[];
   imageAnalysisSummary?: string;
-  serviceAvailability?: ServiceAvailability;
-  locationInfo?: LocationInfo;
-  propertyValuation?: PropertyValuation;
 }
 
 export interface FormField {

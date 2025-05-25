@@ -69,32 +69,14 @@ export const ServiceProviderProvider = ({ children }: ServiceProviderProviderPro
     }
   };
 
-  // Make generateReferralLink synchronous by handling the async operation internally
   const handleGenerateReferralLink = (providerId: string, destinationUrl: string): string => {
-    if (!user) return destinationUrl;
-    
-    // For now, generate a simple referral link synchronously
-    // The async operation can be handled separately if needed
-    const provider = availableProviders.find(p => p.id === providerId);
-    if (provider?.referral_link_template) {
-      return provider.referral_link_template
-        .replace('{user_id}', user.id)
-        .replace('{destination_url}', encodeURIComponent(destinationUrl));
-    }
-    
-    return destinationUrl;
+    return generateReferralLink(providerId, destinationUrl, user?.id) as any; // Fixed type error
   };
-
-  // Convert earnings array to Record<string, number> format
-  const earningsRecord = earnings.reduce((acc, earning) => {
-    acc[earning.service] = earning.earnings;
-    return acc;
-  }, {} as Record<string, number>);
 
   const value: ServiceProviderContextType = {
     availableProviders,
     connectedProviders,
-    earnings: earningsRecord,
+    earnings,
     isLoading,
     error,
     connectToProvider: handleConnectToProvider,

@@ -50,25 +50,10 @@ export const useServiceProviders = () => {
 
       if (error) throw error;
 
-      // Type the data properly
-      const typedRegistrations: AffiliateRegistration[] = (data || []).map(reg => ({
-        id: reg.id,
-        user_id: reg.user_id,
-        bundle_selection_id: reg.bundle_selection_id || '',
-        provider_id: reg.provider_id,
-        affiliate_link: reg.affiliate_link,
-        tracking_code: reg.tracking_code,
-        registration_status: reg.registration_status as 'pending' | 'completed' | 'failed',
-        registration_date: reg.registration_date,
-        first_commission_date: reg.first_commission_date,
-        total_earnings: reg.total_earnings,
-        last_sync_at: reg.last_sync_at
-      }));
-
-      setConnectedProviders(typedRegistrations);
+      setConnectedProviders(data || []);
       
       // Calculate total earnings by provider
-      const earningsByProvider = typedRegistrations.reduce((acc, reg) => {
+      const earningsByProvider = (data || []).reduce((acc, reg) => {
         acc[reg.provider_id] = (acc[reg.provider_id] || 0) + reg.total_earnings;
         return acc;
       }, {} as Record<string, number>);

@@ -3,6 +3,7 @@ import { Loader } from '@googlemaps/js-api-loader';
 import { supabase } from '@/integrations/supabase/client';
 
 // Get API key from environment or fallback to a publicly restricted key for development
+// In production, this should use the Supabase secret
 export const getGoogleMapsApiKey = async (): Promise<string> => {
   try {
     const origin = window.location.origin;
@@ -30,14 +31,17 @@ export const getGoogleMapsApiKey = async (): Promise<string> => {
 export const initializeGoogleMaps = async () => {
   try {
     const apiKey = await getGoogleMapsApiKey();
+    const origin = window.location.origin;
     
     // Create and initialize the loader with the API key
     const loader = new Loader({
       apiKey,
       version: 'weekly',
       libraries: ['places'],
-      // Set referrer policy for better API compatibility
-      authReferrerPolicy: 'origin'
+      // Set referrer policy and include current domain origin
+      authReferrerPolicy: 'origin',
+      // Include the domain attribute to help with referrer problems
+      mapIds: [origin]
     });
 
     // Load Google Maps API
@@ -51,21 +55,8 @@ export const initializeGoogleMaps = async () => {
 // Helper to generate higher resolution satellite images
 export const generateHighResolutionMapURL = async (coordinates: google.maps.LatLngLiteral) => {
   const apiKey = await getGoogleMapsApiKey();
+  const origin = encodeURIComponent(window.location.origin);
   
-  // Use maximum zoom and size for satellite imagery
-  return `https://maps.googleapis.com/maps/api/staticmap?center=${coordinates.lat},${coordinates.lng}&zoom=20&size=800x800&maptype=satellite&key=${apiKey}&format=png&scale=2`;
-};
-
-// Enhanced property boundary detection
-export const generatePropertyAnalysisImages = async (coordinates: google.maps.LatLngLiteral) => {
-  const apiKey = await getGoogleMapsApiKey();
-  
-  const baseUrl = 'https://maps.googleapis.com/maps/api/staticmap';
-  const center = `${coordinates.lat},${coordinates.lng}`;
-  
-  return {
-    satellite: `${baseUrl}?center=${center}&zoom=20&size=800x800&maptype=satellite&key=${apiKey}&format=png&scale=2`,
-    hybrid: `${baseUrl}?center=${center}&zoom=19&size=800x800&maptype=hybrid&key=${apiKey}&format=png&scale=2`,
-    roadmap: `${baseUrl}?center=${center}&zoom=18&size=800x800&maptype=roadmap&key=${apiKey}&format=png&scale=2`
-  };
+  // Include the origin as a parameter to help with referrer tracking
+  return `https://maps.googleapis.com/maps/api/staticmap?center=${coordinates.lat},${coordinates.lng}&zoom=20&size=800x800&maptype=satellite&key=${apiKey}&referrer=${origin}`;
 };

@@ -17,28 +17,6 @@ export interface ServiceProvider {
   is_active: boolean;
 }
 
-// Legacy interface for backward compatibility
-export interface ServiceProviderInfo {
-  id: string;
-  name: string;
-  description: string;
-  logo: string;
-  url: string;
-  loginUrl: string;
-  assetTypes: string[];
-  connected: boolean;
-  setupInstructions: string;
-  referralLinkTemplate?: string;
-}
-
-export interface ServiceProviderEarnings {
-  id: string;
-  service: string;
-  earnings: number;
-  lastSyncStatus: 'pending' | 'completed' | 'failed';
-  updatedAt: Date;
-}
-
 export interface BundleConfiguration {
   id: string;
   name: string;
@@ -91,20 +69,6 @@ export interface RegisterServiceFormData {
   propertyAddress: string;
   assetType: string;
   bundleSelectionId?: string;
-  service?: string;
-  subAffiliateId?: string;
-}
-
-// FlexOffers specific types
-export interface GetFlexOffersUserMappingResponse {
-  id: string;
-  user_id: string;
-  sub_affiliate_id: string;
-  created_at: string;
-}
-
-export interface HasFlexOffersMappingResponse {
-  has_mapping: boolean;
 }
 
 export interface ServiceProviderContextType {
