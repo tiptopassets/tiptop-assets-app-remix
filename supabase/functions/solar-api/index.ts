@@ -10,6 +10,9 @@ const GOOGLE_MAPS_API_KEY = Deno.env.get('GOOGLE_MAPS_API_KEY') || '';
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') || '';
 const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY') || '';
 
+// Cache management
+const CACHE_DURATION_HOURS = 24;
+
 Deno.serve(async (req: Request) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -32,11 +35,14 @@ Deno.serve(async (req: Request) => {
       );
     }
 
+    // Verify API key configuration
     if (!GOOGLE_MAPS_API_KEY) {
+      console.error('Google Maps API key not configured');
       return new Response(
         JSON.stringify({
           success: false,
-          error: 'Google Maps API key is not configured'
+          error: 'Google Maps API key is not configured',
+          fallbackUsed: true
         }),
         {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -107,6 +113,37 @@ Deno.serve(async (req: Request) => {
       );
     }
 
+    // Check cache first
+    const cacheKey = `${locationCoordinates.lat},${locationCoordinates.lng}`;
+    try {
+      const { data: cachedData } = await supabase
+        .from('solar_api_cache')
+        .select('*')
+        .eq('coordinates', `POINT(${locationCoordinates.lng} ${locationCoordinates.lat})`)
+        .gte('requested_at', new Date(Date.now() - CACHE_DURATION_HOURS * 60 * 60 * 1000).toISOString())
+        .order('requested_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (cachedData) {
+        console.log('Returning cached solar data');
+        return new Response(
+          JSON.stringify({
+            success: true,
+            solarData: cachedData.formatted_data,
+            coordinates: locationCoordinates,
+            cached: true
+          }),
+          {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 200
+          }
+        );
+      }
+    } catch (cacheError) {
+      console.log('Cache lookup failed, proceeding with API call:', cacheError);
+    }
+
     // Call Google Solar API with coordinates
     console.log('Calling Google Solar API with coordinates:', locationCoordinates);
     
@@ -114,6 +151,28 @@ Deno.serve(async (req: Request) => {
       const solarResult = await handleSolarApiRequest(locationCoordinates, GOOGLE_MAPS_API_KEY, SUPABASE_URL);
       
       if (solarResult.error) {
+        // Check if it's a quota error and provide better messaging
+        if (solarResult.error.includes('quota') || solarResult.error.includes('RESOURCE_EXHAUSTED')) {
+          console.log('API quota exceeded, generating estimated data');
+          const estimatedRoofSize = 1500; // sq ft average home
+          const estimatedSolarData = generateEstimatedSolarData(locationCoordinates, estimatedRoofSize, countryCode || '');
+          
+          return new Response(
+            JSON.stringify({
+              success: true,
+              solarData: estimatedSolarData,
+              coordinates: locationCoordinates,
+              estimatedData: true,
+              quotaExceeded: true,
+              message: 'API quota exceeded - using estimated data based on location and average roof size'
+            }),
+            {
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+              status: 200
+            }
+          );
+        }
+
         // For unsupported regions, generate estimated data
         if (countryCode && countryCode !== 'US') {
           console.log(`Generating estimated solar data for ${countryCode}`);
@@ -153,19 +212,20 @@ Deno.serve(async (req: Request) => {
         );
       }
 
-      // Store the API response in the database for future reference
+      // Store the API response in the cache for future reference
       if (locationCoordinates && solarResult.solarData) {
         try {
-          // Store the raw API response in a table for reference
           await supabase
             .from('solar_api_cache')
             .upsert({
               coordinates: `POINT(${locationCoordinates.lng} ${locationCoordinates.lat})`,
               raw_response: solarResult.rawResponse,
               formatted_data: solarResult.solarData,
-              requested_at: new Date().toISOString()
+              requested_at: new Date().toISOString(),
+              api_success: true
             })
             .select();
+          console.log('Solar data cached successfully');
         } catch (dbError) {
           console.log('Database storage error (non-critical):', dbError);
           // Continue execution even if database storage fails
@@ -176,7 +236,8 @@ Deno.serve(async (req: Request) => {
         JSON.stringify({
           success: true,
           solarData: solarResult.solarData,
-          coordinates: locationCoordinates
+          coordinates: locationCoordinates,
+          apiSuccess: true
         }),
         {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -196,6 +257,7 @@ Deno.serve(async (req: Request) => {
           solarData: estimatedSolarData,
           coordinates: locationCoordinates,
           estimatedData: true,
+          fallbackUsed: true,
           error: 'Failed to connect to Google Solar API - using estimates',
           message: apiError.message
         }),
@@ -210,7 +272,8 @@ Deno.serve(async (req: Request) => {
     return new Response(
       JSON.stringify({
         success: false,
-        error: error.message || 'An unknown error occurred'
+        error: error.message || 'An unknown error occurred',
+        fallbackAvailable: true
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

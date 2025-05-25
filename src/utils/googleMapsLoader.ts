@@ -29,6 +29,20 @@ export const getGoogleMapsApiKey = async (): Promise<string> => {
   return GOOGLE_MAPS_API_KEY;
 };
 
+// Verify API key configuration
+export const verifyApiKeyConfiguration = async (): Promise<{ valid: boolean; message: string }> => {
+  if (!GOOGLE_MAPS_API_KEY) {
+    return { valid: false, message: 'Google Maps API key not configured' };
+  }
+  
+  try {
+    await loadGoogleMaps();
+    return { valid: true, message: 'API key is valid and Maps loaded successfully' };
+  } catch (error) {
+    return { valid: false, message: `API key validation failed: ${error}` };
+  }
+};
+
 export const geocodeAddress = async (address: string): Promise<google.maps.LatLngLiteral | null> => {
   try {
     const maps = await loadGoogleMaps();
@@ -64,7 +78,7 @@ export const getPropertyTypeFromPlaces = async (coordinates: google.maps.LatLngL
     const request = {
       location: coordinates,
       radius: 50,
-      type: 'establishment' as any // Use 'any' to avoid type issues
+      type: 'establishment' as const
     };
 
     service.nearbySearch(request, (results, status) => {
