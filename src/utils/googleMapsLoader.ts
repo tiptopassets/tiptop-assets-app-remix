@@ -1,8 +1,7 @@
 
 import { Loader } from '@googlemaps/js-api-loader';
 
-// In Vite, environment variables are accessed via import.meta.env
-const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '';
+const GOOGLE_MAPS_API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '';
 
 const loader = new Loader({
   apiKey: GOOGLE_MAPS_API_KEY,
