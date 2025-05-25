@@ -9,8 +9,8 @@ const fetchGoogleMapsApiKey = async (): Promise<string> => {
   }
   
   try {
-    // Fallback to Supabase edge function
-    const response = await fetch('/api/get-google-maps-key', {
+    // Fallback to Supabase edge function - use correct URL
+    const response = await fetch('https://cxvdcdatxewrvwbcnksg.supabase.co/functions/v1/get-google-maps-key', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
