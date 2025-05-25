@@ -1,110 +1,129 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { BundleConfiguration, ServiceProvider, BundleRecommendation } from '@/contexts/ServiceProviders/types';
+import { useAuth } from '@/contexts/AuthContext';
+import { BundleConfiguration, BundleRecommendation, ServiceProvider } from '@/contexts/ServiceProviders/types';
 
-export const useBundleRecommendations = (detectedAssets: string[]) => {
+export const useBundleRecommendations = (selectedAssets: string[] = []) => {
+  const { user } = useAuth();
   const [recommendations, setRecommendations] = useState<BundleRecommendation[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (detectedAssets.length === 0) return;
-    
-    fetchBundleRecommendations();
-  }, [detectedAssets]);
+    if (selectedAssets.length > 0) {
+      fetchRecommendations();
+    }
+  }, [selectedAssets]);
 
-  const fetchBundleRecommendations = async () => {
-    setLoading(true);
+  const fetchRecommendations = async () => {
+    if (!user || selectedAssets.length === 0) return;
+
+    setIsLoading(true);
     setError(null);
 
     try {
-      // Fetch all active bundle configurations
-      const { data: bundles, error: bundleError } = await supabase
+      // Fetch bundle configurations
+      const { data: bundles, error: bundlesError } = await supabase
         .from('bundle_configurations')
         .select('*')
-        .eq('is_active', true)
-        .order('total_monthly_earnings_high', { ascending: false });
+        .eq('is_active', true);
 
-      if (bundleError) throw bundleError;
+      if (bundlesError) throw bundlesError;
 
-      // Fetch all active service providers
-      const { data: providers, error: providerError } = await supabase
+      // Fetch service providers
+      const { data: providers, error: providersError } = await supabase
         .from('service_providers')
         .select('*')
-        .eq('is_active', true)
-        .order('priority', { ascending: true });
+        .eq('is_active', true);
 
-      if (providerError) throw providerError;
+      if (providersError) throw providersError;
 
-      // Generate recommendations based on detected assets
-      const bundleRecommendations: BundleRecommendation[] = [];
+      // Filter bundles that match selected assets and convert types
+      const matchingBundles: BundleRecommendation[] = (bundles || [])
+        .map(bundle => {
+          // Convert Json type to string array
+          const assetRequirements = Array.isArray(bundle.asset_requirements) 
+            ? bundle.asset_requirements as string[]
+            : typeof bundle.asset_requirements === 'string'
+            ? JSON.parse(bundle.asset_requirements)
+            : [];
 
-      for (const bundle of bundles || []) {
-        const requiredAssets = bundle.asset_requirements as string[];
-        const matchingAssets = detectedAssets.filter(asset => 
-          requiredAssets.includes(asset)
-        );
+          const bundleConfig: BundleConfiguration = {
+            ...bundle,
+            asset_requirements: assetRequirements
+          };
 
-        // Only recommend if we have enough matching assets
-        if (matchingAssets.length >= bundle.min_assets) {
-          // Get providers for matching assets
-          const bundleProviders = (providers || []).filter(provider =>
-            matchingAssets.includes(provider.category)
+          const matchingAssets = bundleConfig.asset_requirements.filter(asset => 
+            selectedAssets.includes(asset)
           );
 
-          // Limit providers per asset type
-          const limitedProviders: ServiceProvider[] = [];
-          const assetProviderCount: Record<string, number> = {};
+          // Only include if bundle requirements are met
+          if (matchingAssets.length >= bundleConfig.min_assets) {
+            // Get relevant providers for this bundle
+            const bundleProviders = (providers || []).filter(provider =>
+              bundleConfig.asset_requirements.some(asset => 
+                provider.category === asset
+              )
+            );
 
-          for (const provider of bundleProviders) {
-            const count = assetProviderCount[provider.category] || 0;
-            if (count < bundle.max_providers_per_asset) {
-              limitedProviders.push(provider);
-              assetProviderCount[provider.category] = count + 1;
-            }
+            return {
+              bundle: bundleConfig,
+              providers: bundleProviders,
+              totalEarnings: {
+                low: bundleConfig.total_monthly_earnings_low,
+                high: bundleConfig.total_monthly_earnings_high
+              },
+              matchingAssets,
+              setupCost: bundleConfig.total_setup_cost
+            };
           }
+          return null;
+        })
+        .filter(Boolean) as BundleRecommendation[];
 
-          // Calculate total earnings and setup cost
-          const totalEarnings = limitedProviders.reduce(
-            (acc, provider) => ({
-              low: acc.low + provider.avg_monthly_earnings_low,
-              high: acc.high + provider.avg_monthly_earnings_high
-            }),
-            { low: 0, high: 0 }
-          );
+      // Sort by potential earnings
+      matchingBundles.sort((a, b) => b.totalEarnings.high - a.totalEarnings.high);
 
-          const setupCost = limitedProviders.reduce(
-            (acc, provider) => acc + provider.setup_cost,
-            0
-          );
-
-          bundleRecommendations.push({
-            bundle,
-            providers: limitedProviders,
-            totalEarnings,
-            matchingAssets,
-            setupCost
-          });
-        }
-      }
-
-      // Sort by potential earnings (high estimate)
-      bundleRecommendations.sort((a, b) => b.totalEarnings.high - a.totalEarnings.high);
-
-      setRecommendations(bundleRecommendations);
+      setRecommendations(matchingBundles);
     } catch (err) {
       console.error('Error fetching bundle recommendations:', err);
       setError(err instanceof Error ? err.message : 'Failed to fetch recommendations');
     } finally {
-      setLoading(false);
+      setIsLoading(false);
+    }
+  };
+
+  const selectBundle = async (bundleId: string, propertyAddress: string) => {
+    if (!user) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('user_bundle_selections')
+        .insert({
+          user_id: user.id,
+          bundle_id: bundleId,
+          property_address: propertyAddress,
+          selected_assets: selectedAssets,
+          selected_providers: [],
+          status: 'pending'
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    } catch (err) {
+      console.error('Error selecting bundle:', err);
+      throw err;
     }
   };
 
   return {
     recommendations,
-    loading,
+    isLoading,
     error,
-    refetch: fetchBundleRecommendations
+    selectBundle,
+    refetch: fetchRecommendations
   };
 };

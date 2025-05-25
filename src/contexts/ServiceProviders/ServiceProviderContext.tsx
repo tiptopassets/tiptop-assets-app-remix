@@ -1,14 +1,88 @@
 
-import { createContext, useContext, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import {
-  ServiceProviderContextType,
-  RegisterServiceFormData,
+import { 
+  ServiceProviderContextType, 
+  ServiceProvider, 
+  AffiliateRegistration,
+  RegisterServiceFormData 
 } from './types';
 import { useProviderData } from './hooks/useProviderData';
 import { useProviderActions } from './hooks/useProviderActions';
 
 const ServiceProviderContext = createContext<ServiceProviderContextType | undefined>(undefined);
+
+export const ServiceProviderProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { user } = useAuth();
+  const [availableProviders, setAvailableProviders] = useState<ServiceProvider[]>([]);
+  const [connectedProviders, setConnectedProviders] = useState<AffiliateRegistration[]>([]);
+  const [earnings, setEarnings] = useState<Record<string, number>>({});
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Use custom hooks for data and actions
+  const { 
+    fetchProviders, 
+    fetchConnectedProviders, 
+    fetchEarnings 
+  } = useProviderData({
+    setAvailableProviders,
+    setConnectedProviders,
+    setEarnings,
+    setIsLoading,
+    setError
+  });
+
+  const {
+    connectToProvider,
+    registerWithProvider,
+    disconnectProvider,
+    syncProviderEarnings,
+    generateReferralLink
+  } = useProviderActions({
+    setIsLoading,
+    setError,
+    refreshData: () => {
+      if (user) {
+        fetchConnectedProviders(user.id);
+        fetchEarnings(user.id);
+      }
+    }
+  });
+
+  // Load data when user changes
+  useEffect(() => {
+    if (user) {
+      fetchProviders();
+      fetchConnectedProviders(user.id);
+      fetchEarnings(user.id);
+    } else {
+      // Reset state when user logs out
+      setAvailableProviders([]);
+      setConnectedProviders([]);
+      setEarnings({});
+    }
+  }, [user]);
+
+  const contextValue: ServiceProviderContextType = {
+    availableProviders,
+    connectedProviders,
+    earnings,
+    isLoading,
+    error,
+    connectToProvider,
+    registerWithProvider,
+    disconnectProvider,
+    syncProviderEarnings,
+    generateReferralLink
+  };
+
+  return (
+    <ServiceProviderContext.Provider value={contextValue}>
+      {children}
+    </ServiceProviderContext.Provider>
+  );
+};
 
 export const useServiceProviders = () => {
   const context = useContext(ServiceProviderContext);
@@ -16,85 +90,4 @@ export const useServiceProviders = () => {
     throw new Error('useServiceProviders must be used within a ServiceProviderProvider');
   }
   return context;
-};
-
-interface ServiceProviderProviderProps {
-  children: ReactNode;
-}
-
-export const ServiceProviderProvider = ({ children }: ServiceProviderProviderProps) => {
-  const { user } = useAuth();
-  
-  const {
-    availableProviders,
-    setAvailableProviders,
-    connectedProviders,
-    setConnectedProviders,
-    earnings,
-    isLoading,
-    error
-  } = useProviderData();
-
-  const {
-    connectToProvider,
-    registerWithProvider,
-    disconnectProvider,
-    syncProviderEarnings,
-    generateReferralLink,
-    actionInProgress
-  } = useProviderActions(availableProviders, setAvailableProviders, connectedProviders, setConnectedProviders);
-
-  // Create wrapper functions that pass user ID to the service functions
-  const handleConnectToProvider = async (providerId: string) => {
-    if (user) {
-      await connectToProvider(providerId, user.id);
-    }
-  };
-
-  const handleRegisterWithProvider = async (formData: RegisterServiceFormData) => {
-    if (user) {
-      await registerWithProvider(formData, user.id);
-    }
-  };
-
-  const handleDisconnectProvider = async (providerId: string) => {
-    if (user) {
-      await disconnectProvider(providerId, user.id);
-    }
-  };
-
-  const handleSyncProviderEarnings = async (providerId: string) => {
-    if (user) {
-      await syncProviderEarnings(providerId, user.id);
-    }
-  };
-
-  const handleGenerateReferralLink = (providerId: string, destinationUrl: string): string => {
-    return generateReferralLink(providerId, destinationUrl, user?.id) as any;
-  };
-
-  // Convert earnings array to Record<string, number>
-  const earningsRecord = earnings.reduce((acc, earning) => {
-    acc[earning.service] = earning.earnings;
-    return acc;
-  }, {} as Record<string, number>);
-
-  const value: ServiceProviderContextType = {
-    availableProviders,
-    connectedProviders,
-    earnings: earningsRecord,
-    isLoading,
-    error,
-    connectToProvider: handleConnectToProvider,
-    registerWithProvider: handleRegisterWithProvider,
-    disconnectProvider: handleDisconnectProvider,
-    syncProviderEarnings: handleSyncProviderEarnings,
-    generateReferralLink: handleGenerateReferralLink
-  };
-
-  return (
-    <ServiceProviderContext.Provider value={value}>
-      {children}
-    </ServiceProviderContext.Provider>
-  );
 };

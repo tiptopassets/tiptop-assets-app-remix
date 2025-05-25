@@ -1,103 +1,91 @@
 import { Loader } from '@googlemaps/js-api-loader';
-import { supabase } from '@/integrations/supabase/client';
 
-// Get API key from environment or fallback to a publicly restricted key for development
-// In production, this should use the Supabase secret
-export const getGoogleMapsApiKey = async (): Promise<string> => {
-  try {
-    const origin = window.location.origin;
-    
-    // Try to get API key from Supabase edge function
-    const { data, error } = await supabase.functions.invoke('get-google-maps-key', {
-      body: { origin }
+const GOOGLE_MAPS_API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '';
+
+const loader = new Loader({
+  apiKey: GOOGLE_MAPS_API_KEY,
+  version: 'weekly',
+  libraries: ['places']
+});
+
+let googleMapsPromise: Promise<typeof google.maps> | null = null;
+
+export const loadGoogleMaps = (): Promise<typeof google.maps> => {
+  if (!googleMapsPromise) {
+    googleMapsPromise = loader.load().then((google) => {
+      console.log('Google Maps API loaded');
+      return google.maps;
     });
-    
-    if (error || !data?.apiKey) {
-      console.warn('Could not get secure Google Maps API key, using fallback:', error);
-      // Fallback to the restricted development key with domain authorization
-      return 'AIzaSyBbclc8qxh5NVR9skf6XCz_xRJCZsnmUGA';
-    }
-    
-    console.log(`Got API key for domain: ${data.domain || origin}`);
-    return data.apiKey;
-  } catch (err) {
-    console.error('Error getting Google Maps API key:', err);
-    // Fallback to the restricted development key
-    return 'AIzaSyBbclc8qxh5NVR9skf6XCz_xRJCZsnmUGA';
   }
+  return googleMapsPromise;
 };
 
-export const initializeGoogleMaps = async () => {
+export const geocodeAddress = async (address: string): Promise<google.maps.LatLngLiteral | null> => {
   try {
-    const apiKey = await getGoogleMapsApiKey();
-    const origin = window.location.origin;
-    
-    // Create and initialize the loader with the API key
-    const loader = new Loader({
-      apiKey,
-      version: 'weekly',
-      libraries: ['places'],
-      // Set referrer policy and include current domain origin
-      authReferrerPolicy: 'origin',
-      // Include the domain attribute to help with referrer problems
-      mapIds: [origin]
-    });
+    const maps = await loadGoogleMaps();
+    const geocoder = new maps.Geocoder();
 
-    // Load Google Maps API
-    return await loader.load();
-  } catch (error) {
-    console.error("Failed to initialize Google Maps:", error);
-    throw error;
-  }
-};
-
-// Helper to generate higher resolution satellite images
-export const generateHighResolutionMapURL = async (coordinates: google.maps.LatLngLiteral) => {
-  const apiKey = await getGoogleMapsApiKey();
-  const origin = encodeURIComponent(window.location.origin);
-  
-  // Include the origin as a parameter to help with referrer tracking
-  return `https://maps.googleapis.com/maps/api/staticmap?center=${coordinates.lat},${coordinates.lng}&zoom=20&size=800x800&maptype=satellite&key=${apiKey}&referrer=${origin}`;
-};
-
-export const getPropertyTypeFromPlaces = async (coordinates: google.maps.LatLngLiteral): Promise<string> => {
-  try {
-    if (!window.google?.maps?.places) {
-      console.log('Google Places API not available, using default property type');
-      return 'Residential Property';
-    }
-
-    const placesService = new google.maps.places.PlacesService(document.createElement('div'));
-    
-    return new Promise((resolve) => {
-      const request = {
-        location: coordinates,
-        radius: 50, // 50 meter radius
-        type: 'establishment' as google.maps.places.PlaceType
-      };
-
-      placesService.nearbySearch(request, (results, status) => {
-        if (status === google.maps.places.PlacesServiceStatus.OK && results && results[0]) {
-          const place = results[0];
-          
-          // Determine property type based on place types
-          if (place.types?.includes('lodging')) {
-            resolve('Hotel/Lodging');
-          } else if (place.types?.includes('real_estate_agency')) {
-            resolve('Commercial Property');
-          } else if (place.types?.includes('apartment_complex')) {
-            resolve('Apartment Complex');
-          } else {
-            resolve('Single Family Home');
-          }
+    return new Promise((resolve, reject) => {
+      geocoder.geocode({ address }, (results, status) => {
+        if (status === maps.GeocoderStatus.OK && results && results.length > 0) {
+          const location = results[0].geometry.location;
+          resolve({ lat: location.lat(), lng: location.lng() });
         } else {
-          // Default to single family home if no specific type found
-          resolve('Single Family Home');
+          console.error('Geocoding failed:', status);
+          reject(null);
         }
       });
     });
   } catch (error) {
-    console.error('Error getting property type from Places API:', error);
-    return 'Residential Property';
+    console.error('Error geocoding address:', error);
+    return null;
   }
+};
+
+// Add the missing function
+export const getPropertyTypeFromPlaces = async (coordinates: google.maps.LatLngLiteral): Promise<string> => {
+  if (!window.google?.maps) {
+    throw new Error('Google Maps not loaded');
+  }
+
+  return new Promise((resolve, reject) => {
+    const service = new google.maps.places.PlacesService(
+      document.createElement('div')
+    );
+
+    const request = {
+      location: coordinates,
+      radius: 50,
+      type: 'establishment' as google.maps.places.PlaceType
+    };
+
+    service.nearbySearch(request, (results, status) => {
+      if (status === google.maps.places.PlacesServiceStatus.OK && results) {
+        // Analyze the nearby places to determine property type
+        const residentialTypes = ['lodging', 'real_estate_agency', 'moving_company'];
+        const commercialTypes = ['store', 'restaurant', 'gas_station', 'bank'];
+        
+        let residentialCount = 0;
+        let commercialCount = 0;
+        
+        results.forEach(place => {
+          if (place.types) {
+            place.types.forEach(type => {
+              if (residentialTypes.includes(type)) residentialCount++;
+              if (commercialTypes.includes(type)) commercialCount++;
+            });
+          }
+        });
+        
+        if (commercialCount > residentialCount) {
+          resolve('commercial');
+        } else {
+          resolve('residential');
+        }
+      } else {
+        // Default to residential if we can't determine
+        resolve('residential');
+      }
+    });
+  });
 };
