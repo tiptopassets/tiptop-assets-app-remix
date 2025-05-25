@@ -1,8 +1,7 @@
-
 import { Loader } from '@googlemaps/js-api-loader';
 
 // Try to get API key from environment first, then fallback to Supabase function
-const getGoogleMapsApiKey = async (): Promise<string> => {
+const fetchGoogleMapsApiKey = async (): Promise<string> => {
   const envApiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
   
   if (envApiKey) {
@@ -39,7 +38,7 @@ let apiKey: string = '';
 export const loadGoogleMaps = async (): Promise<typeof google.maps> => {
   if (!googleMapsPromise) {
     // Get the API key first
-    apiKey = await getGoogleMapsApiKey();
+    apiKey = await fetchGoogleMapsApiKey();
     
     if (!apiKey) {
       throw new Error('Google Maps API key not available');
@@ -65,7 +64,7 @@ export const initializeGoogleMaps = loadGoogleMaps;
 // Function to get the API key
 export const getGoogleMapsApiKey = async (): Promise<string> => {
   if (!apiKey) {
-    apiKey = await getGoogleMapsApiKey();
+    apiKey = await fetchGoogleMapsApiKey();
   }
   return apiKey;
 };
