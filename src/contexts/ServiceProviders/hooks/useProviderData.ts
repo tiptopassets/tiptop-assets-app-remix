@@ -5,14 +5,14 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { 
   ServiceProviderInfo, 
-  ServiceProviderEarnings, 
-  HasFlexOffersMappingResponse 
+  ServiceProviderEarnings,
+  AffiliateRegistration
 } from '../types';
 import { formatProviderInfo } from '../utils/providerUtils';
 
 export const useProviderData = () => {
   const [availableProviders, setAvailableProviders] = useState<ServiceProviderInfo[]>([]);
-  const [connectedProviders, setConnectedProviders] = useState<ServiceProviderInfo[]>([]);
+  const [connectedProviders, setConnectedProviders] = useState<AffiliateRegistration[]>([]);
   const [earnings, setEarnings] = useState<ServiceProviderEarnings[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -51,8 +51,8 @@ export const useProviderData = () => {
         if (credentialsError) throw credentialsError;
 
         // Check FlexOffers sub-affiliate mappings using RPC function
-        const { data: flexoffersMapping, error: mappingError } = await supabase.rpc<HasFlexOffersMappingResponse>(
-          'has_flexoffers_mapping',
+        const { data: flexoffersMapping, error: mappingError } = await supabase.rpc(
+          'has_flexoffers_mapping' as any,
           { user_id_param: user.id }
         );
         
@@ -64,7 +64,7 @@ export const useProviderData = () => {
         const connected = new Set((credentialsData || []).map(cred => cred.service.toLowerCase()));
         
         // Add FlexOffers if mapping exists
-        if (flexoffersMapping && flexoffersMapping.has_mapping) {
+        if (flexoffersMapping && (flexoffersMapping as any).has_mapping) {
           connected.add('flexoffers');
         }
         
@@ -73,7 +73,16 @@ export const useProviderData = () => {
           connected: connected.has(provider.id)
         }));
 
-        const connectedProvidersList = updatedProviders.filter(p => p.connected);
+        const connectedProvidersList = updatedProviders.filter(p => p.connected).map(p => ({
+          id: p.id,
+          user_id: user.id,
+          bundle_selection_id: '',
+          provider_id: p.id,
+          tracking_code: '',
+          registration_status: 'completed' as const,
+          total_earnings: 0,
+          last_sync_at: new Date().toISOString()
+        }));
         
         setAvailableProviders(updatedProviders);
         setConnectedProviders(connectedProvidersList);
@@ -91,7 +100,7 @@ export const useProviderData = () => {
             id: e.id,
             service: e.service,
             earnings: e.earnings || 0,
-            lastSyncStatus: e.last_sync_status as any || 'pending',
+            lastSyncStatus: (e.last_sync_status as any) || 'pending',
             updatedAt: new Date(e.updated_at)
           })));
         }

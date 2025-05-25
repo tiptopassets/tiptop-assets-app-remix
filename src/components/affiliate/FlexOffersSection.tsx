@@ -1,6 +1,5 @@
 
 import React from 'react';
-import { GetFlexOffersUserMappingResponse } from '@/contexts/ServiceProviders/types';
 
 interface FlexOffersSectionProps {
   hasFlexOffers: boolean;

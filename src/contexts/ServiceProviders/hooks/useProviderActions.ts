@@ -5,14 +5,15 @@ import { useToast } from '@/hooks/use-toast';
 import {
   ServiceProviderInfo,
   RegisterServiceFormData,
+  AffiliateRegistration,
 } from '../types';
 import { connectToFlexOffers, disconnectFlexOffers, syncFlexOffersEarnings, getFlexOffersReferralLink } from '../services/flexOffersService';
 
 export const useProviderActions = (
   availableProviders: ServiceProviderInfo[],
   setAvailableProviders: (providers: ServiceProviderInfo[]) => void,
-  connectedProviders: ServiceProviderInfo[],
-  setConnectedProviders: (providers: ServiceProviderInfo[]) => void
+  connectedProviders: AffiliateRegistration[],
+  setConnectedProviders: (providers: AffiliateRegistration[]) => void
 ) => {
   const [actionInProgress, setActionInProgress] = useState(false);
   const { toast } = useToast();
@@ -36,7 +37,16 @@ export const useProviderActions = (
           userId,
           (updatedProvider) => {
             // Update the providers lists with type safety
-            setConnectedProviders([...connectedProviders, updatedProvider]);
+            setConnectedProviders([...connectedProviders, {
+              id: '',
+              user_id: userId,
+              bundle_selection_id: '',
+              provider_id: providerId,
+              tracking_code: '',
+              registration_status: 'completed',
+              total_earnings: 0,
+              last_sync_at: new Date().toISOString()
+            }]);
             setAvailableProviders(
               availableProviders.map(p => 
                 p.id.toLowerCase() === providerId.toLowerCase() 
@@ -86,10 +96,10 @@ export const useProviderActions = (
     setActionInProgress(true);
     try {
       // For FlexOffers, we'll register the sub-affiliate ID
-      if (formData.service.toLowerCase() === 'flexoffers' && formData.subAffiliateId) {
-        // Store the mapping using RPC function
+      if (formData.providerId.toLowerCase() === 'flexoffers' && formData.subAffiliateId) {
+        // Use the .rpc method without type parameters since we don't have the function defined in types
         const { error } = await supabase.rpc(
-          'create_flexoffers_mapping',
+          'create_flexoffers_mapping' as any,
           {
             user_id_param: userId,
             sub_affiliate_id_param: formData.subAffiliateId
@@ -116,13 +126,22 @@ export const useProviderActions = (
         });
         
         // Refresh the providers list with type safety
-        const provider = availableProviders.find(p => p.id.toLowerCase() === formData.service.toLowerCase());
+        const provider = availableProviders.find(p => p.id.toLowerCase() === formData.providerId.toLowerCase());
         if (provider) {
           // Create new arrays instead of modifying existing ones
-          setConnectedProviders([...connectedProviders, {...provider, connected: true}]);
+          setConnectedProviders([...connectedProviders, {
+            id: '',
+            user_id: userId,
+            bundle_selection_id: '',
+            provider_id: formData.providerId,
+            tracking_code: '',
+            registration_status: 'completed',
+            total_earnings: 0,
+            last_sync_at: new Date().toISOString()
+          }]);
           setAvailableProviders(
             availableProviders.map(p => 
-              p.id.toLowerCase() === formData.service.toLowerCase() 
+              p.id.toLowerCase() === formData.providerId.toLowerCase() 
                 ? {...p, connected: true} 
                 : p
             )
@@ -168,7 +187,7 @@ export const useProviderActions = (
           userId,
           () => {
             // Update the UI with type safety
-            setConnectedProviders(connectedProviders.filter(p => p.id.toLowerCase() !== providerId.toLowerCase()));
+            setConnectedProviders(connectedProviders.filter(p => p.provider_id.toLowerCase() !== providerId.toLowerCase()));
             setAvailableProviders(
               availableProviders.map(p => 
                 p.id.toLowerCase() === providerId.toLowerCase() 

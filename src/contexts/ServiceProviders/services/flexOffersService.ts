@@ -1,7 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { ServiceProviderInfo } from "../types";
-import { useToast } from "@/hooks/use-toast";
 
 export const connectToFlexOffers = async (
   userId: string,
@@ -15,7 +14,7 @@ export const connectToFlexOffers = async (
     
     // Store the sub-affiliate ID mapping
     const { error } = await supabase.rpc(
-      'create_flexoffers_mapping',
+      'create_flexoffers_mapping' as any,
       {
         user_id_param: userId,
         sub_affiliate_id_param: subAffiliateId
@@ -56,7 +55,7 @@ export const disconnectFlexOffers = async (
   try {
     // Remove the sub-affiliate mapping
     const { error } = await supabase.rpc(
-      'delete_flexoffers_mapping',
+      'delete_flexoffers_mapping' as any,
       {
         user_id_param: userId
       }
@@ -108,14 +107,14 @@ export const getFlexOffersReferralLink = async (
 ): Promise<{ subAffiliateId: string; referralLink: string }> => {
   try {
     // Get the sub-affiliate ID for the user
-    const { data, error } = await supabase.rpc<{ sub_affiliate_id: string }>(
-      'get_flexoffers_sub_id',
+    const { data, error } = await supabase.rpc(
+      'get_flexoffers_sub_id' as any,
       { user_id_param: userId }
     );
     
     if (error) throw error;
     
-    const subAffiliateId = data?.sub_affiliate_id || '';
+    const subAffiliateId = (data as any)?.sub_affiliate_id || '';
     
     // Generate the referral link
     // In a real implementation, this would involve FlexOffers API calls

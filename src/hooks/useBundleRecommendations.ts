@@ -41,7 +41,19 @@ export const useBundleRecommendations = (detectedAssets: string[]) => {
       const bundleRecommendations: BundleRecommendation[] = [];
 
       for (const bundle of bundles || []) {
-        const requiredAssets = bundle.asset_requirements as string[];
+        // Handle the Json type properly by parsing the asset requirements
+        let requiredAssets: string[] = [];
+        try {
+          if (typeof bundle.asset_requirements === 'string') {
+            requiredAssets = JSON.parse(bundle.asset_requirements);
+          } else if (Array.isArray(bundle.asset_requirements)) {
+            requiredAssets = bundle.asset_requirements as string[];
+          }
+        } catch (e) {
+          console.error('Error parsing asset requirements:', e);
+          continue;
+        }
+
         const matchingAssets = detectedAssets.filter(asset => 
           requiredAssets.includes(asset)
         );
@@ -79,8 +91,22 @@ export const useBundleRecommendations = (detectedAssets: string[]) => {
             0
           );
 
+          // Create properly typed bundle configuration
+          const typedBundle: BundleConfiguration = {
+            id: bundle.id,
+            name: bundle.name,
+            description: bundle.description || '',
+            asset_requirements: requiredAssets,
+            min_assets: bundle.min_assets,
+            max_providers_per_asset: bundle.max_providers_per_asset,
+            total_setup_cost: bundle.total_setup_cost,
+            total_monthly_earnings_low: bundle.total_monthly_earnings_low,
+            total_monthly_earnings_high: bundle.total_monthly_earnings_high,
+            is_active: bundle.is_active
+          };
+
           bundleRecommendations.push({
-            bundle,
+            bundle: typedBundle,
             providers: limitedProviders,
             totalEarnings,
             matchingAssets,
