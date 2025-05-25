@@ -3,15 +3,14 @@ import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import {
-  ServiceProviderInfo,
+  ServiceProvider,
   RegisterServiceFormData,
   AffiliateRegistration,
 } from '../types';
-import { connectToFlexOffers, disconnectFlexOffers, syncFlexOffersEarnings, getFlexOffersReferralLink } from '../services/flexOffersService';
 
 export const useProviderActions = (
-  availableProviders: ServiceProviderInfo[],
-  setAvailableProviders: (providers: ServiceProviderInfo[]) => void,
+  availableProviders: ServiceProvider[],
+  setAvailableProviders: (providers: ServiceProvider[]) => void,
   connectedProviders: AffiliateRegistration[],
   setConnectedProviders: (providers: AffiliateRegistration[]) => void
 ) => {
@@ -31,44 +30,45 @@ export const useProviderActions = (
     
     setActionInProgress(true);
     try {
-      // For FlexOffers, we'll generate a unique sub-affiliate ID for the user
-      if (providerId.toLowerCase() === 'flexoffers') {
-        const success = await connectToFlexOffers(
-          userId,
-          (updatedProvider) => {
-            // Update the providers lists with type safety
-            setConnectedProviders([...connectedProviders, {
-              id: '',
-              user_id: userId,
-              bundle_selection_id: '',
-              provider_id: providerId,
-              tracking_code: '',
-              registration_status: 'completed',
-              total_earnings: 0,
-              last_sync_at: new Date().toISOString()
-            }]);
-            setAvailableProviders(
-              availableProviders.map(p => 
-                p.id.toLowerCase() === providerId.toLowerCase() 
-                  ? {...p, connected: true} 
-                  : p
-              )
-            );
-          },
-          availableProviders
-        );
-        
-        if (!success) {
-          throw new Error('Failed to connect to FlexOffers');
-        }
-        
-        return;
+      // Create affiliate registration
+      const provider = availableProviders.find(p => p.id === providerId);
+      if (!provider) {
+        throw new Error('Provider not found');
       }
-      
-      // For other providers, we'll use the existing flow
+
+      // Generate unique tracking code
+      const trackingCode = `tiptop_${userId.slice(0, 8)}_${provider.id.slice(0, 8)}_${Date.now()}`;
+
+      const { data, error } = await supabase
+        .from('affiliate_registrations')
+        .insert({
+          user_id: userId,
+          provider_id: providerId,
+          tracking_code: trackingCode,
+          registration_status: 'pending'
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      // Update connected providers list
+      const newRegistration: AffiliateRegistration = {
+        id: data.id,
+        user_id: userId,
+        bundle_selection_id: '',
+        provider_id: providerId,
+        tracking_code: trackingCode,
+        registration_status: 'pending',
+        total_earnings: 0,
+        last_sync_at: new Date().toISOString()
+      };
+
+      setConnectedProviders([...connectedProviders, newRegistration]);
+
       toast({
-        title: 'Coming Soon',
-        description: 'Provider connection functionality will be available soon',
+        title: 'Connected Successfully',
+        description: `Connected to ${provider.name}`,
       });
     } catch (err) {
       console.error('Error connecting to provider:', err);
@@ -95,67 +95,65 @@ export const useProviderActions = (
     
     setActionInProgress(true);
     try {
-      // For FlexOffers, we'll register the sub-affiliate ID
-      if (formData.providerId.toLowerCase() === 'flexoffers' && formData.subAffiliateId) {
-        // Use the .rpc method without type parameters since we don't have the function defined in types
-        const { error } = await supabase.rpc(
-          'create_flexoffers_mapping' as any,
-          {
-            user_id_param: userId,
-            sub_affiliate_id_param: formData.subAffiliateId
-          }
-        );
-        
-        if (error) {
-          throw error;
-        }
-        
-        // Create a placeholder in affiliate_earnings
-        await supabase
-          .from('affiliate_earnings')
-          .insert({
-            user_id: userId,
-            service: 'FlexOffers',
-            earnings: 0,
-            last_sync_status: 'pending'
-          });
-        
-        toast({
-          title: 'FlexOffers Registered',
-          description: 'Your FlexOffers sub-affiliate ID has been registered.',
-        });
-        
-        // Refresh the providers list with type safety
-        const provider = availableProviders.find(p => p.id.toLowerCase() === formData.providerId.toLowerCase());
-        if (provider) {
-          // Create new arrays instead of modifying existing ones
-          setConnectedProviders([...connectedProviders, {
-            id: '',
-            user_id: userId,
-            bundle_selection_id: '',
-            provider_id: formData.providerId,
-            tracking_code: '',
-            registration_status: 'completed',
-            total_earnings: 0,
-            last_sync_at: new Date().toISOString()
-          }]);
-          setAvailableProviders(
-            availableProviders.map(p => 
-              p.id.toLowerCase() === formData.providerId.toLowerCase() 
-                ? {...p, connected: true} 
-                : p
-            )
-          );
-        }
-        
-        return;
+      const provider = availableProviders.find(p => p.id === formData.providerId);
+      if (!provider) throw new Error('Provider not found');
+
+      // Generate unique tracking code
+      const trackingCode = `tiptop_${userId.slice(0, 8)}_${provider.id.slice(0, 8)}_${Date.now()}`;
+
+      // Create affiliate registration record
+      const { data, error } = await supabase
+        .from('affiliate_registrations')
+        .insert({
+          user_id: userId,
+          provider_id: formData.providerId,
+          bundle_selection_id: formData.bundleSelectionId,
+          tracking_code: trackingCode,
+          registration_status: 'pending'
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      // Generate affiliate link if template exists
+      let affiliateLink = provider.website_url;
+      if (provider.referral_link_template) {
+        affiliateLink = provider.referral_link_template
+          .replace('{user_id}', userId)
+          .replace('{tracking_code}', trackingCode);
       }
-      
-      // For other providers, use the default flow
+
+      // Update with affiliate link
+      if (affiliateLink !== provider.website_url) {
+        await supabase
+          .from('affiliate_registrations')
+          .update({ affiliate_link: affiliateLink })
+          .eq('id', data.id);
+      }
+
       toast({
-        title: 'Coming Soon',
-        description: 'Provider registration functionality will be available soon',
+        title: 'Registration Started',
+        description: `Redirecting to ${provider.name} for registration`,
       });
+
+      // Open provider registration in new tab
+      window.open(affiliateLink || provider.website_url, '_blank');
+
+      // Update connected providers list
+      const newRegistration: AffiliateRegistration = {
+        id: data.id,
+        user_id: userId,
+        bundle_selection_id: formData.bundleSelectionId || '',
+        provider_id: formData.providerId,
+        affiliate_link: affiliateLink,
+        tracking_code: trackingCode,
+        registration_status: 'pending',
+        total_earnings: 0,
+        last_sync_at: new Date().toISOString()
+      };
+
+      setConnectedProviders([...connectedProviders, newRegistration]);
     } catch (err) {
       console.error('Error registering with provider:', err);
       toast({
@@ -181,34 +179,20 @@ export const useProviderActions = (
     
     setActionInProgress(true);
     try {
-      // For FlexOffers, remove the sub-affiliate mapping
-      if (providerId.toLowerCase() === 'flexoffers') {
-        const success = await disconnectFlexOffers(
-          userId,
-          () => {
-            // Update the UI with type safety
-            setConnectedProviders(connectedProviders.filter(p => p.provider_id.toLowerCase() !== providerId.toLowerCase()));
-            setAvailableProviders(
-              availableProviders.map(p => 
-                p.id.toLowerCase() === providerId.toLowerCase() 
-                  ? {...p, connected: false} 
-                  : p
-              )
-            );
-          }
-        );
-        
-        if (!success) {
-          throw new Error('Failed to disconnect from FlexOffers');
-        }
-        
-        return;
-      }
-      
-      // For other providers, use the default flow
+      const { error } = await supabase
+        .from('affiliate_registrations')
+        .delete()
+        .eq('user_id', userId)
+        .eq('provider_id', providerId);
+
+      if (error) throw error;
+
+      // Update connected providers list
+      setConnectedProviders(connectedProviders.filter(p => p.provider_id !== providerId));
+
       toast({
-        title: 'Coming Soon',
-        description: 'Provider disconnection functionality will be available soon',
+        title: 'Disconnected Successfully',
+        description: 'Provider has been disconnected',
       });
     } catch (err) {
       console.error('Error disconnecting provider:', err);
@@ -235,20 +219,19 @@ export const useProviderActions = (
     
     setActionInProgress(true);
     try {
-      if (providerId.toLowerCase() === 'flexoffers') {
-        const success = await syncFlexOffersEarnings(userId);
-        
-        if (!success) {
-          throw new Error('Failed to sync FlexOffers earnings');
+      // Call edge function to sync earnings
+      const { data, error } = await supabase.functions.invoke('sync_affiliate_earnings', {
+        body: {
+          user_id: userId,
+          provider_id: providerId
         }
-        
-        return;
-      }
-      
-      // For other providers, use the default flow
+      });
+
+      if (error) throw error;
+
       toast({
-        title: 'Coming Soon',
-        description: 'Provider earnings sync functionality will be available soon',
+        title: 'Earnings Synced',
+        description: 'Successfully synced earnings data',
       });
     } catch (err) {
       console.error('Error syncing provider earnings:', err);
@@ -262,13 +245,14 @@ export const useProviderActions = (
     }
   };
 
-  // Generate a FlexOffers affiliate link
-  const generateReferralLink = async (providerId: string, destinationUrl: string, userId: string | undefined): Promise<string> => {
-    const provider = availableProviders.find(p => p.id.toLowerCase() === providerId.toLowerCase());
+  // Generate a referral link synchronously
+  const generateReferralLink = (providerId: string, destinationUrl: string, userId: string | undefined): string => {
+    const provider = availableProviders.find(p => p.id === providerId);
     
-    if (provider?.referralLinkTemplate && userId) {
-      const { subAffiliateId, referralLink } = await getFlexOffersReferralLink(userId, destinationUrl);
-      return referralLink;
+    if (provider?.referral_link_template && userId) {
+      return provider.referral_link_template
+        .replace('{user_id}', userId)
+        .replace('{destination_url}', encodeURIComponent(destinationUrl));
     }
     
     // If no template or user is not logged in, return the original URL

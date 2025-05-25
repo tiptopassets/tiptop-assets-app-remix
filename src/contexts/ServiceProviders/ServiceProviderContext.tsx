@@ -69,8 +69,20 @@ export const ServiceProviderProvider = ({ children }: ServiceProviderProviderPro
     }
   };
 
+  // Make generateReferralLink synchronous by handling the async operation internally
   const handleGenerateReferralLink = (providerId: string, destinationUrl: string): string => {
-    return generateReferralLink(providerId, destinationUrl, user?.id) as string;
+    if (!user) return destinationUrl;
+    
+    // For now, generate a simple referral link synchronously
+    // The async operation can be handled separately if needed
+    const provider = availableProviders.find(p => p.id === providerId);
+    if (provider?.referral_link_template) {
+      return provider.referral_link_template
+        .replace('{user_id}', user.id)
+        .replace('{destination_url}', encodeURIComponent(destinationUrl));
+    }
+    
+    return destinationUrl;
   };
 
   // Convert earnings array to Record<string, number> format
