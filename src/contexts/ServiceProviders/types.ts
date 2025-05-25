@@ -1,97 +1,85 @@
 
-export interface ServiceProviderCredentials {
+export interface ServiceProvider {
   id: string;
-  userId: string;
-  service: string;
-  encryptedEmail?: string;
-  encryptedPassword?: string;
-  connected: boolean;
-  lastSyncedAt?: Date;
-  subAffiliateId?: string; // Added for FlexOffers integration
+  name: string;
+  category: string;
+  description: string;
+  logo_url?: string;
+  website_url?: string;
+  affiliate_program_url?: string;
+  referral_link_template?: string;
+  commission_rate: number;
+  setup_cost: number;
+  avg_monthly_earnings_low: number;
+  avg_monthly_earnings_high: number;
+  conversion_rate: number;
+  priority: number;
+  is_active: boolean;
 }
 
-export interface ServiceProviderInfo {
+export interface BundleConfiguration {
   id: string;
   name: string;
   description: string;
-  logo: string;
-  url: string;
-  loginUrl: string;
-  assetTypes: string[];
-  connected: boolean;
-  setupInstructions: string;
-  referralLinkTemplate?: string; // Added for FlexOffers integration
+  asset_requirements: string[];
+  min_assets: number;
+  max_providers_per_asset: number;
+  total_setup_cost: number;
+  total_monthly_earnings_low: number;
+  total_monthly_earnings_high: number;
+  is_active: boolean;
 }
 
-export interface ServiceProviderEarnings {
+export interface UserBundleSelection {
   id: string;
-  service: string;
-  earnings: number;
-  lastSyncStatus: 'success' | 'failed' | 'pending';
-  updatedAt: Date;
+  user_id: string;
+  bundle_id: string;
+  property_address: string;
+  selected_assets: string[];
+  selected_providers: string[];
+  status: 'pending' | 'registered' | 'active';
+  created_at: string;
+}
+
+export interface AffiliateRegistration {
+  id: string;
+  user_id: string;
+  bundle_selection_id: string;
+  provider_id: string;
+  affiliate_link?: string;
+  tracking_code: string;
+  registration_status: 'pending' | 'completed' | 'failed';
+  registration_date?: string;
+  first_commission_date?: string;
+  total_earnings: number;
+  last_sync_at: string;
+}
+
+export interface BundleRecommendation {
+  bundle: BundleConfiguration;
+  providers: ServiceProvider[];
+  totalEarnings: { low: number; high: number };
+  matchingAssets: string[];
+  setupCost: number;
 }
 
 export interface RegisterServiceFormData {
-  service: string;
-  email: string;
-  password: string;
-  additionalFields?: Record<string, string>;
-  subAffiliateId?: string; // Added for FlexOffers integration
+  providerId: string;
+  userEmail: string;
+  propertyAddress: string;
+  assetType: string;
+  bundleSelectionId?: string;
 }
 
 export interface ServiceProviderContextType {
-  availableProviders: ServiceProviderInfo[];
-  connectedProviders: ServiceProviderInfo[];
-  earnings: ServiceProviderEarnings[];
+  availableProviders: ServiceProvider[];
+  connectedProviders: AffiliateRegistration[];
+  earnings: Record<string, number>;
   isLoading: boolean;
   error: string | null;
-  
   connectToProvider: (providerId: string) => Promise<void>;
   registerWithProvider: (formData: RegisterServiceFormData) => Promise<void>;
   disconnectProvider: (providerId: string) => Promise<void>;
   syncProviderEarnings: (providerId: string) => Promise<void>;
-  generateReferralLink?: (providerId: string, destinationUrl: string) => string; // Added for FlexOffers integration
-}
-
-// Interface to support the FlexOffers user mapping
-export interface FlexOffersUserMapping {
-  id: string;
-  user_id: string;
-  sub_affiliate_id: string;
-  created_at?: string;
-}
-
-// Define RPC function response types
-export interface GetFlexOffersUserMappingResponse {
-  id: string;
-  user_id: string;
-  sub_affiliate_id: string;
-  created_at: string;
-}
-
-export interface HasFlexOffersMappingResponse {
-  has_mapping: boolean;
-}
-
-export interface FlexOffersSubIdResponse {
-  sub_affiliate_id: string;
-}
-
-// Declare custom RPC functions to extend Supabase types
-declare module '@supabase/supabase-js' {
-  interface SupabaseClient {
-    rpc<T = any>(
-      fn: 'sum_login_count' | 
-          'get_flexoffers_user_mapping' | 
-          'has_flexoffers_mapping' | 
-          'create_flexoffers_mapping' | 
-          'delete_flexoffers_mapping' | 
-          'get_flexoffers_sub_id',
-      params?: object,
-      options?: object
-    ): {
-      data: T | null;
-      error: Error | null;
-    }
-  }
+  generateReferralLink: (providerId: string, destinationUrl: string) => string;
 }

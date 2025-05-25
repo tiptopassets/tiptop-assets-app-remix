@@ -1,29 +1,46 @@
-
 import { useState } from 'react';
 import { useGoogleMap } from '@/contexts/GoogleMapContext';
 import { motion } from "framer-motion";
 import { toast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { SelectedAsset } from '@/types/analysis';
+import { BundleRecommendation } from '@/contexts/ServiceProviders/types';
 
-// Refactored Components
+// Existing components
 import PropertySummaryCard from './PropertySummaryCard';
 import AssetOpportunitiesGrid from './AssetOpportunitiesGrid';
 import AdditionalAssetsCarousel from './AdditionalAssetsCarousel';
 import ContinueButton from './ContinueButton';
 import AssetFormSection from './AssetFormSection';
 import SpacerBlock from './SpacerBlock';
+
+// New bundle components
+import BundleRecommendations from '../bundles/BundleRecommendations';
+import BundleRegistrationFlow from '../bundles/BundleRegistrationFlow';
+
 import { useAdditionalOpportunities } from '@/hooks/useAdditionalOpportunities';
 
 const AssetResultList = () => {
-  const { analysisComplete, analysisResults, isAnalyzing } = useGoogleMap();
+  const { analysisComplete, analysisResults, isAnalyzing, address } = useGoogleMap();
   const [selectedAssets, setSelectedAssets] = useState<string[]>([]);
   const [showFormSection, setShowFormSection] = useState(false);
+  const [showBundles, setShowBundles] = useState(false);
+  const [selectedBundle, setSelectedBundle] = useState<BundleRecommendation | null>(null);
   const navigate = useNavigate();
   const { additionalOpportunities } = useAdditionalOpportunities();
 
   // Don't show results until analysis is complete and not analyzing
   if (!analysisComplete || isAnalyzing || !analysisResults) return null;
+
+  // Extract detected assets from analysis results
+  const detectedAssets = [
+    ...(analysisResults.rooftop?.solarPotential ? ['solar'] : []),
+    ...(analysisResults.parking?.spaces > 0 ? ['parking'] : []),
+    ...(analysisResults.pool?.present ? ['pool'] : []),
+    ...(analysisResults.bandwidth?.available > 0 ? ['internet'] : []),
+    ...(analysisResults.storage?.volume > 0 ? ['storage'] : []),
+    // Add more asset detection logic based on your analysis results
+  ];
 
   // Calculate total potential monthly income from selected assets
   const calculateTotalMonthlyIncome = () => {
@@ -83,9 +100,38 @@ const AssetResultList = () => {
       return;
     }
     
+    // Show bundle recommendations if multiple assets are detected
+    if (detectedAssets.length >= 2) {
+      setShowBundles(true);
+    } else {
+      setShowFormSection(true);
+      
+      // Scroll to the form section
+      setTimeout(() => {
+        const formSection = document.getElementById('asset-form-section');
+        if (formSection) {
+          formSection.scrollIntoView({ behavior: 'smooth' });
+        }
+      }, 100);
+    }
+  };
+
+  const handleSelectBundle = (recommendation: BundleRecommendation) => {
+    setSelectedBundle(recommendation);
+  };
+
+  const handleBundleRegistrationComplete = () => {
+    toast({
+      title: "Bundle Registration Complete",
+      description: "You've successfully registered with multiple providers!",
+    });
+    navigate('/dashboard');
+  };
+
+  const handleSkipBundles = () => {
+    setShowBundles(false);
     setShowFormSection(true);
     
-    // Scroll to the form section
     setTimeout(() => {
       const formSection = document.getElementById('asset-form-section');
       if (formSection) {
@@ -107,6 +153,48 @@ const AssetResultList = () => {
   
   // Combine all opportunities for form field lookup
   const allOpportunities = [...analysisResults.topOpportunities, ...additionalOpportunities];
+
+  // Show bundle registration flow if a bundle is selected
+  if (selectedBundle) {
+    return (
+      <div className="w-full px-4 md:px-0 md:max-w-4xl">
+        <SpacerBlock />
+        <BundleRegistrationFlow
+          selectedBundle={selectedBundle}
+          propertyAddress={address || ''}
+          onComplete={handleBundleRegistrationComplete}
+          onBack={() => setSelectedBundle(null)}
+        />
+      </div>
+    );
+  }
+
+  // Show bundle recommendations if enabled
+  if (showBundles && detectedAssets.length >= 2) {
+    return (
+      <div className="w-full px-4 md:px-0 md:max-w-4xl">
+        <SpacerBlock />
+        <BundleRecommendations
+          detectedAssets={detectedAssets}
+          onSelectBundle={handleSelectBundle}
+        />
+        
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5 }}
+          className="text-center mt-8"
+        >
+          <button
+            onClick={handleSkipBundles}
+            className="text-gray-400 hover:text-white underline text-sm"
+          >
+            Skip bundles and register individually
+          </button>
+        </motion.div>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full px-4 md:px-0 md:max-w-3xl">
