@@ -14,6 +14,8 @@ const fetchGoogleMapsApiKey = async (): Promise<string> => {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN4dmRjZGF0eGV3cnZ3YmNua3NnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDYzMzQ3NzAsImV4cCI6MjA2MTkxMDc3MH0.bhO2Y4n8E3Quj59Ve21nBRUspORKUVPa5t5fgV1XBdI`,
+        'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN4dmRjZGF0eGV3cnZ3YmNua3NnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDYzMzQ3NzAsImV4cCI6MjA2MTkxMDc3MH0.bhO2Y4n8E3Quj59Ve21nBRUspORKUVPa5t5fgV1XBdI'
       },
       body: JSON.stringify({
         origin: window.location.origin
