@@ -31,6 +31,9 @@ const SolarDashboard: React.FC<SolarDashboardProps> = ({ analysisResults, addres
   const co2SavedYearly = Math.round(yearlyProduction * 0.4); // kg CO2 per kWh
   const co2SavedLifetime = co2SavedYearly * 25;
 
+  // Default sun hours based on average US location
+  const defaultSunHours = 2500;
+
   const getProductionValue = () => {
     switch (selectedTimeframe) {
       case 'monthly': return monthlyProduction;
@@ -158,7 +161,7 @@ const SolarDashboard: React.FC<SolarDashboardProps> = ({ analysisResults, addres
               <span className="text-sm text-white/70">Sun Hours/Year</span>
             </div>
             <div className="text-2xl font-bold text-white">
-              {solarData.averageHoursOfSunPerYear || 2,500}
+              {defaultSunHours}
             </div>
           </CardContent>
         </Card>
