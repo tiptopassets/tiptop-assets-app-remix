@@ -9,7 +9,12 @@ import PropertyAnalysisContent from './PropertyAnalysisContent';
 
 const HomeModelViewer = () => {
   const { status } = useModelGeneration();
-  const { analysisResults, isGeneratingAnalysis } = useGoogleMap();
+  const { 
+    analysisResults, 
+    isGeneratingAnalysis, 
+    address,
+    addressCoordinates 
+  } = useGoogleMap();
   const [isVisible, setIsVisible] = useState(false);
   const [showFullAnalysis, setShowFullAnalysis] = useState(false);
   
@@ -42,6 +47,7 @@ const HomeModelViewer = () => {
         showFullAnalysis={showFullAnalysis}
         toggleFullAnalysis={toggleFullAnalysis}
         onClose={() => setIsVisible(false)}
+        address={address || ''}
       />
       
       {/* Show loading state or analysis results */}
@@ -51,6 +57,8 @@ const HomeModelViewer = () => {
         <PropertyAnalysisContent 
           analysisResults={analysisResults}
           showFullAnalysis={showFullAnalysis}
+          coordinates={addressCoordinates || undefined}
+          address={address || undefined}
         />
       ) : null}
     </motion.div>

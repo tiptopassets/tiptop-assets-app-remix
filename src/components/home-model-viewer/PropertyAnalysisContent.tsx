@@ -5,6 +5,9 @@ import PropertyTypeDisplay from './PropertyTypeDisplay';
 import MetricsGrid from './MetricsGrid';
 import ExpandedAnalysis from './ExpandedAnalysis';
 import TopOpportunities from './TopOpportunities';
+import PropertyTypeDetector from '@/components/property-analysis/PropertyTypeDetector';
+import ServiceAvailabilityChecker from '@/components/property-analysis/ServiceAvailabilityChecker';
+import MarketPricingEngine from '@/components/property-analysis/MarketPricingEngine';
 import { Slider } from '@/components/ui/slider';
 import { Label } from '@/components/ui/label';
 import { Info } from 'lucide-react';
@@ -14,11 +17,15 @@ import { TooltipProvider, TooltipTrigger, TooltipContent } from '@/components/ui
 interface PropertyAnalysisContentProps {
   analysisResults: PropertyAnalysis;
   showFullAnalysis: boolean;
+  coordinates?: google.maps.LatLngLiteral;
+  address?: string;
 }
 
 const PropertyAnalysisContent = ({ 
   analysisResults, 
-  showFullAnalysis 
+  showFullAnalysis,
+  coordinates,
+  address 
 }: PropertyAnalysisContentProps) => {
   const [localAnalysis, setLocalAnalysis] = useState<PropertyAnalysis>(analysisResults);
   const [showManualAdjustment, setShowManualAdjustment] = useState(false);
@@ -61,6 +68,34 @@ const PropertyAnalysisContent = ({
   
   return (
     <div className="p-4 md:p-6">
+      {/* Enhanced Property Type Detection */}
+      <div className="mb-4">
+        <PropertyTypeDetector 
+          propertyType={localAnalysis.propertyType} 
+          confidence={0.85}
+        />
+      </div>
+
+      {/* Market Insights */}
+      {coordinates && (
+        <div className="mb-4">
+          <MarketPricingEngine 
+            coordinates={coordinates}
+            propertyType={localAnalysis.propertyType}
+          />
+        </div>
+      )}
+
+      {/* Service Availability */}
+      {coordinates && address && (
+        <div className="mb-4">
+          <ServiceAvailabilityChecker 
+            coordinates={coordinates}
+            address={address}
+          />
+        </div>
+      )}
+      
       {/* Property Type and Summary */}
       <PropertyTypeDisplay analysisResults={localAnalysis} />
       
