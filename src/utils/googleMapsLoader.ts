@@ -1,4 +1,3 @@
-
 import { Loader } from '@googlemaps/js-api-loader';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -59,4 +58,46 @@ export const generateHighResolutionMapURL = async (coordinates: google.maps.LatL
   
   // Include the origin as a parameter to help with referrer tracking
   return `https://maps.googleapis.com/maps/api/staticmap?center=${coordinates.lat},${coordinates.lng}&zoom=20&size=800x800&maptype=satellite&key=${apiKey}&referrer=${origin}`;
+};
+
+export const getPropertyTypeFromPlaces = async (coordinates: google.maps.LatLngLiteral): Promise<string> => {
+  try {
+    if (!window.google?.maps?.places) {
+      console.log('Google Places API not available, using default property type');
+      return 'Residential Property';
+    }
+
+    const placesService = new google.maps.places.PlacesService(document.createElement('div'));
+    
+    return new Promise((resolve) => {
+      const request = {
+        location: coordinates,
+        radius: 50, // 50 meter radius
+        type: 'establishment' as google.maps.places.PlaceType
+      };
+
+      placesService.nearbySearch(request, (results, status) => {
+        if (status === google.maps.places.PlacesServiceStatus.OK && results && results[0]) {
+          const place = results[0];
+          
+          // Determine property type based on place types
+          if (place.types?.includes('lodging')) {
+            resolve('Hotel/Lodging');
+          } else if (place.types?.includes('real_estate_agency')) {
+            resolve('Commercial Property');
+          } else if (place.types?.includes('apartment_complex')) {
+            resolve('Apartment Complex');
+          } else {
+            resolve('Single Family Home');
+          }
+        } else {
+          // Default to single family home if no specific type found
+          resolve('Single Family Home');
+        }
+      });
+    });
+  } catch (error) {
+    console.error('Error getting property type from Places API:', error);
+    return 'Residential Property';
+  }
 };

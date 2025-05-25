@@ -17,6 +17,27 @@ export interface ServiceProvider {
   is_active: boolean;
 }
 
+export interface ServiceProviderInfo {
+  id: string;
+  name: string;
+  description: string;
+  logo: string;
+  url: string;
+  loginUrl: string;
+  assetTypes: string[];
+  connected: boolean;
+  setupInstructions: string;
+  referralLinkTemplate?: string;
+}
+
+export interface ServiceProviderEarnings {
+  id: string;
+  service: string;
+  earnings: number;
+  lastSyncStatus: 'pending' | 'completed' | 'failed';
+  updatedAt: Date;
+}
+
 export interface BundleConfiguration {
   id: string;
   name: string;
@@ -69,6 +90,8 @@ export interface RegisterServiceFormData {
   propertyAddress: string;
   assetType: string;
   bundleSelectionId?: string;
+  service?: string;
+  subAffiliateId?: string;
 }
 
 export interface ServiceProviderContextType {
@@ -82,4 +105,12 @@ export interface ServiceProviderContextType {
   disconnectProvider: (providerId: string) => Promise<void>;
   syncProviderEarnings: (providerId: string) => Promise<void>;
   generateReferralLink: (providerId: string, destinationUrl: string) => string;
+}
+
+export interface GetFlexOffersUserMappingResponse {
+  sub_affiliate_id: string;
+}
+
+export interface HasFlexOffersMappingResponse {
+  has_mapping: boolean;
 }

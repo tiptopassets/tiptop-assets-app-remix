@@ -70,13 +70,19 @@ export const ServiceProviderProvider = ({ children }: ServiceProviderProviderPro
   };
 
   const handleGenerateReferralLink = (providerId: string, destinationUrl: string): string => {
-    return generateReferralLink(providerId, destinationUrl, user?.id) as any; // Fixed type error
+    return generateReferralLink(providerId, destinationUrl, user?.id) as any;
   };
+
+  // Convert earnings array to Record<string, number>
+  const earningsRecord = earnings.reduce((acc, earning) => {
+    acc[earning.service] = earning.earnings;
+    return acc;
+  }, {} as Record<string, number>);
 
   const value: ServiceProviderContextType = {
     availableProviders,
     connectedProviders,
-    earnings,
+    earnings: earningsRecord,
     isLoading,
     error,
     connectToProvider: handleConnectToProvider,

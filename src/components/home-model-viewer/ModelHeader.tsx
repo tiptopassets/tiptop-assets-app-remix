@@ -9,6 +9,7 @@ interface ModelHeaderProps {
   showFullAnalysis: boolean;
   toggleFullAnalysis: () => void;
   onClose: () => void;
+  address: string;
 }
 
 const ModelHeader = ({ 
@@ -16,7 +17,8 @@ const ModelHeader = ({
   isVisible, 
   showFullAnalysis, 
   toggleFullAnalysis, 
-  onClose 
+  onClose,
+  address 
 }: ModelHeaderProps) => {
   if (!isVisible) return null;
 
@@ -32,7 +34,7 @@ const ModelHeader = ({
         <p className="text-sm text-gray-400">
           {isGenerating 
             ? "Please wait while our AI analyzes your property" 
-            : "View your property's monetization insights below"}
+            : `Analysis for ${address}`}
         </p>
       </div>
       <div className="flex items-center gap-2">

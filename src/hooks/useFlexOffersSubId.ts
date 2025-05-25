@@ -2,7 +2,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { GetFlexOffersUserMappingResponse } from '@/contexts/ServiceProviders/types';
 
 export const useFlexOffersSubId = () => {
   const [flexoffersSubId, setFlexoffersSubId] = useState<string | null>(null);
@@ -21,16 +20,22 @@ export const useFlexOffersSubId = () => {
         setIsLoading(true);
         setError(null);
 
-        // Use RPC function to get user mapping
-        const { data, error: rpcError } = await supabase
-          .rpc<GetFlexOffersUserMappingResponse>('get_flexoffers_user_mapping');
+        // Check if user has FlexOffers earnings record
+        const { data, error: queryError } = await supabase
+          .from('affiliate_earnings')
+          .select('service')
+          .eq('user_id', user.id)
+          .eq('service', 'FlexOffers')
+          .single();
           
-        if (rpcError) {
-          throw rpcError;
+        if (queryError && queryError.code !== 'PGRST116') {
+          throw queryError;
         }
         
-        if (data && data.sub_affiliate_id) {
-          setFlexoffersSubId(data.sub_affiliate_id);
+        if (data) {
+          // Generate sub-affiliate ID based on user ID
+          const subAffiliateId = `tiptop_${user.id.substring(0, 8)}`;
+          setFlexoffersSubId(subAffiliateId);
         } else {
           console.log('No FlexOffers mapping found');
         }

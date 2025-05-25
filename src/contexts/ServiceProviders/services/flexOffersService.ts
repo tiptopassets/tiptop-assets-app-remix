@@ -1,7 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { ServiceProviderInfo } from "../types";
-import { useToast } from "@/hooks/use-toast";
 
 export const connectToFlexOffers = async (
   userId: string,
@@ -10,19 +9,7 @@ export const connectToFlexOffers = async (
 ): Promise<boolean> => {
   try {
     // Generate a pseudo-random sub-affiliate ID based on user ID
-    // In a real implementation, this would involve FlexOffers API calls
     const subAffiliateId = `tiptop_${userId.substring(0, 8)}`;
-    
-    // Store the sub-affiliate ID mapping
-    const { error } = await supabase.rpc(
-      'create_flexoffers_mapping',
-      {
-        user_id_param: userId,
-        sub_affiliate_id_param: subAffiliateId
-      }
-    );
-    
-    if (error) throw error;
     
     // Create a placeholder in affiliate_earnings
     const { error: earningsError } = await supabase
@@ -54,16 +41,6 @@ export const disconnectFlexOffers = async (
   onSuccess: () => void
 ): Promise<boolean> => {
   try {
-    // Remove the sub-affiliate mapping
-    const { error } = await supabase.rpc(
-      'delete_flexoffers_mapping',
-      {
-        user_id_param: userId
-      }
-    );
-    
-    if (error) throw error;
-    
     // Delete the earnings record
     await supabase
       .from('affiliate_earnings')
@@ -107,18 +84,9 @@ export const getFlexOffersReferralLink = async (
   destinationUrl: string
 ): Promise<{ subAffiliateId: string; referralLink: string }> => {
   try {
-    // Get the sub-affiliate ID for the user
-    const { data, error } = await supabase.rpc<{ sub_affiliate_id: string }>(
-      'get_flexoffers_sub_id',
-      { user_id_param: userId }
-    );
-    
-    if (error) throw error;
-    
-    const subAffiliateId = data?.sub_affiliate_id || '';
+    const subAffiliateId = `tiptop_${userId.substring(0, 8)}`;
     
     // Generate the referral link
-    // In a real implementation, this would involve FlexOffers API calls
     const encodedUrl = encodeURIComponent(destinationUrl);
     const referralLink = `https://track.flexoffers.com/a/${subAffiliateId}?url=${encodedUrl}`;
     

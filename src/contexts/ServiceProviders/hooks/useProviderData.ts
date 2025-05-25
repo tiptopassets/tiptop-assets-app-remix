@@ -5,8 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { 
   ServiceProviderInfo, 
-  ServiceProviderEarnings, 
-  HasFlexOffersMappingResponse 
+  ServiceProviderEarnings
 } from '../types';
 import { formatProviderInfo } from '../utils/providerUtils';
 
@@ -50,21 +49,27 @@ export const useProviderData = () => {
 
         if (credentialsError) throw credentialsError;
 
-        // Check FlexOffers sub-affiliate mappings using RPC function
-        const { data: flexoffersMapping, error: mappingError } = await supabase.rpc<HasFlexOffersMappingResponse>(
-          'has_flexoffers_mapping',
-          { user_id_param: user.id }
-        );
-        
-        if (mappingError) {
-          console.error("Error checking FlexOffers mapping:", mappingError);
+        // Check FlexOffers sub-affiliate mappings - using direct query since RPC doesn't exist
+        let hasFlexOffersMapping = false;
+        try {
+          const { data: flexoffersData } = await supabase
+            .from('affiliate_earnings')
+            .select('service')
+            .eq('user_id', user.id)
+            .eq('service', 'FlexOffers')
+            .single();
+          
+          hasFlexOffersMapping = !!flexoffersData;
+        } catch (err) {
+          // No FlexOffers mapping found
+          hasFlexOffersMapping = false;
         }
 
         // Mark which providers are connected
         const connected = new Set((credentialsData || []).map(cred => cred.service.toLowerCase()));
         
         // Add FlexOffers if mapping exists
-        if (flexoffersMapping && flexoffersMapping.has_mapping) {
+        if (hasFlexOffersMapping) {
           connected.add('flexoffers');
         }
         
@@ -91,7 +96,7 @@ export const useProviderData = () => {
             id: e.id,
             service: e.service,
             earnings: e.earnings || 0,
-            lastSyncStatus: e.last_sync_status as any || 'pending',
+            lastSyncStatus: (e.last_sync_status as 'pending' | 'completed' | 'failed') || 'pending',
             updatedAt: new Date(e.updated_at)
           })));
         }
