@@ -6,11 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ServiceProviderProvider } from "@/contexts/ServiceProviders";
-import { GoogleMapProvider } from "@/contexts/GoogleMapContext";
-import { ModelGenerationProvider } from "@/contexts/ModelGeneration";
-import ProtectedRoute from "@/components/ProtectedRoute";
 import Index from "./pages/Index";
-import Auth from "./pages/Auth";
 import Options from "./pages/Options";
 import NotFound from "./pages/NotFound";
 import Dashboard from "./pages/Dashboard";
@@ -38,62 +34,25 @@ const App = () => (
     <BrowserRouter>
       <AuthProvider>
         <ServiceProviderProvider>
-          <GoogleMapProvider>
-            <ModelGenerationProvider>
-              <TooltipProvider>
-                <Toaster />
-                <Sonner />
-                <Routes>
-                  <Route path="/" element={<Index />} />
-                  <Route path="/auth" element={<Auth />} />
-                  <Route path="/options" element={<Options />} />
-                  <Route path="/dashboard" element={
-                    <ProtectedRoute>
-                      <Dashboard />
-                    </ProtectedRoute>
-                  } />
-                  <Route path="/dashboard/rooftop" element={
-                    <ProtectedRoute>
-                      <RooftopDashboard />
-                    </ProtectedRoute>
-                  } />
-                  <Route path="/dashboard/internet" element={
-                    <ProtectedRoute>
-                      <InternetDashboard />
-                    </ProtectedRoute>
-                  } />
-                  <Route path="/dashboard/ev-charging" element={
-                    <ProtectedRoute>
-                      <EVChargingDashboard />
-                    </ProtectedRoute>
-                  } />
-                  <Route path="/dashboard/add-asset" element={
-                    <ProtectedRoute>
-                      <AddAsset />
-                    </ProtectedRoute>
-                  } />
-                  <Route path="/dashboard/account" element={
-                    <ProtectedRoute>
-                      <AccountPage />
-                    </ProtectedRoute>
-                  } />
-                  <Route path="/dashboard/admin" element={
-                    <ProtectedRoute>
-                      <AdminDashboard />
-                    </ProtectedRoute>
-                  } />
-                  <Route path="/dashboard/affiliate" element={
-                    <ProtectedRoute>
-                      <AffiliateEarningsDashboard />
-                    </ProtectedRoute>
-                  } />
-                  <Route path="/model-viewer" element={<ModelViewer />} />
-                  <Route path="/submit-property" element={<SubmitProperty />} />
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
-              </TooltipProvider>
-            </ModelGenerationProvider>
-          </GoogleMapProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/options" element={<Options />} />
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/dashboard/rooftop" element={<RooftopDashboard />} />
+              <Route path="/dashboard/internet" element={<InternetDashboard />} />
+              <Route path="/dashboard/ev-charging" element={<EVChargingDashboard />} />
+              <Route path="/dashboard/add-asset" element={<AddAsset />} />
+              <Route path="/dashboard/account" element={<AccountPage />} />
+              <Route path="/dashboard/admin" element={<AdminDashboard />} />
+              <Route path="/dashboard/affiliate" element={<AffiliateEarningsDashboard />} />
+              <Route path="/model-viewer" element={<ModelViewer />} />
+              <Route path="/submit-property" element={<SubmitProperty />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </TooltipProvider>
         </ServiceProviderProvider>
       </AuthProvider>
     </BrowserRouter>

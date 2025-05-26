@@ -1,5 +1,4 @@
-
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import DashboardLayout from '@/components/dashboard/DashboardLayout';
 import { PropertyOverviewCard } from '@/components/dashboard/PropertyOverviewCard';
@@ -9,24 +8,17 @@ import { AssetDistributionChart, TodayRevenueChart, RevenueOverTimeChart } from 
 import { useAuth } from '@/contexts/AuthContext';
 import { useGoogleMap } from '@/contexts/GoogleMapContext';
 import { useModelGeneration } from '@/contexts/ModelGeneration';
-import { usePropertyPersistence } from '@/hooks/usePropertyPersistence';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
-import { Home, ChartPie, Info, Loader2 } from 'lucide-react';
-import { AnalysisResults } from '@/types/analysis';
+import { Home, ChartPie, Info } from 'lucide-react';
 
 const Dashboard = () => {
   const { user } = useAuth();
-  const { analysisResults: contextResults, address: contextAddress } = useGoogleMap();
+  const { analysisResults, address } = useGoogleMap();
   const { toast } = useToast();
   const { contentFromGPT, googleImages } = useModelGeneration();
-  const { getCurrentAnalysis, isLoading: isPersistenceLoading } = usePropertyPersistence();
   const navigate = useNavigate();
-  
-  const [analysisResults, setAnalysisResults] = useState<AnalysisResults | null>(contextResults);
-  const [address, setAddress] = useState<string>(contextAddress || '');
-  const [isLoadingAnalysis, setIsLoadingAnalysis] = useState(true);
   
   useEffect(() => {
     if (!user) {
@@ -37,36 +29,6 @@ const Dashboard = () => {
       });
     }
   }, [user, toast]);
-
-  // Load analysis data on mount
-  useEffect(() => {
-    const loadAnalysisData = async () => {
-      setIsLoadingAnalysis(true);
-      
-      try {
-        // First try context data (current session)
-        if (contextResults && contextAddress) {
-          setAnalysisResults(contextResults);
-          setAddress(contextAddress);
-          setIsLoadingAnalysis(false);
-          return;
-        }
-
-        // Then try persisted data
-        const persistedData = await getCurrentAnalysis();
-        if (persistedData) {
-          setAnalysisResults(persistedData.analysisResults);
-          setAddress(persistedData.address);
-        }
-      } catch (error) {
-        console.error('Failed to load analysis data:', error);
-      } finally {
-        setIsLoadingAnalysis(false);
-      }
-    };
-
-    loadAnalysisData();
-  }, [contextResults, contextAddress, getCurrentAnalysis]);
 
   const handleAnalyzeProperty = () => {
     navigate('/');
@@ -147,22 +109,6 @@ const Dashboard = () => {
           Go to Home Page
         </Link>
       </div>
-    );
-  }
-
-  // Show loading state
-  if (isLoadingAnalysis || isPersistenceLoading) {
-    return (
-      <DashboardLayout>
-        <div className="px-6 py-8">
-          <div className="flex items-center justify-center min-h-[400px]">
-            <div className="text-center">
-              <Loader2 className="w-8 h-8 animate-spin text-tiptop-purple mx-auto mb-4" />
-              <p className="text-white">Loading your dashboard...</p>
-            </div>
-          </div>
-        </div>
-      </DashboardLayout>
     );
   }
 
