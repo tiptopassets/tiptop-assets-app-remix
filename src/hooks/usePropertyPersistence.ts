@@ -47,37 +47,22 @@ export const usePropertyPersistence = () => {
     try {
       setIsLoading(true);
       
-      // Use the raw SQL approach to avoid TypeScript issues with auto-generated types
-      const { data: result, error } = await supabase.rpc('insert_property_analysis', {
-        p_user_id: user.id,
-        p_property_address: data.address,
-        p_coordinates: data.coordinates,
-        p_analysis_results: data.analysisResults,
-        p_property_type: data.propertyType,
-        p_total_monthly_revenue: data.totalMonthlyRevenue,
-        p_total_opportunities: data.totalOpportunities
-      });
+      // Direct insert to property_analyses table
+      const { data: result, error } = await supabase
+        .from('property_analyses')
+        .insert({
+          user_id: user.id,
+          property_address: data.address,
+          coordinates: data.coordinates as any,
+          analysis_results: data.analysisResults as any,
+          property_type: data.propertyType,
+          total_monthly_revenue: data.totalMonthlyRevenue,
+          total_opportunities: data.totalOpportunities
+        })
+        .select()
+        .single();
 
-      if (error) {
-        // Fallback to direct insert if RPC doesn't exist
-        const { data: directResult, error: directError } = await supabase
-          .from('property_analyses')
-          .insert({
-            user_id: user.id,
-            property_address: data.address,
-            coordinates: data.coordinates as any,
-            analysis_results: data.analysisResults as any,
-            property_type: data.propertyType,
-            total_monthly_revenue: data.totalMonthlyRevenue,
-            total_opportunities: data.totalOpportunities
-          })
-          .select()
-          .single();
-
-        if (directError) throw directError;
-        return directResult;
-      }
-
+      if (error) throw error;
       return result;
     } catch (error) {
       console.error('Failed to save analysis to database:', error);
@@ -110,8 +95,8 @@ export const usePropertyPersistence = () => {
 
       const analyses = data.map(item => ({
         address: item.property_address,
-        coordinates: item.coordinates as google.maps.LatLngLiteral | null,
-        analysisResults: item.analysis_results as AnalysisResults,
+        coordinates: item.coordinates as unknown as google.maps.LatLngLiteral | null,
+        analysisResults: item.analysis_results as unknown as AnalysisResults,
         propertyType: item.property_type || 'Unknown',
         totalMonthlyRevenue: Number(item.total_monthly_revenue) || 0,
         totalOpportunities: item.total_opportunities || 0
