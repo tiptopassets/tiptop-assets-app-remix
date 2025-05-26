@@ -280,6 +280,48 @@ export type Database = {
         }
         Relationships: []
       }
+      service_integrations: {
+        Row: {
+          asset_type: string
+          created_at: string | null
+          expected_monthly_revenue: number | null
+          id: string
+          integration_details: Json | null
+          integration_status: string | null
+          last_updated: string | null
+          property_address: string
+          service_name: string
+          setup_cost: number | null
+          user_id: string
+        }
+        Insert: {
+          asset_type: string
+          created_at?: string | null
+          expected_monthly_revenue?: number | null
+          id?: string
+          integration_details?: Json | null
+          integration_status?: string | null
+          last_updated?: string | null
+          property_address: string
+          service_name: string
+          setup_cost?: number | null
+          user_id: string
+        }
+        Update: {
+          asset_type?: string
+          created_at?: string | null
+          expected_monthly_revenue?: number | null
+          id?: string
+          integration_details?: Json | null
+          integration_status?: string | null
+          last_updated?: string | null
+          property_address?: string
+          service_name?: string
+          setup_cost?: number | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       service_providers: {
         Row: {
           affiliate_program_url: string | null
