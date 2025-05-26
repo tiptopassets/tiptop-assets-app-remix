@@ -229,6 +229,48 @@ export type Database = {
         }
         Relationships: []
       }
+      property_analyses: {
+        Row: {
+          analysis_results: Json
+          coordinates: Json | null
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          property_address: string
+          property_type: string | null
+          total_monthly_revenue: number | null
+          total_opportunities: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          analysis_results: Json
+          coordinates?: Json | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          property_address: string
+          property_type?: string | null
+          total_monthly_revenue?: number | null
+          total_opportunities?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          analysis_results?: Json
+          coordinates?: Json | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          property_address?: string
+          property_type?: string | null
+          total_monthly_revenue?: number | null
+          total_opportunities?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       property_submissions: {
         Row: {
           additional_info: string | null

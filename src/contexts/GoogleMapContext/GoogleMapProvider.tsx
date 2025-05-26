@@ -1,8 +1,9 @@
 
-import { createContext, useContext, useState, ReactNode } from 'react';
+import { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { GoogleMapContextType, AnalysisResults } from './types';
 import { generatePropertyAnalysis } from './propertyAnalysis';
 import { useToast } from '@/hooks/use-toast';
+import { usePropertyPersistence } from '@/hooks/usePropertyPersistence';
 
 const GoogleMapContext = createContext<GoogleMapContextType | undefined>(undefined);
 
@@ -17,8 +18,24 @@ export const GoogleMapProvider = ({ children }: { children: ReactNode }) => {
   const [isGeneratingAnalysis, setIsGeneratingAnalysis] = useState(false);
   const [analysisError, setAnalysisError] = useState<string | null>(null);
   const [useLocalAnalysis, setUseLocalAnalysis] = useState(false);
-  const [zoomLevel, setZoomLevel] = useState(20); // Default zoom level
+  const [zoomLevel, setZoomLevel] = useState(20);
   const { toast } = useToast();
+  const { saveAnalysis, getCurrentAnalysis } = usePropertyPersistence();
+
+  // Load persisted analysis on mount
+  useEffect(() => {
+    const loadPersistedAnalysis = async () => {
+      const persistedData = await getCurrentAnalysis();
+      if (persistedData) {
+        setAddress(persistedData.address);
+        setAddressCoordinates(persistedData.coordinates);
+        setAnalysisResults(persistedData.analysisResults);
+        setAnalysisComplete(true);
+      }
+    };
+
+    loadPersistedAnalysis();
+  }, [getCurrentAnalysis]);
 
   const handlePropertyAnalysis = async (propertyAddress: string) => {
     await generatePropertyAnalysis({
@@ -27,7 +44,23 @@ export const GoogleMapProvider = ({ children }: { children: ReactNode }) => {
       useLocalAnalysis,
       setIsGeneratingAnalysis,
       setIsAnalyzing,
-      setAnalysisResults,
+      setAnalysisResults: (results) => {
+        setAnalysisResults(results);
+        
+        // Save to persistence when analysis completes
+        if (results && propertyAddress && addressCoordinates) {
+          const totalRevenue = results.topOpportunities.reduce((sum, opp) => sum + opp.monthlyRevenue, 0);
+          
+          saveAnalysis({
+            address: propertyAddress,
+            coordinates: addressCoordinates,
+            analysisResults: results,
+            propertyType: results.propertyType || 'Unknown',
+            totalMonthlyRevenue: totalRevenue,
+            totalOpportunities: results.topOpportunities.length
+          });
+        }
+      },
       setAnalysisComplete,
       setUseLocalAnalysis,
       setAnalysisError,
