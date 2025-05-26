@@ -1,36 +1,37 @@
-import { Loader } from '@googlemaps/js-api-loader';
 
-// Try to get API key from environment first, then fallback to Supabase function
+import { Loader } from '@googlemaps/js-api-loader';
+import { supabase } from '@/integrations/supabase/client';
+
+// Securely fetch Google Maps API key
 const fetchGoogleMapsApiKey = async (): Promise<string> => {
+  // 1. Try environment variable first
   const envApiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
-  
   if (envApiKey) {
+    console.log('Using Google Maps API key from environment variable');
     return envApiKey;
   }
   
+  // 2. Fallback to Supabase edge function using the client
   try {
-    // Fallback to Supabase edge function - use correct URL
-    const response = await fetch('https://cxvdcdatxewrvwbcnksg.supabase.co/functions/v1/get-google-maps-key', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN4dmRjZGF0eGV3cnZ3YmNua3NnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDYzMzQ3NzAsImV4cCI6MjA2MTkxMDc3MH0.bhO2Y4n8E3Quj59Ve21nBRUspORKUVPa5t5fgV1XBdI`,
-        'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN4dmRjZGF0eGV3cnZ3YmNua3NnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDYzMzQ3NzAsImV4cCI6MjA2MTkxMDc3MH0.bhO2Y4n8E3Quj59Ve21nBRUspORKUVPa5t5fgV1XBdI'
-      },
-      body: JSON.stringify({
-        origin: window.location.origin
-      })
+    console.log('Fetching Google Maps API key from Supabase edge function');
+    const { data, error } = await supabase.functions.invoke('get-google-maps-key', {
+      body: { origin: window.location.origin }
     });
     
-    if (!response.ok) {
-      throw new Error('Failed to get API key from server');
+    if (error) {
+      console.error('Error from Supabase function:', error);
+      throw new Error(`Supabase function error: ${error.message}`);
     }
     
-    const data = await response.json();
-    return data.apiKey || '';
+    if (!data?.apiKey) {
+      throw new Error('No API key returned from server');
+    }
+    
+    console.log('Successfully retrieved API key from Supabase');
+    return data.apiKey;
   } catch (error) {
     console.error('Failed to get Google Maps API key:', error);
-    return '';
+    throw new Error('Google Maps API key not available. Please check your configuration.');
   }
 };
 
@@ -39,23 +40,30 @@ let apiKey: string = '';
 
 export const loadGoogleMaps = async (): Promise<typeof google.maps> => {
   if (!googleMapsPromise) {
-    // Get the API key first
-    apiKey = await fetchGoogleMapsApiKey();
-    
-    if (!apiKey) {
-      throw new Error('Google Maps API key not available');
-    }
-    
-    const loader = new Loader({
-      apiKey: apiKey,
-      version: 'weekly',
-      libraries: ['places']
-    });
+    try {
+      // Get the API key first
+      apiKey = await fetchGoogleMapsApiKey();
+      
+      if (!apiKey) {
+        throw new Error('Google Maps API key not available');
+      }
+      
+      const loader = new Loader({
+        apiKey: apiKey,
+        version: 'weekly',
+        libraries: ['places']
+      });
 
-    googleMapsPromise = loader.load().then((google) => {
-      console.log('Google Maps API loaded');
-      return google.maps;
-    });
+      googleMapsPromise = loader.load().then((google) => {
+        console.log('Google Maps API loaded successfully');
+        return google.maps;
+      });
+    } catch (error) {
+      console.error('Error initializing Google Maps:', error);
+      // Reset promise so it can be retried
+      googleMapsPromise = null;
+      throw error;
+    }
   }
   return googleMapsPromise;
 };
@@ -63,7 +71,7 @@ export const loadGoogleMaps = async (): Promise<typeof google.maps> => {
 // Alias for backward compatibility
 export const initializeGoogleMaps = loadGoogleMaps;
 
-// Function to get the API key
+// Function to get the API key (for components that need it)
 export const getGoogleMapsApiKey = async (): Promise<string> => {
   if (!apiKey) {
     apiKey = await fetchGoogleMapsApiKey();
@@ -82,7 +90,8 @@ export const verifyApiKeyConfiguration = async (): Promise<{ valid: boolean; mes
     await loadGoogleMaps();
     return { valid: true, message: 'API key is valid and Maps loaded successfully' };
   } catch (error) {
-    return { valid: false, message: `API key validation failed: ${error}` };
+    const message = error instanceof Error ? error.message : 'Unknown error occurred';
+    return { valid: false, message: `API key validation failed: ${message}` };
   }
 };
 

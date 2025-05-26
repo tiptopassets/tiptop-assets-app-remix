@@ -7,7 +7,7 @@ import MapErrorOverlay from './map/MapErrorOverlay';
 import MapVisualEffects from './map/MapVisualEffects';
 import { useGoogleMapInstance } from '@/hooks/useGoogleMapInstance';
 import { Button } from '@/components/ui/button';
-import { AlertCircle, MapPin } from 'lucide-react';
+import { AlertCircle, MapPin, RefreshCw } from 'lucide-react';
 
 const GoogleMap = () => {
   const { 
@@ -69,22 +69,36 @@ const GoogleMap = () => {
     }
   }, [mapInstance, addressCoordinates]);
 
-  // Handle map loading error
+  // Handle map loading error with improved messaging
   if (mapLoadError) {
     return (
       <div className="absolute inset-0 z-0 flex flex-col items-center justify-center bg-gradient-to-b from-gray-900 to-purple-900">
         <div className="bg-black/40 backdrop-blur-md p-8 rounded-lg max-w-md text-center border border-white/10">
           <AlertCircle className="h-12 w-12 text-red-400 mx-auto mb-4" />
-          <h2 className="text-xl font-bold text-white mb-2">Google Maps Error</h2>
-          <p className="text-white/80 mb-4">
-            {mapLoadError}
+          <h2 className="text-xl font-bold text-white mb-2">Google Maps Unavailable</h2>
+          <p className="text-white/80 mb-6">
+            Unable to load Google Maps. This could be due to:
           </p>
-          <Button 
-            onClick={() => setUseLocalAnalysis(true)} 
-            className="bg-tiptop-purple hover:bg-tiptop-purple/90"
-          >
-            Switch to Demo Mode
-          </Button>
+          <ul className="text-left text-white/70 mb-6 text-sm">
+            <li>• API key configuration issues</li>
+            <li>• Domain restrictions</li>
+            <li>• Network connectivity</li>
+          </ul>
+          <div className="space-y-3">
+            <Button 
+              onClick={() => window.location.reload()} 
+              className="w-full bg-blue-600 hover:bg-blue-700"
+            >
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Retry Loading
+            </Button>
+            <Button 
+              onClick={() => setUseLocalAnalysis(true)} 
+              className="w-full bg-tiptop-purple hover:bg-tiptop-purple/90"
+            >
+              Switch to Demo Mode
+            </Button>
+          </div>
         </div>
         
         {/* Fallback visuals */}

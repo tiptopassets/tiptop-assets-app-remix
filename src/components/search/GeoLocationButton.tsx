@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { MapPin } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { loadGoogleMaps } from '@/utils/googleMapsLoader';
 
 type GeoLocationButtonProps = {
   onLocationFound: (address: string, coordinates: google.maps.LatLngLiteral) => void;
@@ -12,7 +13,7 @@ const GeoLocationButton = ({ onLocationFound, disabled = false }: GeoLocationBut
   const [isLocating, setIsLocating] = useState(false);
   const { toast } = useToast();
 
-  const handleGetCurrentLocation = () => {
+  const handleGetCurrentLocation = async () => {
     if (disabled || isLocating) return;
     
     setIsLocating(true);
@@ -33,6 +34,9 @@ const GeoLocationButton = ({ onLocationFound, disabled = false }: GeoLocationBut
           const { latitude, longitude } = position.coords;
           const coordinates = { lat: latitude, lng: longitude };
           
+          // Ensure Google Maps is loaded before using geocoder
+          await loadGoogleMaps();
+          
           // Use Google's Geocoder to get address from coordinates
           const geocoder = new google.maps.Geocoder();
           geocoder.geocode({ location: coordinates }, (results, status) => {
@@ -51,7 +55,7 @@ const GeoLocationButton = ({ onLocationFound, disabled = false }: GeoLocationBut
           console.error('Error getting location:', error);
           toast({
             title: "Location Error",
-            description: "Failed to get your current location",
+            description: "Failed to get your current location. Please try switching to Demo Mode.",
             variant: "destructive"
           });
           setIsLocating(false);
