@@ -6,44 +6,75 @@ export async function geocodeAddress(
   apiKey: string
 ): Promise<GeocodeResult> {
   try {
-    // Geocode the address to get coordinates
-    const geocodeResponse = await fetch(
-      `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${apiKey}`
-    );
+    // Use a more reliable geocoding endpoint format
+    const geocodeUrl = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${apiKey}`;
+    
+    // Make request without custom headers to avoid referrer restrictions
+    const geocodeResponse = await fetch(geocodeUrl);
+    
+    if (!geocodeResponse.ok) {
+      return {
+        error: `Geocoding request failed with status ${geocodeResponse.status}`,
+        details: geocodeResponse.statusText
+      };
+    }
     
     const geocodeData = await geocodeResponse.json();
     console.log('Geocode API response status:', geocodeData.status);
+    
+    // Handle API-level errors
+    if (geocodeData.status === 'REQUEST_DENIED') {
+      return {
+        error: 'Geocoding access denied',
+        details: 'API key may have restrictions. Please check domain restrictions in Google Cloud Console.'
+      };
+    }
+    
+    if (geocodeData.status === 'OVER_QUERY_LIMIT') {
+      return {
+        error: 'Geocoding quota exceeded',
+        details: 'Daily quota limit reached for geocoding API.'
+      };
+    }
+    
+    if (geocodeData.status === 'ZERO_RESULTS') {
+      return {
+        error: 'Address not found',
+        details: 'The provided address could not be located.'
+      };
+    }
     
     if (geocodeData.results && geocodeData.results.length > 0) {
       const location = geocodeData.results[0].geometry.location;
       const coordinates = { lat: location.lat, lng: location.lng };
       
-      // Check if the country is supported by Google Solar API
+      // Extract country information
       const addressComponents = geocodeData.results[0].address_components || [];
       const countryComponent = addressComponents.find(
         (component: any) => component.types.includes('country')
       );
       
-      // Google Solar API currently only supports certain countries fully
-      // As of 2025, primarily US with limited support in other regions
       if (countryComponent) {
         const countryCode = countryComponent.short_name;
-        if (countryCode !== 'US') {
-          console.log(`Country detected: ${countryCode}. Google Solar API may have limited support.`);
-          
-          // Check for known unsupported countries
-          const unsupportedCountries = ['IL', 'PS', 'SY', 'LB', 'JO', 'IR', 'IQ'];
-          if (unsupportedCountries.includes(countryCode)) {
-            return {
-              countryCode,
-              unsupported: true,
-              error: `Solar API not available in ${countryCode}`,
-              details: 'Google Solar API currently has limited coverage in this region.'
-            };
-          }
+        
+        // Enhanced country support detection
+        const limitedSupportCountries = ['CA', 'DE', 'FR', 'IT', 'ES', 'NL', 'BE', 'AT', 'CH'];
+        const unsupportedCountries = ['CN', 'RU', 'IR', 'KP', 'CU'];
+        
+        if (unsupportedCountries.includes(countryCode)) {
+          return {
+            countryCode,
+            unsupported: true,
+            error: `Solar API not available in ${countryCode}`,
+            details: 'Google Solar API is not supported in this region.'
+          };
         }
         
-        return { coordinates, countryCode };
+        return { 
+          coordinates, 
+          countryCode,
+          limitedSupport: limitedSupportCountries.includes(countryCode)
+        };
       }
       
       return { coordinates };
@@ -57,7 +88,7 @@ export async function geocodeAddress(
     console.error('Geocoding error:', error);
     return {
       error: 'Failed to geocode address',
-      details: error.message
+      details: error.message || 'Network error during geocoding'
     };
   }
 }
