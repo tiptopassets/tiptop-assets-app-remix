@@ -64,10 +64,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   useEffect(() => {
-    // First set up the auth state listener
+    let mounted = true;
+
+    // Set up auth state listener first
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, currentSession) => {
+      async (event, currentSession) => {
         console.log('Auth state changed:', event, currentSession?.user?.email);
+        
+        if (!mounted) return;
+
         setSession(currentSession);
         setUser(currentSession?.user ?? null);
         
@@ -78,37 +83,59 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             updateLoginStats(currentSession.user.id);
           }, 0);
           
-          // Redirect to dashboard if user is logged in
-          setTimeout(() => {
-            navigate('/dashboard');
-          }, 0);
+          // Redirect to dashboard if user is logged in and not already there
+          if (window.location.pathname !== '/dashboard') {
+            setTimeout(() => {
+              navigate('/dashboard');
+            }, 100);
+          }
         }
         
         // Redirect to homepage if user logs out
         if (event === 'SIGNED_OUT') {
           setTimeout(() => {
             navigate('/');
-          }, 0);
+          }, 100);
         }
         
-        setLoading(false);
+        if (mounted) {
+          setLoading(false);
+        }
       }
     );
 
     // Then check for existing session
-    supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
-      setSession(currentSession);
-      setUser(currentSession?.user ?? null);
-      
-      // If user was already signed in on page load, update login stats
-      if (currentSession?.user) {
-        updateLoginStats(currentSession.user.id);
+    const initializeAuth = async () => {
+      try {
+        const { data: { session: currentSession }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error('Error getting session:', error);
+        }
+        
+        if (mounted) {
+          setSession(currentSession);
+          setUser(currentSession?.user ?? null);
+          
+          // If user was already signed in on page load, update login stats
+          if (currentSession?.user) {
+            updateLoginStats(currentSession.user.id);
+          }
+          
+          setLoading(false);
+        }
+      } catch (error) {
+        console.error('Error initializing auth:', error);
+        if (mounted) {
+          setLoading(false);
+        }
       }
-      
-      setLoading(false);
-    });
+    };
+
+    initializeAuth();
 
     return () => {
+      mounted = false;
       subscription.unsubscribe();
     };
   }, [navigate]);
@@ -116,13 +143,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const signInWithGoogle = async () => {
     try {
       console.log("Starting Google sign-in process");
+      setLoading(true);
+      
       const origin = window.location.origin;
       console.log("Current origin:", origin);
       
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: origin + '/dashboard'
+          redirectTo: `${origin}/dashboard`
         }
       });
       
@@ -134,6 +163,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       console.log("Sign in initiated:", data);
     } catch (error) {
       console.error('Google sign in error:', error);
+      setLoading(false);
       toast({
         title: "Sign In Error",
         description: "Failed to sign in with Google. Please try again.",
@@ -144,6 +174,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const signOut = async () => {
     try {
+      setLoading(true);
       await supabase.auth.signOut();
     } catch (error) {
       console.error('Sign out error:', error);
@@ -152,6 +183,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         description: "Failed to sign out. Please try again.",
         variant: "destructive"
       });
+    } finally {
+      setLoading(false);
     }
   };
 

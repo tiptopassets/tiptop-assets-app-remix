@@ -229,6 +229,48 @@ export type Database = {
         }
         Relationships: []
       }
+      property_analyses: {
+        Row: {
+          analysis_results: Json
+          coordinates: Json | null
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          property_address: string
+          property_type: string | null
+          total_monthly_revenue: number | null
+          total_opportunities: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          analysis_results: Json
+          coordinates?: Json | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          property_address: string
+          property_type?: string | null
+          total_monthly_revenue?: number | null
+          total_opportunities?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          analysis_results?: Json
+          coordinates?: Json | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          property_address?: string
+          property_type?: string | null
+          total_monthly_revenue?: number | null
+          total_opportunities?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       property_submissions: {
         Row: {
           additional_info: string | null
@@ -277,6 +319,48 @@ export type Database = {
           sent_to_neighbor?: boolean | null
           sent_to_swimply?: boolean | null
           submission_time?: string | null
+        }
+        Relationships: []
+      }
+      service_integrations: {
+        Row: {
+          asset_type: string
+          created_at: string | null
+          expected_monthly_revenue: number | null
+          id: string
+          integration_details: Json | null
+          integration_status: string | null
+          last_updated: string | null
+          property_address: string
+          service_name: string
+          setup_cost: number | null
+          user_id: string
+        }
+        Insert: {
+          asset_type: string
+          created_at?: string | null
+          expected_monthly_revenue?: number | null
+          id?: string
+          integration_details?: Json | null
+          integration_status?: string | null
+          last_updated?: string | null
+          property_address: string
+          service_name: string
+          setup_cost?: number | null
+          user_id: string
+        }
+        Update: {
+          asset_type?: string
+          created_at?: string | null
+          expected_monthly_revenue?: number | null
+          id?: string
+          integration_details?: Json | null
+          integration_status?: string | null
+          last_updated?: string | null
+          property_address?: string
+          service_name?: string
+          setup_cost?: number | null
+          user_id?: string
         }
         Relationships: []
       }

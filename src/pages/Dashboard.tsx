@@ -1,3 +1,4 @@
+
 import React, { useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import DashboardLayout from '@/components/dashboard/DashboardLayout';
@@ -14,25 +15,54 @@ import { motion } from 'framer-motion';
 import { Home, ChartPie, Info } from 'lucide-react';
 
 const Dashboard = () => {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
   const { analysisResults, address } = useGoogleMap();
   const { toast } = useToast();
   const { contentFromGPT, googleImages } = useModelGeneration();
   const navigate = useNavigate();
   
   useEffect(() => {
-    if (!user) {
+    if (!loading && !user) {
       toast({
         title: "Authentication Required",
         description: "Please sign in to view your dashboard",
         variant: "destructive"
       });
+      navigate('/');
     }
-  }, [user, toast]);
+  }, [user, loading, toast, navigate]);
 
   const handleAnalyzeProperty = () => {
     navigate('/');
   };
+
+  // Show loading screen while auth is checking
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black flex items-center justify-center">
+        <div className="text-white text-center">
+          <div className="w-16 h-16 border-4 border-tiptop-purple border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p>Loading dashboard...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Redirect if not authenticated
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black text-white flex flex-col items-center justify-center p-4">
+        <h1 className="text-3xl font-bold mb-6">Authentication Required</h1>
+        <p className="mb-8 text-gray-300">Please sign in to access your dashboard</p>
+        <Link 
+          to="/" 
+          className="bg-tiptop-purple hover:bg-purple-700 text-white px-6 py-3 rounded-full transition-colors"
+        >
+          Go to Home Page
+        </Link>
+      </div>
+    );
+  }
 
   // Generate chart data from analysis results
   const getChartData = () => {
@@ -96,21 +126,6 @@ const Dashboard = () => {
       increasePercentage: 12.5
     };
   };
-
-  if (!user) {
-    return (
-      <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black text-white flex flex-col items-center justify-center p-4">
-        <h1 className="text-3xl font-bold mb-6">Authentication Required</h1>
-        <p className="mb-8 text-gray-300">Please sign in to access your dashboard</p>
-        <Link 
-          to="/" 
-          className="bg-tiptop-purple hover:bg-purple-700 text-white px-6 py-3 rounded-full transition-colors"
-        >
-          Go to Home Page
-        </Link>
-      </div>
-    );
-  }
 
   // If we have analysis results, use them. Otherwise, use sample data
   const chartData = analysisResults ? getChartData() : getSampleData();
