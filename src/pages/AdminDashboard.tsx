@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { useAdmin } from "@/hooks/useAdmin";
@@ -8,7 +8,7 @@ import { LoginStatsSummary } from '@/components/admin/LoginStatsSummary';
 import { LoginStatsTable } from '@/components/admin/LoginStatsTable';
 import { LoginChartsSection } from '@/components/admin/LoginChartsSection';
 import ServiceIntegrationsManagement from '@/components/admin/ServiceIntegrationsManagement';
-import { toast } from '@/hooks/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import { motion } from 'framer-motion';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle, ChevronLeft } from 'lucide-react';
@@ -16,6 +16,20 @@ import { AlertCircle, ChevronLeft } from 'lucide-react';
 const AdminDashboard = () => {
   const { isAdmin, loading } = useAdmin();
   const [activeTab, setActiveTab] = useState("users");
+  const [shouldRedirect, setShouldRedirect] = useState(false);
+  const { toast } = useToast();
+
+  // Handle access denied in useEffect to avoid hook call during render
+  useEffect(() => {
+    if (!loading && !isAdmin) {
+      toast({
+        title: "Access Denied",
+        description: "You don't have permission to access the admin dashboard.",
+        variant: "destructive",
+      });
+      setShouldRedirect(true);
+    }
+  }, [isAdmin, loading, toast]);
 
   if (loading) {
     return (
@@ -27,12 +41,7 @@ const AdminDashboard = () => {
     );
   }
 
-  if (!isAdmin) {
-    toast({
-      title: "Access Denied",
-      description: "You don't have permission to access the admin dashboard.",
-      variant: "destructive",
-    });
+  if (shouldRedirect) {
     return <Navigate to="/dashboard" replace />;
   }
 
