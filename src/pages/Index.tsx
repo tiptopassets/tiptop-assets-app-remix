@@ -9,7 +9,7 @@ import AssetResultList from '@/components/asset-results/AssetResultList';
 import ModelGenerationSheet from '@/components/ModelGenerationSheet';
 import HomeModelViewer from '@/components/home-model-viewer';
 import { useGoogleMap } from '@/contexts/GoogleMapContext';
-import { PlusCircle } from 'lucide-react';
+import { PlusCircle, Box } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import FooterCarousel from '@/components/FooterCarousel';
 import { motion } from 'framer-motion';
@@ -63,6 +63,16 @@ const Index = () => {
             tiptop
           </Link>
           <div className="flex gap-4">
+            <Link
+              to="/product-viewer"
+              className="glass-effect px-3 py-1 md:px-4 md:py-2 rounded-full flex items-center gap-2 text-white hover:scale-105 transition-transform text-sm md:text-base"
+            >
+              <Box size={isMobile ? 16 : 20} />
+              <span className="text-gray-100">3D Viewer</span>
+              
+              {/* Glow effect for hover */}
+              <div className="absolute -inset-0.5 bg-gradient-to-r from-purple-500/20 to-violet-500/20 rounded-full blur-sm -z-10"></div>
+            </Link>
             <Link
               to="/submit-property"
               className="glass-effect px-3 py-1 md:px-4 md:py-2 rounded-full flex items-center gap-2 text-white hover:scale-105 transition-transform text-sm md:text-base"

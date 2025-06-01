@@ -16,6 +16,7 @@ import EVChargingDashboard from "./pages/EVChargingDashboard";
 import AddAsset from "./pages/AddAsset";
 import AccountPage from "./pages/AccountPage";
 import ModelViewer from "./pages/ModelViewer";
+import ProductViewer from "./pages/ProductViewer";
 import AdminDashboard from "./pages/AdminDashboard";
 import SubmitProperty from "./pages/SubmitProperty";
 import AffiliateEarningsDashboard from "./pages/AffiliateEarningsDashboard";
@@ -62,6 +63,7 @@ const App = () => (
                 <Route path="/dashboard/admin" element={<AdminDashboard />} />
                 <Route path="/dashboard/affiliate" element={<AffiliateEarningsDashboard />} />
                 <Route path="/model-viewer" element={<ModelViewer />} />
+                <Route path="/product-viewer" element={<ProductViewer />} />
                 <Route path="/submit-property" element={<SubmitProperty />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
