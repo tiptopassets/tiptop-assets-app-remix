@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useAffiliateEarnings } from '@/hooks/useAffiliateEarnings';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -7,6 +6,7 @@ import { useServiceProviders } from '@/contexts/ServiceProviders';
 import { useFlexOffersSubId } from '@/hooks/useFlexOffersSubId';
 import { useExtensionStatus } from '@/hooks/useExtensionStatus';
 import { supabase } from '@/integrations/supabase/client';
+import { useAffiliateIntegration } from '@/hooks/useAffiliateIntegration';
 
 // Imported component modules
 import LoadingState from './LoadingState';
@@ -21,24 +21,24 @@ const AffiliateEarningsDashboard: React.FC = () => {
   const [isSyncing, setIsSyncing] = useState(false);
   const extensionInstalled = useExtensionStatus();
   const { flexoffersSubId } = useFlexOffersSubId();
+  const { syncEarnings } = useAffiliateIntegration();
 
-  // Function to trigger earnings sync
-  const syncEarnings = async () => {
+  // Enhanced sync function that uses the new affiliate integration
+  const syncAllEarnings = async () => {
     try {
       setIsSyncing(true);
       
-      const { data, error } = await supabase.functions.invoke('sync_affiliate_earnings', {
-        body: { action: 'sync_all' }
-      });
+      const partners = ['FlexOffers', 'Honeygain', 'Tesla Energy', 'Swimply', 'Airbnb'];
+      const syncPromises = partners.map(partner => syncEarnings(partner));
       
-      if (error) throw error;
+      const results = await Promise.allSettled(syncPromises);
+      const successful = results.filter(r => r.status === 'fulfilled').length;
       
       toast({
         title: "Sync Complete",
-        description: `Successfully synced earnings from ${data.services_synced || 0} services.`,
+        description: `Successfully synced earnings from ${successful} partners.`,
       });
       
-      // Refetch data to show updated earnings
       refreshData();
       
     } catch (err) {
@@ -98,7 +98,7 @@ const AffiliateEarningsDashboard: React.FC = () => {
       <CardFooter>
         <DashboardActions
           isSyncing={isSyncing}
-          refreshData={refreshData}
+          refreshData={syncAllEarnings} // Use enhanced sync function
           hasFlexOffers={hasFlexOffers}
           extensionInstalled={extensionInstalled}
         />

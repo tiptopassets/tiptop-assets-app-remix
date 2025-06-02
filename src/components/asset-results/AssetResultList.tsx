@@ -5,6 +5,7 @@ import { toast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { SelectedAsset } from '@/types/analysis';
 import { BundleRecommendation } from '@/contexts/ServiceProviders/types';
+import PartnerRegistrationFlow from '@/components/enhanced-analysis/PartnerRegistrationFlow';
 
 // Existing components
 import PropertySummaryCard from './PropertySummaryCard';
@@ -26,6 +27,8 @@ const AssetResultList = () => {
   const [showFormSection, setShowFormSection] = useState(false);
   const [showBundles, setShowBundles] = useState(false);
   const [selectedBundle, setSelectedBundle] = useState<BundleRecommendation | null>(null);
+  const [showPartnerRegistration, setShowPartnerRegistration] = useState(false);
+  const [recommendedPartners, setRecommendedPartners] = useState([]);
   const navigate = useNavigate();
   const { additionalOpportunities } = useAdditionalOpportunities();
 
@@ -100,30 +103,56 @@ const AssetResultList = () => {
       return;
     }
     
-    // Show bundle recommendations if multiple assets are detected
-    if (detectedAssets.length >= 2) {
-      setShowBundles(true);
-    } else {
-      setShowFormSection(true);
-      
-      // Scroll to the form section
-      setTimeout(() => {
-        const formSection = document.getElementById('asset-form-section');
-        if (formSection) {
-          formSection.scrollIntoView({ behavior: 'smooth' });
-        }
-      }, 100);
-    }
+    // Generate partner recommendations based on selected assets
+    const partners = generatePartnerRecommendations(selectedAssets);
+    setRecommendedPartners(partners);
+    setShowPartnerRegistration(true);
   };
 
-  const handleSelectBundle = (recommendation: BundleRecommendation) => {
-    setSelectedBundle(recommendation);
+  const generatePartnerRecommendations = (assets: string[]) => {
+    const partnerMap: Record<string, any> = {
+      'Solar Panels': {
+        name: 'Tesla Energy',
+        description: 'Leading solar panel installation and energy solutions',
+        category: 'Solar',
+        estimatedEarnings: '$200-500/month',
+        setupTime: '2-4 weeks',
+        difficulty: 'Medium'
+      },
+      'Parking Space Rental': {
+        name: 'SpotHero',
+        description: 'Monetize your parking spaces with hourly/daily rentals',
+        category: 'Parking',
+        estimatedEarnings: '$100-300/month',
+        setupTime: '1-2 days',
+        difficulty: 'Easy'
+      },
+      'Internet Bandwidth Sharing': {
+        name: 'Honeygain',
+        description: 'Earn passive income by sharing your unused internet',
+        category: 'Internet',
+        estimatedEarnings: '$20-50/month',
+        setupTime: '5 minutes',
+        difficulty: 'Easy'
+      },
+      'Pool Rental': {
+        name: 'Swimply',
+        description: 'Rent out your pool by the hour to local swimmers',
+        category: 'Pool',
+        estimatedEarnings: '$300-800/month',
+        setupTime: '1 week',
+        difficulty: 'Medium'
+      }
+    };
+
+    return assets.map(asset => partnerMap[asset]).filter(Boolean);
   };
 
-  const handleBundleRegistrationComplete = () => {
+  const handlePartnerRegistrationComplete = () => {
+    setShowPartnerRegistration(false);
     toast({
-      title: "Bundle Registration Complete",
-      description: "You've successfully registered with multiple providers!",
+      title: "Registration Complete!",
+      description: "You're all set up with your selected partners",
     });
     navigate('/dashboard');
   };
@@ -153,6 +182,20 @@ const AssetResultList = () => {
   
   // Combine all opportunities for form field lookup
   const allOpportunities = [...analysisResults.topOpportunities, ...additionalOpportunities];
+
+  // Show partner registration flow
+  if (showPartnerRegistration) {
+    return (
+      <div className="w-full px-4 md:px-0 md:max-w-4xl">
+        <SpacerBlock />
+        <PartnerRegistrationFlow
+          selectedAssets={selectedAssets}
+          recommendedPartners={recommendedPartners}
+          onComplete={handlePartnerRegistrationComplete}
+        />
+      </div>
+    );
+  }
 
   // Show bundle registration flow if a bundle is selected
   if (selectedBundle) {

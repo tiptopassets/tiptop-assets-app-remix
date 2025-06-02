@@ -229,6 +229,164 @@ export type Database = {
         }
         Relationships: []
       }
+      enhanced_property_analyses: {
+        Row: {
+          accuracy_score: number | null
+          analysis_version: string | null
+          coordinates: Json | null
+          created_at: string | null
+          data_sources_used: Json | null
+          final_analysis_results: Json | null
+          google_solar_data: Json | null
+          gpt_analysis_raw: Json | null
+          id: string
+          property_address: string
+          satellite_image_url: string | null
+          street_view_image_url: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          accuracy_score?: number | null
+          analysis_version?: string | null
+          coordinates?: Json | null
+          created_at?: string | null
+          data_sources_used?: Json | null
+          final_analysis_results?: Json | null
+          google_solar_data?: Json | null
+          gpt_analysis_raw?: Json | null
+          id?: string
+          property_address: string
+          satellite_image_url?: string | null
+          street_view_image_url?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          accuracy_score?: number | null
+          analysis_version?: string | null
+          coordinates?: Json | null
+          created_at?: string | null
+          data_sources_used?: Json | null
+          final_analysis_results?: Json | null
+          google_solar_data?: Json | null
+          gpt_analysis_raw?: Json | null
+          id?: string
+          property_address?: string
+          satellite_image_url?: string | null
+          street_view_image_url?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      enhanced_service_providers: {
+        Row: {
+          affiliate_base_url: string | null
+          api_endpoint: string | null
+          api_type: string
+          auth_method: string | null
+          avg_earnings_high: number | null
+          avg_earnings_low: number | null
+          base_url: string | null
+          category: string
+          commission_rate: number | null
+          created_at: string | null
+          id: string
+          integration_status: string | null
+          name: string
+          priority_score: number | null
+          setup_requirements: Json | null
+          supported_assets: Json | null
+          updated_at: string | null
+        }
+        Insert: {
+          affiliate_base_url?: string | null
+          api_endpoint?: string | null
+          api_type: string
+          auth_method?: string | null
+          avg_earnings_high?: number | null
+          avg_earnings_low?: number | null
+          base_url?: string | null
+          category: string
+          commission_rate?: number | null
+          created_at?: string | null
+          id?: string
+          integration_status?: string | null
+          name: string
+          priority_score?: number | null
+          setup_requirements?: Json | null
+          supported_assets?: Json | null
+          updated_at?: string | null
+        }
+        Update: {
+          affiliate_base_url?: string | null
+          api_endpoint?: string | null
+          api_type?: string
+          auth_method?: string | null
+          avg_earnings_high?: number | null
+          avg_earnings_low?: number | null
+          base_url?: string | null
+          category?: string
+          commission_rate?: number | null
+          created_at?: string | null
+          id?: string
+          integration_status?: string | null
+          name?: string
+          priority_score?: number | null
+          setup_requirements?: Json | null
+          supported_assets?: Json | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      partner_earnings_sync: {
+        Row: {
+          created_at: string | null
+          earnings_data: Json | null
+          error_details: string | null
+          id: string
+          last_sync_at: string | null
+          provider_id: string | null
+          provider_name: string
+          sync_method: string
+          sync_status: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          earnings_data?: Json | null
+          error_details?: string | null
+          id?: string
+          last_sync_at?: string | null
+          provider_id?: string | null
+          provider_name: string
+          sync_method: string
+          sync_status?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          earnings_data?: Json | null
+          error_details?: string | null
+          id?: string
+          last_sync_at?: string | null
+          provider_id?: string | null
+          provider_name?: string
+          sync_method?: string
+          sync_status?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_earnings_sync_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "enhanced_service_providers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       property_analyses: {
         Row: {
           analysis_results: Json
@@ -447,6 +605,59 @@ export type Database = {
           status?: string | null
         }
         Relationships: []
+      }
+      user_affiliate_journeys: {
+        Row: {
+          affiliate_clicks: Json | null
+          created_at: string | null
+          earnings_tracked: Json | null
+          id: string
+          journey_status: string | null
+          property_analysis_id: string | null
+          registrations_completed: Json | null
+          selected_providers: Json | null
+          total_actual_monthly: number | null
+          total_estimated_monthly: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          affiliate_clicks?: Json | null
+          created_at?: string | null
+          earnings_tracked?: Json | null
+          id?: string
+          journey_status?: string | null
+          property_analysis_id?: string | null
+          registrations_completed?: Json | null
+          selected_providers?: Json | null
+          total_actual_monthly?: number | null
+          total_estimated_monthly?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          affiliate_clicks?: Json | null
+          created_at?: string | null
+          earnings_tracked?: Json | null
+          id?: string
+          journey_status?: string | null
+          property_analysis_id?: string | null
+          registrations_completed?: Json | null
+          selected_providers?: Json | null
+          total_actual_monthly?: number | null
+          total_estimated_monthly?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_affiliate_journeys_property_analysis_id_fkey"
+            columns: ["property_analysis_id"]
+            isOneToOne: false
+            referencedRelation: "enhanced_property_analyses"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_bundle_selections: {
         Row: {

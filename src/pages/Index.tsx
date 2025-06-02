@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import SearchBar from '@/components/SearchBar';
@@ -16,6 +15,7 @@ import { motion } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
+import EnhancedAnalysisButton from '@/components/enhanced-analysis/EnhancedAnalysisButton';
 
 const Index = () => {
   const { isAnalyzing, analysisComplete, address, setUseLocalAnalysis } = useGoogleMap();
@@ -96,6 +96,7 @@ const Index = () => {
           <div className="flex flex-col items-center gap-4 w-full max-w-full md:max-w-md">
             <SearchBar isCollapsed={isCollapsed} />
             {!isAnalyzing && !analysisComplete && <AnalyzeButton />}
+            {!isAnalyzing && !analysisComplete && hasAddress && <EnhancedAnalysisButton />}
           </div>
 
           {/* Demo Mode Button */}
@@ -130,7 +131,7 @@ const Index = () => {
         {/* Footer with carousel - pushed much lower, especially on mobile */}
         {!analysisComplete && !isAnalyzing && !hasAddress && (
           <footer className="w-full mt-auto">
-            <div className={`py-20 md:py-32 ${isMobile ? 'pb-36' : ''}`}></div> {/* Increased spacing for mobile */}
+            <div className={`py-20 md:py-32 ${isMobile ? 'pb-36' : ''}`}></div>
             <FooterCarousel />
           </footer>
         )}
