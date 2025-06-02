@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useGoogleMap } from '@/contexts/GoogleMapContext';
 import { motion } from "framer-motion";
@@ -153,6 +154,20 @@ const AssetResultList = () => {
     toast({
       title: "Registration Complete!",
       description: "You're all set up with your selected partners",
+    });
+    navigate('/dashboard');
+  };
+
+  const handleSelectBundle = (recommendation: BundleRecommendation) => {
+    setSelectedBundle(recommendation);
+    setShowBundles(false);
+  };
+
+  const handleBundleRegistrationComplete = () => {
+    setSelectedBundle(null);
+    toast({
+      title: "Bundle Registration Complete!",
+      description: "You're all set up with your selected bundle",
     });
     navigate('/dashboard');
   };
