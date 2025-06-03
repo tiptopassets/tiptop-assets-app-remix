@@ -53,7 +53,7 @@ const HomeModelViewer = () => {
       {/* Show loading state or analysis results */}
       {isGenerating ? (
         <LoadingState />
-      ) : analysisResults ? (
+      ) : analysisResults && showFullAnalysis ? (
         <PropertyAnalysisContent 
           analysisResults={analysisResults}
           showFullAnalysis={showFullAnalysis}
