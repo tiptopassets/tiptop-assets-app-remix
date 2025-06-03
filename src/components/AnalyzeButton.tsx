@@ -21,7 +21,14 @@ const AnalyzeButton = () => {
   const [analysisStarted, setAnalysisStarted] = useState(false);
 
   const handleUnifiedAnalysis = async () => {
-    if (!address) return;
+    if (!address) {
+      toast({
+        title: "Address Required",
+        description: "Please enter a property address first.",
+        variant: "destructive"
+      });
+      return;
+    }
 
     setAnalysisStarted(true);
     
@@ -59,16 +66,18 @@ const AnalyzeButton = () => {
     }
   };
 
-  if (!address) return null;
-
   const isLoading = isAnalyzing || isEnhancedLoading;
+  const hasAddress = !!address;
 
   return (
     <div className="w-full max-w-md mx-auto">
       <Button
         onClick={handleUnifiedAnalysis}
-        disabled={isLoading || analysisStarted}
-        className="w-full bg-gradient-to-r from-tiptop-purple to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white font-semibold py-3 px-6 rounded-full transition-all duration-300 transform hover:scale-105"
+        disabled={isLoading || analysisStarted || !hasAddress}
+        className={`w-full ${hasAddress 
+          ? 'bg-gradient-to-r from-tiptop-purple to-purple-600 hover:from-purple-600 hover:to-purple-700' 
+          : 'bg-gray-600 hover:bg-gray-700'
+        } text-white font-semibold py-3 px-6 rounded-full transition-all duration-300 transform hover:scale-105`}
         size="lg"
       >
         {isLoading ? (
@@ -91,10 +100,14 @@ const AnalyzeButton = () => {
       
       {!analysisStarted && (
         <p className="text-center text-sm text-gray-400 mt-2">
-          {user ? (
-            <>🚀 Multi-source analysis with Google Solar + GPT-4o</>
+          {hasAddress ? (
+            user ? (
+              <>🚀 Multi-source analysis with Google Solar + GPT-4o</>
+            ) : (
+              <>🏠 Basic property analysis - sign in for enhanced features</>
+            )
           ) : (
-            <>🏠 Basic property analysis - sign in for enhanced features</>
+            <>📍 Enter an address above to start analysis</>
           )}
         </p>
       )}
