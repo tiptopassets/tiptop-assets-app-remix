@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import SearchBar from '@/components/SearchBar';
@@ -15,7 +16,6 @@ import { motion } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
-import EnhancedAnalysisButton from '@/components/enhanced-analysis/EnhancedAnalysisButton';
 
 const Index = () => {
   const { isAnalyzing, analysisComplete, address, setUseLocalAnalysis } = useGoogleMap();
@@ -96,7 +96,6 @@ const Index = () => {
           <div className="flex flex-col items-center gap-4 w-full max-w-full md:max-w-md">
             <SearchBar isCollapsed={isCollapsed} />
             {!isAnalyzing && !analysisComplete && <AnalyzeButton />}
-            {!isAnalyzing && !analysisComplete && hasAddress && <EnhancedAnalysisButton />}
           </div>
 
           {/* Demo Mode Button */}

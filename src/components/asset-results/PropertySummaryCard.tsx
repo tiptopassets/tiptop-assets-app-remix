@@ -3,7 +3,8 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { AnalysisResults } from '@/contexts/GoogleMapContext/types';
 import { Button } from '@/components/ui/button';
-import { ChevronDown, ChevronUp } from 'lucide-react';
+import { ChevronDown, ChevronUp, CheckCircle } from 'lucide-react';
+import { useGoogleMap } from '@/contexts/GoogleMapContext';
 
 interface PropertySummaryCardProps {
   analysisResults: AnalysisResults;
@@ -21,6 +22,7 @@ const PropertySummaryCard: React.FC<PropertySummaryCardProps> = ({
   isCollapsed: initialCollapsed
 }) => {
   const [isCollapsed, setIsCollapsed] = useState(initialCollapsed);
+  const { address } = useGoogleMap();
 
   const toggleCollapse = () => {
     setIsCollapsed(!isCollapsed);
@@ -34,9 +36,15 @@ const PropertySummaryCard: React.FC<PropertySummaryCardProps> = ({
       className="w-full mb-8"
     >
       <div className="bg-black/40 backdrop-blur-md rounded-lg border border-white/10 p-4 md:p-6">
-        <div className="flex justify-between items-start">
-          <div>
-            <h2 className="text-xl md:text-2xl font-bold text-white mb-2">{analysisResults.propertyType} Property</h2>
+        <div className="flex justify-between items-start mb-4">
+          <div className="flex-1">
+            <h2 className="text-xl md:text-2xl font-bold text-white flex items-center mb-2">
+              <CheckCircle className="text-green-500 h-6 w-6 mr-2" />
+              Property Analysis Complete
+            </h2>
+            <p className="text-sm text-gray-400 mb-4">
+              Analysis for {address}
+            </p>
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <p className="text-sm text-gray-400">Selected Assets</p>
@@ -78,7 +86,7 @@ const PropertySummaryCard: React.FC<PropertySummaryCardProps> = ({
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.3 }}
-            className="mt-4 pt-4 border-t border-white/10"
+            className="pt-4 border-t border-white/10"
           >
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               {analysisResults.rooftop && (
@@ -93,6 +101,9 @@ const PropertySummaryCard: React.FC<PropertySummaryCardProps> = ({
                   <h4 className="text-xs text-gray-400">Parking</h4>
                   <p className="text-white font-semibold">{analysisResults.parking.spaces} spaces</p>
                   <p className="text-xs text-tiptop-purple">${analysisResults.parking.revenue}/mo</p>
+                  {analysisResults.parking.rate && (
+                    <p className="text-xs text-gray-400">${analysisResults.parking.rate}/day rate</p>
+                  )}
                 </div>
               )}
               {analysisResults.garden && (

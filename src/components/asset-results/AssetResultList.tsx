@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useGoogleMap } from '@/contexts/GoogleMapContext';
 import { motion } from "framer-motion";
@@ -7,6 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import { SelectedAsset } from '@/types/analysis';
 import { BundleRecommendation } from '@/contexts/ServiceProviders/types';
 import PartnerRegistrationFlow from '@/components/enhanced-analysis/PartnerRegistrationFlow';
+import ServiceAvailabilityChecker from '@/components/property-analysis/ServiceAvailabilityChecker';
 
 // Existing components
 import PropertySummaryCard from './PropertySummaryCard';
@@ -23,7 +23,7 @@ import BundleRegistrationFlow from '../bundles/BundleRegistrationFlow';
 import { useAdditionalOpportunities } from '@/hooks/useAdditionalOpportunities';
 
 const AssetResultList = () => {
-  const { analysisComplete, analysisResults, isAnalyzing, address } = useGoogleMap();
+  const { analysisComplete, analysisResults, isAnalyzing, address, addressCoordinates } = useGoogleMap();
   const [selectedAssets, setSelectedAssets] = useState<string[]>([]);
   const [showFormSection, setShowFormSection] = useState(false);
   const [showBundles, setShowBundles] = useState(false);
@@ -265,6 +265,23 @@ const AssetResultList = () => {
         selectedAssetsCount={selectedAssets.length}
         isCollapsed={false}
       />
+
+      {/* Service Availability Section */}
+      {addressCoordinates && address && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.3 }}
+          className="mb-8"
+        >
+          <div className="bg-black/40 backdrop-blur-md rounded-lg border border-white/10 p-4 md:p-6">
+            <ServiceAvailabilityChecker 
+              coordinates={addressCoordinates}
+              address={address}
+            />
+          </div>
+        </motion.div>
+      )}
 
       <AssetOpportunitiesGrid
         opportunities={analysisResults.topOpportunities}

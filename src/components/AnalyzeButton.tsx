@@ -1,102 +1,103 @@
 
-import { motion } from 'framer-motion';
-import { Sparkles, CloudOff } from 'lucide-react';
+import { useState } from 'react';
+import { Button } from '@/components/ui/button';
 import { useGoogleMap } from '@/contexts/GoogleMapContext';
+import { useEnhancedAnalysis } from '@/hooks/useEnhancedAnalysis';
+import { useAuth } from '@/contexts/AuthContext';
+import { Zap, CheckCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const AnalyzeButton = () => {
   const { 
     address, 
     generatePropertyAnalysis, 
-    isGeneratingAnalysis, 
-    analysisError, 
-    setAnalysisError,
-    useLocalAnalysis,
-    setUseLocalAnalysis,
-    addressCoordinates
+    isAnalyzing,
+    setAnalysisResults,
+    setAnalysisComplete 
   } = useGoogleMap();
+  const { analyzeProperty, isLoading: isEnhancedLoading } = useEnhancedAnalysis();
+  const { user } = useAuth();
   const { toast } = useToast();
-  
-  const handleAnalyze = () => {
-    if (!address) {
+  const [analysisStarted, setAnalysisStarted] = useState(false);
+
+  const handleUnifiedAnalysis = async () => {
+    if (!address) return;
+
+    setAnalysisStarted(true);
+    
+    try {
+      // First run the basic analysis
+      await generatePropertyAnalysis(address);
+      
+      // If user is authenticated, also run enhanced analysis
+      if (user) {
+        const enhancedResult = await analyzeProperty(address);
+        
+        if (enhancedResult?.success) {
+          // Merge the enhanced results with the basic analysis
+          setAnalysisResults(enhancedResult.results);
+          setAnalysisComplete(true);
+          
+          toast({
+            title: "Enhanced Analysis Complete",
+            description: `Property analysis completed with ${Math.round(enhancedResult.dataQuality.accuracyScore * 100)}% accuracy using multi-source data`
+          });
+        }
+      } else {
+        toast({
+          title: "Basic Analysis Complete",
+          description: "Property analysis completed. Sign in for enhanced AI analysis with Google Solar data."
+        });
+      }
+    } catch (error) {
+      console.error('Analysis error:', error);
       toast({
-        title: "Address Required",
-        description: "Please enter a property address to analyze",
+        title: "Analysis Error",
+        description: "There was an issue analyzing your property. Please try again.",
         variant: "destructive"
       });
-      return;
     }
-    
-    // Clear any previous error state
-    if (analysisError) {
-      setAnalysisError(null);
-    }
-    
-    console.log("Starting analysis for address:", address);
-    console.log("Coordinates available:", addressCoordinates);
-    console.log("Using local analysis mode:", useLocalAnalysis);
-    
-    // Use our property analysis function
-    generatePropertyAnalysis(address);
   };
-  
-  const toggleAnalysisMode = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setUseLocalAnalysis(!useLocalAnalysis);
-    toast({
-      title: useLocalAnalysis ? "Using AI Analysis" : "Using Demo Mode",
-      description: useLocalAnalysis 
-        ? "Switched to AI-powered analysis for accurate results" 
-        : "Switched to demo mode - results are simulated"
-    });
-  };
-  
+
+  if (!address) return null;
+
+  const isLoading = isAnalyzing || isEnhancedLoading;
+
   return (
-    <div className="flex flex-col items-center gap-2">
-      <motion.button
-        onClick={handleAnalyze}
-        disabled={isGeneratingAnalysis || !address}
-        whileHover={{ scale: 1.03 }}
-        whileTap={{ scale: 0.97 }}
-        className={`glass-effect px-6 py-3 rounded-full flex items-center gap-2 text-white glow-effect ${!address ? 'opacity-70 cursor-not-allowed' : ''}`}
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2 }}
+    <div className="w-full max-w-md mx-auto">
+      <Button
+        onClick={handleUnifiedAnalysis}
+        disabled={isLoading || analysisStarted}
+        className="w-full bg-gradient-to-r from-tiptop-purple to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white font-semibold py-3 px-6 rounded-full transition-all duration-300 transform hover:scale-105"
+        size="lg"
       >
-        {useLocalAnalysis ? (
-          <CloudOff className="h-5 w-5 text-amber-400" />
+        {isLoading ? (
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+            {user ? 'Enhanced AI Analysis...' : 'Analyzing Property...'}
+          </div>
+        ) : analysisStarted ? (
+          <div className="flex items-center gap-2">
+            <CheckCircle className="w-5 h-5" />
+            Analysis Complete
+          </div>
         ) : (
-          <Sparkles className="h-5 w-5 text-tiptop-purple" />
+          <div className="flex items-center gap-2">
+            <Zap className="w-5 h-5" />
+            {user ? 'Enhanced AI Analysis' : 'Analyze Property'}
+          </div>
         )}
-        <span className="font-medium">
-          {isGeneratingAnalysis 
-            ? 'Analyzing with AI...' 
-            : analysisError 
-              ? 'Try Again' 
-              : useLocalAnalysis 
-                ? 'Analyze Property (Demo Mode)' 
-                : 'Analyze Property'}
-        </span>
-        
-        {isGeneratingAnalysis && (
-          <div className="ml-2 h-5 w-5 rounded-full border-t-2 border-r-2 border-tiptop-purple animate-spin" />
-        )}
-      </motion.button>
+      </Button>
       
-      <motion.button 
-        onClick={toggleAnalysisMode}
-        className="text-xs text-white/80 hover:text-white underline flex items-center gap-1 bg-black/20 px-3 py-1 rounded-full border border-white/10 backdrop-blur-sm"
-        whileHover={{ scale: 1.05 }}
-        animate={{ opacity: 1, y: 0 }}
-        initial={{ opacity: 0, y: 5 }}
-        transition={{ delay: 0.3 }}
-      >
-        {useLocalAnalysis ? (
-          <>Try AI Analysis (Requires API Key)</>
-        ) : (
-          <>Switch to Demo Mode (No API Key Needed)</>
-        )}
-      </motion.button>
+      {!analysisStarted && (
+        <p className="text-center text-sm text-gray-400 mt-2">
+          {user ? (
+            <>🚀 Multi-source analysis with Google Solar + GPT-4o</>
+          ) : (
+            <>🏠 Basic property analysis - sign in for enhanced features</>
+          )}
+        </p>
+      )}
     </div>
   );
 };
