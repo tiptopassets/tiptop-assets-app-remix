@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { imageUrlToBase64, generateMapImageUrls } from '@/contexts/ModelGeneration/utils';
 import { AnalysisResults } from './types';
@@ -45,10 +44,10 @@ export const generatePropertyAnalysis = async ({
     setIsGeneratingAnalysis(true);
     setIsAnalyzing(true);
     
-    // If using local analysis (fallback mode), generate mock data
+    // If using local analysis (fallback mode), generate mock data with coordinates
     if (useLocalAnalysis) {
       setTimeout(() => {
-        const mockResults = generateLocalMockAnalysis(propertyAddress);
+        const mockResults = generateLocalMockAnalysis(propertyAddress, addressCoordinates || undefined);
         setAnalysisResults(mockResults);
         setAnalysisComplete(true);
         setIsGeneratingAnalysis(false);
@@ -155,7 +154,7 @@ export const generatePropertyAnalysis = async ({
         description: "Switching to demo mode. Results will be approximate. You can manually adjust values.",
       });
       
-      // Try again with local analysis
+      // Try again with local analysis - now with coordinates
       return generatePropertyAnalysis({
         propertyAddress,
         addressCoordinates,

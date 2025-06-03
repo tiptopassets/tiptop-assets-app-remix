@@ -1,8 +1,8 @@
-
 import { AnalysisResults } from './types';
+import { getMarketData } from '@/utils/marketDataService';
 
 // Helper function to generate mock analysis data for local testing
-export const generateLocalMockAnalysis = (address: string): AnalysisResults => {
+export const generateLocalMockAnalysis = (address: string, coordinates?: google.maps.LatLngLiteral): AnalysisResults => {
   // Determine property type based on address keywords
   const isApartment = /apartment|apt|flat|condo|unit/i.test(address);
   const isRural = /farm|ranch|rural|country|acres/i.test(address);
@@ -30,9 +30,18 @@ export const generateLocalMockAnalysis = (address: string): AnalysisResults => {
     hasPool = Math.random() > 0.5; // 50% chance of pool
   }
   
-  // Calculate financials based on property features
+  // Get market data for pricing if coordinates are available
+  let marketData = null;
+  let parkingDayRate = 10; // Default fallback rate
+  
+  if (coordinates) {
+    marketData = getMarketData(coordinates);
+    parkingDayRate = marketData.parkingRates;
+  }
+  
+  // Calculate financials based on property features and market data
   const solarRevenue = Math.round((roofSize * 0.7) / 15 * 0.15 * 30); // Simplified solar revenue
-  const parkingRevenue = parkingSpaces * 10 * 20; // $10/day, 20 days/month average
+  const parkingRevenue = parkingSpaces * parkingDayRate * 20; // Use market-based rate, 20 days/month average
   const gardenRevenue = Math.round(gardenArea * 0.02); // Simple garden revenue estimate
   const poolRevenue = hasPool ? Math.round(poolSize * 0.4) : 0; // Pool rental revenue if present
   const storageRevenue = Math.round(roofSize * 0.1); // Storage revenue
@@ -184,7 +193,7 @@ export const generateLocalMockAnalysis = (address: string): AnalysisResults => {
     },
     parking: {
       spaces: parkingSpaces,
-      rate: 10,
+      rate: parkingDayRate, // Use market-based rate
       revenue: parkingRevenue,
       evChargerPotential: Math.random() > 0.5
     },
