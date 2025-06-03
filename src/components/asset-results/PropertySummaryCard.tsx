@@ -112,30 +112,30 @@ const PropertySummaryCard: React.FC<PropertySummaryCardProps> = ({
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               {analysisResults.rooftop && (
                 <div className="bg-white/5 p-3 rounded">
-                  <h4 className="text-xs text-gray-400">Roof Area</h4>
-                  <p className="text-white font-semibold">{analysisResults.rooftop.area} sq ft</p>
-                  <div className="flex justify-between items-center">
-                    <p className="text-xs text-tiptop-purple">${analysisResults.rooftop.revenue}/mo</p>
+                  <div className="flex justify-between items-start mb-2">
+                    <h4 className="text-xs text-gray-400">Roof Area</h4>
                     {analysisResults.rooftop.solarPotential && (
                       <Badge variant="outline" className="text-xs bg-green-500/20 text-green-300 border-green-500/30">
                         Solar Ready
                       </Badge>
                     )}
                   </div>
+                  <p className="text-white font-semibold">{analysisResults.rooftop.area} sq ft</p>
+                  <p className="text-xs text-tiptop-purple">${analysisResults.rooftop.revenue}/mo</p>
                 </div>
               )}
               {analysisResults.parking && (
                 <div className="bg-white/5 p-3 rounded">
-                  <h4 className="text-xs text-gray-400">Parking</h4>
-                  <p className="text-white font-semibold">{analysisResults.parking.spaces} spaces</p>
-                  <div className="flex justify-between items-center">
-                    <p className="text-xs text-tiptop-purple">${analysisResults.parking.revenue}/mo</p>
+                  <div className="flex justify-between items-start mb-2">
+                    <h4 className="text-xs text-gray-400">Parking</h4>
                     {analysisResults.parking.evChargerPotential && (
                       <Badge variant="outline" className="text-xs bg-blue-500/20 text-blue-300 border-blue-500/30">
                         EV Ready
                       </Badge>
                     )}
                   </div>
+                  <p className="text-white font-semibold">{analysisResults.parking.spaces} spaces</p>
+                  <p className="text-xs text-tiptop-purple">${analysisResults.parking.revenue}/mo</p>
                   {analysisResults.parking.rate && (
                     <p className="text-xs text-gray-400">${analysisResults.parking.rate}/day rate</p>
                   )}
@@ -158,14 +158,14 @@ const PropertySummaryCard: React.FC<PropertySummaryCardProps> = ({
               {/* Internet Sharing Card */}
               {analysisResults.bandwidth && analysisResults.bandwidth.revenue > 0 && (
                 <div className="bg-white/5 p-3 rounded">
-                  <h4 className="text-xs text-gray-400">Internet Sharing</h4>
-                  <p className="text-white font-semibold">{analysisResults.bandwidth.available} GB</p>
-                  <div className="flex justify-between items-center">
-                    <p className="text-xs text-tiptop-purple">${analysisResults.bandwidth.revenue}/mo</p>
+                  <div className="flex justify-between items-start mb-2">
+                    <h4 className="text-xs text-gray-400">Internet Sharing</h4>
                     <Badge variant="outline" className="text-xs bg-purple-500/20 text-purple-300 border-purple-500/30">
                       Passive Income
                     </Badge>
                   </div>
+                  <p className="text-white font-semibold">{analysisResults.bandwidth.available} GB</p>
+                  <p className="text-xs text-tiptop-purple">${analysisResults.bandwidth.revenue}/mo</p>
                 </div>
               )}
             </div>
