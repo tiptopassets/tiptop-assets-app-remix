@@ -7,8 +7,6 @@ import { SelectedAsset } from '@/types/analysis';
 import { BundleRecommendation } from '@/contexts/ServiceProviders/types';
 import PartnerRegistrationFlow from '@/components/enhanced-analysis/PartnerRegistrationFlow';
 import ServiceAvailabilityChecker from '@/components/property-analysis/ServiceAvailabilityChecker';
-import { Button } from '@/components/ui/button';
-import { ChevronDown, ChevronUp } from 'lucide-react';
 
 // Existing components
 import PropertySummaryCard from './PropertySummaryCard';
@@ -32,7 +30,6 @@ const AssetResultList = () => {
   const [selectedBundle, setSelectedBundle] = useState<BundleRecommendation | null>(null);
   const [showPartnerRegistration, setShowPartnerRegistration] = useState(false);
   const [recommendedPartners, setRecommendedPartners] = useState([]);
-  const [showAdditionalContent, setShowAdditionalContent] = useState(false); // New state for collapsible content
   const navigate = useNavigate();
   const { additionalOpportunities } = useAdditionalOpportunities();
 
@@ -269,6 +266,23 @@ const AssetResultList = () => {
         isCollapsed={false}
       />
 
+      {/* Service Availability Section */}
+      {addressCoordinates && address && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.3 }}
+          className="mb-8"
+        >
+          <div className="bg-black/40 backdrop-blur-md rounded-lg border border-white/10 p-4 md:p-6">
+            <ServiceAvailabilityChecker 
+              coordinates={addressCoordinates}
+              address={address}
+            />
+          </div>
+        </motion.div>
+      )}
+
       <AssetOpportunitiesGrid
         opportunities={analysisResults.topOpportunities}
         selectedAssets={selectedAssets}
@@ -280,38 +294,6 @@ const AssetResultList = () => {
         selectedAssets={selectedAssets}
         onAssetToggle={handleAssetToggle}
       />
-
-      {/* Collapsible Section for Additional Content */}
-      <div className="mb-6">
-        <Button
-          variant="ghost"
-          onClick={() => setShowAdditionalContent(!showAdditionalContent)}
-          className="w-full flex items-center justify-between p-4 bg-white/5 rounded-lg border border-white/10 hover:bg-white/10 text-white"
-        >
-          <h3 className="text-lg font-semibold">Service Availability & Providers</h3>
-          {showAdditionalContent ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
-        </Button>
-        
-        {showAdditionalContent && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.3 }}
-            className="mt-4 space-y-4"
-          >
-            {/* Service Availability Section */}
-            {addressCoordinates && address && (
-              <div className="bg-black/40 backdrop-blur-md rounded-lg border border-white/10 p-4 md:p-6">
-                <ServiceAvailabilityChecker 
-                  coordinates={addressCoordinates}
-                  address={address}
-                />
-              </div>
-            )}
-          </motion.div>
-        )}
-      </div>
       
       {!showFormSection && (
         <ContinueButton
