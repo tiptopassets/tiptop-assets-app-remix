@@ -5,6 +5,7 @@ import { AnalysisResults } from '@/contexts/GoogleMapContext/types';
 import { Button } from '@/components/ui/button';
 import { ChevronDown, ChevronUp, CheckCircle } from 'lucide-react';
 import { useGoogleMap } from '@/contexts/GoogleMapContext';
+import PropertyTypeDetector from '@/components/property-analysis/PropertyTypeDetector';
 
 interface PropertySummaryCardProps {
   analysisResults: AnalysisResults;
@@ -42,9 +43,28 @@ const PropertySummaryCard: React.FC<PropertySummaryCardProps> = ({
               <CheckCircle className="text-green-500 h-6 w-6 mr-2" />
               Property Analysis Complete
             </h2>
-            <p className="text-sm text-gray-400 mb-4">
+            <p className="text-sm text-gray-400 mb-3">
               Analysis for {address}
             </p>
+            
+            {/* Property Type Section */}
+            <div className="mb-4">
+              <PropertyTypeDetector 
+                propertyType={analysisResults.propertyType} 
+                confidence={0.85}
+              />
+            </div>
+
+            {/* Analysis Summary Section */}
+            {analysisResults.imageAnalysisSummary && (
+              <div className="mb-4 p-3 bg-white/5 rounded-lg border border-white/10">
+                <h4 className="text-sm font-medium text-tiptop-purple mb-2">Analysis Summary:</h4>
+                <p className="text-sm text-gray-300 leading-relaxed">
+                  {analysisResults.imageAnalysisSummary}
+                </p>
+              </div>
+            )}
+
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <p className="text-sm text-gray-400">Selected Assets</p>

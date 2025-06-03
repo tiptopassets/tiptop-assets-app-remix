@@ -8,7 +8,6 @@ interface MapMarkerProps {
 
 const MapMarker = ({ mapInstance, coordinates }: MapMarkerProps) => {
   const markerRef = useRef<google.maps.Marker | null>(null);
-  const roofHighlightRef = useRef<google.maps.Polygon | null>(null);
 
   useEffect(() => {
     if (!mapInstance) return;
@@ -16,11 +15,6 @@ const MapMarker = ({ mapInstance, coordinates }: MapMarkerProps) => {
     // If there's already a marker, remove it
     if (markerRef.current) {
       markerRef.current.setMap(null);
-    }
-    
-    // If there's already a roof highlight, remove it
-    if (roofHighlightRef.current) {
-      roofHighlightRef.current.setMap(null);
     }
 
     // Create custom marker
@@ -87,82 +81,6 @@ const MapMarker = ({ mapInstance, coordinates }: MapMarkerProps) => {
     
     pinGlowOverlay.setMap(mapInstance);
     
-    // Create a roof highlight effect - approximate the building footprint
-    // We'll create a square polygon around the coordinates to simulate the roof
-    const roofSize = 0.0003; // Approximately size of small building footprint in lat/lng coordinates
-    
-    const roofCoordinates = [
-      { lat: coordinates.lat - roofSize, lng: coordinates.lng - roofSize },
-      { lat: coordinates.lat - roofSize, lng: coordinates.lng + roofSize },
-      { lat: coordinates.lat + roofSize, lng: coordinates.lng + roofSize },
-      { lat: coordinates.lat + roofSize, lng: coordinates.lng - roofSize },
-    ];
-    
-    // Create the roof highlight polygon
-    roofHighlightRef.current = new google.maps.Polygon({
-      paths: roofCoordinates,
-      strokeColor: '#9333EA',
-      strokeOpacity: 0.8,
-      strokeWeight: 2,
-      fillColor: '#9333EA',
-      fillOpacity: 0.35,
-      map: mapInstance,
-      zIndex: 1
-    });
-    
-    // Add animation for roof highlight
-    const roofAnimationOverlay = new google.maps.OverlayView();
-    roofAnimationOverlay.onAdd = function() {
-      const div = document.createElement('div');
-      div.className = 'roof-highlight';
-      div.style.position = 'absolute';
-      div.style.width = '120px';
-      div.style.height = '120px';
-      div.style.border = '2px solid rgba(147, 51, 234, 0.8)';
-      div.style.backgroundColor = 'rgba(147, 51, 234, 0.2)';
-      div.style.animation = 'roof-pulse 2s infinite';
-      
-      const styleElement = document.createElement('style');
-      styleElement.textContent = `
-        @keyframes roof-pulse {
-          0% {
-            transform: scale(0.95);
-            box-shadow: 0 0 0 0 rgba(147, 51, 234, 0.7);
-          }
-          
-          70% {
-            transform: scale(1);
-            box-shadow: 0 0 0 10px rgba(147, 51, 234, 0);
-          }
-          
-          100% {
-            transform: scale(0.95);
-            box-shadow: 0 0 0 0 rgba(147, 51, 234, 0);
-          }
-        }
-      `;
-      document.head.appendChild(styleElement);
-      
-      this.getPanes().overlayLayer.appendChild(div);
-      this.div_ = div;
-    };
-    
-    roofAnimationOverlay.draw = function() {
-      if (!this.div_) return;
-      // Calculate the center point of the roof
-      const center = {
-        lat: coordinates.lat,
-        lng: coordinates.lng
-      };
-      const position = this.getProjection().fromLatLngToDivPixel(center);
-      if (position) {
-        this.div_.style.left = (position.x - 60) + 'px';
-        this.div_.style.top = (position.y - 60) + 'px';
-      }
-    };
-    
-    roofAnimationOverlay.setMap(mapInstance);
-    
     // Center map on the address with smooth animation
     mapInstance.panTo(coordinates);
     mapInstance.setZoom(18);
@@ -171,11 +89,7 @@ const MapMarker = ({ mapInstance, coordinates }: MapMarkerProps) => {
       if (markerRef.current) {
         markerRef.current.setMap(null);
       }
-      if (roofHighlightRef.current) {
-        roofHighlightRef.current.setMap(null);
-      }
       pinGlowOverlay.setMap(null);
-      roofAnimationOverlay.setMap(null);
     };
   }, [mapInstance, coordinates]);
 
