@@ -24,7 +24,9 @@ const Index = () => {
 
   // Collapse UI elements when analysis is complete
   useEffect(() => {
-    setIsCollapsed(analysisComplete);
+    if (analysisComplete) {
+      setIsCollapsed(true);
+    }
   }, [analysisComplete]);
 
   // Show loading screen while auth is initializing
@@ -76,28 +78,40 @@ const Index = () => {
 
         {/* Main content */}
         <main className="flex-1 w-full flex flex-col items-center justify-start px-4 md:px-6 transition-all duration-500">
-          <div className={`text-center mb-6 md:mb-8 transform transition-all duration-500 ${isCollapsed ? 'scale-0 h-0 mb-0' : 'scale-100'}`}>
-            <h1 className="text-3xl md:text-5xl font-bold text-white mb-2 drop-shadow-lg">
-              {isAnalyzing ? "Analyzing Your Home Assets..." : "Monetize Your Home Assets"}
-            </h1>
-          </div>
+          {/* Hero section - only show when not analyzing and not complete */}
+          {!isAnalyzing && !analysisComplete && (
+            <div className="text-center mb-6 md:mb-8 transform transition-all duration-500">
+              <h1 className="text-3xl md:text-5xl font-bold text-white mb-2 drop-shadow-lg">
+                Monetize Your Home Assets
+              </h1>
+            </div>
+          )}
 
+          {/* Search and analyze section */}
           <div className="flex flex-col items-center gap-4 w-full max-w-full md:max-w-md">
             <SearchBar isCollapsed={isCollapsed} />
             {!isAnalyzing && !analysisComplete && <AnalyzeButton />}
           </div>
 
-          {/* Asset Icons and Results */}
-          <div className={`mt-8 w-full flex flex-col justify-center items-center ${analysisComplete ? 'mt-4' : ''}`}>
-            {!analysisComplete && !isAnalyzing && <AssetIcons />}
-            <AssetResultList />
-          </div>
+          {/* Asset Icons - only show when not analyzing and not complete */}
+          {!isAnalyzing && !analysisComplete && (
+            <div className="mt-8 w-full flex flex-col justify-center items-center">
+              <AssetIcons />
+            </div>
+          )}
+
+          {/* Analysis Results */}
+          {(analysisComplete || isAnalyzing) && (
+            <div className="mt-8 w-full flex flex-col justify-center items-center">
+              <AssetResultList />
+            </div>
+          )}
 
           {/* 3D Model Viewer */}
           {(analysisComplete || isAnalyzing) && <HomeModelViewer />}
         </main>
         
-        {/* Footer with carousel - pushed much lower, especially on mobile */}
+        {/* Footer with carousel - only show when not analyzing and not complete */}
         {!analysisComplete && !isAnalyzing && !hasAddress && (
           <footer className="w-full mt-auto">
             <div className={`py-20 md:py-32 ${isMobile ? 'pb-36' : ''}`}></div>
