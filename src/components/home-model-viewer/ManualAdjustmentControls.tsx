@@ -1,7 +1,8 @@
 
 import React from 'react';
 import { AnalysisResults as PropertyAnalysis } from '@/types/analysis';
-import { getMarketData } from '@/utils/marketDataService';
+import { validateParkingRevenue } from '@/utils/revenueValidator';
+import { ensureCoordinates, getValidatedMarketData } from '@/contexts/GoogleMapContext/coordinateService';
 import { Slider } from '@/components/ui/slider';
 import { Label } from '@/components/ui/label';
 import { Info } from 'lucide-react';
@@ -14,6 +15,7 @@ interface ManualAdjustmentControlsProps {
   showManualAdjustment: boolean;
   setShowManualAdjustment: (show: boolean) => void;
   coordinates?: google.maps.LatLngLiteral;
+  address?: string;
 }
 
 const ManualAdjustmentControls = ({ 
@@ -21,61 +23,45 @@ const ManualAdjustmentControls = ({
   setLocalAnalysis, 
   showManualAdjustment, 
   setShowManualAdjustment,
-  coordinates 
+  coordinates,
+  address = ''
 }: ManualAdjustmentControlsProps) => {
   
-  // Calculate parking revenue based on spaces and market rate with validation
-  const calculateParkingRevenue = (spaces: number, rate: number) => {
-    // Assuming average occupancy of 67% (20 days out of 30 days per month)
-    const calculated = Math.round(spaces * rate * 20);
-    // ADDED: Cap revenue at reasonable amount to prevent unrealistic values
-    const maxReasonable = 1000; // $1000/month cap
-    return Math.min(calculated, maxReasonable);
-  };
-  
-  // Handle adjustments to values like parking spaces
-  const handleParkingSpacesChange = (value: number[]) => {
+  // Handle adjustments to parking spaces with centralized validation
+  const handleParkingSpacesChange = async (value: number[]) => {
     const newSpaces = value[0];
     
-    // FIXED: Always get fresh market data to ensure consistency
-    let marketParkingRate = 10; // Default fallback
-    if (coordinates) {
-      const marketData = getMarketData(coordinates);
-      marketParkingRate = marketData.parkingRates;
-      
-      // ADDED: Apply property-type specific adjustments
-      const isCommercial = localAnalysis.propertyType.toLowerCase().includes('commercial');
-      const isHotel = localAnalysis.propertyType.toLowerCase().includes('hotel');
-      
-      if (isCommercial) {
-        marketParkingRate = Math.min(marketParkingRate * 1.5, 25); // Cap at $25/day
-      } else if (isHotel) {
-        marketParkingRate = Math.min(marketParkingRate * 1.3, 20); // Cap at $20/day
-      }
-      
-      console.log("🅿️ Using fresh market parking rate with property adjustments:", {
-        original: marketData.parkingRates,
-        adjusted: marketParkingRate,
-        propertyType: localAnalysis.propertyType
-      });
-    } else {
-      console.log("⚠️ No coordinates available, using fallback rate");
-    }
+    console.log('🔧 Manual adjustment: parking spaces changed to', newSpaces);
     
-    // Update the parking spaces and recalculate the revenue using fresh market rate
-    const updatedRevenue = calculateParkingRevenue(newSpaces, marketParkingRate);
+    // Ensure coordinates are available for market data
+    const coordinateResult = await ensureCoordinates(address, coordinates);
+    const marketData = getValidatedMarketData(coordinateResult);
+    
+    console.log('📊 Using market data for adjustment:', {
+      coordinates: coordinateResult.coordinates,
+      source: coordinateResult.source,
+      parkingRate: marketData.parkingRates
+    });
+    
+    // Use centralized parking validation
+    const validationResult = validateParkingRevenue(
+      newSpaces,
+      marketData.parkingRates,
+      localAnalysis.propertyType,
+      20 // 20 days per month
+    );
     
     const updatedAnalysis = {
       ...localAnalysis,
       parking: {
         ...localAnalysis.parking,
         spaces: newSpaces,
-        rate: marketParkingRate, // Always use fresh market rate
-        revenue: updatedRevenue
+        rate: marketData.parkingRates,
+        revenue: validationResult.validatedRevenue
       }
     };
     
-    // Update any related top opportunities with consistent rate
+    // Update related top opportunities with consistent data
     const parkingOpportunityIndex = updatedAnalysis.topOpportunities.findIndex(
       opp => opp.title.toLowerCase().includes('parking')
     );
@@ -83,44 +69,45 @@ const ManualAdjustmentControls = ({
     if (parkingOpportunityIndex >= 0) {
       updatedAnalysis.topOpportunities[parkingOpportunityIndex] = {
         ...updatedAnalysis.topOpportunities[parkingOpportunityIndex],
-        monthlyRevenue: updatedRevenue,
-        description: `Rent out ${newSpaces} parking spaces at $${marketParkingRate}/day when not in use.`
+        monthlyRevenue: validationResult.validatedRevenue,
+        description: `Rent out ${newSpaces} parking spaces at $${marketData.parkingRates}/day when not in use.`
       };
     }
     
-    console.log("📊 Updated parking analysis:", {
+    console.log('✅ Manual adjustment complete:', {
       spaces: newSpaces,
-      rate: marketParkingRate,
-      revenue: updatedRevenue,
-      calculationUsed: `${newSpaces} spaces × $${marketParkingRate}/day × 20 days = $${updatedRevenue}/month`,
-      propertyType: localAnalysis.propertyType
+      rate: marketData.parkingRates,
+      revenue: validationResult.validatedRevenue,
+      wasAdjusted: validationResult.wasAdjusted,
+      reason: validationResult.reason
     });
     
     setLocalAnalysis(updatedAnalysis);
   };
 
-  // FIXED: Get current market rate for display purposes with property adjustments
-  const getCurrentMarketRate = () => {
-    if (coordinates) {
-      const marketData = getMarketData(coordinates);
-      let rate = marketData.parkingRates;
-      
-      // Apply property-type specific adjustments
-      const isCommercial = localAnalysis.propertyType.toLowerCase().includes('commercial');
-      const isHotel = localAnalysis.propertyType.toLowerCase().includes('hotel');
-      
-      if (isCommercial) {
-        rate = Math.min(rate * 1.5, 25); // Cap at $25/day
-      } else if (isHotel) {
-        rate = Math.min(rate * 1.3, 20); // Cap at $20/day
-      }
-      
-      return rate;
+  // Get current market rate for display with coordinate fallback
+  const getCurrentMarketRate = async () => {
+    try {
+      const coordinateResult = await ensureCoordinates(address, coordinates);
+      const marketData = getValidatedMarketData(coordinateResult);
+      return marketData.parkingRates;
+    } catch (error) {
+      console.error('Error getting market rate:', error);
+      return localAnalysis.parking.rate || 10;
     }
-    return localAnalysis.parking.rate || 10;
   };
 
-  const currentMarketRate = getCurrentMarketRate();
+  // Calculate current expected revenue
+  const calculateExpectedRevenue = async (spaces: number) => {
+    const marketRate = await getCurrentMarketRate();
+    const validationResult = validateParkingRevenue(
+      spaces,
+      marketRate,
+      localAnalysis.propertyType,
+      20
+    );
+    return validationResult.validatedRevenue;
+  };
 
   return (
     <>
@@ -141,14 +128,14 @@ const ManualAdjustmentControls = ({
             <TooltipContent>
               <p className="text-xs max-w-xs">
                 Our AI sometimes misinterprets property features from satellite imagery. 
-                Adjust values here to get more accurate monetization estimates.
+                Adjust values here to get more accurate monetization estimates using real market data.
               </p>
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
       </div>
       
-      {/* Manual Adjustment Controls - Collapsed by default */}
+      {/* Manual Adjustment Controls */}
       {showManualAdjustment && (
         <div className="mb-6 p-4 bg-white/5 rounded-lg border border-white/10">
           <h3 className="text-sm font-medium mb-4">Adjust Property Values</h3>
@@ -158,35 +145,35 @@ const ManualAdjustmentControls = ({
             <div className="flex justify-between">
               <Label className="text-sm">Parking Spaces: {localAnalysis.parking.spaces}</Label>
               <span className="text-xs text-gray-400">
-                ${calculateParkingRevenue(localAnalysis.parking.spaces, currentMarketRate)}/mo
+                ${localAnalysis.parking.revenue}/mo (validated)
               </span>
             </div>
             <Slider
               defaultValue={[localAnalysis.parking.spaces]}
-              max={20} // INCREASED: Allow up to 20 spaces for commercial properties
+              max={20}
               min={0}
               step={1}
               onValueChange={handleParkingSpacesChange}
               className="mt-2"
             />
             <div className="text-xs text-gray-400 mt-1">
-              Rate: ${currentMarketRate}/day ({localAnalysis.propertyType} rate) × 20 days/month
+              Rate: ${localAnalysis.parking.rate}/day ({localAnalysis.propertyType} market rate) × 20 days/month
             </div>
             <div className="text-xs text-gray-500 mt-1">
-              Max revenue capped at $1,000/month for realism
+              Revenue automatically validated using market data and property type
             </div>
           </div>
           
-          {/* Property Type Info */}
-          <div className="text-xs text-gray-400 mt-3">
+          {/* Coordinate Status Info */}
+          <div className="text-xs text-gray-400 mt-3 p-2 bg-white/5 rounded">
             <p>
-              <strong>Detected Property Type:</strong> {localAnalysis.propertyType}
+              <strong>Market Data Source:</strong> {coordinates ? 'Precise coordinates' : 'Estimated location'}
             </p>
             <p className="mt-1">
-              Rates are automatically adjusted based on property type. Commercial properties have higher base rates.
+              <strong>Property Type:</strong> {localAnalysis.propertyType}
             </p>
             <p className="mt-1">
-              Adjust values to match your property's actual features for more accurate estimates.
+              Rates are automatically calculated using validated market data for your location and property type.
             </p>
           </div>
         </div>

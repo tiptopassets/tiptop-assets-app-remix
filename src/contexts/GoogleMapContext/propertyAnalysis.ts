@@ -1,7 +1,10 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { imageUrlToBase64, generateMapImageUrls } from '@/contexts/ModelGeneration/utils';
 import { AnalysisResults } from './types';
 import { generateLocalMockAnalysis } from './mockAnalysisGenerator';
+import { processPropertyAnalysis } from './dataFlowManager';
+import { ensureCoordinates } from './coordinateService';
 import { toast } from '@/hooks/use-toast';
 
 interface AnalysisParams {
@@ -44,10 +47,14 @@ export const generatePropertyAnalysis = async ({
     setIsGeneratingAnalysis(true);
     setIsAnalyzing(true);
     
-    // If using local analysis (fallback mode), generate mock data with coordinates
+    // Ensure coordinates are always available using centralized service
+    const coordinateResult = await ensureCoordinates(propertyAddress, addressCoordinates);
+    console.log("📍 Ensured coordinates:", coordinateResult);
+    
+    // If using local analysis (fallback mode), generate mock data with guaranteed coordinates
     if (useLocalAnalysis) {
-      setTimeout(() => {
-        const mockResults = generateLocalMockAnalysis(propertyAddress, addressCoordinates || undefined);
+      setTimeout(async () => {
+        const mockResults = await generateLocalMockAnalysis(propertyAddress, coordinateResult.coordinates);
         setAnalysisResults(mockResults);
         setAnalysisComplete(true);
         setIsGeneratingAnalysis(false);
@@ -57,15 +64,15 @@ export const generatePropertyAnalysis = async ({
           title: "Analysis Complete",
           description: `Found ${mockResults.topOpportunities.length} monetization opportunities for your property (Demo mode)`,
         });
-      }, 2000); // Simulate a delay
+      }, 2000);
       return;
     }
     
     // Get satellite image if we have coordinates
     let satelliteImage = null;
-    if (addressCoordinates) {
+    if (coordinateResult.coordinates) {
       try {
-        const mapUrls = await generateMapImageUrls(addressCoordinates);
+        const mapUrls = await generateMapImageUrls(coordinateResult.coordinates);
         satelliteImage = await imageUrlToBase64(mapUrls.satelliteImageUrl);
         console.log("Captured satellite image for analysis");
       } catch (err) {
@@ -73,24 +80,19 @@ export const generatePropertyAnalysis = async ({
       }
     }
     
-    // Show toast notification about image analysis
-    if (satelliteImage) {
-      toast({
-        title: "Processing Images",
-        description: "Using AI to analyze satellite imagery for your property",
-      });
-    } else {
-      toast({
-        title: "Processing Address",
-        description: "Using address data for property analysis",
-      });
-    }
+    // Show toast notification about processing
+    toast({
+      title: "Processing Property",
+      description: coordinateResult.source === 'provided' 
+        ? "Using precise coordinates for analysis"
+        : `Using ${coordinateResult.source} coordinates (confidence: ${Math.round(coordinateResult.confidence * 100)}%)`,
+    });
     
-    // Call Supabase Edge Function to generate property analysis with GPT
+    // Call Supabase Edge Function with guaranteed coordinates
     const { data, error } = await supabase.functions.invoke('analyze-property', {
       body: { 
         address: propertyAddress,
-        coordinates: addressCoordinates,
+        coordinates: coordinateResult.coordinates,
         satelliteImage: satelliteImage,
         forceLocalAnalysis: false
       }
@@ -108,7 +110,7 @@ export const generatePropertyAnalysis = async ({
         // Retry with local analysis
         return generatePropertyAnalysis({
           propertyAddress,
-          addressCoordinates,
+          addressCoordinates: coordinateResult.coordinates,
           useLocalAnalysis: true,
           setIsGeneratingAnalysis,
           setIsAnalyzing,
@@ -123,14 +125,22 @@ export const generatePropertyAnalysis = async ({
     }
     
     if (data && data.analysis) {
-      // Set the analysis results from GPT
-      setAnalysisResults(data.analysis);
+      // Process the analysis results through centralized data flow manager
+      const processedResult = await processPropertyAnalysis(data.analysis, {
+        address: propertyAddress,
+        coordinates: coordinateResult.coordinates,
+        propertyType: data.analysis.propertyType,
+        useRealData: true
+      });
+      
+      setAnalysisResults(processedResult.analysisResults);
       setAnalysisComplete(true);
       
-      // Show toast with insight summary
+      // Show toast with validation summary
+      const validationSummary = processedResult.validationLog.join(', ');
       toast({
         title: "Analysis Complete",
-        description: `Found ${data.analysis.topOpportunities.length} monetization opportunities for your property`,
+        description: `Found ${processedResult.analysisResults.topOpportunities.length} opportunities. ${validationSummary}`,
       });
     } else {
       throw new Error("No analysis data received");
@@ -139,7 +149,7 @@ export const generatePropertyAnalysis = async ({
   } catch (error) {
     console.error("Error generating property analysis:", error);
     
-    // If we encounter any API error, fall back to local analysis
+    // If we encounter any API error, fall back to local analysis with guaranteed coordinates
     if (error instanceof Error && 
         (error.message.includes('OpenAI') || 
          error.message.includes('quota') || 
@@ -147,17 +157,18 @@ export const generatePropertyAnalysis = async ({
          error.message.includes('geocode') ||
          error.message.includes('coordinates'))) {
       
-      console.log("API error, switching to fallback mode");
+      console.log("API error, switching to fallback mode with guaranteed coordinates");
       setUseLocalAnalysis(true);
       toast({
         title: "API Connection Issue",
-        description: "Switching to demo mode. Results will be approximate. You can manually adjust values.",
+        description: "Switching to demo mode with market-based estimates.",
       });
       
-      // Try again with local analysis - now with coordinates
+      // Try again with local analysis and guaranteed coordinates
+      const coordinateResult = await ensureCoordinates(propertyAddress, addressCoordinates);
       return generatePropertyAnalysis({
         propertyAddress,
-        addressCoordinates,
+        addressCoordinates: coordinateResult.coordinates,
         useLocalAnalysis: true,
         setIsGeneratingAnalysis,
         setIsAnalyzing,
