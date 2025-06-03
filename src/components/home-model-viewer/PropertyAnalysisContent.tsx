@@ -31,7 +31,7 @@ const PropertyAnalysisContent = ({
   address 
 }: PropertyAnalysisContentProps) => {
   const [localAnalysis, setLocalAnalysis] = useState<PropertyAnalysis>(analysisResults);
-  const [showManualAdjustment, setShowManualAdjustment] = useState(false);
+  const [showManualAdjustment, setShowManualAdjustment] = useState(false); // Start collapsed by default
   const [activeTab, setActiveTab] = useState('overview');
   
   // Handle adjustments to values like parking spaces
@@ -139,7 +139,7 @@ const PropertyAnalysisContent = ({
             </TooltipProvider>
           </div>
           
-          {/* Manual Adjustment Controls */}
+          {/* Manual Adjustment Controls - Collapsed by default */}
           {showManualAdjustment && (
             <div className="mb-6 p-4 bg-white/5 rounded-lg border border-white/10">
               <h3 className="text-sm font-medium mb-4">Adjust Property Values</h3>
