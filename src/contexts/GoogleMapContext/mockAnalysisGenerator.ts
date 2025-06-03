@@ -47,20 +47,26 @@ export const generateLocalMockAnalysis = (address: string, coordinates?: google.
     console.log("⚠️ No coordinates available, using default rates");
   }
   
-  // Calculate financials based on property features and market data
+  // FIXED: Use consistent parking revenue calculation - 67% occupancy rate (20 days out of 30)
+  const parkingRevenue = Math.round(parkingSpaces * parkingDayRate * 20);
+  
+  console.log("💰 Parking revenue calculation:", {
+    spaces: parkingSpaces,
+    dayRate: parkingDayRate,
+    daysPerMonth: 20,
+    formula: `${parkingSpaces} spaces × $${parkingDayRate}/day × 20 days = $${parkingRevenue}/month`
+  });
+  
+  // Calculate other financials based on property features and market data
   const solarRevenue = Math.round((roofSize * 0.7) / 15 * 0.15 * solarSavings); // Use market-based solar savings
-  // FIXED: Use market-based parking rate consistently - 67% occupancy rate (20 days out of 30)
-  const parkingRevenue = Math.round(parkingSpaces * parkingDayRate * 20); // Market-based rate
   const gardenRevenue = Math.round(gardenArea * 0.02); // Simple garden revenue estimate
   const poolRevenue = hasPool ? Math.round(poolSize * 0.4) : 0; // Pool rental revenue if present
   const storageRevenue = Math.round(roofSize * 0.1); // Storage revenue
   const bandwidthRevenue = 35; // Fixed internet sharing revenue
   
-  console.log("💰 Revenue calculations:", {
+  console.log("💰 All revenue calculations:", {
     solar: solarRevenue,
     parking: parkingRevenue,
-    parkingRate: parkingDayRate,
-    parkingSpaces,
     garden: gardenRevenue,
     pool: poolRevenue,
     storage: storageRevenue,
@@ -98,13 +104,13 @@ export const generateLocalMockAnalysis = (address: string, coordinates?: google.
     });
   }
   
-  // Add parking if available - FIXED: Use consistent market-based description
+  // FIXED: Add parking with consistent market-based calculation and description
   if (parkingSpaces > 0) {
     opportunities.push({
       icon: "parking",
       title: "Parking Space Rental",
-      monthlyRevenue: parkingRevenue,
-      description: `Rent out ${parkingSpaces} parking spaces at $${parkingDayRate}/day when not in use.`,
+      monthlyRevenue: parkingRevenue, // FIXED: Use the consistent calculation
+      description: `Rent out ${parkingSpaces} parking spaces at $${parkingDayRate}/day when not in use.`, // FIXED: Use actual market rate in description
       provider: "SpotHero",
       setupCost: 0,
       roi: 1,
@@ -214,7 +220,7 @@ export const generateLocalMockAnalysis = (address: string, coordinates?: google.
     parking: {
       spaces: parkingSpaces,
       rate: parkingDayRate, // FIXED: Use market-based rate consistently
-      revenue: parkingRevenue
+      revenue: parkingRevenue // FIXED: Use consistent calculation
     },
     pool: {
       present: hasPool,
@@ -239,6 +245,12 @@ export const generateLocalMockAnalysis = (address: string, coordinates?: google.
     topOpportunities: opportunities.slice(0, 5)
   };
   
-  console.log("✅ Generated analysis result:", result);
+  console.log("✅ Generated analysis result with consistent parking calculations:", {
+    parkingSpaces: result.parking.spaces,
+    parkingRate: result.parking.rate,
+    parkingRevenue: result.parking.revenue,
+    parkingOpportunityRevenue: opportunities.find(o => o.title.includes("Parking"))?.monthlyRevenue
+  });
+  
   return result;
 };
