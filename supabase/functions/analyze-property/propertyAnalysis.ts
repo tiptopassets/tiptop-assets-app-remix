@@ -1,11 +1,11 @@
-
 import { PropertyInfo, ImageAnalysis, PropertyAnalysis } from './types.ts';
 import { extractStructuredData } from './dataExtraction.ts';
+import { validateAndCorrectRevenue, getMarketDataForValidation } from './marketDataValidator.ts';
 
 const GPT_API_KEY = Deno.env.get('GPT') || '';
 
 /**
- * Generates a comprehensive property analysis using OpenAI
+ * Generates a comprehensive property analysis using OpenAI with enhanced validation
  */
 export async function generatePropertyAnalysis(propertyInfo: PropertyInfo, imageAnalysis: ImageAnalysis): Promise<PropertyAnalysis> {
   if (!GPT_API_KEY) {
@@ -13,7 +13,7 @@ export async function generatePropertyAnalysis(propertyInfo: PropertyInfo, image
     throw new Error('OpenAI API key not configured');
   }
   
-  const systemPrompt = createSystemPrompt();
+  const systemPrompt = createEnhancedSystemPrompt();
   const userPrompt = createUserPrompt(propertyInfo, imageAnalysis);
   
   console.log('Calling OpenAI API for property analysis...');
@@ -25,12 +25,12 @@ export async function generatePropertyAnalysis(propertyInfo: PropertyInfo, image
       'Authorization': `Bearer ${GPT_API_KEY}`
     },
     body: JSON.stringify({
-      model: 'gpt-4o-mini', // Using a more affordable model for text analysis
+      model: 'gpt-4o-mini',
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userPrompt }
       ],
-      temperature: 0.5,
+      temperature: 0.3, // Lower temperature for more consistent results
       max_tokens: 2500
     })
   });
@@ -53,79 +53,76 @@ export async function generatePropertyAnalysis(propertyInfo: PropertyInfo, image
   console.log('Raw GPT response:', content);
   
   // Generate the analysis data
-  const analysisData = extractStructuredData(content);
+  let analysisData = extractStructuredData(content);
   
-  // Apply validation and realistic constraints
+  // Apply market-based validation and corrections
+  if (propertyInfo.coordinates) {
+    analysisData = validateAndCorrectRevenue(
+      analysisData, 
+      propertyInfo.coordinates, 
+      propertyInfo.propertyType || analysisData.propertyType
+    );
+  }
+  
+  // Apply final validation and realistic constraints
   return validateAndNormalizeAnalysis(analysisData, propertyInfo.propertyType);
 }
 
 /**
- * Creates the system prompt for OpenAI with stronger emphasis on reality-checking
+ * Creates an enhanced system prompt with explicit revenue constraints
  */
-function createSystemPrompt(): string {
+function createEnhancedSystemPrompt(): string {
   return `You are a real estate and property monetization expert with deep knowledge of service providers. Analyze this property information and identify specific monetization opportunities for the owner, with STRICTLY ACCURATE and realistic valuation assessments.
 
-CRITICAL INSTRUCTION: First determine if the property is a single-family home, multi-family home, apartment building, commercial property, or other type. Your analysis MUST be appropriate for the correct property type.
+CRITICAL REVENUE CONSTRAINTS - DO NOT EXCEED THESE LIMITS:
 
-1. Rooftop solar potential - use the roof size estimate from image analysis if available
-   - Calculate potential solar capacity in kW (approx. 15 sq ft per 1 kW)
-   - Realistically estimate monthly revenue from solar panels (use $100-150 per kW)
-   - Consider roof type and orientation from image analysis
-   - Recommend specific solar providers like SunRun, Tesla Solar, Sunpower
-   - Provide accurate setup costs and ROI timeline
+SOLAR REVENUE LIMITS:
+- Residential properties: MAXIMUM $200/month
+- Commercial properties: MAXIMUM $500/month
+- Calculate as: (roof_area_sqft × 0.7 usable × 15W per sqft × 4 hours × 30 days × $0.15/kWh) / 1000
+- Example: 1500 sqft roof = 1050 usable × 15W = 15.75kW × 4h × 30d = 1890 kWh × $0.15 = $284/month (too high, cap at $200)
 
-2. Parking spaces rental - use the parking space count from image analysis if available
-   - BE EXTREMELY REALISTIC AND CONSERVATIVE with parking space counts:
-     * Single-family homes typically have 1-3 spaces MAXIMUM
-     * Multi-family homes typically have 1-2 spaces per unit
-     * Apartment buildings often have shared parking (do not assume individual spaces are available)
-   - Calculate monthly revenue potential with realistic rates based on location
-   - Suggest specific platforms like Neighbor, ParkingPanda, SpotHero
-   - Evaluate EV charger potential and associated additional revenue
+PARKING REVENUE LIMITS:
+- MAXIMUM rate: $50/day per space
+- Residential homes: MAXIMUM 3 spaces
+- Commercial properties: MAXIMUM 20 spaces
+- Calculate as: spaces × daily_rate × 20_days_per_month
+- Example: 2 spaces × $15/day × 20 days = $600/month (acceptable)
+- Example: 5 spaces × $25/day × 20 days = $2500/month (too high, reduce spaces to 3 max)
 
-3. Storage space rental
-   - Single-family homes may have garage or basement space
-   - Apartment buildings typically do NOT have extra storage unless explicitly mentioned
-   - Calculate monthly revenue potential ($1-2 per sq ft)
-   - Recommend services like Neighbor, STOW IT
-   - Include setup costs and barriers to entry
+POOL REVENUE LIMITS:
+- MAXIMUM $800/month for any pool
+- Calculate based on pool size and local demand
+- Example: 400 sqft pool = max $400/month
 
-4. Garden/yard rental or urban farming - use the garden size estimate from image analysis if available
-   - Single-family homes may have yards, apartment buildings typically do NOT
-   - Assess suitability for urban farming based on image analysis
-   - Calculate rental potential with specific dollar amounts
-   - Recommend platforms like Peerspace, YardYum
-   - Estimate startup costs for different garden use cases
+OTHER LIMITS:
+- Garden rental: MAXIMUM $200/month
+- Internet bandwidth: MAXIMUM $50/month
+- Storage space: MAXIMUM $300/month
 
-5. Swimming pool rental if present - use pool information from image analysis
-   - ONLY if you can confidently detect a pool in the image analysis
-   - Estimate hourly/daily rental rates based on pool size and type
-   - Calculate monthly revenue during swimming season
-   - Suggest platforms like Swimply
-   - Include maintenance considerations in valuation
+PROPERTY TYPE DETECTION:
+First determine if the property is:
+1. Single-family home (1-3 parking spaces max, roof access likely)
+2. Apartment/Condo (1-2 parking spaces max, no roof access typically)
+3. Commercial property (5-20 parking spaces max, large roof potential)
+4. Multi-family (varies by units)
 
-6. Internet bandwidth sharing
-   - Estimate potential revenue based on location (typically $5-50 per month)
-   - Recommend services like Honeygain
-   - Provide setup steps and requirements
-   - Include typical earnings in the area
+Your analysis MUST be appropriate for the correct property type and NEVER exceed the revenue limits above.
 
-7. Property valuation
-   - Provide a comprehensive valuation of the entire property's monetization potential
-   - Calculate total monthly and annual revenue potential
-   - Rank opportunities by profitability
-   - Estimate total setup costs and ROI timeline
-
-For each opportunity, provide highly specific estimates based on what you can realistically see in the image:
-- BE EXTREMELY REALISTIC AND CONSERVATIVE with counts and measurements - NEVER exaggerate
-- If you cannot confidently determine a feature exists, DO NOT include it
+For each opportunity, provide highly specific estimates based on what you can realistically see:
+- BE EXTREMELY REALISTIC AND CONSERVATIVE with counts and measurements
 - Installation/setup costs with dollar amounts
-- Monthly revenue potential with realistic ranges based on market data
+- Monthly revenue potential within the strict limits above
 - Recommended service providers with URLs
 - Any regulatory considerations or permits required
 - ROI timeline in months
 
-Your analysis must be data-driven, realistic, actionable, and include complete information for all applicable categories. DO NOT exaggerate opportunities or include features that aren't clearly visible.`;
+EXAMPLE REALISTIC OUTPUTS:
+- Single-family home solar: $120/month (not $12,000)
+- Driveway parking (2 spaces): $400/month (not $4,000)
+- Pool rental: $300/month (not $6,000)
+
+Your analysis must be data-driven, realistic, actionable, and stay within all revenue constraints. DO NOT exaggerate opportunities.`;
 }
 
 /**
@@ -153,21 +150,43 @@ function createUserPrompt(propertyInfo: PropertyInfo, imageAnalysis: ImageAnalys
     }
   }
 
+  // Add market context if coordinates are available
+  let marketContext = "";
+  if (propertyInfo.coordinates) {
+    const marketData = getMarketDataForValidation(propertyInfo.coordinates);
+    marketContext = `
+
+MARKET CONTEXT FOR THIS LOCATION:
+- Average parking rate in area: $${marketData.parkingRates}/day
+- Solar savings potential: $${marketData.solarSavings}/month average
+- Market trend: ${marketData.marketTrend}
+
+Use this market data to inform your revenue estimates and ensure they align with local conditions.`;
+  }
+
   return `Here is the property information: ${JSON.stringify(propertyInfo)}
     
 Here is the satellite image analysis: ${JSON.stringify(imageAnalysis)}
 
 IMPORTANT: Based on the address and image analysis, the property appears to be a "${propertyTypeHint}" type, but make your own determination.
 
-CRITICAL RULES:
-- Be extremely realistic and conservative in your assessments
-- For parking spaces: single-family homes have 1-3 spaces MAX, apartment units typically have 1 space
-- For solar panels, only estimate based on visible roof area in proper orientation
-- For swimming pools, only include if clearly detected
-- For garden space, estimate conservatively based on visible yard area
-- For apartment buildings, do NOT assume individual residents can rent out common areas or shared facilities
+${marketContext}
 
-Please analyze this property and generate a comprehensive assessment of monetization opportunities with specific service provider recommendations and accurate valuations. Return your analysis as a JSON object with the following structure:
+CRITICAL RULES - THESE ARE NON-NEGOTIABLE:
+- Solar revenue: MAX $200/month residential, MAX $500/month commercial
+- Parking rates: MAX $50/day per space
+- Parking spaces: MAX 3 for residential, MAX 20 for commercial
+- Pool revenue: MAX $800/month
+- For parking: calculate as (spaces × daily_rate × 20_days), cap total at $1000/month
+- For solar: use realistic calculations based on roof size, never exceed caps
+
+EXAMPLES OF CORRECT OUTPUTS:
+- 1800 sqft residential roof → $150/month solar revenue
+- 2 parking spaces at $20/day → $800/month parking revenue
+- 500 sqft pool → $350/month rental revenue
+
+Please analyze this property and generate a comprehensive assessment with realistic valuations that stay within all limits. Return your analysis as a JSON object with the following structure:
+
 {
   "propertyType": "single_family|apartment|commercial|multi_family",
   "amenities": ["array", "of", "amenities"],
@@ -176,10 +195,8 @@ Please analyze this property and generate a comprehensive assessment of monetiza
     "type": "flat/pitched/etc",
     "solarCapacity": kilowatts, 
     "solarPotential": boolean,
-    "revenue": dollars_per_month,
-    "providers": [
-      {"name": "Provider Name", "setupCost": dollars, "roi": months, "url": "provider_url"}
-    ]
+    "revenue": dollars_per_month_MAX_200_residential_500_commercial,
+    "providers": [...]
   },
   "garden": { 
     "area": number_in_sqft, 
@@ -190,9 +207,9 @@ Please analyze this property and generate a comprehensive assessment of monetiza
     ]
   },
   "parking": { 
-    "spaces": number, 
-    "rate": dollars_per_day, 
-    "revenue": dollars_per_month,
+    "spaces": number_MAX_3_residential_20_commercial, 
+    "rate": dollars_per_day_MAX_50, 
+    "revenue": dollars_per_month_calculated_correctly,
     "evChargerPotential": boolean,
     "providers": [
       {"name": "Provider Name", "setupCost": dollars, "roi": months, "url": "provider_url"}
@@ -202,7 +219,7 @@ Please analyze this property and generate a comprehensive assessment of monetiza
     "present": boolean, 
     "area": number_in_sqft, 
     "type": "inground/above-ground", 
-    "revenue": dollars_per_month,
+    "revenue": dollars_per_month_MAX_800,
     "providers": [
       {"name": "Provider Name", "setupCost": dollars, "fee": percentage, "url": "provider_url"}
     ]
@@ -260,7 +277,7 @@ Please analyze this property and generate a comprehensive assessment of monetiza
   }
 }
 
-IMPORTANT: Make sure to provide complete information for ALL applicable categories. If data is limited, use reasonable estimates based on location and property type. Don't omit any relevant fields.`;
+REMEMBER: All revenue values must be realistic and within the specified limits!`;
 }
 
 /**

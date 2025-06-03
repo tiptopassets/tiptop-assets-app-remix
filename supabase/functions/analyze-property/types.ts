@@ -1,119 +1,86 @@
-export interface AnalysisRequest {
-  address: string;
-  coordinates?: { lat: number; lng: number } | null;
-  satelliteImage?: string | null;
-}
-
 export interface PropertyInfo {
   address: string;
-  coordinates?: { lat: number; lng: number } | null;
-  details: any;
-  solarData?: SolarApiData | null;
+  coordinates?: google.maps.LatLngLiteral;
+  details?: any;
+  solarData?: any;
+  propertyType?: string; // Added property type field
+}
+
+export interface AnalysisRequest {
+  address: string;
+  coordinates?: google.maps.LatLngLiteral;
+  satelliteImage?: string;
+  forceLocalAnalysis?: boolean;
 }
 
 export interface ImageAnalysis {
-  roofSize?: number | null;
-  roofType?: string | null;
-  solarPotential?: string | null;
-  parkingSpaces?: number | null;
-  gardenArea?: number | null;
-  gardenPotential?: string | null;
-  poolPresent?: boolean;
-  poolSize?: number | null;
-  poolType?: string | null;
-  fullAnalysis?: string;
-}
-
-export interface SolarApiData {
-  roofTotalAreaSqFt: number;
-  solarPotential: boolean;
-  maxSolarCapacityKW: number;
-  yearlyEnergyKWh: number;
-  panelsCount: number;
-  averageHoursOfSunPerYear: number;
-  carbonOffsetKg: number;
-  monthlyRevenue: number;
-  setupCost: number;
-  roofSegments: any[];
-  financialAnalysis?: {
-    initialYearlyProduction: number;
-    federalIncentiveValue: number;
-    panelLifetimeYears: number;
-  };
-}
-
-export interface ProviderInfo {
-  name: string;
-  setupCost?: number;
-  roi?: number;
-  fee?: string | number;
-  url?: string;
+  roofSize?: number;
+  parkingSpaces?: number;
+  gardenArea?: number;
+  hasPool?: boolean;
+  poolSize?: number;
+  solarPotential?: string;
 }
 
 export interface PropertyAnalysis {
   propertyType: string;
   amenities: string[];
   rooftop: {
-    area: number | null;
-    type?: string | null;
-    solarCapacity: number | null;
+    area: number;
+    type?: string;
+    solarCapacity: number;
     solarPotential?: boolean;
     revenue: number;
-    providers?: ProviderInfo[];
+    providers?: any[];
+    usingRealSolarData?: boolean;
+    yearlyEnergyKWh?: number;
+    panelsCount?: number;
+    setupCost?: number;
   };
   garden: {
-    area: number | null;
+    area: number;
     opportunity: string;
     revenue: number;
-    providers?: ProviderInfo[];
+    providers?: any[];
   };
   parking: {
     spaces: number;
     rate: number;
     revenue: number;
     evChargerPotential?: boolean;
-    parkingType?: string;
-    providers?: ProviderInfo[];
+    providers?: any[];
   };
   pool: {
     present: boolean;
-    area: number | null;
-    type: string | null;
+    area: number;
+    type: string;
     revenue: number;
-    providers?: ProviderInfo[];
+    providers?: any[];
   };
   storage: {
     volume: number;
     revenue: number;
-    providers?: ProviderInfo[];
+    providers?: any[];
   };
   bandwidth: {
     available: number;
     revenue: number;
-    providers?: ProviderInfo[];
+    providers?: any[];
   };
   shortTermRental: {
     nightlyRate: number;
     monthlyProjection: number;
-    providers?: ProviderInfo[];
+    providers?: any[];
   };
   permits: string[];
   restrictions: string | null;
-  topOpportunities: {
-    icon: string;
-    title: string;
-    monthlyRevenue: number;
-    description: string;
-    provider?: string;
-    setupCost?: number;
-    roi?: number;
-    formFields?: {
-      type: "text" | "number" | "select";
-      name: string;
-      label: string;
-      value: string | number;
-      options?: string[];
-    }[];
-  }[];
+  topOpportunities: any[];
   imageAnalysisSummary?: string;
+  propertyValuation?: {
+    totalMonthlyRevenue: number;
+    totalAnnualRevenue: number;
+    totalSetupCosts: number;
+    averageROI: number;
+    bestOpportunity: string;
+  };
 }

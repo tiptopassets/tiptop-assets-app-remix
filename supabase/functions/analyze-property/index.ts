@@ -1,9 +1,9 @@
-
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.43.1';
 import { corsHeaders } from '../_shared/cors.ts';
 import { analyzeImage } from './imageAnalysis.ts';
 import { generatePropertyAnalysis } from './propertyAnalysis.ts';
 import { extractStructuredData } from './dataExtraction.ts';
+import { validateAndCorrectRevenue } from './marketDataValidator.ts';
 import { AnalysisRequest, PropertyInfo, ImageAnalysis } from './types.ts';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') || '';
@@ -32,7 +32,6 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Create Supabase client
     const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     
     // Get property details from Google Maps API if coordinates aren't provided
@@ -143,14 +142,24 @@ Deno.serve(async (req) => {
       address: address,
       coordinates: propertyCoordinates,
       details: propertyDetails,
-      solarData: solarData // Add solar data to the property info
+      solarData: solarData,
+      propertyType: propertyDetails.type ? propertyDetails.type.join(', ') : undefined
     };
     
-    // Generate property analysis using AI
-    const analysis = await generatePropertyAnalysis(propertyInfo, imageAnalysis);
+    // Generate property analysis using AI with enhanced validation
+    let analysis = await generatePropertyAnalysis(propertyInfo, imageAnalysis);
     
-    // If we have solar data, enhance the analysis with it
+    // Apply additional validation with market data
+    if (propertyCoordinates) {
+      analysis = validateAndCorrectRevenue(analysis, propertyCoordinates, analysis.propertyType);
+      console.log('Applied market-based revenue validation');
+    }
+    
+    // If we have solar data, enhance the analysis with it (but validate the revenue)
     if (solarData) {
+      const maxSolarRevenue = analysis.propertyType?.toLowerCase().includes('commercial') ? 500 : 200;
+      const validatedSolarRevenue = Math.min(solarData.monthlyRevenue || 0, maxSolarRevenue);
+      
       analysis.rooftop = {
         ...analysis.rooftop,
         area: solarData.roofTotalAreaSqFt,
@@ -158,7 +167,7 @@ Deno.serve(async (req) => {
         solarPotential: solarData.solarPotential,
         yearlyEnergyKWh: solarData.yearlyEnergyKWh,
         panelsCount: solarData.panelsCount,
-        revenue: solarData.monthlyRevenue,
+        revenue: validatedSolarRevenue, // Use validated revenue
         setupCost: solarData.setupCost,
         usingRealSolarData: true
       };
@@ -171,13 +180,15 @@ Deno.serve(async (req) => {
       if (solarOpportunityIndex >= 0) {
         analysis.topOpportunities[solarOpportunityIndex] = {
           ...analysis.topOpportunities[solarOpportunityIndex],
-          monthlyRevenue: solarData.monthlyRevenue,
+          monthlyRevenue: validatedSolarRevenue,
           setupCost: solarData.setupCost,
-          roi: Math.ceil(solarData.setupCost / solarData.monthlyRevenue),
+          roi: Math.ceil(solarData.setupCost / validatedSolarRevenue),
           description: `Install ${solarData.panelsCount} solar panels producing ${solarData.yearlyEnergyKWh} kWh/year on your ${solarData.roofTotalAreaSqFt} sq ft roof.`,
           usingRealSolarData: true
         };
       }
+      
+      console.log(`Solar revenue validated: ${solarData.monthlyRevenue} → ${validatedSolarRevenue}`);
     }
     
     return new Response(
@@ -189,7 +200,8 @@ Deno.serve(async (req) => {
           coordinates: propertyCoordinates
         },
         imageAnalysis: imageAnalysis,
-        solarData: solarData
+        solarData: solarData,
+        validationApplied: true
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
