@@ -95,8 +95,9 @@ const MetricsGrid = ({ analysisResults }: MetricsGridProps) => {
                 </TooltipTrigger>
                 <TooltipContent>
                   <p className="text-xs max-w-xs">
-                    This is based on property type: {analysisResults.propertyType}. 
-                    You can adjust this value if needed.
+                    Rate: ${analysisResults.parking.rate || 10}/day (market-based) × 20 days/month
+                    <br />
+                    Property type: {analysisResults.propertyType}
                   </p>
                 </TooltipContent>
               </Tooltip>
@@ -108,6 +109,9 @@ const MetricsGrid = ({ analysisResults }: MetricsGridProps) => {
                   EV Ready
                 </Badge>
               )}
+            </div>
+            <div className="text-xs text-gray-400 mt-1">
+              ${analysisResults.parking.rate || 10}/day rate
             </div>
           </div>
         )}

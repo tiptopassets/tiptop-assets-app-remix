@@ -1,5 +1,5 @@
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { 
   ServiceProviderContextType, 
@@ -30,9 +30,9 @@ export const ServiceProviderProvider: React.FC<{ children: React.ReactNode }> = 
     providerData.setConnectedProviders
   );
 
-  // Update state when provider data changes
-  useEffect(() => {
-    setAvailableProviders(providerData.availableProviders.map(p => ({
+  // Memoize the update functions to prevent infinite loops
+  const updateProviderStates = useCallback(() => {
+    const newAvailableProviders = providerData.availableProviders.map(p => ({
       id: p.id,
       name: p.name,
       category: p.assetTypes[0] || 'general',
@@ -41,16 +41,16 @@ export const ServiceProviderProvider: React.FC<{ children: React.ReactNode }> = 
       website_url: p.url,
       affiliate_program_url: p.loginUrl,
       referral_link_template: p.referralLinkTemplate,
-      commission_rate: 5, // Default commission rate
+      commission_rate: 5,
       setup_cost: 0,
       avg_monthly_earnings_low: 25,
       avg_monthly_earnings_high: 150,
       conversion_rate: 2.5,
       priority: 1,
       is_active: true
-    })));
+    }));
     
-    setConnectedProviders(providerData.connectedProviders.map(p => ({
+    const newConnectedProviders = providerData.connectedProviders.map(p => ({
       id: p.id,
       user_id: user?.id || '',
       bundle_selection_id: '',
@@ -62,18 +62,37 @@ export const ServiceProviderProvider: React.FC<{ children: React.ReactNode }> = 
       first_commission_date: undefined,
       total_earnings: 0,
       last_sync_at: new Date().toISOString()
-    })));
+    }));
 
-    // Convert earnings array to record
-    const earningsRecord: Record<string, number> = {};
+    const newEarningsRecord: Record<string, number> = {};
     providerData.earnings.forEach(earning => {
-      earningsRecord[earning.service] = earning.earnings;
+      newEarningsRecord[earning.service] = earning.earnings;
     });
-    setEarnings(earningsRecord);
+    
+    // Only update if data has actually changed
+    setAvailableProviders(prev => {
+      const hasChanged = JSON.stringify(prev) !== JSON.stringify(newAvailableProviders);
+      return hasChanged ? newAvailableProviders : prev;
+    });
+    
+    setConnectedProviders(prev => {
+      const hasChanged = JSON.stringify(prev) !== JSON.stringify(newConnectedProviders);
+      return hasChanged ? newConnectedProviders : prev;
+    });
+    
+    setEarnings(prev => {
+      const hasChanged = JSON.stringify(prev) !== JSON.stringify(newEarningsRecord);
+      return hasChanged ? newEarningsRecord : prev;
+    });
     
     setIsLoading(providerData.isLoading);
     setError(providerData.error);
-  }, [providerData, user]);
+  }, [providerData, user?.id]);
+
+  // Update state when provider data changes, but only if necessary
+  useEffect(() => {
+    updateProviderStates();
+  }, [updateProviderStates]);
 
   // Wrapper functions to handle user ID automatically
   const connectToProvider = async (providerId: string) => {

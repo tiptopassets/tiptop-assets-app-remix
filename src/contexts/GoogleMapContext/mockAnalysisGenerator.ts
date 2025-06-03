@@ -49,7 +49,8 @@ export const generateLocalMockAnalysis = (address: string, coordinates?: google.
   
   // Calculate financials based on property features and market data
   const solarRevenue = Math.round((roofSize * 0.7) / 15 * 0.15 * solarSavings); // Use market-based solar savings
-  const parkingRevenue = parkingSpaces * parkingDayRate * 20; // Use market-based rate, 20 days/month average
+  // FIXED: Use market-based parking rate consistently - 67% occupancy rate (20 days out of 30)
+  const parkingRevenue = Math.round(parkingSpaces * parkingDayRate * 20); // Market-based rate
   const gardenRevenue = Math.round(gardenArea * 0.02); // Simple garden revenue estimate
   const poolRevenue = hasPool ? Math.round(poolSize * 0.4) : 0; // Pool rental revenue if present
   const storageRevenue = Math.round(roofSize * 0.1); // Storage revenue
@@ -97,13 +98,13 @@ export const generateLocalMockAnalysis = (address: string, coordinates?: google.
     });
   }
   
-  // Add parking if available
+  // Add parking if available - FIXED: Use consistent market-based description
   if (parkingSpaces > 0) {
     opportunities.push({
       icon: "parking",
       title: "Parking Space Rental",
       monthlyRevenue: parkingRevenue,
-      description: `Rent out your ${parkingSpaces} parking spaces at $${parkingDayRate}/day when not in use.`,
+      description: `Rent out ${parkingSpaces} parking spaces at $${parkingDayRate}/day when not in use.`,
       provider: "SpotHero",
       setupCost: 0,
       roi: 1,
@@ -212,9 +213,8 @@ export const generateLocalMockAnalysis = (address: string, coordinates?: google.
     },
     parking: {
       spaces: parkingSpaces,
-      rate: parkingDayRate, // Use market-based rate
-      revenue: parkingRevenue,
-      evChargerPotential: Math.random() > 0.5
+      rate: parkingDayRate, // FIXED: Use market-based rate consistently
+      revenue: parkingRevenue
     },
     pool: {
       present: hasPool,

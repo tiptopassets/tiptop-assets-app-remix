@@ -34,15 +34,17 @@ const ManualAdjustmentControls = ({
   const handleParkingSpacesChange = (value: number[]) => {
     const newSpaces = value[0];
     
-    // Get market-based parking rate for consistent calculation
+    // FIXED: Always get fresh market data to ensure consistency
     let marketParkingRate = 10; // Default fallback
     if (coordinates) {
       const marketData = getMarketData(coordinates);
       marketParkingRate = marketData.parkingRates;
-      console.log("🅿️ Using market parking rate:", marketParkingRate);
+      console.log("🅿️ Using fresh market parking rate:", marketParkingRate);
+    } else {
+      console.log("⚠️ No coordinates available, using fallback rate");
     }
     
-    // Update the parking spaces and recalculate the revenue using market rate
+    // Update the parking spaces and recalculate the revenue using fresh market rate
     const updatedRevenue = calculateParkingRevenue(newSpaces, marketParkingRate);
     
     const updatedAnalysis = {
@@ -50,12 +52,12 @@ const ManualAdjustmentControls = ({
       parking: {
         ...localAnalysis.parking,
         spaces: newSpaces,
-        rate: marketParkingRate, // Update rate to market rate
+        rate: marketParkingRate, // FIXED: Always use fresh market rate
         revenue: updatedRevenue
       }
     };
     
-    // Update any related top opportunities
+    // Update any related top opportunities with consistent rate
     const parkingOpportunityIndex = updatedAnalysis.topOpportunities.findIndex(
       opp => opp.title.toLowerCase().includes('parking')
     );
@@ -71,11 +73,23 @@ const ManualAdjustmentControls = ({
     console.log("📊 Updated parking analysis:", {
       spaces: newSpaces,
       rate: marketParkingRate,
-      revenue: updatedRevenue
+      revenue: updatedRevenue,
+      calculationUsed: `${newSpaces} spaces × $${marketParkingRate}/day × 20 days = $${updatedRevenue}/month`
     });
     
     setLocalAnalysis(updatedAnalysis);
   };
+
+  // FIXED: Get current market rate for display purposes
+  const getCurrentMarketRate = () => {
+    if (coordinates) {
+      const marketData = getMarketData(coordinates);
+      return marketData.parkingRates;
+    }
+    return localAnalysis.parking.rate || 10;
+  };
+
+  const currentMarketRate = getCurrentMarketRate();
 
   return (
     <>
@@ -113,7 +127,7 @@ const ManualAdjustmentControls = ({
             <div className="flex justify-between">
               <Label className="text-sm">Parking Spaces: {localAnalysis.parking.spaces}</Label>
               <span className="text-xs text-gray-400">
-                ${calculateParkingRevenue(localAnalysis.parking.spaces, localAnalysis.parking.rate || 10)}/mo
+                ${calculateParkingRevenue(localAnalysis.parking.spaces, currentMarketRate)}/mo
               </span>
             </div>
             <Slider
@@ -124,6 +138,9 @@ const ManualAdjustmentControls = ({
               onValueChange={handleParkingSpacesChange}
               className="mt-2"
             />
+            <div className="text-xs text-gray-400 mt-1">
+              Rate: ${currentMarketRate}/day (market-based) × 20 days/month
+            </div>
           </div>
           
           {/* Property Type Info */}
