@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { ChevronDown, ChevronUp, CheckCircle } from 'lucide-react';
 import { useGoogleMap } from '@/contexts/GoogleMapContext';
 import PropertyTypeDetector from '@/components/property-analysis/PropertyTypeDetector';
+import { Badge } from '@/components/ui/badge';
 
 interface PropertySummaryCardProps {
   analysisResults: AnalysisResults;
@@ -113,14 +114,28 @@ const PropertySummaryCard: React.FC<PropertySummaryCardProps> = ({
                 <div className="bg-white/5 p-3 rounded">
                   <h4 className="text-xs text-gray-400">Roof Area</h4>
                   <p className="text-white font-semibold">{analysisResults.rooftop.area} sq ft</p>
-                  <p className="text-xs text-tiptop-purple">${analysisResults.rooftop.revenue}/mo</p>
+                  <div className="flex justify-between items-center">
+                    <p className="text-xs text-tiptop-purple">${analysisResults.rooftop.revenue}/mo</p>
+                    {analysisResults.rooftop.solarPotential && (
+                      <Badge variant="outline" className="text-xs bg-green-500/20 text-green-300 border-green-500/30">
+                        Solar Ready
+                      </Badge>
+                    )}
+                  </div>
                 </div>
               )}
               {analysisResults.parking && (
                 <div className="bg-white/5 p-3 rounded">
                   <h4 className="text-xs text-gray-400">Parking</h4>
                   <p className="text-white font-semibold">{analysisResults.parking.spaces} spaces</p>
-                  <p className="text-xs text-tiptop-purple">${analysisResults.parking.revenue}/mo</p>
+                  <div className="flex justify-between items-center">
+                    <p className="text-xs text-tiptop-purple">${analysisResults.parking.revenue}/mo</p>
+                    {analysisResults.parking.evChargerPotential && (
+                      <Badge variant="outline" className="text-xs bg-blue-500/20 text-blue-300 border-blue-500/30">
+                        EV Ready
+                      </Badge>
+                    )}
+                  </div>
                   {analysisResults.parking.rate && (
                     <p className="text-xs text-gray-400">${analysisResults.parking.rate}/day rate</p>
                   )}
@@ -138,6 +153,19 @@ const PropertySummaryCard: React.FC<PropertySummaryCardProps> = ({
                   <h4 className="text-xs text-gray-400">Pool</h4>
                   <p className="text-white font-semibold">{analysisResults.pool.area} sq ft</p>
                   <p className="text-xs text-tiptop-purple">${analysisResults.pool.revenue}/mo</p>
+                </div>
+              )}
+              {/* Internet Sharing Card */}
+              {analysisResults.bandwidth && analysisResults.bandwidth.revenue > 0 && (
+                <div className="bg-white/5 p-3 rounded">
+                  <h4 className="text-xs text-gray-400">Internet Sharing</h4>
+                  <p className="text-white font-semibold">{analysisResults.bandwidth.available} GB</p>
+                  <div className="flex justify-between items-center">
+                    <p className="text-xs text-tiptop-purple">${analysisResults.bandwidth.revenue}/mo</p>
+                    <Badge variant="outline" className="text-xs bg-purple-500/20 text-purple-300 border-purple-500/30">
+                      Passive Income
+                    </Badge>
+                  </div>
                 </div>
               )}
             </div>
