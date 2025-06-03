@@ -3,34 +3,57 @@ import React, { createContext, useContext, useEffect, useState, useCallback } fr
 import { ServiceProviderContextType, ServiceProvider, BundleRecommendation } from './types';
 import { useProviderData } from './hooks/useProviderData';
 import { useProviderActions } from './hooks/useProviderActions';
+import { useAuth } from '@/contexts/AuthContext';
 
 const ServiceProviderContext = createContext<ServiceProviderContextType | undefined>(undefined);
 
 export const ServiceProviderProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [providers, setProviders] = useState<ServiceProvider[]>([]);
+  const { user } = useAuth();
   const [bundles, setBundles] = useState<BundleRecommendation[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
-  const { loadProviders, loadBundles } = useProviderData();
-  const { registerWithProvider, createBundle } = useProviderActions();
+  const {
+    availableProviders,
+    setAvailableProviders,
+    connectedProviders,
+    setConnectedProviders,
+    earnings,
+    setEarnings,
+    isLoading,
+    error
+  } = useProviderData();
 
-  // Memoize the load functions to prevent infinite loops
-  const memoizedLoadProviders = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const providerData = await loadProviders();
-      setProviders(providerData);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load providers');
-      console.error('Error loading providers:', err);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [loadProviders]);
+  const {
+    connectToProvider,
+    registerWithProvider,
+    disconnectProvider,
+    syncProviderEarnings,
+    generateReferralLink,
+    actionInProgress
+  } = useProviderActions(
+    availableProviders,
+    setAvailableProviders,
+    connectedProviders,
+    setConnectedProviders
+  );
 
-  const memoizedLoadBundles = useCallback(async () => {
+  // Mock functions for bundles - these can be implemented later
+  const loadBundles = useCallback(async (): Promise<BundleRecommendation[]> => {
+    // Mock implementation - replace with actual API call
+    return [];
+  }, []);
+
+  const createBundle = useCallback(async (bundleData: any): Promise<void> => {
+    // Mock implementation - replace with actual API call
+    console.log('Creating bundle:', bundleData);
+  }, []);
+
+  // Refresh functions
+  const refreshProviders = useCallback(async () => {
+    // The useProviderData hook already handles loading providers
+    // This is just a placeholder for the interface
+  }, []);
+
+  const refreshBundles = useCallback(async () => {
     try {
       const bundleData = await loadBundles();
       setBundles(bundleData);
@@ -39,21 +62,23 @@ export const ServiceProviderProvider: React.FC<{ children: React.ReactNode }> = 
     }
   }, [loadBundles]);
 
-  // Load data on mount only
-  useEffect(() => {
-    memoizedLoadProviders();
-    memoizedLoadBundles();
-  }, []); // Empty dependency array to run only on mount
+  // Wrapper for registerWithProvider to match expected signature
+  const wrappedRegisterWithProvider = useCallback(async (formData: any) => {
+    if (!user?.id) {
+      throw new Error('User not authenticated');
+    }
+    return registerWithProvider(formData, user.id);
+  }, [registerWithProvider, user?.id]);
 
   const value: ServiceProviderContextType = {
-    providers,
+    providers: availableProviders,
     bundles,
     isLoading,
     error,
-    registerWithProvider,
+    registerWithProvider: wrappedRegisterWithProvider,
     createBundle,
-    refreshProviders: memoizedLoadProviders,
-    refreshBundles: memoizedLoadBundles,
+    refreshProviders,
+    refreshBundles,
   };
 
   return (
