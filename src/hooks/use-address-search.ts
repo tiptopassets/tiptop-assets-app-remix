@@ -21,7 +21,6 @@ export const useAddressSearch = () => {
   const { toast } = useToast();
   const [hasSelectedAddress, setHasSelectedAddress] = useState(false);
   const { capturePropertyImages } = useModelGeneration();
-  const lastProcessedAddressRef = useRef<string>('');
 
   // Start analysis when an address is selected
   const startAnalysis = () => {
@@ -55,18 +54,8 @@ export const useAddressSearch = () => {
         
         const place = autocompleteRef.current.getPlace();
         if (place.geometry && place.geometry.location && mapInstance) {
-          const formattedAddress = place.formatted_address || '';
-          
-          // Prevent duplicate processing of the same address
-          if (lastProcessedAddressRef.current === formattedAddress) {
-            console.log('Duplicate address selection prevented:', formattedAddress);
-            return;
-          }
-          
-          lastProcessedAddressRef.current = formattedAddress;
-          
           // Set the address
-          setAddress(formattedAddress);
+          setAddress(place.formatted_address || '');
           setHasSelectedAddress(true);
           
           // Save coordinates
@@ -80,9 +69,10 @@ export const useAddressSearch = () => {
           mapInstance.setZoom(18);
           
           // Capture property images for 3D model generation
-          capturePropertyImages(formattedAddress, coordinates);
+          capturePropertyImages(place.formatted_address || '', coordinates);
           
-          console.log('Address selected and processed:', formattedAddress);
+          // Auto trigger analysis when address is selected
+          startAnalysis();
         }
       });
     } catch (error) {
@@ -120,13 +110,6 @@ export const useAddressSearch = () => {
       return () => clearTimeout(debounceTimeout);
     }
   }, [address, mapInstance, mapLoaded, hasSelectedAddress]);
-
-  // Reset last processed address when address is cleared
-  useEffect(() => {
-    if (!address) {
-      lastProcessedAddressRef.current = '';
-    }
-  }, [address]);
 
   return {
     searchInputRef,
