@@ -8,6 +8,8 @@ interface MarketData {
 }
 
 export const getMarketData = (coordinates: google.maps.LatLngLiteral): MarketData => {
+  console.log("📊 Calculating market data for coordinates:", coordinates);
+  
   // Estimate market data based on location
   const marketData: MarketData = {
     averageRent: getEstimatedRent(coordinates),
@@ -17,6 +19,7 @@ export const getMarketData = (coordinates: google.maps.LatLngLiteral): MarketDat
     confidence: 0.85
   };
   
+  console.log("📊 Market data calculated:", marketData);
   return marketData;
 };
 
@@ -45,17 +48,23 @@ const getEstimatedRent = (coords: google.maps.LatLngLiteral): number => {
 
   // Adjust rent based on distance from major city
   const distanceFactor = Math.max(0.3, 1 - minDistance * 10);
-  return Math.round(closestCity.rent * distanceFactor);
+  const estimatedRent = Math.round(closestCity.rent * distanceFactor);
+  console.log("🏠 Estimated rent:", estimatedRent, "for distance factor:", distanceFactor);
+  return estimatedRent;
 };
 
 const getEstimatedSolarSavings = (coords: google.maps.LatLngLiteral): number => {
   // Solar savings based on latitude (sun exposure)
   const latitudeFactor = Math.max(0.5, 1 - Math.abs(coords.lat - 35) / 20);
-  return Math.round(150 * latitudeFactor);
+  const solarSavings = Math.round(150 * latitudeFactor);
+  console.log("☀️ Estimated solar savings:", solarSavings, "for latitude factor:", latitudeFactor);
+  return solarSavings;
 };
 
 const getEstimatedParkingRates = (coords: google.maps.LatLngLiteral): number => {
   // Parking rates based on urban density estimation
   const urbanDensity = Math.max(0.3, 1 - Math.min(Math.abs(coords.lat - 40), Math.abs(coords.lng + 74)) / 10);
-  return Math.round(15 * urbanDensity);
+  const parkingRate = Math.round(15 * urbanDensity);
+  console.log("🅿️ Estimated parking rate:", parkingRate, "for urban density:", urbanDensity);
+  return parkingRate;
 };

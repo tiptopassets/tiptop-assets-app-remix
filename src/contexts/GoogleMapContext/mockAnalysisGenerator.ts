@@ -1,8 +1,11 @@
+
 import { AnalysisResults } from './types';
 import { getMarketData } from '@/utils/marketDataService';
 
 // Helper function to generate mock analysis data for local testing
 export const generateLocalMockAnalysis = (address: string, coordinates?: google.maps.LatLngLiteral): AnalysisResults => {
+  console.log("🏠 Generating mock analysis for:", address, coordinates);
+  
   // Determine property type based on address keywords
   const isApartment = /apartment|apt|flat|condo|unit/i.test(address);
   const isRural = /farm|ranch|rural|country|acres/i.test(address);
@@ -30,22 +33,38 @@ export const generateLocalMockAnalysis = (address: string, coordinates?: google.
     hasPool = Math.random() > 0.5; // 50% chance of pool
   }
   
-  // Get market data for pricing if coordinates are available
+  // Get market data for consistent pricing if coordinates are available
   let marketData = null;
   let parkingDayRate = 10; // Default fallback rate
+  let solarSavings = 150; // Default solar savings
   
   if (coordinates) {
     marketData = getMarketData(coordinates);
     parkingDayRate = marketData.parkingRates;
+    solarSavings = marketData.solarSavings;
+    console.log("📊 Market data retrieved:", { parkingRate: parkingDayRate, solarSavings });
+  } else {
+    console.log("⚠️ No coordinates available, using default rates");
   }
   
   // Calculate financials based on property features and market data
-  const solarRevenue = Math.round((roofSize * 0.7) / 15 * 0.15 * 30); // Simplified solar revenue
+  const solarRevenue = Math.round((roofSize * 0.7) / 15 * 0.15 * solarSavings); // Use market-based solar savings
   const parkingRevenue = parkingSpaces * parkingDayRate * 20; // Use market-based rate, 20 days/month average
   const gardenRevenue = Math.round(gardenArea * 0.02); // Simple garden revenue estimate
   const poolRevenue = hasPool ? Math.round(poolSize * 0.4) : 0; // Pool rental revenue if present
   const storageRevenue = Math.round(roofSize * 0.1); // Storage revenue
   const bandwidthRevenue = 35; // Fixed internet sharing revenue
+  
+  console.log("💰 Revenue calculations:", {
+    solar: solarRevenue,
+    parking: parkingRevenue,
+    parkingRate: parkingDayRate,
+    parkingSpaces,
+    garden: gardenRevenue,
+    pool: poolRevenue,
+    storage: storageRevenue,
+    bandwidth: bandwidthRevenue
+  });
   
   // Generate top opportunities sorted by revenue
   const opportunities = [];
@@ -84,7 +103,7 @@ export const generateLocalMockAnalysis = (address: string, coordinates?: google.
       icon: "parking",
       title: "Parking Space Rental",
       monthlyRevenue: parkingRevenue,
-      description: `Rent out your ${parkingSpaces} parking spaces when not in use.`,
+      description: `Rent out your ${parkingSpaces} parking spaces at $${parkingDayRate}/day when not in use.`,
       provider: "SpotHero",
       setupCost: 0,
       roi: 1,
@@ -176,7 +195,7 @@ export const generateLocalMockAnalysis = (address: string, coordinates?: google.
   // Sort opportunities by revenue (highest first)
   opportunities.sort((a, b) => b.monthlyRevenue - a.monthlyRevenue);
   
-  return {
+  const result = {
     propertyType: propertyType,
     amenities: [],
     rooftop: {
@@ -219,4 +238,7 @@ export const generateLocalMockAnalysis = (address: string, coordinates?: google.
     restrictions: null,
     topOpportunities: opportunities.slice(0, 5)
   };
+  
+  console.log("✅ Generated analysis result:", result);
+  return result;
 };

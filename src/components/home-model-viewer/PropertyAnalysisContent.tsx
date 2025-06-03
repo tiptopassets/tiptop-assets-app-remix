@@ -9,6 +9,7 @@ import SolarDashboard from '@/components/solar/SolarDashboard';
 import PropertyTypeDetector from '@/components/property-analysis/PropertyTypeDetector';
 import ServiceAvailabilityChecker from '@/components/property-analysis/ServiceAvailabilityChecker';
 import MarketPricingEngine from '@/components/property-analysis/MarketPricingEngine';
+import { getMarketData } from '@/utils/marketDataService';
 import { Slider } from '@/components/ui/slider';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
@@ -38,13 +39,24 @@ const PropertyAnalysisContent = ({
   const handleParkingSpacesChange = (value: number[]) => {
     const newSpaces = value[0];
     
-    // Update the parking spaces and recalculate the revenue
+    // Get market-based parking rate for consistent calculation
+    let marketParkingRate = 10; // Default fallback
+    if (coordinates) {
+      const marketData = getMarketData(coordinates);
+      marketParkingRate = marketData.parkingRates;
+      console.log("🅿️ Using market parking rate:", marketParkingRate);
+    }
+    
+    // Update the parking spaces and recalculate the revenue using market rate
+    const updatedRevenue = calculateParkingRevenue(newSpaces, marketParkingRate);
+    
     const updatedAnalysis = {
       ...localAnalysis,
       parking: {
         ...localAnalysis.parking,
         spaces: newSpaces,
-        revenue: calculateParkingRevenue(newSpaces, localAnalysis.parking.rate || 10)
+        rate: marketParkingRate, // Update rate to market rate
+        revenue: updatedRevenue
       }
     };
     
@@ -56,18 +68,24 @@ const PropertyAnalysisContent = ({
     if (parkingOpportunityIndex >= 0) {
       updatedAnalysis.topOpportunities[parkingOpportunityIndex] = {
         ...updatedAnalysis.topOpportunities[parkingOpportunityIndex],
-        monthlyRevenue: updatedAnalysis.parking.revenue,
-        description: `Rent out ${newSpaces} parking spaces at $${localAnalysis.parking.rate} per day.`
+        monthlyRevenue: updatedRevenue,
+        description: `Rent out ${newSpaces} parking spaces at $${marketParkingRate}/day when not in use.`
       };
     }
+    
+    console.log("📊 Updated parking analysis:", {
+      spaces: newSpaces,
+      rate: marketParkingRate,
+      revenue: updatedRevenue
+    });
     
     setLocalAnalysis(updatedAnalysis);
   };
   
-  // Calculate parking revenue based on spaces and rate
+  // Calculate parking revenue based on spaces and market rate
   const calculateParkingRevenue = (spaces: number, rate: number) => {
-    // Assuming average occupancy of 80% and 30 days per month
-    return Math.round(spaces * rate * 0.8 * 30);
+    // Assuming average occupancy of 67% (20 days out of 30 days per month)
+    return Math.round(spaces * rate * 20);
   };
   
   return (
