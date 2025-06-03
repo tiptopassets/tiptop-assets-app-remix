@@ -13,7 +13,7 @@ import { Slider } from '@/components/ui/slider';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Info, Sun } from 'lucide-react';
+import { Info, Sun, ChevronDown, ChevronUp } from 'lucide-react';
 import { Tooltip } from '@/components/ui/tooltip';
 import { TooltipProvider, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 
@@ -32,6 +32,7 @@ const PropertyAnalysisContent = ({
 }: PropertyAnalysisContentProps) => {
   const [localAnalysis, setLocalAnalysis] = useState<PropertyAnalysis>(analysisResults);
   const [showManualAdjustment, setShowManualAdjustment] = useState(false); // Start collapsed by default
+  const [showServiceProviders, setShowServiceProviders] = useState(false); // Start collapsed by default
   const [activeTab, setActiveTab] = useState('overview');
   
   // Handle adjustments to values like parking spaces
@@ -99,6 +100,72 @@ const PropertyAnalysisContent = ({
           />
         </div>
       )}
+
+      {/* Service Provider Recommendations - Collapsible Section */}
+      <div className="mb-6">
+        <Button
+          variant="ghost"
+          onClick={() => setShowServiceProviders(!showServiceProviders)}
+          className="w-full flex items-center justify-between p-4 bg-white/5 rounded-lg border border-white/10 hover:bg-white/10 text-white"
+        >
+          <h3 className="text-lg font-semibold">Service Provider Recommendations</h3>
+          {showServiceProviders ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+        </Button>
+        
+        {showServiceProviders && (
+          <div className="mt-4 space-y-4">
+            {/* Solar Panel Providers */}
+            <div className="bg-white/5 rounded-lg border border-white/10 p-4">
+              <h4 className="text-tiptop-purple font-medium mb-3">Solar Panel Providers</h4>
+              <div className="space-y-2">
+                <div className="flex justify-between items-center p-2 bg-white/5 rounded">
+                  <span className="text-white">SunRun</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-gray-400">$400000 • ROI: 60 mo</span>
+                    <Button size="sm" variant="outline" className="text-xs">
+                      Visit
+                    </Button>
+                  </div>
+                </div>
+                <div className="flex justify-between items-center p-2 bg-white/5 rounded">
+                  <span className="text-white">Tesla Solar</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-gray-400">$400000 • ROI: 60 mo</span>
+                    <Button size="sm" variant="outline" className="text-xs">
+                      Visit
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Parking Rental Platforms */}
+            <div className="bg-white/5 rounded-lg border border-white/10 p-4">
+              <h4 className="text-tiptop-purple font-medium mb-3">Parking Rental Platforms</h4>
+              <div className="space-y-2">
+                <div className="flex justify-between items-center p-2 bg-white/5 rounded">
+                  <span className="text-white">Neighbor</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-gray-400">ROI: 1 mo</span>
+                    <Button size="sm" variant="outline" className="text-xs">
+                      Visit
+                    </Button>
+                  </div>
+                </div>
+                <div className="flex justify-between items-center p-2 bg-white/5 rounded">
+                  <span className="text-white">SpotHero</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-gray-400">ROI: 1 mo</span>
+                    <Button size="sm" variant="outline" className="text-xs">
+                      Visit
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
 
       {/* Main Analysis Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">
