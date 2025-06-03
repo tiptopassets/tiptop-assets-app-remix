@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { AnalysisResults } from '@/contexts/GoogleMapContext/types';
@@ -23,7 +22,7 @@ const PropertySummaryCard: React.FC<PropertySummaryCardProps> = ({
   selectedAssetsCount,
   isCollapsed: initialCollapsed
 }) => {
-  const [isCollapsed, setIsCollapsed] = useState(true); // Always start collapsed
+  const [isCollapsed, setIsCollapsed] = useState(true); // Force start collapsed
   const { address } = useGoogleMap();
 
   const toggleCollapse = () => {
@@ -110,6 +109,7 @@ const PropertySummaryCard: React.FC<PropertySummaryCardProps> = ({
             className="pt-4 border-t border-white/10"
           >
             <h3 className="text-lg font-semibold text-white mb-4">Detailed Analysis</h3>
+            
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               {analysisResults.rooftop && (
                 <div className="bg-white/5 p-3 rounded">
