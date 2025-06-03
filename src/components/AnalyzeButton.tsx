@@ -1,6 +1,7 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { Progress } from '@/components/ui/progress';
 import { useGoogleMap } from '@/contexts/GoogleMapContext';
 import { useEnhancedAnalysis } from '@/hooks/useEnhancedAnalysis';
 import { useAuth } from '@/contexts/AuthContext';
@@ -19,6 +20,7 @@ const AnalyzeButton = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [analysisStarted, setAnalysisStarted] = useState(false);
+  const [progress, setProgress] = useState(0);
 
   const handleUnifiedAnalysis = async () => {
     if (!address) {
@@ -31,19 +33,35 @@ const AnalyzeButton = () => {
     }
 
     setAnalysisStarted(true);
+    setProgress(0);
+    
+    // Simulate progress updates
+    const progressInterval = setInterval(() => {
+      setProgress(prev => {
+        if (prev >= 90) {
+          clearInterval(progressInterval);
+          return 90;
+        }
+        return prev + Math.random() * 15;
+      });
+    }, 500);
     
     try {
       // First run the basic analysis
+      setProgress(30);
       await generatePropertyAnalysis(address);
+      setProgress(60);
       
       // If user is authenticated, also run enhanced analysis
       if (user) {
         const enhancedResult = await analyzeProperty(address);
+        setProgress(90);
         
         if (enhancedResult?.success) {
           // Merge the enhanced results with the basic analysis
           setAnalysisResults(enhancedResult.results);
           setAnalysisComplete(true);
+          setProgress(100);
           
           toast({
             title: "Enhanced Analysis Complete",
@@ -51,6 +69,7 @@ const AnalyzeButton = () => {
           });
         }
       } else {
+        setProgress(100);
         toast({
           title: "Basic Analysis Complete",
           description: "Property analysis completed. Sign in for enhanced AI analysis with Google Solar data."
@@ -63,6 +82,9 @@ const AnalyzeButton = () => {
         description: "There was an issue analyzing your property. Please try again.",
         variant: "destructive"
       });
+      setProgress(0);
+    } finally {
+      clearInterval(progressInterval);
     }
   };
 
@@ -97,6 +119,20 @@ const AnalyzeButton = () => {
           </div>
         )}
       </Button>
+      
+      {/* Progress Bar */}
+      {isLoading && (
+        <div className="mt-4 space-y-2">
+          <Progress 
+            value={progress} 
+            className="h-2 bg-black/40 border border-white/10"
+          />
+          <div className="flex justify-between text-xs text-gray-400">
+            <span>Analyzing property...</span>
+            <span>{Math.round(progress)}%</span>
+          </div>
+        </div>
+      )}
       
       {!analysisStarted && (
         <p className="text-center text-sm text-gray-400 mt-2">
