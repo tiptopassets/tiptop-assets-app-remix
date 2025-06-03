@@ -63,14 +63,14 @@ const ServiceAvailabilityChecker = ({ coordinates, address }: ServiceAvailabilit
     return (
       <div className="flex items-center gap-2">
         <AlertCircle className="h-4 w-4 text-yellow-500 animate-pulse" />
-        <span className="text-sm text-gray-600">Checking service availability...</span>
+        <span className="text-sm text-white/70">Analyzing market conditions...</span>
       </div>
     );
   }
 
   return (
-    <div className="space-y-2">
-      <h4 className="text-sm font-medium text-gray-700">Service Availability in Your Area</h4>
+    <div className="space-y-3">
+      <h4 className="text-sm font-medium text-white/90">Market Analysis & Service Coverage</h4>
       <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
         {services.map((service) => (
           <Badge
@@ -87,7 +87,7 @@ const ServiceAvailabilityChecker = ({ coordinates, address }: ServiceAvailabilit
           </Badge>
         ))}
       </div>
-      <div className="text-xs text-gray-500 space-y-1">
+      <div className="text-xs text-white/60 space-y-1">
         {services.filter(s => !s.available).map((service) => (
           <p key={service.serviceName}>
             <strong>{service.serviceName}:</strong> {service.reason}

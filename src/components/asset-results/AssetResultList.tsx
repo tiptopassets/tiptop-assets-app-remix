@@ -7,6 +7,8 @@ import { SelectedAsset } from '@/types/analysis';
 import { BundleRecommendation } from '@/contexts/ServiceProviders/types';
 import PartnerRegistrationFlow from '@/components/enhanced-analysis/PartnerRegistrationFlow';
 import ServiceAvailabilityChecker from '@/components/property-analysis/ServiceAvailabilityChecker';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { ChevronDown } from 'lucide-react';
 
 // Existing components
 import PropertySummaryCard from './PropertySummaryCard';
@@ -30,6 +32,7 @@ const AssetResultList = () => {
   const [selectedBundle, setSelectedBundle] = useState<BundleRecommendation | null>(null);
   const [showPartnerRegistration, setShowPartnerRegistration] = useState(false);
   const [recommendedPartners, setRecommendedPartners] = useState([]);
+  const [isPropertyInsightsOpen, setIsPropertyInsightsOpen] = useState(false);
   const navigate = useNavigate();
   const { additionalOpportunities } = useAdditionalOpportunities();
 
@@ -266,7 +269,7 @@ const AssetResultList = () => {
         isCollapsed={false}
       />
 
-      {/* Service Availability Section */}
+      {/* Property Insights Section */}
       {addressCoordinates && address && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -275,10 +278,24 @@ const AssetResultList = () => {
           className="mb-8"
         >
           <div className="bg-black/40 backdrop-blur-md rounded-lg border border-white/10 p-4 md:p-6">
-            <ServiceAvailabilityChecker 
-              coordinates={addressCoordinates}
-              address={address}
-            />
+            <Collapsible open={isPropertyInsightsOpen} onOpenChange={setIsPropertyInsightsOpen}>
+              <CollapsibleTrigger className="flex items-center justify-between w-full text-left">
+                <h3 className="text-lg font-semibold text-white">Property Insights</h3>
+                <ChevronDown 
+                  className={`h-4 w-4 text-white transition-transform duration-200 ${
+                    isPropertyInsightsOpen ? 'rotate-180' : ''
+                  }`} 
+                />
+              </CollapsibleTrigger>
+              <CollapsibleContent className="overflow-hidden transition-all duration-300 data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down">
+                <div className="pt-4">
+                  <ServiceAvailabilityChecker 
+                    coordinates={addressCoordinates}
+                    address={address}
+                  />
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
           </div>
         </motion.div>
       )}
