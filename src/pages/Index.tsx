@@ -14,29 +14,18 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import FooterCarousel from '@/components/FooterCarousel';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
-import { useToast } from '@/hooks/use-toast';
-import { Button } from '@/components/ui/button';
 
 const Index = () => {
-  const { isAnalyzing, analysisComplete, address, setUseLocalAnalysis } = useGoogleMap();
+  const { isAnalyzing, analysisComplete, address } = useGoogleMap();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const isMobile = useIsMobile();
   const hasAddress = !!address;
-  const { user, loading } = useAuth();
-  const { toast } = useToast();
+  const { loading } = useAuth();
 
   // Collapse UI elements when analysis is complete
   useEffect(() => {
     setIsCollapsed(analysisComplete);
   }, [analysisComplete]);
-
-  const handleSwitchToDemo = () => {
-    setUseLocalAnalysis(true);
-    toast({
-      title: "Demo Mode Activated",
-      description: "Using sample data for property analysis"
-    });
-  };
 
   // Show loading screen while auth is initializing
   if (loading) {
@@ -95,27 +84,9 @@ const Index = () => {
 
           <div className="flex flex-col items-center gap-4 w-full max-w-full md:max-w-md">
             <SearchBar isCollapsed={isCollapsed} />
-            {!isAnalyzing && !analysisComplete && <AnalyzeButton />}
+            {/* Always show the analyze button when address is available */}
+            <AnalyzeButton />
           </div>
-
-          {/* Demo Mode Button */}
-          {!isAnalyzing && !analysisComplete && (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.5 }}
-              className="mt-4"
-            >
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleSwitchToDemo}
-                className="text-xs text-gray-300 hover:text-white bg-black/20 hover:bg-black/40 border-gray-500/20"
-              >
-                Switch to Demo Mode (No API Key Needed)
-              </Button>
-            </motion.div>
-          )}
 
           {/* Asset Icons and Results */}
           <div className={`mt-8 w-full flex flex-col justify-center items-center ${analysisComplete ? 'mt-4' : ''}`}>

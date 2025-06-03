@@ -26,11 +26,12 @@ const AnalyzeButton = () => {
     setAnalysisStarted(true);
     
     try {
-      // First run the basic analysis
+      // Always run the basic analysis first
       await generatePropertyAnalysis(address);
       
-      // If user is authenticated, also run enhanced analysis
-      if (user) {
+      // Try to run enhanced analysis regardless of authentication status
+      // This provides full analysis for all users
+      try {
         const enhancedResult = await analyzeProperty(address);
         
         if (enhancedResult?.success) {
@@ -42,11 +43,18 @@ const AnalyzeButton = () => {
             title: "Enhanced Analysis Complete",
             description: `Property analysis completed with ${Math.round(enhancedResult.dataQuality.accuracyScore * 100)}% accuracy using multi-source data`
           });
+        } else {
+          // Fallback to basic analysis if enhanced fails
+          toast({
+            title: "Property Analysis Complete",
+            description: "Property analysis completed successfully."
+          });
         }
-      } else {
+      } catch (enhancedError) {
+        console.log('Enhanced analysis not available, using basic analysis:', enhancedError);
         toast({
-          title: "Basic Analysis Complete",
-          description: "Property analysis completed. Sign in for enhanced AI analysis with Google Solar data."
+          title: "Property Analysis Complete",
+          description: "Property analysis completed successfully."
         });
       }
     } catch (error) {
@@ -59,6 +67,7 @@ const AnalyzeButton = () => {
     }
   };
 
+  // Always show the button if there's an address
   if (!address) return null;
 
   const isLoading = isAnalyzing || isEnhancedLoading;
@@ -74,7 +83,7 @@ const AnalyzeButton = () => {
         {isLoading ? (
           <div className="flex items-center gap-2">
             <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-            {user ? 'Enhanced AI Analysis...' : 'Analyzing Property...'}
+            Analyzing Property...
           </div>
         ) : analysisStarted ? (
           <div className="flex items-center gap-2">
@@ -84,18 +93,14 @@ const AnalyzeButton = () => {
         ) : (
           <div className="flex items-center gap-2">
             <Zap className="w-5 h-5" />
-            {user ? 'Enhanced AI Analysis' : 'Analyze Property'}
+            Analyze Property
           </div>
         )}
       </Button>
       
       {!analysisStarted && (
         <p className="text-center text-sm text-gray-400 mt-2">
-          {user ? (
-            <>🚀 Multi-source analysis with Google Solar + GPT-4o</>
-          ) : (
-            <>🏠 Basic property analysis - sign in for enhanced features</>
-          )}
+          🚀 AI-powered analysis with Google Solar data
         </p>
       )}
     </div>

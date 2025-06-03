@@ -30,39 +30,10 @@ const SearchBar = ({ isCollapsed }: SearchBarProps) => {
     hasSelectedAddress,
     setHasSelectedAddress,
     analysisError,
-    setAnalysisError,
-    startAnalysis
+    setAnalysisError
   } = useAddressSearch();
   
   const { resetGeneration, capturePropertyImages } = useModelGeneration();
-
-  // Effect to geocode address when it changes
-  useEffect(() => {
-    if (address && mapInstance && !hasSelectedAddress) {
-      // Use a delay to avoid too many geocode requests while typing
-      const debounceTimeout = setTimeout(() => {
-        const geocoder = new google.maps.Geocoder();
-        
-        geocoder.geocode({ address }, (results, status) => {
-          if (status === 'OK' && results && results[0]) {
-            const location = results[0].geometry.location;
-            const coordinates = {
-              lat: location.lat(),
-              lng: location.lng()
-            };
-            
-            // Don't set as selected address since user is still typing
-            // but update coordinates for map centering
-            setAddressCoordinates(coordinates);
-            mapInstance.setCenter(coordinates);
-            mapInstance.setZoom(16); // Less zoom than when fully selected
-          }
-        });
-      }, 800); // 800ms debounce
-      
-      return () => clearTimeout(debounceTimeout);
-    }
-  }, [address, mapInstance, hasSelectedAddress, setAddressCoordinates]);
 
   // Clear search and reset analysis state
   const clearSearch = () => {
@@ -88,8 +59,7 @@ const SearchBar = ({ isCollapsed }: SearchBarProps) => {
     // Capture property images for 3D model 
     capturePropertyImages(formattedAddress, coordinates);
     
-    // Start analysis
-    startAnalysis();
+    console.log('Geolocation address set:', formattedAddress);
   };
 
   return (
