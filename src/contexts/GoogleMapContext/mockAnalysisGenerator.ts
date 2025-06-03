@@ -6,11 +6,13 @@ import { getMarketData } from '@/utils/marketDataService';
 export const generateLocalMockAnalysis = (address: string, coordinates?: google.maps.LatLngLiteral): AnalysisResults => {
   console.log("🏠 Generating mock analysis for:", address, coordinates);
   
-  // Determine property type based on address keywords
+  // IMPROVED: Enhanced property type detection with commercial keywords
   const isApartment = /apartment|apt|flat|condo|unit/i.test(address);
   const isRural = /farm|ranch|rural|country|acres/i.test(address);
+  const isCommercial = /office|commercial|business|corp|inc|llc|plaza|center|mall|store|shop|warehouse|industrial/i.test(address);
+  const isHotel = /hotel|motel|inn|resort|lodge/i.test(address);
   
-  // Default to single family home if no specific keywords detected
+  // Enhanced property type classification
   let propertyType = "Single Family Home";
   let roofSize = 1800; // Average roof size in sq ft
   let parkingSpaces = 2; // Default parking spaces
@@ -18,8 +20,21 @@ export const generateLocalMockAnalysis = (address: string, coordinates?: google.
   let hasPool = Math.random() > 0.7; // 30% chance of having a pool
   let poolSize = 450; // Default pool size if present
   
-  // Adjust values based on property type
-  if (isApartment) {
+  // FIXED: Property-specific adjustments with realistic constraints
+  if (isCommercial) {
+    propertyType = "Commercial Property";
+    roofSize = 5000 + Math.floor(Math.random() * 10000); // Large commercial roof
+    parkingSpaces = Math.floor(Math.random() * 8) + 5; // 5-12 spaces (realistic for small commercial)
+    gardenArea = Math.floor(Math.random() * 200); // Minimal landscaping
+    hasPool = false; // Commercial properties rarely have pools for rental
+    console.log("🏢 Detected commercial property, adjusted values for realism");
+  } else if (isHotel) {
+    propertyType = "Hotel / Lodging";
+    roofSize = 3000 + Math.floor(Math.random() * 7000); // Medium to large roof
+    parkingSpaces = Math.floor(Math.random() * 15) + 10; // 10-24 spaces
+    gardenArea = Math.floor(Math.random() * 500); // Some landscaping
+    hasPool = Math.random() > 0.4; // 60% chance of pool
+  } else if (isApartment) {
     propertyType = "Apartment / Condo";
     roofSize = 0; // Individual apartments don't own the roof
     parkingSpaces = Math.floor(Math.random() * 2) + 1; // 1-2 spaces for apartments
@@ -42,31 +57,61 @@ export const generateLocalMockAnalysis = (address: string, coordinates?: google.
     marketData = getMarketData(coordinates);
     parkingDayRate = marketData.parkingRates;
     solarSavings = marketData.solarSavings;
-    console.log("📊 Market data retrieved:", { parkingRate: parkingDayRate, solarSavings });
+    
+    // FIXED: Apply property-type specific rate adjustments
+    if (isCommercial) {
+      // Commercial properties typically have higher rates but we need to be realistic
+      parkingDayRate = Math.min(parkingDayRate * 1.5, 25); // Cap at $25/day for realism
+    } else if (isHotel) {
+      // Hotels might have premium rates
+      parkingDayRate = Math.min(parkingDayRate * 1.3, 20); // Cap at $20/day
+    }
+    
+    console.log("📊 Market data retrieved with property adjustments:", { 
+      originalRate: marketData.parkingRates,
+      adjustedRate: parkingDayRate, 
+      propertyType,
+      solarSavings 
+    });
   } else {
     console.log("⚠️ No coordinates available, using default rates");
   }
   
-  // FIXED: Use consistent parking revenue calculation - 67% occupancy rate (20 days out of 30)
+  // FIXED: Consistent parking revenue calculation with validation
   const parkingRevenue = Math.round(parkingSpaces * parkingDayRate * 20);
+  
+  // ADDED: Validation to prevent unrealistic revenue
+  const maxReasonableRevenue = 1000; // Cap monthly parking revenue at $1000
+  const validatedParkingRevenue = Math.min(parkingRevenue, maxReasonableRevenue);
+  
+  if (parkingRevenue > maxReasonableRevenue) {
+    console.warn("⚠️ Parking revenue exceeded realistic bounds, capping at $1000/month:", {
+      calculated: parkingRevenue,
+      capped: validatedParkingRevenue,
+      spaces: parkingSpaces,
+      rate: parkingDayRate
+    });
+  }
   
   console.log("💰 Parking revenue calculation:", {
     spaces: parkingSpaces,
     dayRate: parkingDayRate,
     daysPerMonth: 20,
-    formula: `${parkingSpaces} spaces × $${parkingDayRate}/day × 20 days = $${parkingRevenue}/month`
+    calculated: parkingRevenue,
+    final: validatedParkingRevenue,
+    formula: `${parkingSpaces} spaces × $${parkingDayRate}/day × 20 days = $${validatedParkingRevenue}/month`
   });
   
   // Calculate other financials based on property features and market data
-  const solarRevenue = Math.round((roofSize * 0.7) / 15 * 0.15 * solarSavings); // Use market-based solar savings
-  const gardenRevenue = Math.round(gardenArea * 0.02); // Simple garden revenue estimate
-  const poolRevenue = hasPool ? Math.round(poolSize * 0.4) : 0; // Pool rental revenue if present
-  const storageRevenue = Math.round(roofSize * 0.1); // Storage revenue
+  const solarRevenue = Math.round((roofSize * 0.7) / 15 * 0.15 * solarSavings);
+  const gardenRevenue = Math.round(gardenArea * 0.02);
+  const poolRevenue = hasPool ? Math.round(poolSize * 0.4) : 0;
+  const storageRevenue = Math.round(roofSize * 0.1);
   const bandwidthRevenue = 35; // Fixed internet sharing revenue
   
   console.log("💰 All revenue calculations:", {
     solar: solarRevenue,
-    parking: parkingRevenue,
+    parking: validatedParkingRevenue,
     garden: gardenRevenue,
     pool: poolRevenue,
     storage: storageRevenue,
@@ -104,13 +149,13 @@ export const generateLocalMockAnalysis = (address: string, coordinates?: google.
     });
   }
   
-  // FIXED: Add parking with consistent market-based calculation and description
+  // FIXED: Add parking with validated revenue and consistent description
   if (parkingSpaces > 0) {
     opportunities.push({
       icon: "parking",
       title: "Parking Space Rental",
-      monthlyRevenue: parkingRevenue, // FIXED: Use the consistent calculation
-      description: `Rent out ${parkingSpaces} parking spaces at $${parkingDayRate}/day when not in use.`, // FIXED: Use actual market rate in description
+      monthlyRevenue: validatedParkingRevenue, // Use validated revenue
+      description: `Rent out ${parkingSpaces} parking spaces at $${parkingDayRate}/day when not in use.`,
       provider: "SpotHero",
       setupCost: 0,
       roi: 1,
@@ -125,7 +170,7 @@ export const generateLocalMockAnalysis = (address: string, coordinates?: google.
           type: "text" as "text",
           name: "location",
           label: "Parking Location",
-          value: "Driveway"
+          value: isCommercial ? "Commercial Lot" : "Driveway"
         }
       ]
     });
@@ -219,8 +264,8 @@ export const generateLocalMockAnalysis = (address: string, coordinates?: google.
     },
     parking: {
       spaces: parkingSpaces,
-      rate: parkingDayRate, // FIXED: Use market-based rate consistently
-      revenue: parkingRevenue // FIXED: Use consistent calculation
+      rate: parkingDayRate, // Consistent market-based rate
+      revenue: validatedParkingRevenue // Use validated revenue
     },
     pool: {
       present: hasPool,
@@ -241,15 +286,17 @@ export const generateLocalMockAnalysis = (address: string, coordinates?: google.
       monthlyProjection: 0
     },
     permits: [],
-    restrictions: null,
+    restrictions: isCommercial ? "Commercial properties may require additional permits for monetization activities. Check local zoning laws." : null,
     topOpportunities: opportunities.slice(0, 5)
   };
   
-  console.log("✅ Generated analysis result with consistent parking calculations:", {
+  console.log("✅ Generated analysis result with validated calculations:", {
+    propertyType: result.propertyType,
     parkingSpaces: result.parking.spaces,
     parkingRate: result.parking.rate,
     parkingRevenue: result.parking.revenue,
-    parkingOpportunityRevenue: opportunities.find(o => o.title.includes("Parking"))?.monthlyRevenue
+    parkingOpportunityRevenue: opportunities.find(o => o.title.includes("Parking"))?.monthlyRevenue,
+    totalOpportunities: opportunities.length
   });
   
   return result;

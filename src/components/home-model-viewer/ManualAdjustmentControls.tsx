@@ -24,10 +24,13 @@ const ManualAdjustmentControls = ({
   coordinates 
 }: ManualAdjustmentControlsProps) => {
   
-  // Calculate parking revenue based on spaces and market rate
+  // Calculate parking revenue based on spaces and market rate with validation
   const calculateParkingRevenue = (spaces: number, rate: number) => {
     // Assuming average occupancy of 67% (20 days out of 30 days per month)
-    return Math.round(spaces * rate * 20);
+    const calculated = Math.round(spaces * rate * 20);
+    // ADDED: Cap revenue at reasonable amount to prevent unrealistic values
+    const maxReasonable = 1000; // $1000/month cap
+    return Math.min(calculated, maxReasonable);
   };
   
   // Handle adjustments to values like parking spaces
@@ -39,7 +42,22 @@ const ManualAdjustmentControls = ({
     if (coordinates) {
       const marketData = getMarketData(coordinates);
       marketParkingRate = marketData.parkingRates;
-      console.log("🅿️ Using fresh market parking rate:", marketParkingRate);
+      
+      // ADDED: Apply property-type specific adjustments
+      const isCommercial = localAnalysis.propertyType.toLowerCase().includes('commercial');
+      const isHotel = localAnalysis.propertyType.toLowerCase().includes('hotel');
+      
+      if (isCommercial) {
+        marketParkingRate = Math.min(marketParkingRate * 1.5, 25); // Cap at $25/day
+      } else if (isHotel) {
+        marketParkingRate = Math.min(marketParkingRate * 1.3, 20); // Cap at $20/day
+      }
+      
+      console.log("🅿️ Using fresh market parking rate with property adjustments:", {
+        original: marketData.parkingRates,
+        adjusted: marketParkingRate,
+        propertyType: localAnalysis.propertyType
+      });
     } else {
       console.log("⚠️ No coordinates available, using fallback rate");
     }
@@ -52,7 +70,7 @@ const ManualAdjustmentControls = ({
       parking: {
         ...localAnalysis.parking,
         spaces: newSpaces,
-        rate: marketParkingRate, // FIXED: Always use fresh market rate
+        rate: marketParkingRate, // Always use fresh market rate
         revenue: updatedRevenue
       }
     };
@@ -74,17 +92,30 @@ const ManualAdjustmentControls = ({
       spaces: newSpaces,
       rate: marketParkingRate,
       revenue: updatedRevenue,
-      calculationUsed: `${newSpaces} spaces × $${marketParkingRate}/day × 20 days = $${updatedRevenue}/month`
+      calculationUsed: `${newSpaces} spaces × $${marketParkingRate}/day × 20 days = $${updatedRevenue}/month`,
+      propertyType: localAnalysis.propertyType
     });
     
     setLocalAnalysis(updatedAnalysis);
   };
 
-  // FIXED: Get current market rate for display purposes
+  // FIXED: Get current market rate for display purposes with property adjustments
   const getCurrentMarketRate = () => {
     if (coordinates) {
       const marketData = getMarketData(coordinates);
-      return marketData.parkingRates;
+      let rate = marketData.parkingRates;
+      
+      // Apply property-type specific adjustments
+      const isCommercial = localAnalysis.propertyType.toLowerCase().includes('commercial');
+      const isHotel = localAnalysis.propertyType.toLowerCase().includes('hotel');
+      
+      if (isCommercial) {
+        rate = Math.min(rate * 1.5, 25); // Cap at $25/day
+      } else if (isHotel) {
+        rate = Math.min(rate * 1.3, 20); // Cap at $20/day
+      }
+      
+      return rate;
     }
     return localAnalysis.parking.rate || 10;
   };
@@ -132,14 +163,17 @@ const ManualAdjustmentControls = ({
             </div>
             <Slider
               defaultValue={[localAnalysis.parking.spaces]}
-              max={10}
+              max={20} // INCREASED: Allow up to 20 spaces for commercial properties
               min={0}
               step={1}
               onValueChange={handleParkingSpacesChange}
               className="mt-2"
             />
             <div className="text-xs text-gray-400 mt-1">
-              Rate: ${currentMarketRate}/day (market-based) × 20 days/month
+              Rate: ${currentMarketRate}/day ({localAnalysis.propertyType} rate) × 20 days/month
+            </div>
+            <div className="text-xs text-gray-500 mt-1">
+              Max revenue capped at $1,000/month for realism
             </div>
           </div>
           
@@ -147,6 +181,9 @@ const ManualAdjustmentControls = ({
           <div className="text-xs text-gray-400 mt-3">
             <p>
               <strong>Detected Property Type:</strong> {localAnalysis.propertyType}
+            </p>
+            <p className="mt-1">
+              Rates are automatically adjusted based on property type. Commercial properties have higher base rates.
             </p>
             <p className="mt-1">
               Adjust values to match your property's actual features for more accurate estimates.
