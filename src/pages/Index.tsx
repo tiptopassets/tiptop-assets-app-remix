@@ -22,11 +22,8 @@ const Index = () => {
   const hasAddress = !!address;
   const { user, loading } = useAuth();
 
-  console.log('Index render state:', { isAnalyzing, analysisComplete, address, hasAddress });
-
   // Collapse UI elements when analysis is complete
   useEffect(() => {
-    console.log('Setting collapsed state:', analysisComplete);
     setIsCollapsed(analysisComplete);
   }, [analysisComplete]);
 
@@ -57,7 +54,7 @@ const Index = () => {
           <div className="flex gap-4">
             <Link
               to="/submit-property"
-              className="glass-effect px-3 py-1 md:px-4 md:py-2 rounded-full flex items-center gap-2 text-white hover:scale-105 transition-transform text-sm md:text-base relative"
+              className="glass-effect px-3 py-1 md:px-4 md:py-2 rounded-full flex items-center gap-2 text-white hover:scale-105 transition-transform text-sm md:text-base"
             >
               <PlusCircle size={isMobile ? 16 : 20} />
               <span className="text-gray-100">Submit Property</span>
@@ -67,7 +64,7 @@ const Index = () => {
             </Link>
             <Link 
               to="/dashboard" 
-              className="glass-effect px-3 py-1 md:px-4 md:py-2 rounded-full flex items-center gap-2 text-white hover:scale-105 transition-transform text-sm md:text-base relative"
+              className="glass-effect px-3 py-1 md:px-4 md:py-2 rounded-full flex items-center gap-2 text-white hover:scale-105 transition-transform text-sm md:text-base"
             >
               <span className="text-gray-100">Dashboard</span>
               
@@ -93,14 +90,14 @@ const Index = () => {
           {/* Asset Icons and Results */}
           <div className={`mt-8 w-full flex flex-col justify-center items-center ${analysisComplete ? 'mt-4' : ''}`}>
             {!analysisComplete && !isAnalyzing && <AssetIcons />}
-            {analysisComplete && <AssetResultList />}
+            <AssetResultList />
           </div>
 
           {/* 3D Model Viewer */}
           {(analysisComplete || isAnalyzing) && <HomeModelViewer />}
         </main>
         
-        {/* Footer with carousel - only show when no analysis */}
+        {/* Footer with carousel - pushed much lower, especially on mobile */}
         {!analysisComplete && !isAnalyzing && !hasAddress && (
           <footer className="w-full mt-auto">
             <div className={`py-20 md:py-32 ${isMobile ? 'pb-36' : ''}`}></div>
