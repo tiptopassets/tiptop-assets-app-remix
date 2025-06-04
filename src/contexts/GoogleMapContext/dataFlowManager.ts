@@ -1,6 +1,6 @@
 
 // Centralized data flow management for consistent property analysis
-import { AnalysisResults, AssetOpportunity } from './types';
+import { AnalysisResults, Opportunity } from './types';
 import { ensureCoordinates, getValidatedMarketData, CoordinateResult } from './coordinateService';
 import { validateRevenue, validateParkingRevenue } from '@/utils/revenueValidator';
 import { getMarketData } from '@/utils/marketDataService';
@@ -109,8 +109,8 @@ const updateTopOpportunities = (
   analysis: AnalysisResults,
   marketData: any,
   validationLog: string[]
-): AssetOpportunity[] => {
-  const opportunities: AssetOpportunity[] = [];
+): Opportunity[] => {
+  const opportunities: Opportunity[] = [];
   
   // Solar opportunity
   if (analysis.rooftop?.revenue > 0) {
