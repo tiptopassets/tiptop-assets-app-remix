@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { motion } from "framer-motion";
 import { useAdditionalOpportunities } from '@/hooks/useAdditionalOpportunities';
 import { SelectedAsset } from '@/types/analysis';
@@ -22,11 +22,18 @@ const AssetResultList: React.FC<AssetResultListProps> = ({ analysisResults }) =>
   const [showAssetForm, setShowAssetForm] = useState(false);
   const { analysisComplete } = useGoogleMap();
 
-  const handleAssetToggle = (assetTitle: string) => {
+  console.log('🏠 AssetResultList render:', {
+    analysisComplete,
+    hasResults: !!analysisResults,
+    selectedAssetsCount: selectedAssets.length,
+    showAssetForm,
+    additionalOpportunitiesCount: additionalOpportunities.length
+  });
+
+  // Memoize the asset toggle handler to prevent unnecessary re-renders
+  const handleAssetToggle = useCallback((assetTitle: string) => {
     console.log('🔄 Asset toggle called for:', assetTitle);
     console.log('📊 Current selectedAssets:', selectedAssets);
-    console.log('📋 Current selectedAssetsData:', selectedAssetsData);
-    console.log('🎯 Available opportunities:', additionalOpportunities.map(o => o.title));
     
     setSelectedAssets(prev => {
       const isSelected = prev.includes(assetTitle);
@@ -73,9 +80,9 @@ const AssetResultList: React.FC<AssetResultListProps> = ({ analysisResults }) =>
         return newSelectedAssets;
       }
     });
-  };
+  }, [additionalOpportunities, selectedAssets]);
 
-  const handleContinue = () => {
+  const handleContinue = useCallback(() => {
     console.log('🚀 Continue clicked');
     console.log('📊 Selected assets count:', selectedAssets.length);
     console.log('📋 Selected assets data:', selectedAssetsData);
@@ -85,28 +92,33 @@ const AssetResultList: React.FC<AssetResultListProps> = ({ analysisResults }) =>
     } else {
       console.warn('⚠️ No assets selected when continue was clicked');
     }
-  };
+  }, [selectedAssets.length, selectedAssetsData]);
 
-  const handleFormComplete = () => {
+  const handleFormComplete = useCallback(() => {
     console.log('✅ Form completed');
     setShowAssetForm(false);
     // Here you could navigate to dashboard or next step
-  };
+  }, []);
 
-  const totalSelectedRevenue = selectedAssetsData.reduce((sum, asset) => sum + asset.monthlyRevenue, 0);
-  const totalSetupCost = selectedAssetsData.reduce((sum, asset) => sum + (asset.setupCost || 0), 0);
+  // Memoize calculations to prevent unnecessary re-computation
+  const { totalSelectedRevenue, totalSetupCost, analysisRevenue, totalMonthlyIncome } = useMemo(() => {
+    const totalSelectedRevenue = selectedAssetsData.reduce((sum, asset) => sum + asset.monthlyRevenue, 0);
+    const totalSetupCost = selectedAssetsData.reduce((sum, asset) => sum + (asset.setupCost || 0), 0);
 
-  // Calculate total monthly income from analysis results
-  const analysisRevenue = analysisResults ? (
-    (analysisResults.rooftop?.revenue || 0) +
-    (analysisResults.parking?.revenue || 0) +
-    (analysisResults.garden?.revenue || 0) +
-    (analysisResults.pool?.revenue || 0) +
-    (analysisResults.storage?.revenue || 0) +
-    (analysisResults.bandwidth?.revenue || 0)
-  ) : 0;
+    // Calculate total monthly income from analysis results
+    const analysisRevenue = analysisResults ? (
+      (analysisResults.rooftop?.revenue || 0) +
+      (analysisResults.parking?.revenue || 0) +
+      (analysisResults.garden?.revenue || 0) +
+      (analysisResults.pool?.revenue || 0) +
+      (analysisResults.storage?.revenue || 0) +
+      (analysisResults.bandwidth?.revenue || 0)
+    ) : 0;
 
-  const totalMonthlyIncome = analysisRevenue + totalSelectedRevenue;
+    const totalMonthlyIncome = analysisRevenue + totalSelectedRevenue;
+
+    return { totalSelectedRevenue, totalSetupCost, analysisRevenue, totalMonthlyIncome };
+  }, [selectedAssetsData, analysisResults]);
 
   if (showAssetForm) {
     console.log('📝 Rendering AssetFormSection with:', {
@@ -129,13 +141,6 @@ const AssetResultList: React.FC<AssetResultListProps> = ({ analysisResults }) =>
     console.log('⏳ Analysis not complete or no results');
     return null;
   }
-
-  console.log('🏠 Rendering main asset list with:', {
-    analysisComplete,
-    hasResults: !!analysisResults,
-    selectedAssetsCount: selectedAssets.length,
-    additionalOpportunitiesCount: additionalOpportunities.length
-  });
 
   return (
     <div className="space-y-8">

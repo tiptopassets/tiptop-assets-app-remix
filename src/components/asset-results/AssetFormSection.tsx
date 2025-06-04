@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -33,10 +33,22 @@ const AssetFormSection = ({
     opportunitiesCount: opportunities.length
   });
 
+  // Memoize form fields lookup to prevent unnecessary recalculations
+  const formFieldsMap = useMemo(() => {
+    const map = new Map<string, FormField[]>();
+    
+    opportunities.forEach(opp => {
+      if (opp.formFields) {
+        map.set(opp.title, opp.formFields);
+      }
+    });
+    
+    return map;
+  }, [opportunities]);
+
   // Find form fields for an asset based on its title
   const findFormFields = (assetTitle: string): FormField[] => {
-    const opportunity = opportunities.find(opp => opp.title === assetTitle);
-    const fields = opportunity?.formFields || [];
+    const fields = formFieldsMap.get(assetTitle) || [];
     console.log(`🔍 Form fields for ${assetTitle}:`, fields);
     return fields;
   };
@@ -82,7 +94,8 @@ const AssetFormSection = ({
     }
   };
 
-  if (selectedAssets.length === 0) {
+  // Early return for no assets case
+  if (!selectedAssets || selectedAssets.length === 0) {
     console.warn('⚠️ No selected assets provided to AssetFormSection');
     return (
       <div className="mt-12 mb-16 text-center">

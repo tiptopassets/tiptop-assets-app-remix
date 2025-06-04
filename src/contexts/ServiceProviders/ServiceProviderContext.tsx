@@ -1,5 +1,5 @@
 
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { 
   ServiceProviderContextType, 
@@ -39,11 +39,18 @@ export const ServiceProviderProvider: React.FC<{ children: React.ReactNode }> = 
     providerData.setConnectedProviders
   );
 
-  // Memoize the update functions to prevent infinite loops
-  const updateProviderStates = useCallback(() => {
+  // Single effect to handle provider data updates - removed useCallback to prevent dependency loops
+  useEffect(() => {
+    // Don't initialize until auth is ready
+    if (authLoading) {
+      console.log('⏳ Waiting for auth to finish loading');
+      return;
+    }
+    
     try {
       console.log('🔄 Updating provider states');
       
+      // Transform available providers
       const newAvailableProviders = providerData.availableProviders.map(p => ({
         id: p.id,
         name: p.name,
@@ -62,6 +69,7 @@ export const ServiceProviderProvider: React.FC<{ children: React.ReactNode }> = 
         is_active: true
       }));
       
+      // Transform connected providers
       const newConnectedProviders = providerData.connectedProviders.map(p => ({
         id: p.id,
         user_id: user?.id || '',
@@ -76,32 +84,21 @@ export const ServiceProviderProvider: React.FC<{ children: React.ReactNode }> = 
         last_sync_at: new Date().toISOString()
       }));
 
+      // Transform earnings
       const newEarningsRecord: Record<string, number> = {};
       providerData.earnings.forEach(earning => {
         newEarningsRecord[earning.service] = earning.earnings;
       });
       
-      // Only update if data has actually changed
-      setAvailableProviders(prev => {
-        const hasChanged = JSON.stringify(prev) !== JSON.stringify(newAvailableProviders);
-        return hasChanged ? newAvailableProviders : prev;
-      });
-      
-      setConnectedProviders(prev => {
-        const hasChanged = JSON.stringify(prev) !== JSON.stringify(newConnectedProviders);
-        return hasChanged ? newConnectedProviders : prev;
-      });
-      
-      setEarnings(prev => {
-        const hasChanged = JSON.stringify(prev) !== JSON.stringify(newEarningsRecord);
-        return hasChanged ? newEarningsRecord : prev;
-      });
-      
+      // Update state directly without comparison checks to prevent loops
+      setAvailableProviders(newAvailableProviders);
+      setConnectedProviders(newConnectedProviders);
+      setEarnings(newEarningsRecord);
       setIsLoading(providerData.isLoading);
       setError(providerData.error);
       
       // Mark as initialized only after auth is ready
-      if (!authLoading) {
+      if (!authLoading && !isInitialized) {
         setIsInitialized(true);
       }
     } catch (err) {
@@ -109,18 +106,17 @@ export const ServiceProviderProvider: React.FC<{ children: React.ReactNode }> = 
       setError(err instanceof Error ? err.message : 'Unknown error occurred');
       setIsLoading(false);
     }
-  }, [providerData, user?.id, authLoading]);
-
-  // Update state when provider data changes, but only if necessary
-  useEffect(() => {
-    // Don't initialize until auth is ready
-    if (authLoading) {
-      console.log('⏳ Waiting for auth to finish loading');
-      return;
-    }
-    
-    updateProviderStates();
-  }, [updateProviderStates, authLoading]);
+  }, [
+    authLoading,
+    providerData.isLoading,
+    providerData.error,
+    user?.id,
+    isInitialized,
+    // Remove deep dependencies that cause loops
+    providerData.availableProviders.length,
+    providerData.connectedProviders.length,
+    providerData.earnings.length
+  ]);
 
   // Wrapper functions to handle user ID automatically
   const connectToProvider = async (providerId: string) => {
@@ -159,14 +155,14 @@ export const ServiceProviderProvider: React.FC<{ children: React.ReactNode }> = 
     return providerActions.generateReferralLink(providerId, destinationUrl, user?.id) as any;
   };
 
-  // Show loading state while auth is loading or context is initializing
-  if (authLoading || !isInitialized) {
-    console.log('⏳ ServiceProviderContext still loading');
+  // Simplified loading state - only show while auth is loading
+  if (authLoading) {
+    console.log('⏳ ServiceProviderContext waiting for auth');
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-black to-purple-900">
         <div className="text-white text-center">
           <div className="animate-spin h-8 w-8 border-4 border-tiptop-purple border-t-transparent rounded-full mx-auto mb-4"></div>
-          <p>Loading service providers...</p>
+          <p>Loading authentication...</p>
         </div>
       </div>
     );

@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
@@ -9,13 +9,33 @@ import { useAuth } from '@/contexts/AuthContext';
 
 const Options = () => {
   const [selectedOption, setSelectedOption] = useState<'manual' | 'concierge' | null>(null);
-  const { signInWithGoogle, loading: authLoading } = useAuth();
+  const [isInitialized, setIsInitialized] = useState(false);
+  const { signInWithGoogle, loading: authLoading, user } = useAuth();
   const { toast } = useToast();
 
   console.log('🎯 Options page state:', {
     selectedOption,
-    authLoading
+    authLoading,
+    isInitialized,
+    hasUser: !!user
   });
+
+  // Initialize the page after a short delay to prevent black screen
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsInitialized(true);
+    }, 100);
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Redirect authenticated users to dashboard
+  useEffect(() => {
+    if (user && !authLoading) {
+      console.log('🔄 User is authenticated, redirecting to dashboard');
+      window.location.href = '/dashboard';
+    }
+  }, [user, authLoading]);
 
   const handleOptionSelect = (option: 'manual' | 'concierge') => {
     console.log('✅ Option selected:', option);
@@ -54,13 +74,13 @@ const Options = () => {
     }
   };
 
-  // Show loading state while auth is processing
-  if (authLoading) {
+  // Show loading state while initializing or processing auth
+  if (!isInitialized || authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-[#1A1F2C] to-[#2d3748]">
         <div className="text-white text-center">
           <div className="animate-spin h-8 w-8 border-4 border-tiptop-purple border-t-transparent rounded-full mx-auto mb-4"></div>
-          <p>Processing authentication...</p>
+          <p>{authLoading ? 'Processing authentication...' : 'Loading options...'}</p>
         </div>
       </div>
     );

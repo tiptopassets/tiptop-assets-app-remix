@@ -65,46 +65,52 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     let mounted = true;
+    let authSubscription: any = null;
 
-    // Set up auth state listener first
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, currentSession) => {
-        console.log('Auth state changed:', event, currentSession?.user?.email);
-        
-        if (!mounted) return;
-
-        setSession(currentSession);
-        setUser(currentSession?.user ?? null);
-        
-        // Track login event when user signs in
-        if (event === 'SIGNED_IN' && currentSession?.user) {
-          // Use setTimeout to prevent deadlocking in the auth state change handler
-          setTimeout(() => {
-            updateLoginStats(currentSession.user.id);
-          }, 0);
-          
-          // Always redirect to dashboard when user signs in
-          setTimeout(() => {
-            navigate('/dashboard');
-          }, 100);
-        }
-        
-        // Redirect to homepage if user logs out
-        if (event === 'SIGNED_OUT') {
-          setTimeout(() => {
-            navigate('/');
-          }, 100);
-        }
-        
-        if (mounted) {
-          setLoading(false);
-        }
-      }
-    );
-
-    // Then check for existing session
     const initializeAuth = async () => {
       try {
+        console.log('🔐 Initializing auth state');
+        
+        // Set up auth state listener first
+        authSubscription = supabase.auth.onAuthStateChange(
+          async (event, currentSession) => {
+            console.log('Auth state changed:', event, currentSession?.user?.email);
+            
+            if (!mounted) return;
+
+            // Update state immediately
+            setSession(currentSession);
+            setUser(currentSession?.user ?? null);
+            
+            // Handle specific auth events
+            if (event === 'SIGNED_IN' && currentSession?.user) {
+              // Use setTimeout to prevent deadlocking in the auth state change handler
+              setTimeout(() => {
+                if (mounted) {
+                  updateLoginStats(currentSession.user.id);
+                  // Always redirect to dashboard when user signs in
+                  navigate('/dashboard');
+                }
+              }, 0);
+            }
+            
+            // Redirect to homepage if user logs out
+            if (event === 'SIGNED_OUT') {
+              setTimeout(() => {
+                if (mounted) {
+                  navigate('/');
+                }
+              }, 0);
+            }
+            
+            // Mark loading as complete after processing
+            if (mounted) {
+              setLoading(false);
+            }
+          }
+        );
+
+        // Then check for existing session
         const { data: { session: currentSession }, error } = await supabase.auth.getSession();
         
         if (error) {
@@ -117,7 +123,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           
           // If user was already signed in on page load, update login stats
           if (currentSession?.user) {
-            updateLoginStats(currentSession.user.id);
+            setTimeout(() => {
+              if (mounted) {
+                updateLoginStats(currentSession.user.id);
+              }
+            }, 0);
           }
           
           setLoading(false);
@@ -133,8 +143,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     initializeAuth();
 
     return () => {
+      console.log('🧹 Cleaning up auth context');
       mounted = false;
-      subscription.unsubscribe();
+      if (authSubscription?.data?.subscription) {
+        authSubscription.data.subscription.unsubscribe();
+      }
     };
   }, [navigate]);
 
@@ -172,6 +185,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const signOut = async () => {
     try {
+      console.log('🚪 Starting sign out process');
       setLoading(true);
       await supabase.auth.signOut();
     } catch (error) {
