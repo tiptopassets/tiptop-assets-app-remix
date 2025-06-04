@@ -87,8 +87,8 @@ const Index = () => {
             {!isAnalyzing && !analysisComplete && <AnalyzeButton />}
           </div>
 
-          {/* Add massive spacing before results when analysis is complete to match the reference image */}
-          <div className={`w-full flex flex-col justify-center items-center ${analysisComplete ? 'mt-64 md:mt-80 lg:mt-96' : 'mt-8'}`}>
+          {/* Push asset cards almost to the bottom of the viewport */}
+          <div className={`w-full flex flex-col justify-center items-center ${analysisComplete ? 'mt-[calc(100vh-500px)] min-h-[400px]' : 'mt-8'}`}>
             {!analysisComplete && !isAnalyzing && <AssetIcons />}
             <AssetResultList analysisResults={analysisResults} />
           </div>
