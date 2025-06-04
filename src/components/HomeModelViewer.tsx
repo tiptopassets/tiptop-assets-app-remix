@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { Check, Info, ExternalLink } from 'lucide-react';
 import { useModelGeneration } from '@/contexts/ModelGeneration';
 import { useGoogleMap } from '@/contexts/GoogleMapContext';
+import { useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
 import { Badge } from '@/components/ui/badge';
@@ -10,20 +11,28 @@ import { Badge } from '@/components/ui/badge';
 const HomeModelViewer = () => {
   const { status, progress } = useModelGeneration();
   const { analysisResults, isGeneratingAnalysis } = useGoogleMap();
+  const location = useLocation();
   const [isVisible, setIsVisible] = useState(false);
   const [showFullAnalysis, setShowFullAnalysis] = useState(false);
   
   const isGenerating = isGeneratingAnalysis || status === 'generating';
   const isComplete = !isGenerating && analysisResults;
   
+  // Don't show this component when we have asset results or are on specific pages
+  const shouldHide = location.pathname !== '/' || 
+                    location.search.includes('step=asset-form') ||
+                    location.search.includes('step=results');
+  
   // Determine if we should show the component
   useEffect(() => {
-    if (isGenerating || isComplete) {
+    if (!shouldHide && (isGenerating || isComplete)) {
       setIsVisible(true);
+    } else {
+      setIsVisible(false);
     }
-  }, [isGenerating, isComplete]);
+  }, [isGenerating, isComplete, shouldHide]);
   
-  if (!isVisible) return null;
+  if (!isVisible || shouldHide) return null;
   
   const toggleFullAnalysis = () => {
     setShowFullAnalysis(!showFullAnalysis);
