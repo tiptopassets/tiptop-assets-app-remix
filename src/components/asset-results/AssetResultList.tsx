@@ -9,6 +9,7 @@ import AssetFormSection from './AssetFormSection';
 import ContinueButton from './ContinueButton';
 import PropertySummaryCard from './PropertySummaryCard';
 import RestrictionsCard from './RestrictionsCard';
+import { useGoogleMap } from '@/contexts/GoogleMapContext';
 
 interface AssetResultListProps {
   analysisResults: any;
@@ -19,6 +20,7 @@ const AssetResultList: React.FC<AssetResultListProps> = ({ analysisResults }) =>
   const [selectedAssets, setSelectedAssets] = useState<string[]>([]);
   const [selectedAssetsData, setSelectedAssetsData] = useState<SelectedAsset[]>([]);
   const [showAssetForm, setShowAssetForm] = useState(false);
+  const { analysisComplete } = useGoogleMap();
 
   const handleAssetToggle = (assetTitle: string) => {
     setSelectedAssets(prev => {
@@ -54,25 +56,58 @@ const AssetResultList: React.FC<AssetResultListProps> = ({ analysisResults }) =>
     }
   };
 
+  const handleFormComplete = () => {
+    setShowAssetForm(false);
+    // Here you could navigate to dashboard or next step
+  };
+
   const totalSelectedRevenue = selectedAssetsData.reduce((sum, asset) => sum + asset.monthlyRevenue, 0);
   const totalSetupCost = selectedAssetsData.reduce((sum, asset) => sum + (asset.setupCost || 0), 0);
+
+  // Calculate total monthly income from analysis results
+  const analysisRevenue = analysisResults ? (
+    (analysisResults.rooftop?.revenue || 0) +
+    (analysisResults.parking?.revenue || 0) +
+    (analysisResults.garden?.revenue || 0) +
+    (analysisResults.pool?.revenue || 0) +
+    (analysisResults.storage?.revenue || 0) +
+    (analysisResults.bandwidth?.revenue || 0)
+  ) : 0;
+
+  const totalMonthlyIncome = analysisRevenue + totalSelectedRevenue;
 
   if (showAssetForm) {
     return (
       <AssetFormSection 
         selectedAssets={selectedAssetsData}
-        onBack={() => setShowAssetForm(false)}
+        opportunities={analysisResults?.topOpportunities || []}
+        onComplete={handleFormComplete}
       />
     );
+  }
+
+  // Don't render anything if analysis is not complete
+  if (!analysisComplete || !analysisResults) {
+    return null;
   }
 
   return (
     <div className="space-y-8">
       {/* Property Summary */}
-      <PropertySummaryCard analysisResults={analysisResults} />
+      <PropertySummaryCard 
+        analysisResults={analysisResults}
+        totalMonthlyIncome={totalMonthlyIncome}
+        totalSetupCost={totalSetupCost}
+        selectedAssetsCount={selectedAssets.length}
+        isCollapsed={false}
+      />
       
       {/* Main Asset Opportunities */}
-      <AssetOpportunitiesGrid analysisResults={analysisResults} />
+      <AssetOpportunitiesGrid 
+        opportunities={analysisResults.topOpportunities || []}
+        selectedAssets={selectedAssets}
+        onAssetToggle={handleAssetToggle}
+      />
       
       {/* Additional Assets Carousel with Enhanced Features */}
       <AdditionalAssetsCarousel 
@@ -84,8 +119,8 @@ const AssetResultList: React.FC<AssetResultListProps> = ({ analysisResults }) =>
       />
       
       {/* Restrictions and Permits */}
-      {(analysisResults.restrictions || analysisResults.permits?.length > 0) && (
-        <RestrictionsCard analysisResults={analysisResults} />
+      {analysisResults.restrictions && (
+        <RestrictionsCard restrictions={analysisResults.restrictions} />
       )}
       
       {/* Continue Button with Summary */}

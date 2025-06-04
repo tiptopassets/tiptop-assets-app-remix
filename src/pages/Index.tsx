@@ -16,7 +16,7 @@ import { motion } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 
 const Index = () => {
-  const { isAnalyzing, analysisComplete, address } = useGoogleMap();
+  const { isAnalyzing, analysisComplete, address, analysisResults } = useGoogleMap();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const isMobile = useIsMobile();
   const hasAddress = !!address;
@@ -90,7 +90,7 @@ const Index = () => {
           {/* Asset Icons and Results */}
           <div className={`mt-8 w-full flex flex-col justify-center items-center ${analysisComplete ? 'mt-4' : ''}`}>
             {!analysisComplete && !isAnalyzing && <AssetIcons />}
-            <AssetResultList />
+            <AssetResultList analysisResults={analysisResults} />
           </div>
 
           {/* 3D Model Viewer */}
