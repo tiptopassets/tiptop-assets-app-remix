@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { motion } from "framer-motion";
 import { useAdditionalOpportunities } from '@/hooks/useAdditionalOpportunities';
@@ -37,7 +36,7 @@ const AssetResultList: React.FC<AssetResultListProps> = ({ analysisResults }) =>
         if (assetData) {
           setSelectedAssetsData(prevData => [...prevData, {
             title: assetData.title,
-            icon: assetData.icon,
+            icon: assetData.icon.name || 'circle', // Convert icon component to string
             monthlyRevenue: assetData.monthlyRevenue,
             provider: assetData.provider,
             setupCost: assetData.setupCost,
