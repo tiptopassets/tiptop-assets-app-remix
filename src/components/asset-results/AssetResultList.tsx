@@ -102,6 +102,54 @@ const AssetResultList: React.FC<AssetResultListProps> = ({ analysisResults }) =>
         isCollapsed={false}
       />
       
+      {/* Floating Selected Assets Widget */}
+      {selectedAssets.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 20, scale: 0.95 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={{ opacity: 0, y: -20, scale: 0.95 }}
+          transition={{ duration: 0.4, ease: "easeOut" }}
+          className="fixed top-4 right-4 z-50 w-80 max-w-[calc(100vw-2rem)] md:w-96"
+        >
+          <div className="bg-black/60 backdrop-blur-xl rounded-2xl border border-white/20 p-4 shadow-2xl">
+            {/* Header */}
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-semibold text-white">Selected Assets</h3>
+              <div className="bg-tiptop-purple/20 text-tiptop-purple text-xs px-2 py-1 rounded-full border border-tiptop-purple/30">
+                {selectedAssets.length}
+              </div>
+            </div>
+            
+            {/* Stats Grid */}
+            <div className="grid grid-cols-4 gap-3 mb-3">
+              <div className="text-center">
+                <p className="text-white/60 text-xs">Assets</p>
+                <p className="text-white font-bold text-sm">{selectedAssets.length}</p>
+              </div>
+              <div className="text-center">
+                <p className="text-white/60 text-xs">Revenue</p>
+                <p className="text-tiptop-purple font-bold text-sm">${totalSelectedRevenue}/mo</p>
+              </div>
+              <div className="text-center">
+                <p className="text-white/60 text-xs">Setup</p>
+                <p className="text-orange-400 font-bold text-sm">${totalSetupCost}</p>
+              </div>
+              <div className="text-center">
+                <p className="text-white/60 text-xs">Options</p>
+                <p className="text-green-400 font-bold text-sm">{additionalOpportunities.length}</p>
+              </div>
+            </div>
+            
+            {/* Continue Button */}
+            <ContinueButton 
+              selectedAssetsCount={selectedAssets.length}
+              onClick={handleContinue}
+              className="w-full"
+            />
+          </div>
+        </motion.div>
+      )}
+      
       {/* Main Asset Opportunities */}
       <AssetOpportunitiesGrid 
         opportunities={analysisResults.topOpportunities || []}
@@ -121,37 +169,6 @@ const AssetResultList: React.FC<AssetResultListProps> = ({ analysisResults }) =>
       {/* Restrictions and Permits */}
       {analysisResults.restrictions && (
         <RestrictionsCard restrictions={analysisResults.restrictions} />
-      )}
-      
-      {/* Continue Button with Summary */}
-      {selectedAssets.length > 0 && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="glass-effect p-6 rounded-lg text-center"
-        >
-          <div className="mb-4">
-            <h3 className="text-xl font-bold text-white mb-2">Selected Assets Summary</h3>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-center">
-              <div>
-                <p className="text-white/60 text-sm">Assets Selected</p>
-                <p className="text-white font-bold text-xl">{selectedAssets.length}</p>
-              </div>
-              <div>
-                <p className="text-white/60 text-sm">Monthly Revenue</p>
-                <p className="text-tiptop-purple font-bold text-xl">${totalSelectedRevenue}</p>
-              </div>
-              <div className="col-span-2 md:col-span-1">
-                <p className="text-white/60 text-sm">Setup Investment</p>
-                <p className="text-orange-400 font-bold text-xl">${totalSetupCost}</p>
-              </div>
-            </div>
-          </div>
-          <ContinueButton 
-            selectedAssetsCount={selectedAssets.length}
-            onClick={handleContinue}
-          />
-        </motion.div>
       )}
     </div>
   );
