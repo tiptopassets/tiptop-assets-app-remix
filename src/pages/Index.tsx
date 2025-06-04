@@ -46,17 +46,17 @@ const Index = () => {
 
       {/* Content overlay */}
       <div className="relative z-10 min-h-screen flex flex-col items-center">
-        {/* Header */}
-        <header className="w-full p-4 md:p-6 flex justify-between items-center">
-          <Link to="/" className="text-2xl md:text-3xl font-bold text-tiptop-purple hover:scale-105 transition-transform flex items-center">
+        {/* Header - Responsive */}
+        <header className="w-full p-3 sm:p-4 md:p-6 flex justify-between items-center">
+          <Link to="/" className="text-xl sm:text-2xl md:text-3xl font-bold text-tiptop-purple hover:scale-105 transition-transform flex items-center">
             tiptop
           </Link>
-          <div className="flex gap-2 md:gap-4">
+          <div className="flex gap-2 sm:gap-3 md:gap-4">
             <Link
               to="/submit-property"
-              className="glass-effect px-2 py-1 md:px-4 md:py-2 rounded-full flex items-center gap-1 md:gap-2 text-white hover:scale-105 transition-transform text-xs md:text-base"
+              className="glass-effect px-2 py-1 sm:px-3 sm:py-2 md:px-4 md:py-2 rounded-full flex items-center gap-1 sm:gap-2 text-white hover:scale-105 transition-transform text-xs sm:text-sm md:text-base"
             >
-              <PlusCircle size={isMobile ? 14 : 20} />
+              <PlusCircle size={isMobile ? 12 : 16} className="sm:w-4 sm:h-4 md:w-5 md:h-5" />
               <span className="text-gray-100">{isMobile ? 'Submit' : 'Submit Property'}</span>
               
               {/* Glow effect for hover */}
@@ -64,7 +64,7 @@ const Index = () => {
             </Link>
             <Link 
               to="/dashboard" 
-              className="glass-effect px-2 py-1 md:px-4 md:py-2 rounded-full flex items-center gap-1 md:gap-2 text-white hover:scale-105 transition-transform text-xs md:text-base"
+              className="glass-effect px-2 py-1 sm:px-3 sm:py-2 md:px-4 md:py-2 rounded-full flex items-center gap-1 sm:gap-2 text-white hover:scale-105 transition-transform text-xs sm:text-sm md:text-base"
             >
               <span className="text-gray-100">Dashboard</span>
               
@@ -74,31 +74,29 @@ const Index = () => {
           </div>
         </header>
 
-        {/* Main content */}
-        <main className="flex-1 w-full flex flex-col items-center justify-start px-4 md:px-6 transition-all duration-500">
-          <div className={`text-center mb-6 md:mb-8 transform transition-all duration-500 ${isCollapsed ? 'scale-0 h-0 mb-0' : 'scale-100'}`}>
-            <h1 className="text-2xl md:text-5xl font-bold text-white mb-2 drop-shadow-lg">
+        {/* Main content - Responsive layout */}
+        <main className="flex-1 w-full flex flex-col items-center justify-start px-3 sm:px-4 md:px-6 transition-all duration-500">
+          <div className={`text-center mb-4 sm:mb-6 md:mb-8 transform transition-all duration-500 ${isCollapsed ? 'scale-0 h-0 mb-0' : 'scale-100'}`}>
+            <h1 className="text-xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-2 drop-shadow-lg px-4">
               {isAnalyzing ? "Analyzing Your Home Assets..." : "Monetize Your Home Assets"}
             </h1>
           </div>
 
-          <div className="flex flex-col items-center gap-4 w-full max-w-full md:max-w-md">
+          <div className="flex flex-col items-center gap-3 sm:gap-4 w-full max-w-sm sm:max-w-md">
             <SearchBar isCollapsed={isCollapsed} />
             {!isAnalyzing && !analysisComplete && <AnalyzeButton />}
           </div>
 
-          {/* Asset Icons positioned higher for mobile, lower for desktop */}
-          <div className={`w-full flex flex-col justify-center items-center ${!analysisComplete && !isAnalyzing ? (isMobile ? 'mt-8' : 'mt-16') : ''}`}>
+          {/* Asset Icons positioned responsively */}
+          <div className={`w-full flex flex-col justify-center items-center ${!analysisComplete && !isAnalyzing ? (isMobile ? 'mt-6 sm:mt-8' : 'mt-12 lg:mt-16') : ''}`}>
             {!analysisComplete && !isAnalyzing && <AssetIcons />}
           </div>
 
-          {/* Push asset cards much lower on the page - responsive spacing */}
+          {/* Asset results - responsive spacing and layout */}
           <div className={`w-full flex flex-col justify-center items-center ${
             analysisComplete 
-              ? isMobile 
-                ? 'mt-[calc(100vh-600px)] min-h-[500px]' 
-                : 'mt-[calc(100vh-400px)] min-h-[300px]'
-              : 'mt-8'
+              ? 'mt-4 sm:mt-6 md:mt-8 min-h-[400px] sm:min-h-[500px]' 
+              : 'mt-6 sm:mt-8'
           }`}>
             <AssetResultList analysisResults={analysisResults} />
           </div>
@@ -110,19 +108,19 @@ const Index = () => {
         {/* Footer with carousel - responsive spacing */}
         {!analysisComplete && !isAnalyzing && !hasAddress && (
           <footer className="w-full mt-auto">
-            <div className={`${isMobile ? 'py-16 pb-24' : 'py-20 md:py-32'}`}></div>
+            <div className={`${isMobile ? 'py-12 sm:py-16 pb-20 sm:pb-24' : 'py-16 md:py-20 lg:py-32'}`}></div>
             <FooterCarousel />
           </footer>
         )}
         
-        {/* Copyright footer - always visible with responsive text */}
+        {/* Copyright footer - responsive text */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.7, duration: 0.5 }}
-          className="w-full py-2 md:py-4 text-center"
+          className="w-full py-2 sm:py-3 md:py-4 text-center px-4"
         >
-          <p className="text-white/60 text-xs backdrop-blur-sm py-1 md:py-2 px-2 md:px-4 rounded-full inline-block bg-black/30 border border-white/10">
+          <p className="text-white/60 text-xs sm:text-sm backdrop-blur-sm py-1 sm:py-2 px-2 sm:px-4 rounded-full inline-block bg-black/30 border border-white/10">
             © 2025 Tiptop by Kolonia. All rights reserved.
           </p>
         </motion.div>
