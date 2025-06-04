@@ -40,7 +40,7 @@ const AssetResultList: React.FC<AssetResultListProps> = ({ analysisResults }) =>
             monthlyRevenue: assetData.monthlyRevenue,
             provider: assetData.provider,
             setupCost: assetData.setupCost,
-            roi: assetData.roi,
+            roi: assetData.roi ? parseFloat(assetData.roi.replace(/[^\d.]/g, '')) || 0 : 0, // Convert string roi to number
             formData: {}
           }]);
         }
