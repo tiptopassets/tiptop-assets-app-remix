@@ -113,13 +113,13 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    // Check cache first
-    const cacheKey = `${locationCoordinates.lat},${locationCoordinates.lng}`;
+    // Check cache first using decimal coordinates
     try {
       const { data: cachedData } = await supabase
         .from('solar_api_cache')
         .select('*')
-        .eq('coordinates', `POINT(${locationCoordinates.lng} ${locationCoordinates.lat})`)
+        .eq('latitude', locationCoordinates.lat)
+        .eq('longitude', locationCoordinates.lng)
         .gte('requested_at', new Date(Date.now() - CACHE_DURATION_HOURS * 60 * 60 * 1000).toISOString())
         .order('requested_at', { ascending: false })
         .limit(1)
@@ -212,13 +212,14 @@ Deno.serve(async (req: Request) => {
         );
       }
 
-      // Store the API response in the cache for future reference
+      // Store the API response in the cache using decimal coordinates
       if (locationCoordinates && solarResult.solarData) {
         try {
           await supabase
             .from('solar_api_cache')
             .upsert({
-              coordinates: `POINT(${locationCoordinates.lng} ${locationCoordinates.lat})`,
+              latitude: locationCoordinates.lat,
+              longitude: locationCoordinates.lng,
               raw_response: solarResult.rawResponse,
               formatted_data: solarResult.solarData,
               requested_at: new Date().toISOString(),
@@ -277,7 +278,7 @@ Deno.serve(async (req: Request) => {
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 500
+      status: 500
       }
     );
   }
