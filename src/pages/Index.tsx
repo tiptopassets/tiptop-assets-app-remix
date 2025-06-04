@@ -87,8 +87,12 @@ const Index = () => {
             {!isAnalyzing && !analysisComplete && <AnalyzeButton />}
           </div>
 
-          {/* Push asset cards almost to the bottom of the viewport */}
-          <div className={`w-full flex flex-col justify-center items-center ${analysisComplete ? 'mt-[calc(100vh-500px)] min-h-[400px]' : 'mt-8'}`}>
+          {/* Push asset cards to near bottom with adaptive spacing for mobile */}
+          <div className={`w-full flex flex-col justify-center items-center ${
+            analysisComplete 
+              ? 'mt-[calc(100vh-400px)] sm:mt-[calc(100vh-450px)] md:mt-[calc(100vh-500px)] lg:mt-[calc(100vh-550px)] min-h-[350px] sm:min-h-[400px] md:min-h-[450px]' 
+              : 'mt-8'
+          }`}>
             {!analysisComplete && !isAnalyzing && <AssetIcons />}
             <AssetResultList analysisResults={analysisResults} />
           </div>
