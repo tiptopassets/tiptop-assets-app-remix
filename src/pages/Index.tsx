@@ -87,8 +87,8 @@ const Index = () => {
             {!isAnalyzing && !analysisComplete && <AnalyzeButton />}
           </div>
 
-          {/* Add much more significant spacing before results when analysis is complete */}
-          <div className={`w-full flex flex-col justify-center items-center ${analysisComplete ? 'mt-24 md:mt-32' : 'mt-8'}`}>
+          {/* Add even more significant spacing before results when analysis is complete */}
+          <div className={`w-full flex flex-col justify-center items-center ${analysisComplete ? 'mt-40 md:mt-48' : 'mt-8'}`}>
             {!analysisComplete && !isAnalyzing && <AssetIcons />}
             <AssetResultList analysisResults={analysisResults} />
           </div>
