@@ -92,13 +92,18 @@ const Index = () => {
             {!analysisComplete && !isAnalyzing && <AssetIcons />}
           </div>
 
-          {/* Asset results - responsive spacing and layout */}
-          <div className={`w-full flex flex-col justify-center items-center ${
+          {/* Push content to the edge of the map bottom when analysis is complete */}
+          <div className={`w-full flex flex-col justify-end items-center flex-1 ${
             analysisComplete 
-              ? 'mt-4 sm:mt-6 md:mt-8 min-h-[400px] sm:min-h-[500px]' 
+              ? 'pb-[300px]' // Large padding to push content near bottom edge
               : 'mt-6 sm:mt-8'
           }`}>
-            <AssetResultList analysisResults={analysisResults} />
+            {/* Asset results - positioned near bottom when analysis complete */}
+            {analysisComplete && (
+              <div className="w-full flex flex-col justify-center items-center mb-4">
+                <AssetResultList analysisResults={analysisResults} />
+              </div>
+            )}
           </div>
 
           {/* 3D Model Viewer */}
