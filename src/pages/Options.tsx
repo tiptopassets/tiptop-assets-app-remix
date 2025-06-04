@@ -1,5 +1,6 @@
+
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { CheckCircle2, Upload, User, LogIn } from 'lucide-react';
@@ -7,7 +8,6 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 
 const Options = () => {
-  const navigate = useNavigate();
   const [selectedOption, setSelectedOption] = useState<'manual' | 'concierge' | null>(null);
   const { signInWithGoogle } = useAuth();
   const { toast } = useToast();
@@ -26,14 +26,14 @@ const Options = () => {
       return;
     }
     
-    // Show toast and try to authenticate with Google
+    // Show toast and proceed with Google authentication
     toast({
       title: "Option Selected",
-      description: `${selectedOption === 'manual' ? 'Manual Upload' : 'Tiptop Concierge'} selected`,
+      description: `${selectedOption === 'manual' ? 'Manual Upload' : 'Tiptop Concierge'} selected. Redirecting to authentication...`,
     });
     
     try {
-      // Trigger Google authentication
+      // Trigger Google authentication - this will redirect to Google and then to dashboard
       await signInWithGoogle();
     } catch (error) {
       console.error('Google sign in error:', error);

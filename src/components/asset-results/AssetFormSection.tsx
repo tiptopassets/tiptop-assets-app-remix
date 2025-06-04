@@ -57,10 +57,10 @@ const AssetFormSection = ({
         description: "Your asset information has been saved successfully."
       });
       
-      // Navigate to authentication after a short delay
+      // Navigate to options page after a short delay
       setTimeout(() => {
         setIsSubmitting(false);
-        onComplete();
+        navigate('/options');
       }, 500);
     } catch (error) {
       console.error('Error submitting form:', error);

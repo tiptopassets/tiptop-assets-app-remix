@@ -83,12 +83,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             updateLoginStats(currentSession.user.id);
           }, 0);
           
-          // Redirect to dashboard if user is logged in and not already there
-          if (window.location.pathname !== '/dashboard') {
-            setTimeout(() => {
-              navigate('/dashboard');
-            }, 100);
-          }
+          // Always redirect to dashboard when user signs in
+          setTimeout(() => {
+            navigate('/dashboard');
+          }, 100);
         }
         
         // Redirect to homepage if user logs out
