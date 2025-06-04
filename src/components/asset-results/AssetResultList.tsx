@@ -51,9 +51,17 @@ const AssetResultList: React.FC<AssetResultListProps> = ({ analysisResults }) =>
         console.log('📊 New selectedAssets after removal:', newSelectedAssets);
         return newSelectedAssets;
       } else {
-        // Add asset
+        // Add asset - check both main opportunities and additional opportunities
         console.log('➕ Adding asset:', assetTitle);
-        const assetData = additionalOpportunities.find(opp => opp.title === assetTitle);
+        
+        // First check in main analysis results opportunities
+        let assetData = analysisResults?.topOpportunities?.find(opp => opp.title === assetTitle);
+        
+        // If not found, check in additional opportunities
+        if (!assetData) {
+          assetData = additionalOpportunities.find(opp => opp.title === assetTitle);
+        }
+        
         console.log('🔍 Found asset data:', assetData);
         
         if (assetData) {
@@ -63,7 +71,7 @@ const AssetResultList: React.FC<AssetResultListProps> = ({ analysisResults }) =>
               icon: assetData.icon,
               monthlyRevenue: assetData.monthlyRevenue,
               provider: assetData.provider,
-              setupCost: assetData.setupCost,
+              setupCost: assetData.setupCost || 0,
               roi: assetData.roi,
               formData: {}
             };
@@ -80,7 +88,7 @@ const AssetResultList: React.FC<AssetResultListProps> = ({ analysisResults }) =>
         return newSelectedAssets;
       }
     });
-  }, [additionalOpportunities, selectedAssets]);
+  }, [additionalOpportunities, selectedAssets, analysisResults?.topOpportunities]);
 
   const handleContinue = useCallback(() => {
     console.log('🚀 Continue clicked');
@@ -124,13 +132,19 @@ const AssetResultList: React.FC<AssetResultListProps> = ({ analysisResults }) =>
     console.log('📝 Rendering AssetFormSection with:', {
       selectedAssetsCount: selectedAssetsData.length,
       selectedAssets: selectedAssetsData,
-      opportunities: analysisResults?.topOpportunities || []
+      opportunities: [...(analysisResults?.topOpportunities || []), ...additionalOpportunities]
     });
+    
+    // Combine both main opportunities and additional opportunities for the form
+    const allOpportunities = [
+      ...(analysisResults?.topOpportunities || []),
+      ...additionalOpportunities
+    ];
     
     return (
       <AssetFormSection 
         selectedAssets={selectedAssetsData}
-        opportunities={analysisResults?.topOpportunities || []}
+        opportunities={allOpportunities}
         onComplete={handleFormComplete}
       />
     );
