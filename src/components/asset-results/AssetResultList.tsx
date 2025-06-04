@@ -23,40 +23,72 @@ const AssetResultList: React.FC<AssetResultListProps> = ({ analysisResults }) =>
   const { analysisComplete } = useGoogleMap();
 
   const handleAssetToggle = (assetTitle: string) => {
+    console.log('🔄 Asset toggle called for:', assetTitle);
+    console.log('📊 Current selectedAssets:', selectedAssets);
+    console.log('📋 Current selectedAssetsData:', selectedAssetsData);
+    console.log('🎯 Available opportunities:', additionalOpportunities.map(o => o.title));
+    
     setSelectedAssets(prev => {
       const isSelected = prev.includes(assetTitle);
+      console.log('❓ Is asset selected?', isSelected);
+      
       if (isSelected) {
         // Remove asset
-        setSelectedAssetsData(prevData => 
-          prevData.filter(asset => asset.title !== assetTitle)
-        );
-        return prev.filter(title => title !== assetTitle);
+        console.log('➖ Removing asset:', assetTitle);
+        setSelectedAssetsData(prevData => {
+          const newData = prevData.filter(asset => asset.title !== assetTitle);
+          console.log('📋 New selectedAssetsData after removal:', newData);
+          return newData;
+        });
+        const newSelectedAssets = prev.filter(title => title !== assetTitle);
+        console.log('📊 New selectedAssets after removal:', newSelectedAssets);
+        return newSelectedAssets;
       } else {
         // Add asset
+        console.log('➕ Adding asset:', assetTitle);
         const assetData = additionalOpportunities.find(opp => opp.title === assetTitle);
+        console.log('🔍 Found asset data:', assetData);
+        
         if (assetData) {
-          setSelectedAssetsData(prevData => [...prevData, {
-            title: assetData.title,
-            icon: assetData.icon,
-            monthlyRevenue: assetData.monthlyRevenue,
-            provider: assetData.provider,
-            setupCost: assetData.setupCost,
-            roi: assetData.roi,
-            formData: {}
-          }]);
+          setSelectedAssetsData(prevData => {
+            const newAsset = {
+              title: assetData.title,
+              icon: assetData.icon,
+              monthlyRevenue: assetData.monthlyRevenue,
+              provider: assetData.provider,
+              setupCost: assetData.setupCost,
+              roi: assetData.roi,
+              formData: {}
+            };
+            const newData = [...prevData, newAsset];
+            console.log('📋 New selectedAssetsData after addition:', newData);
+            return newData;
+          });
+        } else {
+          console.error('❌ Asset data not found for:', assetTitle);
         }
-        return [...prev, assetTitle];
+        
+        const newSelectedAssets = [...prev, assetTitle];
+        console.log('📊 New selectedAssets after addition:', newSelectedAssets);
+        return newSelectedAssets;
       }
     });
   };
 
   const handleContinue = () => {
+    console.log('🚀 Continue clicked');
+    console.log('📊 Selected assets count:', selectedAssets.length);
+    console.log('📋 Selected assets data:', selectedAssetsData);
+    
     if (selectedAssets.length > 0) {
       setShowAssetForm(true);
+    } else {
+      console.warn('⚠️ No assets selected when continue was clicked');
     }
   };
 
   const handleFormComplete = () => {
+    console.log('✅ Form completed');
     setShowAssetForm(false);
     // Here you could navigate to dashboard or next step
   };
@@ -77,6 +109,12 @@ const AssetResultList: React.FC<AssetResultListProps> = ({ analysisResults }) =>
   const totalMonthlyIncome = analysisRevenue + totalSelectedRevenue;
 
   if (showAssetForm) {
+    console.log('📝 Rendering AssetFormSection with:', {
+      selectedAssetsCount: selectedAssetsData.length,
+      selectedAssets: selectedAssetsData,
+      opportunities: analysisResults?.topOpportunities || []
+    });
+    
     return (
       <AssetFormSection 
         selectedAssets={selectedAssetsData}
@@ -88,8 +126,16 @@ const AssetResultList: React.FC<AssetResultListProps> = ({ analysisResults }) =>
 
   // Don't render anything if analysis is not complete
   if (!analysisComplete || !analysisResults) {
+    console.log('⏳ Analysis not complete or no results');
     return null;
   }
+
+  console.log('🏠 Rendering main asset list with:', {
+    analysisComplete,
+    hasResults: !!analysisResults,
+    selectedAssetsCount: selectedAssets.length,
+    additionalOpportunitiesCount: additionalOpportunities.length
+  });
 
   return (
     <div className="space-y-8">

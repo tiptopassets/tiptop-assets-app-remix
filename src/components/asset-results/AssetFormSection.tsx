@@ -27,13 +27,22 @@ const AssetFormSection = ({
   const { toast } = useToast();
   const navigate = useNavigate();
 
+  console.log('📝 AssetFormSection received:', {
+    selectedAssetsCount: selectedAssets.length,
+    selectedAssets: selectedAssets.map(a => ({ title: a.title, revenue: a.monthlyRevenue })),
+    opportunitiesCount: opportunities.length
+  });
+
   // Find form fields for an asset based on its title
   const findFormFields = (assetTitle: string): FormField[] => {
     const opportunity = opportunities.find(opp => opp.title === assetTitle);
-    return opportunity?.formFields || [];
+    const fields = opportunity?.formFields || [];
+    console.log(`🔍 Form fields for ${assetTitle}:`, fields);
+    return fields;
   };
 
   const handleInputChange = (assetTitle: string, fieldName: string, value: string | number) => {
+    console.log(`📝 Input changed for ${assetTitle}.${fieldName}:`, value);
     setFormData(prev => ({
       ...prev,
       [assetTitle]: {
@@ -48,8 +57,7 @@ const AssetFormSection = ({
     setIsSubmitting(true);
     
     try {
-      // Here you would typically submit the form data
-      console.log('Form data submitted:', formData);
+      console.log('📤 Form data submitted:', formData);
       
       // Show success toast
       toast({
@@ -63,7 +71,7 @@ const AssetFormSection = ({
         navigate('/options');
       }, 500);
     } catch (error) {
-      console.error('Error submitting form:', error);
+      console.error('❌ Error submitting form:', error);
       setIsSubmitting(false);
       
       toast({
@@ -75,8 +83,16 @@ const AssetFormSection = ({
   };
 
   if (selectedAssets.length === 0) {
-    return null;
+    console.warn('⚠️ No selected assets provided to AssetFormSection');
+    return (
+      <div className="mt-12 mb-16 text-center">
+        <h2 className="text-2xl md:text-3xl font-bold text-white mb-6">No Assets Selected</h2>
+        <p className="text-gray-300">Please go back and select assets to continue.</p>
+      </div>
+    );
   }
+
+  console.log('🎨 Rendering form for assets:', selectedAssets.map(a => a.title));
 
   return (
     <motion.div
@@ -90,11 +106,12 @@ const AssetFormSection = ({
       </h2>
       
       <form onSubmit={handleSubmit} className="space-y-8">
-        {selectedAssets.map((asset) => {
+        {selectedAssets.map((asset, index) => {
+          console.log(`🎯 Rendering asset ${index + 1}/${selectedAssets.length}:`, asset.title);
+          
           const formFields = findFormFields(asset.title);
           const iconType = asset.icon as keyof typeof iconMap;
           
-          // Always render each selected asset card, even if it has no form fields
           return (
             <div 
               key={asset.title}
@@ -113,47 +130,54 @@ const AssetFormSection = ({
                 <div>
                   <h3 className="text-xl font-semibold text-white">{asset.title}</h3>
                   <p className="text-gray-300">${asset.monthlyRevenue}/month</p>
+                  {asset.provider && (
+                    <p className="text-gray-400 text-sm">via {asset.provider}</p>
+                  )}
                 </div>
               </div>
               
               {formFields.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                  {formFields.map((field) => (
-                    <div key={`${asset.title}-${field.name}`} className="form-field">
-                      <Label htmlFor={`${asset.title}-${field.name}`} className="text-white mb-1 block">
-                        {field.label}
-                      </Label>
-                      
-                      {field.type === "select" ? (
-                        <Select 
-                          defaultValue={String(field.value)}
-                          onValueChange={(value) => handleInputChange(asset.title, field.name, value)}
-                        >
-                          <SelectTrigger className="glass-effect border-white/20 text-white">
-                            <SelectValue placeholder={String(field.value)} />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {field.options?.map(option => (
-                              <SelectItem key={option} value={option}>{option}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      ) : (
-                        <Input
-                          id={`${asset.title}-${field.name}`}
-                          type={field.type} 
-                          defaultValue={field.value}
-                          onChange={(e) => {
-                            const value = field.type === "number" 
-                              ? parseFloat(e.target.value) 
-                              : e.target.value;
-                            handleInputChange(asset.title, field.name, value);
-                          }}
-                          className="glass-effect border-white/20 text-white"
-                        />
-                      )}
-                    </div>
-                  ))}
+                  {formFields.map((field, fieldIndex) => {
+                    console.log(`🔧 Rendering field ${fieldIndex + 1}/${formFields.length} for ${asset.title}:`, field.name);
+                    
+                    return (
+                      <div key={`${asset.title}-${field.name}`} className="form-field">
+                        <Label htmlFor={`${asset.title}-${field.name}`} className="text-white mb-1 block">
+                          {field.label}
+                        </Label>
+                        
+                        {field.type === "select" ? (
+                          <Select 
+                            defaultValue={String(field.value)}
+                            onValueChange={(value) => handleInputChange(asset.title, field.name, value)}
+                          >
+                            <SelectTrigger className="glass-effect border-white/20 text-white">
+                              <SelectValue placeholder={String(field.value)} />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {field.options?.map(option => (
+                                <SelectItem key={option} value={option}>{option}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        ) : (
+                          <Input
+                            id={`${asset.title}-${field.name}`}
+                            type={field.type} 
+                            defaultValue={field.value}
+                            onChange={(e) => {
+                              const value = field.type === "number" 
+                                ? parseFloat(e.target.value) 
+                                : e.target.value;
+                              handleInputChange(asset.title, field.name, value);
+                            }}
+                            className="glass-effect border-white/20 text-white"
+                          />
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               ) : (
                 <div className="mt-2 text-gray-200 italic">
@@ -163,8 +187,6 @@ const AssetFormSection = ({
               
               {/* Enhanced glossy effect */}
               <div className="absolute top-0 left-0 right-0 h-1/3 bg-gradient-to-b from-white/10 to-transparent rounded-t-lg pointer-events-none"></div>
-              
-              {/* Additional glossy and glow effects */}
               <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-white/10 rounded-lg pointer-events-none"></div>
               <div className="absolute bottom-0 left-0 right-0 h-1/4 bg-gradient-to-t from-black/10 to-transparent rounded-b-lg pointer-events-none"></div>
               <div className="absolute -inset-1 bg-gradient-to-r from-purple-500/10 to-violet-500/10 rounded-xl blur-lg -z-10 pointer-events-none"></div>

@@ -13,12 +13,21 @@ import { useProviderActions } from './hooks/useProviderActions';
 const ServiceProviderContext = createContext<ServiceProviderContextType | undefined>(undefined);
 
 export const ServiceProviderProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [availableProviders, setAvailableProviders] = useState<ServiceProvider[]>([]);
   const [connectedProviders, setConnectedProviders] = useState<AffiliateRegistration[]>([]);
   const [earnings, setEarnings] = useState<Record<string, number>>({});
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isInitialized, setIsInitialized] = useState(false);
+
+  console.log('🏪 ServiceProviderContext state:', {
+    authLoading,
+    user: user?.email || 'none',
+    isInitialized,
+    isLoading,
+    error
+  });
 
   // Use custom hooks for data and actions
   const providerData = useProviderData();
@@ -32,92 +41,136 @@ export const ServiceProviderProvider: React.FC<{ children: React.ReactNode }> = 
 
   // Memoize the update functions to prevent infinite loops
   const updateProviderStates = useCallback(() => {
-    const newAvailableProviders = providerData.availableProviders.map(p => ({
-      id: p.id,
-      name: p.name,
-      category: p.assetTypes[0] || 'general',
-      description: p.description,
-      logo_url: p.logo,
-      website_url: p.url,
-      affiliate_program_url: p.loginUrl,
-      referral_link_template: p.referralLinkTemplate,
-      commission_rate: 5,
-      setup_cost: 0,
-      avg_monthly_earnings_low: 25,
-      avg_monthly_earnings_high: 150,
-      conversion_rate: 2.5,
-      priority: 1,
-      is_active: true
-    }));
-    
-    const newConnectedProviders = providerData.connectedProviders.map(p => ({
-      id: p.id,
-      user_id: user?.id || '',
-      bundle_selection_id: '',
-      provider_id: p.id,
-      affiliate_link: p.loginUrl,
-      tracking_code: '',
-      registration_status: 'completed' as const,
-      registration_date: new Date().toISOString(),
-      first_commission_date: undefined,
-      total_earnings: 0,
-      last_sync_at: new Date().toISOString()
-    }));
+    try {
+      console.log('🔄 Updating provider states');
+      
+      const newAvailableProviders = providerData.availableProviders.map(p => ({
+        id: p.id,
+        name: p.name,
+        category: p.assetTypes[0] || 'general',
+        description: p.description,
+        logo_url: p.logo,
+        website_url: p.url,
+        affiliate_program_url: p.loginUrl,
+        referral_link_template: p.referralLinkTemplate,
+        commission_rate: 5,
+        setup_cost: 0,
+        avg_monthly_earnings_low: 25,
+        avg_monthly_earnings_high: 150,
+        conversion_rate: 2.5,
+        priority: 1,
+        is_active: true
+      }));
+      
+      const newConnectedProviders = providerData.connectedProviders.map(p => ({
+        id: p.id,
+        user_id: user?.id || '',
+        bundle_selection_id: '',
+        provider_id: p.id,
+        affiliate_link: p.loginUrl,
+        tracking_code: '',
+        registration_status: 'completed' as const,
+        registration_date: new Date().toISOString(),
+        first_commission_date: undefined,
+        total_earnings: 0,
+        last_sync_at: new Date().toISOString()
+      }));
 
-    const newEarningsRecord: Record<string, number> = {};
-    providerData.earnings.forEach(earning => {
-      newEarningsRecord[earning.service] = earning.earnings;
-    });
-    
-    // Only update if data has actually changed
-    setAvailableProviders(prev => {
-      const hasChanged = JSON.stringify(prev) !== JSON.stringify(newAvailableProviders);
-      return hasChanged ? newAvailableProviders : prev;
-    });
-    
-    setConnectedProviders(prev => {
-      const hasChanged = JSON.stringify(prev) !== JSON.stringify(newConnectedProviders);
-      return hasChanged ? newConnectedProviders : prev;
-    });
-    
-    setEarnings(prev => {
-      const hasChanged = JSON.stringify(prev) !== JSON.stringify(newEarningsRecord);
-      return hasChanged ? newEarningsRecord : prev;
-    });
-    
-    setIsLoading(providerData.isLoading);
-    setError(providerData.error);
-  }, [providerData, user?.id]);
+      const newEarningsRecord: Record<string, number> = {};
+      providerData.earnings.forEach(earning => {
+        newEarningsRecord[earning.service] = earning.earnings;
+      });
+      
+      // Only update if data has actually changed
+      setAvailableProviders(prev => {
+        const hasChanged = JSON.stringify(prev) !== JSON.stringify(newAvailableProviders);
+        return hasChanged ? newAvailableProviders : prev;
+      });
+      
+      setConnectedProviders(prev => {
+        const hasChanged = JSON.stringify(prev) !== JSON.stringify(newConnectedProviders);
+        return hasChanged ? newConnectedProviders : prev;
+      });
+      
+      setEarnings(prev => {
+        const hasChanged = JSON.stringify(prev) !== JSON.stringify(newEarningsRecord);
+        return hasChanged ? newEarningsRecord : prev;
+      });
+      
+      setIsLoading(providerData.isLoading);
+      setError(providerData.error);
+      
+      // Mark as initialized only after auth is ready
+      if (!authLoading) {
+        setIsInitialized(true);
+      }
+    } catch (err) {
+      console.error('❌ Error updating provider states:', err);
+      setError(err instanceof Error ? err.message : 'Unknown error occurred');
+      setIsLoading(false);
+    }
+  }, [providerData, user?.id, authLoading]);
 
   // Update state when provider data changes, but only if necessary
   useEffect(() => {
+    // Don't initialize until auth is ready
+    if (authLoading) {
+      console.log('⏳ Waiting for auth to finish loading');
+      return;
+    }
+    
     updateProviderStates();
-  }, [updateProviderStates]);
+  }, [updateProviderStates, authLoading]);
 
   // Wrapper functions to handle user ID automatically
   const connectToProvider = async (providerId: string) => {
-    if (!user) return;
+    if (!user) {
+      console.warn('⚠️ Cannot connect to provider: no user');
+      return;
+    }
     await providerActions.connectToProvider(providerId, user.id);
   };
 
   const registerWithProvider = async (formData: RegisterServiceFormData) => {
-    if (!user) return;
+    if (!user) {
+      console.warn('⚠️ Cannot register with provider: no user');
+      return;
+    }
     await providerActions.registerWithProvider(formData, user.id);
   };
 
   const disconnectProvider = async (providerId: string) => {
-    if (!user) return;
+    if (!user) {
+      console.warn('⚠️ Cannot disconnect provider: no user');
+      return;
+    }
     await providerActions.disconnectProvider(providerId, user.id);
   };
 
   const syncProviderEarnings = async (providerId: string) => {
-    if (!user) return;
+    if (!user) {
+      console.warn('⚠️ Cannot sync earnings: no user');
+      return;
+    }
     await providerActions.syncProviderEarnings(providerId, user.id);
   };
 
   const generateReferralLink = (providerId: string, destinationUrl: string): string => {
     return providerActions.generateReferralLink(providerId, destinationUrl, user?.id) as any;
   };
+
+  // Show loading state while auth is loading or context is initializing
+  if (authLoading || !isInitialized) {
+    console.log('⏳ ServiceProviderContext still loading');
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-white text-center">
+          <div className="animate-spin h-8 w-8 border-4 border-tiptop-purple border-t-transparent rounded-full mx-auto mb-4"></div>
+          <p>Loading service providers...</p>
+        </div>
+      </div>
+    );
+  }
 
   const contextValue: ServiceProviderContextType = {
     availableProviders,
@@ -131,6 +184,8 @@ export const ServiceProviderProvider: React.FC<{ children: React.ReactNode }> = 
     syncProviderEarnings,
     generateReferralLink
   };
+
+  console.log('✅ ServiceProviderContext ready, rendering children');
 
   return (
     <ServiceProviderContext.Provider value={contextValue}>

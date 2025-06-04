@@ -9,14 +9,22 @@ import { useAuth } from '@/contexts/AuthContext';
 
 const Options = () => {
   const [selectedOption, setSelectedOption] = useState<'manual' | 'concierge' | null>(null);
-  const { signInWithGoogle } = useAuth();
+  const { signInWithGoogle, loading: authLoading } = useAuth();
   const { toast } = useToast();
 
+  console.log('🎯 Options page state:', {
+    selectedOption,
+    authLoading
+  });
+
   const handleOptionSelect = (option: 'manual' | 'concierge') => {
+    console.log('✅ Option selected:', option);
     setSelectedOption(option);
   };
 
   const handleContinue = async () => {
+    console.log('🚀 Continue clicked with option:', selectedOption);
+    
     if (!selectedOption) {
       toast({
         title: "Selection Required",
@@ -33,10 +41,11 @@ const Options = () => {
     });
     
     try {
+      console.log('🔐 Starting Google authentication');
       // Trigger Google authentication - this will redirect to Google and then to dashboard
       await signInWithGoogle();
     } catch (error) {
-      console.error('Google sign in error:', error);
+      console.error('❌ Google sign in error:', error);
       toast({
         title: "Authentication Error",
         description: "There was a problem signing in with Google. Please try again.",
@@ -44,6 +53,18 @@ const Options = () => {
       });
     }
   };
+
+  // Show loading state while auth is processing
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-[#1A1F2C] to-[#2d3748]">
+        <div className="text-white text-center">
+          <div className="animate-spin h-8 w-8 border-4 border-tiptop-purple border-t-transparent rounded-full mx-auto mb-4"></div>
+          <p>Processing authentication...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen relative overflow-hidden bg-gradient-to-b from-[#1A1F2C] to-[#2d3748] flex flex-col items-center">
@@ -166,14 +187,23 @@ const Options = () => {
           <div className="mt-12 flex justify-center">
             <Button 
               onClick={handleContinue} 
-              disabled={!selectedOption}
+              disabled={!selectedOption || authLoading}
               className="glass-effect bg-gradient-to-r from-tiptop-purple to-purple-600 hover:opacity-90 px-8 py-6 rounded-full flex items-center gap-3 text-xl disabled:opacity-50"
               style={{ 
                 boxShadow: '0 0 20px rgba(155, 135, 245, 0.5)',
               }}
             >
-              <span>Continue to Authentication</span>
-              <LogIn size={24} />
+              {authLoading ? (
+                <>
+                  <span>Processing...</span>
+                  <div className="h-5 w-5 border-2 border-white/80 border-t-transparent rounded-full animate-spin"></div>
+                </>
+              ) : (
+                <>
+                  <span>Continue to Authentication</span>
+                  <LogIn size={24} />
+                </>
+              )}
             </Button>
           </div>
         </motion.div>
