@@ -1,315 +1,122 @@
-import { useState } from 'react';
-import { useGoogleMap } from '@/contexts/GoogleMapContext';
-import { motion } from "framer-motion";
-import { toast } from '@/hooks/use-toast';
-import { useNavigate } from 'react-router-dom';
-import { SelectedAsset } from '@/types/analysis';
-import { BundleRecommendation } from '@/contexts/ServiceProviders/types';
-import PartnerRegistrationFlow from '@/components/enhanced-analysis/PartnerRegistrationFlow';
-import ServiceAvailabilityChecker from '@/components/property-analysis/ServiceAvailabilityChecker';
 
-// Existing components
-import PropertySummaryCard from './PropertySummaryCard';
+import React, { useState } from 'react';
+import { motion } from "framer-motion";
+import { useAdditionalOpportunities } from '@/hooks/useAdditionalOpportunities';
+import { SelectedAsset } from '@/types/analysis';
 import AssetOpportunitiesGrid from './AssetOpportunitiesGrid';
 import AdditionalAssetsCarousel from './AdditionalAssetsCarousel';
-import ContinueButton from './ContinueButton';
 import AssetFormSection from './AssetFormSection';
-import SpacerBlock from './SpacerBlock';
+import ContinueButton from './ContinueButton';
+import PropertySummaryCard from './PropertySummaryCard';
+import RestrictionsCard from './RestrictionsCard';
 
-// New bundle components
-import BundleRecommendations from '../bundles/BundleRecommendations';
-import BundleRegistrationFlow from '../bundles/BundleRegistrationFlow';
+interface AssetResultListProps {
+  analysisResults: any;
+}
 
-import { useAdditionalOpportunities } from '@/hooks/useAdditionalOpportunities';
-
-const AssetResultList = () => {
-  const { analysisComplete, analysisResults, isAnalyzing, address, addressCoordinates } = useGoogleMap();
+const AssetResultList: React.FC<AssetResultListProps> = ({ analysisResults }) => {
+  const { additionalOpportunities, opportunitiesByTier, opportunitiesByCategory } = useAdditionalOpportunities();
   const [selectedAssets, setSelectedAssets] = useState<string[]>([]);
-  const [showFormSection, setShowFormSection] = useState(false);
-  const [showBundles, setShowBundles] = useState(false);
-  const [selectedBundle, setSelectedBundle] = useState<BundleRecommendation | null>(null);
-  const [showPartnerRegistration, setShowPartnerRegistration] = useState(false);
-  const [recommendedPartners, setRecommendedPartners] = useState([]);
-  const navigate = useNavigate();
-  const { additionalOpportunities } = useAdditionalOpportunities();
-
-  // Don't show results until analysis is complete and not analyzing
-  if (!analysisComplete || isAnalyzing || !analysisResults) return null;
-
-  // Extract detected assets from analysis results
-  const detectedAssets = [
-    ...(analysisResults.rooftop?.solarPotential ? ['solar'] : []),
-    ...(analysisResults.parking?.spaces > 0 ? ['parking'] : []),
-    ...(analysisResults.pool?.present ? ['pool'] : []),
-    ...(analysisResults.bandwidth?.available > 0 ? ['internet'] : []),
-    ...(analysisResults.storage?.volume > 0 ? ['storage'] : []),
-    // Add more asset detection logic based on your analysis results
-  ];
-
-  // Calculate total potential monthly income from selected assets
-  const calculateTotalMonthlyIncome = () => {
-    let total = 0;
-    
-    // Add from main opportunities
-    analysisResults.topOpportunities
-      .filter(opportunity => selectedAssets.includes(opportunity.title))
-      .forEach(opportunity => total += opportunity.monthlyRevenue);
-    
-    // Add from additional opportunities
-    additionalOpportunities
-      .filter(opportunity => selectedAssets.includes(opportunity.title))
-      .forEach(opportunity => total += opportunity.monthlyRevenue);
-      
-    return total;
-  };
-
-  const totalMonthlyIncome = calculateTotalMonthlyIncome();
-
-  // Calculate setup costs for selected assets
-  const calculateTotalSetupCost = () => {
-    let total = 0;
-    
-    // Add from main opportunities
-    analysisResults.topOpportunities
-      .filter(opportunity => selectedAssets.includes(opportunity.title) && opportunity.setupCost)
-      .forEach(opportunity => total += opportunity.setupCost || 0);
-    
-    // Add from additional opportunities
-    additionalOpportunities
-      .filter(opportunity => selectedAssets.includes(opportunity.title) && opportunity.setupCost)
-      .forEach(opportunity => total += opportunity.setupCost || 0);
-      
-    return total;
-  };
-
-  const totalSetupCost = calculateTotalSetupCost();
+  const [selectedAssetsData, setSelectedAssetsData] = useState<SelectedAsset[]>([]);
+  const [showAssetForm, setShowAssetForm] = useState(false);
 
   const handleAssetToggle = (assetTitle: string) => {
     setSelectedAssets(prev => {
-      if (prev.includes(assetTitle)) {
+      const isSelected = prev.includes(assetTitle);
+      if (isSelected) {
+        // Remove asset
+        setSelectedAssetsData(prevData => 
+          prevData.filter(asset => asset.title !== assetTitle)
+        );
         return prev.filter(title => title !== assetTitle);
       } else {
+        // Add asset
+        const assetData = additionalOpportunities.find(opp => opp.title === assetTitle);
+        if (assetData) {
+          setSelectedAssetsData(prevData => [...prevData, {
+            title: assetData.title,
+            icon: assetData.icon,
+            monthlyRevenue: assetData.monthlyRevenue,
+            provider: assetData.provider,
+            setupCost: assetData.setupCost,
+            roi: assetData.roi,
+            formData: {}
+          }]);
+        }
         return [...prev, assetTitle];
       }
     });
   };
-  
+
   const handleContinue = () => {
-    if (selectedAssets.length === 0) {
-      toast({
-        title: "Selection Required",
-        description: "Please select at least one asset to continue",
-        variant: "destructive"
-      });
-      return;
+    if (selectedAssets.length > 0) {
+      setShowAssetForm(true);
     }
-    
-    // Generate partner recommendations based on selected assets
-    const partners = generatePartnerRecommendations(selectedAssets);
-    setRecommendedPartners(partners);
-    setShowPartnerRegistration(true);
   };
 
-  const generatePartnerRecommendations = (assets: string[]) => {
-    const partnerMap: Record<string, any> = {
-      'Solar Panels': {
-        name: 'Tesla Energy',
-        description: 'Leading solar panel installation and energy solutions',
-        category: 'Solar',
-        estimatedEarnings: '$200-500/month',
-        setupTime: '2-4 weeks',
-        difficulty: 'Medium'
-      },
-      'Parking Space Rental': {
-        name: 'SpotHero',
-        description: 'Monetize your parking spaces with hourly/daily rentals',
-        category: 'Parking',
-        estimatedEarnings: '$100-300/month',
-        setupTime: '1-2 days',
-        difficulty: 'Easy'
-      },
-      'Internet Bandwidth Sharing': {
-        name: 'Honeygain',
-        description: 'Earn passive income by sharing your unused internet',
-        category: 'Internet',
-        estimatedEarnings: '$20-50/month',
-        setupTime: '5 minutes',
-        difficulty: 'Easy'
-      },
-      'Pool Rental': {
-        name: 'Swimply',
-        description: 'Rent out your pool by the hour to local swimmers',
-        category: 'Pool',
-        estimatedEarnings: '$300-800/month',
-        setupTime: '1 week',
-        difficulty: 'Medium'
-      }
-    };
+  const totalSelectedRevenue = selectedAssetsData.reduce((sum, asset) => sum + asset.monthlyRevenue, 0);
+  const totalSetupCost = selectedAssetsData.reduce((sum, asset) => sum + (asset.setupCost || 0), 0);
 
-    return assets.map(asset => partnerMap[asset]).filter(Boolean);
-  };
-
-  const handlePartnerRegistrationComplete = () => {
-    setShowPartnerRegistration(false);
-    toast({
-      title: "Registration Complete!",
-      description: "You're all set up with your selected partners",
-    });
-    navigate('/dashboard');
-  };
-
-  const handleSelectBundle = (recommendation: BundleRecommendation) => {
-    setSelectedBundle(recommendation);
-    setShowBundles(false);
-  };
-
-  const handleBundleRegistrationComplete = () => {
-    setSelectedBundle(null);
-    toast({
-      title: "Bundle Registration Complete!",
-      description: "You're all set up with your selected bundle",
-    });
-    navigate('/dashboard');
-  };
-
-  const handleSkipBundles = () => {
-    setShowBundles(false);
-    setShowFormSection(true);
-    
-    setTimeout(() => {
-      const formSection = document.getElementById('asset-form-section');
-      if (formSection) {
-        formSection.scrollIntoView({ behavior: 'smooth' });
-      }
-    }, 100);
-  };
-  
-  const handleAuthenticateClick = () => {
-    // Navigate to the options page
-    navigate('/options');
-  };
-  
-  // Prepare the selected assets for the form
-  const selectedAssetObjects: SelectedAsset[] = [
-    ...analysisResults.topOpportunities.filter(opp => selectedAssets.includes(opp.title)),
-    ...additionalOpportunities.filter(opp => selectedAssets.includes(opp.title))
-  ];
-  
-  // Combine all opportunities for form field lookup
-  const allOpportunities = [...analysisResults.topOpportunities, ...additionalOpportunities];
-
-  // Show partner registration flow
-  if (showPartnerRegistration) {
+  if (showAssetForm) {
     return (
-      <div className="w-full px-4 md:px-0 md:max-w-4xl">
-        <SpacerBlock />
-        <PartnerRegistrationFlow
-          selectedAssets={selectedAssets}
-          recommendedPartners={recommendedPartners}
-          onComplete={handlePartnerRegistrationComplete}
-        />
-      </div>
-    );
-  }
-
-  // Show bundle registration flow if a bundle is selected
-  if (selectedBundle) {
-    return (
-      <div className="w-full px-4 md:px-0 md:max-w-4xl">
-        <SpacerBlock />
-        <BundleRegistrationFlow
-          selectedBundle={selectedBundle}
-          propertyAddress={address || ''}
-          onComplete={handleBundleRegistrationComplete}
-          onBack={() => setSelectedBundle(null)}
-        />
-      </div>
-    );
-  }
-
-  // Show bundle recommendations if enabled
-  if (showBundles && detectedAssets.length >= 2) {
-    return (
-      <div className="w-full px-4 md:px-0 md:max-w-4xl">
-        <SpacerBlock />
-        <BundleRecommendations
-          detectedAssets={detectedAssets}
-          onSelectBundle={handleSelectBundle}
-        />
-        
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5 }}
-          className="text-center mt-8"
-        >
-          <button
-            onClick={handleSkipBundles}
-            className="text-gray-400 hover:text-white underline text-sm"
-          >
-            Skip bundles and register individually
-          </button>
-        </motion.div>
-      </div>
+      <AssetFormSection 
+        selectedAssets={selectedAssetsData}
+        onBack={() => setShowAssetForm(false)}
+      />
     );
   }
 
   return (
-    <div className="w-full px-4 md:px-0 md:max-w-3xl">
-      <SpacerBlock />
+    <div className="space-y-8">
+      {/* Property Summary */}
+      <PropertySummaryCard analysisResults={analysisResults} />
       
-      <PropertySummaryCard 
-        analysisResults={analysisResults}
-        totalMonthlyIncome={totalMonthlyIncome}
-        totalSetupCost={totalSetupCost}
-        selectedAssetsCount={selectedAssets.length}
-        isCollapsed={false}
+      {/* Main Asset Opportunities */}
+      <AssetOpportunitiesGrid analysisResults={analysisResults} />
+      
+      {/* Additional Assets Carousel with Enhanced Features */}
+      <AdditionalAssetsCarousel 
+        opportunities={additionalOpportunities}
+        selectedAssets={selectedAssets}
+        onAssetToggle={handleAssetToggle}
+        opportunitiesByTier={opportunitiesByTier}
+        opportunitiesByCategory={opportunitiesByCategory}
       />
-
-      {/* Service Availability Section */}
-      {addressCoordinates && address && (
+      
+      {/* Restrictions and Permits */}
+      {(analysisResults.restrictions || analysisResults.permits?.length > 0) && (
+        <RestrictionsCard analysisResults={analysisResults} />
+      )}
+      
+      {/* Continue Button with Summary */}
+      {selectedAssets.length > 0 && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.3 }}
-          className="mb-8"
+          className="glass-effect p-6 rounded-lg text-center"
         >
-          <div className="bg-black/40 backdrop-blur-md rounded-lg border border-white/10 p-4 md:p-6">
-            <ServiceAvailabilityChecker 
-              coordinates={addressCoordinates}
-              address={address}
-            />
+          <div className="mb-4">
+            <h3 className="text-xl font-bold text-white mb-2">Selected Assets Summary</h3>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-center">
+              <div>
+                <p className="text-white/60 text-sm">Assets Selected</p>
+                <p className="text-white font-bold text-xl">{selectedAssets.length}</p>
+              </div>
+              <div>
+                <p className="text-white/60 text-sm">Monthly Revenue</p>
+                <p className="text-tiptop-purple font-bold text-xl">${totalSelectedRevenue}</p>
+              </div>
+              <div className="col-span-2 md:col-span-1">
+                <p className="text-white/60 text-sm">Setup Investment</p>
+                <p className="text-orange-400 font-bold text-xl">${totalSetupCost}</p>
+              </div>
+            </div>
           </div>
-        </motion.div>
-      )}
-
-      <AssetOpportunitiesGrid
-        opportunities={analysisResults.topOpportunities}
-        selectedAssets={selectedAssets}
-        onAssetToggle={handleAssetToggle}
-      />
-      
-      <AdditionalAssetsCarousel 
-        opportunities={additionalOpportunities} 
-        selectedAssets={selectedAssets}
-        onAssetToggle={handleAssetToggle}
-      />
-      
-      {!showFormSection && (
-        <ContinueButton
-          selectedAssetsCount={selectedAssets.length}
-          onClick={handleContinue}
-        />
-      )}
-      
-      {showFormSection && (
-        <div id="asset-form-section">
-          <AssetFormSection 
-            selectedAssets={selectedAssetObjects}
-            opportunities={allOpportunities}
-            onComplete={handleAuthenticateClick}
+          <ContinueButton 
+            selectedAssetsCount={selectedAssets.length}
+            onClick={handleContinue}
           />
-        </div>
+        </motion.div>
       )}
     </div>
   );
