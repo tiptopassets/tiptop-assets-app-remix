@@ -19,15 +19,9 @@ const MarketPricingEngine = ({ coordinates, propertyType }: MarketPricingEngineP
   const fetchMarketData = async () => {
     setLoading(true);
     
-    console.log('🏢 MarketPricingEngine fetching data for:', {
-      coordinates,
-      propertyType
-    });
-    
-    // Use the centralized market data service for consistent pricing
+    // Use the shared market data service for consistent pricing
     setTimeout(() => {
       const data = getMarketData(coordinates);
-      console.log('📊 MarketPricingEngine received data:', data);
       setMarketData(data);
       setLoading(false);
     }, 1500);
@@ -90,12 +84,6 @@ const MarketPricingEngine = ({ coordinates, propertyType }: MarketPricingEngineP
         Market trends show {marketData.marketTrend === 'up' ? 'increasing' : marketData.marketTrend === 'down' ? 'decreasing' : 'stable'} 
         {' '}demand for monetization opportunities in this area.
       </p>
-      
-      <div className="text-xs text-gray-500 italic mt-2 p-2 bg-white/50 rounded">
-        <strong>Data Source:</strong> Authoritative parking rates calculated using location-based market analysis
-        <br />
-        <strong>Coordinates:</strong> {coordinates.lat.toFixed(4)}, {coordinates.lng.toFixed(4)}
-      </div>
     </div>
   );
 };

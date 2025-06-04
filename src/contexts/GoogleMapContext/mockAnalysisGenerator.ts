@@ -3,7 +3,6 @@ import { AnalysisResults } from './types';
 import { ensureCoordinates, getValidatedMarketData } from './coordinateService';
 import { validateParkingRevenue } from '@/utils/revenueValidator';
 import { processPropertyAnalysis } from './dataFlowManager';
-import { getMarketData } from '@/utils/marketDataService'; // Import centralized service
 
 // Helper function to generate mock analysis data with centralized validation
 export const generateLocalMockAnalysis = async (
@@ -16,9 +15,9 @@ export const generateLocalMockAnalysis = async (
   const coordinateResult = await ensureCoordinates(address, coordinates);
   console.log("📍 Coordinate result:", coordinateResult);
   
-  // Step 2: Get validated market data using centralized service
-  const marketData = getMarketData(coordinateResult.coordinates); // Use centralized service
-  console.log("📊 Market data from centralized service:", marketData);
+  // Step 2: Get validated market data
+  const marketData = getValidatedMarketData(coordinateResult);
+  console.log("📊 Market data:", marketData);
   
   // Step 3: Enhanced property type detection
   const isApartment = /apartment|apt|flat|condo|unit/i.test(address);
@@ -62,19 +61,15 @@ export const generateLocalMockAnalysis = async (
     hasPool = Math.random() > 0.5; // 50% chance of pool
   }
   
-  // Step 4: Calculate revenues using centralized market data and validation
+  // Step 4: Calculate revenues using validated market data and central validation
   const parkingValidation = validateParkingRevenue(
     parkingSpaces,
-    marketData.parkingRates, // Use centralized parking rate
+    marketData.parkingRates,
     propertyType,
     20 // 20 days per month
   );
   
-  console.log("💰 Parking validation result using centralized rate:", {
-    spaces: parkingSpaces,
-    rate: marketData.parkingRates,
-    validation: parkingValidation
-  });
+  console.log("💰 Parking validation result:", parkingValidation);
   
   // Calculate other financials with validation
   const solarRevenue = roofSize > 0 ? Math.round((roofSize * 0.7) / 15 * 0.15 * marketData.solarSavings) : 0;
@@ -83,7 +78,7 @@ export const generateLocalMockAnalysis = async (
   const storageRevenue = Math.round(roofSize * 0.1);
   const bandwidthRevenue = 35; // Fixed internet sharing revenue
   
-  // Step 5: Create raw analysis with centralized parking rate
+  // Step 5: Create raw analysis
   const rawAnalysis: AnalysisResults = {
     propertyType: propertyType,
     amenities: [],
@@ -101,7 +96,7 @@ export const generateLocalMockAnalysis = async (
     },
     parking: {
       spaces: parkingSpaces,
-      rate: marketData.parkingRates, // Use centralized parking rate
+      rate: marketData.parkingRates,
       revenue: parkingValidation.validatedRevenue
     },
     pool: {
@@ -134,9 +129,8 @@ export const generateLocalMockAnalysis = async (
     propertyType
   });
   
-  console.log("✅ Generated analysis with centralized rates:", {
+  console.log("✅ Generated analysis with validation log:", {
     propertyType: processedResult.analysisResults.propertyType,
-    parkingRate: processedResult.analysisResults.parking.rate,
     parkingRevenue: processedResult.analysisResults.parking.revenue,
     validationLog: processedResult.validationLog,
     coordinateSource: processedResult.coordinateResult.source

@@ -606,39 +606,6 @@ export type Database = {
         }
         Relationships: []
       }
-      solar_api_cache: {
-        Row: {
-          api_success: boolean | null
-          error_message: string | null
-          formatted_data: Json | null
-          id: string
-          latitude: number
-          longitude: number
-          raw_response: Json | null
-          requested_at: string
-        }
-        Insert: {
-          api_success?: boolean | null
-          error_message?: string | null
-          formatted_data?: Json | null
-          id?: string
-          latitude: number
-          longitude: number
-          raw_response?: Json | null
-          requested_at?: string
-        }
-        Update: {
-          api_success?: boolean | null
-          error_message?: string | null
-          formatted_data?: Json | null
-          id?: string
-          latitude?: number
-          longitude?: number
-          raw_response?: Json | null
-          requested_at?: string
-        }
-        Relationships: []
-      }
       user_affiliate_journeys: {
         Row: {
           affiliate_clicks: Json | null
