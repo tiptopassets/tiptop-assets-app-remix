@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { motion } from "framer-motion";
 import { useAdditionalOpportunities } from '@/hooks/useAdditionalOpportunities';
@@ -36,11 +37,11 @@ const AssetResultList: React.FC<AssetResultListProps> = ({ analysisResults }) =>
         if (assetData) {
           setSelectedAssetsData(prevData => [...prevData, {
             title: assetData.title,
-            icon: assetData.icon.name || 'circle', // Convert icon component to string
+            icon: assetData.icon,
             monthlyRevenue: assetData.monthlyRevenue,
             provider: assetData.provider,
             setupCost: assetData.setupCost,
-            roi: assetData.roi ? parseFloat(assetData.roi.replace(/[^\d.]/g, '')) || 0 : 0, // Convert string roi to number
+            roi: assetData.roi,
             formData: {}
           }]);
         }

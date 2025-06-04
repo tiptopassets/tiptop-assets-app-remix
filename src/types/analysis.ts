@@ -1,3 +1,4 @@
+
 // Define types for the asset analysis
 export interface ProviderInfo {
   name: string;
@@ -86,17 +87,13 @@ export interface Opportunity {
 
 export interface AdditionalOpportunity {
   title: string;
-  icon: React.ComponentType<any>;
+  icon: string;
   monthlyRevenue: number;
-  provider: string;
+  description: string;
+  provider?: string;
   setupCost?: number;
-  roi?: string;
-  tier?: 'high' | 'medium' | 'low';
-  category?: 'spaceRentals' | 'petServices' | 'logistics' | 'community' | 'tech';
-  description?: string;
-  requirements?: string[];
-  timeCommitment?: string;
-  difficulty?: 'Easy' | 'Medium' | 'Hard';
+  roi?: number;
+  formFields?: FormField[];
 }
 
 export interface SelectedAsset {

@@ -1,329 +1,256 @@
 
 import { AdditionalOpportunity } from '@/types/analysis';
-import { 
-  Car, Home, Wifi, TreePine, Waves, Package, 
-  DogIcon, Camera, Gamepad2, BookOpen, Bike,
-  Coffee, Music, Dumbbell, Baby, Paintbrush,
-  Wrench, Leaf, Users, ShoppingBag, Gift
-} from 'lucide-react';
 
 export const additionalOpportunities: AdditionalOpportunity[] = [
-  // High Revenue Tier ($200+/month)
+  // High Revenue Tier ($100-400/month)
   {
-    title: "Rent Your Pool",
-    icon: Waves,
-    monthlyRevenue: 450,
-    provider: "Swimply",
-    setupCost: 0,
-    roi: "Immediate",
-    tier: "high",
-    category: "spaceRentals",
-    description: "Rent your pool by the hour to neighbors",
-    requirements: ["Pool", "Insurance", "Safety equipment"],
-    timeCommitment: "2-4 hours/week",
-    difficulty: "Easy"
-  },
-  {
-    title: "ADU Rental",
-    icon: Home,
-    monthlyRevenue: 1200,
-    provider: "Airbnb",
-    setupCost: 2500,
-    roi: "2-3 months",
-    tier: "high",
-    category: "spaceRentals",
-    description: "Convert space into rentable unit",
-    requirements: ["Separate entrance", "Kitchen", "Bathroom"],
-    timeCommitment: "5-10 hours/week",
-    difficulty: "Hard"
-  },
-  {
-    title: "EV Charging Station",
-    icon: Car,
-    monthlyRevenue: 300,
-    provider: "ChargePoint",
-    setupCost: 1500,
-    roi: "5-6 months",
-    tier: "high",
-    category: "tech",
-    description: "Install EV charger for public use",
-    requirements: ["Electrical upgrade", "Parking space", "Permits"],
-    timeCommitment: "1-2 hours/week",
-    difficulty: "Medium"
-  },
-
-  // Medium Revenue Tier ($50-$199/month)
-  {
-    title: "Dog Boarding",
-    icon: DogIcon,
-    monthlyRevenue: 180,
-    provider: "Rover",
-    setupCost: 100,
-    roi: "1 month",
-    tier: "medium",
-    category: "petServices",
-    description: "Host dogs in your home",
-    requirements: ["Fenced yard", "Pet supplies", "Background check"],
-    timeCommitment: "10-15 hours/week",
-    difficulty: "Medium"
-  },
-  {
-    title: "Package Storage",
-    icon: Package,
-    monthlyRevenue: 120,
-    provider: "Stashbee",
-    setupCost: 50,
-    roi: "2 weeks",
-    tier: "medium",
-    category: "logistics",
-    description: "Store packages for neighbors",
-    requirements: ["Secure storage space", "Insurance"],
-    timeCommitment: "3-5 hours/week",
-    difficulty: "Easy"
-  },
-  {
-    title: "Garden Produce Sales",
-    icon: TreePine,
-    monthlyRevenue: 85,
-    provider: "Local Markets",
+    title: "Event Space Rental",
+    icon: "garden",
+    monthlyRevenue: 350,
+    description: "Transform your space into a venue for parties, meetings, and celebrations.",
+    provider: "Peerspace",
     setupCost: 200,
-    roi: "3-4 months",
-    tier: "medium",
-    category: "community",
-    description: "Sell homegrown vegetables and fruits",
-    requirements: ["Garden space", "Organic certification", "Market permit"],
-    timeCommitment: "8-12 hours/week",
-    difficulty: "Medium"
+    roi: 1,
+    formFields: [
+      { type: "number", name: "capacity", label: "Max Capacity (people)", value: 30 },
+      { type: "select", name: "spaceType", label: "Space Type", value: "Indoor", options: ["Indoor", "Outdoor", "Both"] },
+      { type: "select", name: "amenities", label: "Included Amenities", value: "Basic", options: ["Basic", "Standard", "Premium"] },
+      { type: "select", name: "eventTypes", label: "Suitable Event Types", value: "All", options: ["Parties", "Meetings", "Workshops", "All"] }
+    ]
   },
   {
-    title: "Home Security Monitoring",
-    icon: Camera,
-    monthlyRevenue: 95,
-    provider: "Nest Aware",
-    setupCost: 300,
-    roi: "3-4 months",
-    tier: "medium",
-    category: "tech",
-    description: "Provide security monitoring services",
-    requirements: ["Security cameras", "High-speed internet", "Monitoring software"],
-    timeCommitment: "2-3 hours/week",
-    difficulty: "Medium"
-  },
-
-  // Low Revenue Tier (Under $50/month)
-  {
-    title: "Share Internet Bandwidth",
-    icon: Wifi,
-    monthlyRevenue: 35,
-    provider: "Honeygain",
-    setupCost: 0,
-    roi: "Immediate",
-    tier: "low",
-    category: "tech",
-    description: "Share unused internet bandwidth",
-    requirements: ["Stable internet connection", "Device to run app"],
-    timeCommitment: "30 minutes setup",
-    difficulty: "Easy"
-  },
-  {
-    title: "Gaming Server Hosting",
-    icon: Gamepad2,
-    monthlyRevenue: 45,
-    provider: "GameServers",
-    setupCost: 150,
-    roi: "3-4 months",
-    tier: "low",
-    category: "tech",
-    description: "Host gaming servers from home",
-    requirements: ["High-speed internet", "Gaming PC", "Server software"],
-    timeCommitment: "2-4 hours/week",
-    difficulty: "Hard"
-  },
-  {
-    title: "Book Library Sharing",
-    icon: BookOpen,
-    monthlyRevenue: 25,
-    provider: "Little Free Library",
-    setupCost: 75,
-    roi: "3 months",
-    tier: "low",
-    category: "community",
-    description: "Share books with community",
-    requirements: ["Book collection", "Weather-resistant box"],
-    timeCommitment: "1-2 hours/week",
-    difficulty: "Easy"
-  },
-  {
-    title: "Bike Repair Station",
-    icon: Bike,
-    monthlyRevenue: 40,
-    provider: "Local Community",
-    setupCost: 200,
-    roi: "5 months",
-    tier: "low",
-    category: "community",
-    description: "Provide bike repair services",
-    requirements: ["Basic tools", "Repair knowledge", "Space for repairs"],
-    timeCommitment: "3-5 hours/week",
-    difficulty: "Medium"
-  },
-  {
-    title: "Coffee Bean Roasting",
-    icon: Coffee,
-    monthlyRevenue: 35,
-    provider: "Local Sales",
-    setupCost: 300,
-    roi: "8-10 months",
-    tier: "low",
-    category: "community",
-    description: "Roast and sell coffee beans",
-    requirements: ["Coffee roaster", "Green beans", "Food permits"],
-    timeCommitment: "4-6 hours/week",
-    difficulty: "Medium"
-  },
-  {
-    title: "Music Lessons",
-    icon: Music,
-    monthlyRevenue: 160,
-    provider: "Self-employed",
-    setupCost: 0,
-    roi: "Immediate",
-    tier: "medium",
-    category: "community",
-    description: "Teach music from home studio",
-    requirements: ["Musical instrument", "Teaching space", "Music knowledge"],
-    timeCommitment: "5-10 hours/week",
-    difficulty: "Medium"
-  },
-  {
-    title: "Home Gym Rental",
-    icon: Dumbbell,
-    monthlyRevenue: 220,
-    provider: "Gympass",
-    setupCost: 800,
-    roi: "4-5 months",
-    tier: "medium",
-    category: "spaceRentals",
-    description: "Rent out home gym equipment",
-    requirements: ["Exercise equipment", "Dedicated space", "Insurance"],
-    timeCommitment: "3-5 hours/week",
-    difficulty: "Easy"
-  },
-  {
-    title: "Childcare Services",
-    icon: Baby,
+    title: "Co-working Space",
+    icon: "storage",
     monthlyRevenue: 280,
-    provider: "Care.com",
-    setupCost: 150,
-    roi: "3 weeks",
-    tier: "high",
-    category: "community",
-    description: "Provide childcare in your home",
-    requirements: ["Background check", "First aid certification", "Child-safe environment"],
-    timeCommitment: "20-40 hours/week",
-    difficulty: "Hard"
+    description: "Rent out rooms or areas as dedicated workspace for remote workers.",
+    provider: "Breather",
+    setupCost: 500,
+    roi: 2,
+    formFields: [
+      { type: "number", name: "desks", label: "Number of Desks", value: 4 },
+      { type: "select", name: "privacy", label: "Privacy Level", value: "Semi-private", options: ["Open", "Semi-private", "Private"] },
+      { type: "select", name: "equipment", label: "Equipment Provided", value: "Basic", options: ["None", "Basic", "Full Setup"] }
+    ]
   },
   {
-    title: "Art Studio Rental",
-    icon: Paintbrush,
-    monthlyRevenue: 150,
+    title: "Photography Studio",
+    icon: "storage",
+    monthlyRevenue: 220,
+    description: "Convert spaces into rental photography or videography studios.",
+    provider: "Peerspace",
+    setupCost: 300,
+    roi: 2,
+    formFields: [
+      { type: "select", name: "lighting", label: "Lighting Setup", value: "Natural", options: ["Natural", "Basic", "Professional"] },
+      { type: "number", name: "spaceSize", label: "Studio Size (sq ft)", value: 200 },
+      { type: "select", name: "backdrop", label: "Backdrop Options", value: "Wall", options: ["Wall", "Portable", "Multiple"] }
+    ]
+  },
+  {
+    title: "Content Creator Studio",
+    icon: "wifi",
+    monthlyRevenue: 180,
+    description: "Specialized space for YouTubers, podcasters, and content creators.",
     provider: "Peerspace",
     setupCost: 400,
-    roi: "3 months",
-    tier: "medium",
-    category: "spaceRentals",
-    description: "Rent studio space to artists",
-    requirements: ["Dedicated space", "Good lighting", "Art supplies"],
-    timeCommitment: "2-4 hours/week",
-    difficulty: "Easy"
+    roi: 3,
+    formFields: [
+      { type: "select", name: "equipment", label: "Recording Equipment", value: "Audio Only", options: ["Audio Only", "Video Basic", "Full Production"] },
+      { type: "select", name: "acoustics", label: "Sound Treatment", value: "Basic", options: ["None", "Basic", "Professional"] },
+      { type: "number", name: "capacity", label: "Creator Capacity", value: 2 }
+    ]
+  },
+  {
+    title: "Fitness Studio",
+    icon: "garden",
+    monthlyRevenue: 160,
+    description: "Transform garage or basement into rentable fitness space.",
+    provider: "Splacer",
+    setupCost: 600,
+    roi: 4,
+    formFields: [
+      { type: "select", name: "fitnessType", label: "Fitness Type", value: "General", options: ["Yoga", "Dance", "General", "Martial Arts"] },
+      { type: "number", name: "equipment", label: "Equipment Pieces", value: 5 },
+      { type: "select", name: "flooring", label: "Flooring Type", value: "Mats", options: ["Carpet", "Mats", "Hardwood", "Rubber"] }
+    ]
+  },
+
+  // Medium Revenue Tier ($50-150/month)
+  {
+    title: "Workshop Space",
+    icon: "storage",
+    monthlyRevenue: 120,
+    description: "Shared workshop for DIY projects, crafts, and repairs.",
+    setupCost: 300,
+    roi: 3,
+    formFields: [
+      { type: "number", name: "toolsProvided", label: "Tools Provided", value: 10 },
+      { type: "select", name: "workspaceType", label: "Workshop Type", value: "General", options: ["Woodworking", "Electronics", "Crafts", "General"] },
+      { type: "select", name: "safety", label: "Safety Equipment", value: "Basic", options: ["Basic", "Standard", "Complete"] }
+    ]
+  },
+  {
+    title: "Game Room Rental",
+    icon: "storage",
+    monthlyRevenue: 100,
+    description: "Rent out game rooms for parties and entertainment.",
+    setupCost: 400,
+    roi: 4,
+    formFields: [
+      { type: "select", name: "gameTypes", label: "Game Types", value: "Mixed", options: ["Video Games", "Board Games", "Pool/Billiards", "Mixed"] },
+      { type: "number", name: "capacity", label: "Max Players", value: 8 },
+      { type: "select", name: "equipment", label: "Equipment Quality", value: "Standard", options: ["Basic", "Standard", "Premium"] }
+    ]
+  },
+  {
+    title: "Music Practice Room",
+    icon: "storage",
+    monthlyRevenue: 90,
+    description: "Soundproofed space for musicians to practice and record.",
+    setupCost: 500,
+    roi: 6,
+    formFields: [
+      { type: "select", name: "instruments", label: "Instruments Provided", value: "None", options: ["None", "Basic", "Full Band Setup"] },
+      { type: "select", name: "soundproofing", label: "Soundproofing Level", value: "Basic", options: ["None", "Basic", "Professional"] },
+      { type: "number", name: "hourlyRate", label: "Hourly Rate ($)", value: 15 }
+    ]
+  },
+  {
+    title: "Art Studio Space",
+    icon: "storage",
+    monthlyRevenue: 85,
+    description: "Creative space for artists, painters, and crafters.",
+    setupCost: 250,
+    roi: 3,
+    formFields: [
+      { type: "select", name: "artType", label: "Art Focus", value: "General", options: ["Painting", "Sculpture", "Digital", "General"] },
+      { type: "select", name: "supplies", label: "Supplies Included", value: "Basic", options: ["None", "Basic", "Complete"] },
+      { type: "number", name: "easels", label: "Number of Easels", value: 3 }
+    ]
+  },
+  {
+    title: "Meeting Room Rental",
+    icon: "storage",
+    monthlyRevenue: 75,
+    description: "Professional meeting space for small businesses.",
+    setupCost: 200,
+    roi: 3,
+    formFields: [
+      { type: "number", name: "seating", label: "Seating Capacity", value: 8 },
+      { type: "select", name: "techSetup", label: "Tech Equipment", value: "Basic", options: ["None", "Basic", "Full AV"] },
+      { type: "select", name: "catering", label: "Catering Options", value: "None", options: ["None", "Basic", "Full Service"] }
+    ]
+  },
+
+  // Lower Revenue Tier ($15-80/month)
+  {
+    title: "Pet Daycare Service",
+    icon: "garden",
+    monthlyRevenue: 60,
+    description: "Supervised pet care in your yard or dedicated space.",
+    setupCost: 150,
+    roi: 3,
+    formFields: [
+      { type: "number", name: "petCapacity", label: "Max Pets", value: 5 },
+      { type: "select", name: "petTypes", label: "Pet Types", value: "Dogs Only", options: ["Dogs Only", "Cats Only", "Both", "Small Pets"] },
+      { type: "select", name: "supervision", label: "Supervision Level", value: "Moderate", options: ["Light", "Moderate", "Full"] }
+    ]
+  },
+  {
+    title: "Package Storage Hub",
+    icon: "storage",
+    monthlyRevenue: 45,
+    description: "Secure package receiving and storage for neighbors.",
+    setupCost: 100,
+    roi: 3,
+    formFields: [
+      { type: "number", name: "storageCapacity", label: "Package Capacity", value: 20 },
+      { type: "select", name: "security", label: "Security Level", value: "Standard", options: ["Basic", "Standard", "High Security"] },
+      { type: "select", name: "hours", label: "Access Hours", value: "Business", options: ["24/7", "Extended", "Business"] }
+    ]
+  },
+  {
+    title: "Bike Storage & Repair",
+    icon: "storage",
+    monthlyRevenue: 40,
+    description: "Secure bike storage with basic maintenance services.",
+    setupCost: 200,
+    roi: 5,
+    formFields: [
+      { type: "number", name: "bikeCapacity", label: "Bike Capacity", value: 8 },
+      { type: "select", name: "repairServices", label: "Repair Services", value: "Basic", options: ["Storage Only", "Basic", "Full Service"] },
+      { type: "select", name: "security", label: "Security Features", value: "Locked", options: ["Basic", "Locked", "Monitored"] }
+    ]
   },
   {
     title: "Tool Library",
-    icon: Wrench,
+    icon: "storage",
+    monthlyRevenue: 35,
+    description: "Community tool sharing and rental service.",
+    setupCost: 300,
+    roi: 9,
+    formFields: [
+      { type: "number", name: "toolCount", label: "Number of Tools", value: 15 },
+      { type: "select", name: "toolTypes", label: "Tool Categories", value: "Basic", options: ["Basic Hand Tools", "Power Tools", "Specialized", "Complete"] },
+      { type: "select", name: "maintenance", label: "Maintenance Level", value: "Regular", options: ["Basic", "Regular", "Professional"] }
+    ]
+  },
+  {
+    title: "Laundry Service",
+    icon: "storage",
     monthlyRevenue: 30,
-    provider: "Community Tool Library",
-    setupCost: 250,
-    roi: "8 months",
-    tier: "low",
-    category: "community",
-    description: "Lend tools to neighbors",
-    requirements: ["Tool collection", "Storage space", "Tracking system"],
-    timeCommitment: "2-3 hours/week",
-    difficulty: "Easy"
+    description: "Shared laundry facilities for apartment residents.",
+    setupCost: 800,
+    roi: 27,
+    formFields: [
+      { type: "number", name: "machines", label: "Number of Machines", value: 2 },
+      { type: "select", name: "paymentSystem", label: "Payment System", value: "Coin", options: ["Coin", "App-based", "Card"] },
+      { type: "select", name: "detergent", label: "Detergent Provided", value: "Optional", options: ["No", "Optional", "Included"] }
+    ]
   },
   {
-    title: "Composting Service",
-    icon: Leaf,
-    monthlyRevenue: 55,
-    provider: "Local Composting",
-    setupCost: 100,
-    roi: "2 months",
-    tier: "low",
-    category: "community",
-    description: "Compost organic waste for neighbors",
-    requirements: ["Composting setup", "Yard space", "Knowledge of composting"],
-    timeCommitment: "3-4 hours/week",
-    difficulty: "Medium"
-  },
-  {
-    title: "Event Space Rental",
-    icon: Users,
-    monthlyRevenue: 320,
-    provider: "Eventbrite",
-    setupCost: 200,
-    roi: "3 weeks",
-    tier: "high",
-    category: "spaceRentals",
-    description: "Rent space for small events",
-    requirements: ["Large room", "Tables/chairs", "Event insurance"],
-    timeCommitment: "4-8 hours/week",
-    difficulty: "Medium"
-  },
-  {
-    title: "Grocery Pickup Point",
-    icon: ShoppingBag,
-    monthlyRevenue: 75,
-    provider: "Instacart",
-    setupCost: 0,
-    roi: "Immediate",
-    tier: "medium",
-    category: "logistics",
-    description: "Serve as pickup location for groceries",
-    requirements: ["Refrigerated storage", "Reliable schedule"],
-    timeCommitment: "5-8 hours/week",
-    difficulty: "Easy"
-  },
-  {
-    title: "Gift Wrapping Service",
-    icon: Gift,
-    monthlyRevenue: 45,
-    provider: "Seasonal Business",
-    setupCost: 75,
-    roi: "2 months",
-    tier: "low",
-    category: "community",
-    description: "Offer gift wrapping during holidays",
-    requirements: ["Wrapping supplies", "Creative skills", "Seasonal availability"],
-    timeCommitment: "10-15 hours/week (seasonal)",
-    difficulty: "Easy"
+    title: "Smart Charging Station",
+    icon: "wifi",
+    monthlyRevenue: 25,
+    description: "Device charging hub with WiFi access for community use.",
+    setupCost: 150,
+    roi: 6,
+    formFields: [
+      { type: "number", name: "chargingPorts", label: "Charging Ports", value: 8 },
+      { type: "select", name: "deviceTypes", label: "Supported Devices", value: "Universal", options: ["Phone Only", "Tablets", "Laptops", "Universal"] },
+      { type: "select", name: "wifiAccess", label: "WiFi Access", value: "Included", options: ["None", "Basic", "Premium", "Included"] }
+    ]
   }
 ];
 
-// Helper functions to categorize opportunities
 export const getOpportunitiesByRevenueTier = () => {
-  const high = additionalOpportunities.filter(opp => opp.tier === 'high');
-  const medium = additionalOpportunities.filter(opp => opp.tier === 'medium');
-  const low = additionalOpportunities.filter(opp => opp.tier === 'low');
+  const high = additionalOpportunities.filter(opp => opp.monthlyRevenue >= 150);
+  const medium = additionalOpportunities.filter(opp => opp.monthlyRevenue >= 50 && opp.monthlyRevenue < 150);
+  const low = additionalOpportunities.filter(opp => opp.monthlyRevenue < 50);
   
   return { high, medium, low };
 };
 
 export const getOpportunitiesByCategory = () => {
-  const spaceRentals = additionalOpportunities.filter(opp => opp.category === 'spaceRentals');
-  const petServices = additionalOpportunities.filter(opp => opp.category === 'petServices');
-  const logistics = additionalOpportunities.filter(opp => opp.category === 'logistics');
-  const community = additionalOpportunities.filter(opp => opp.category === 'community');
-  const tech = additionalOpportunities.filter(opp => opp.category === 'tech');
+  const spaceRentals = additionalOpportunities.filter(opp => 
+    ['Event Space Rental', 'Co-working Space', 'Photography Studio', 'Content Creator Studio', 'Fitness Studio', 'Game Room Rental', 'Music Practice Room', 'Art Studio Space', 'Meeting Room Rental'].includes(opp.title)
+  );
+  
+  const petServices = additionalOpportunities.filter(opp => 
+    ['Pet Daycare Service'].includes(opp.title)
+  );
+  
+  const logistics = additionalOpportunities.filter(opp => 
+    ['Package Storage Hub', 'Bike Storage & Repair'].includes(opp.title)
+  );
+  
+  const community = additionalOpportunities.filter(opp => 
+    ['Workshop Space', 'Tool Library', 'Laundry Service'].includes(opp.title)
+  );
+  
+  const tech = additionalOpportunities.filter(opp => 
+    ['Smart Charging Station'].includes(opp.title)
+  );
   
   return { spaceRentals, petServices, logistics, community, tech };
 };
