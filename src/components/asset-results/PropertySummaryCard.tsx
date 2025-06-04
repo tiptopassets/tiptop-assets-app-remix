@@ -34,7 +34,7 @@ const PropertySummaryCard: React.FC<PropertySummaryCardProps> = ({
       initial={{ opacity: 0, y: 50 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6 }}
-      className="fixed bottom-4 left-4 right-4 z-40 mx-auto max-w-5xl"
+      className="w-full max-w-7xl mx-auto px-4 sm:px-6 mb-8"
     >
       <Card className="bg-black/80 backdrop-blur-xl border border-white/20 rounded-2xl shadow-2xl overflow-hidden">
         <CardContent className="p-6">
