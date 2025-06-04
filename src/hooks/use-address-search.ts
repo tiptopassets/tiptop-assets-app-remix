@@ -48,11 +48,11 @@ export const useAddressSearch = () => {
     }
 
     try {
-      // Initialize the Places Autocomplete with more specific options
+      // Initialize the Places Autocomplete with worldwide support
       autocompleteRef.current = new google.maps.places.Autocomplete(searchInputRef.current, {
         types: ['address'],
-        fields: ['formatted_address', 'geometry', 'place_id'],
-        componentRestrictions: { country: ['us', 'ca'] } // Restrict to US and Canada for better results
+        fields: ['formatted_address', 'geometry', 'place_id']
+        // Removed componentRestrictions to enable worldwide search
       });
 
       // Add listener for place changed with improved error handling
