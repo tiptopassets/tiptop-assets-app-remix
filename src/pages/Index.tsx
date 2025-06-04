@@ -8,6 +8,7 @@ import AssetIcons from '@/components/AssetIcons';
 import AssetResultList from '@/components/asset-results/AssetResultList';
 import ModelGenerationSheet from '@/components/ModelGenerationSheet';
 import HomeModelViewer from '@/components/home-model-viewer';
+import PropertyPin from '@/components/PropertyPin';
 import { useGoogleMap } from '@/contexts/GoogleMapContext';
 import { PlusCircle } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -87,8 +88,11 @@ const Index = () => {
             {!isAnalyzing && !analysisComplete && <AnalyzeButton />}
           </div>
 
-          {/* Asset Icons and Results */}
-          <div className={`mt-8 w-full flex flex-col justify-center items-center ${analysisComplete ? 'mt-4' : ''}`}>
+          {/* Property Pin - positioned between search bar and results */}
+          <PropertyPin />
+
+          {/* Add significant spacing before results */}
+          <div className={`w-full flex flex-col justify-center items-center ${analysisComplete ? 'mt-12 md:mt-16' : 'mt-8'}`}>
             {!analysisComplete && !isAnalyzing && <AssetIcons />}
             <AssetResultList analysisResults={analysisResults} />
           </div>
