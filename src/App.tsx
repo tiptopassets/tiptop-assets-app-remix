@@ -27,6 +27,49 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
+// Routes that don't need ServiceProviderProvider
+const PublicRoutes = () => (
+  <Routes>
+    <Route path="/" element={<Index />} />
+    <Route path="/options" element={<Options />} />
+    <Route path="/submit-property" element={<SubmitProperty />} />
+    <Route path="*" element={<ProtectedRoutes />} />
+  </Routes>
+);
+
+// Routes that need ServiceProviderProvider
+const ProtectedRoutes = () => (
+  <ErrorBoundary fallback={
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-black to-purple-900">
+      <div className="text-white text-center">
+        <h2 className="text-xl font-bold mb-2">Service Provider Error</h2>
+        <p className="text-gray-300 mb-4">Please refresh the page to continue.</p>
+        <button 
+          onClick={() => window.location.reload()} 
+          className="bg-tiptop-purple hover:bg-tiptop-purple/90 px-4 py-2 rounded text-white"
+        >
+          Refresh Page
+        </button>
+      </div>
+    </div>
+  }>
+    <ServiceProviderProvider>
+      <Routes>
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/model-viewer" element={<ModelViewer />} />
+        <Route path="/add-asset" element={<AddAsset />} />
+        <Route path="/admin" element={<AdminDashboard />} />
+        <Route path="/affiliate-earnings" element={<AffiliateEarningsDashboard />} />
+        <Route path="/account" element={<AccountPage />} />
+        <Route path="/rooftop" element={<RooftopDashboard />} />
+        <Route path="/internet" element={<InternetDashboard />} />
+        <Route path="/ev-charging" element={<EVChargingDashboard />} />
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </ServiceProviderProvider>
+  </ErrorBoundary>
+);
+
 const App = () => (
   <ErrorBoundary>
     <GoogleMapProvider>
@@ -35,45 +78,20 @@ const App = () => (
           <BrowserRouter>
             <TooltipProvider>
               <AuthProvider>
-                <ErrorBoundary fallback={
-                  <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-black to-purple-900">
-                    <div className="text-white text-center">
-                      <h2 className="text-xl font-bold mb-2">Service Provider Error</h2>
-                      <p className="text-gray-300">Please refresh the page to continue.</p>
+                <div className="min-h-screen bg-gradient-to-b from-black to-purple-900">
+                  <Suspense fallback={
+                    <div className="min-h-screen flex items-center justify-center">
+                      <div className="text-white text-center">
+                        <div className="animate-spin h-8 w-8 border-4 border-tiptop-purple border-t-transparent rounded-full mx-auto mb-4"></div>
+                        <p>Loading...</p>
+                      </div>
                     </div>
-                  </div>
-                }>
-                  <ServiceProviderProvider>
-                    <div className="min-h-screen bg-gradient-to-b from-black to-purple-900">
-                      <Suspense fallback={
-                        <div className="min-h-screen flex items-center justify-center">
-                          <div className="text-white text-center">
-                            <div className="animate-spin h-8 w-8 border-4 border-tiptop-purple border-t-transparent rounded-full mx-auto mb-4"></div>
-                            <p>Loading...</p>
-                          </div>
-                        </div>
-                      }>
-                        <Routes>
-                          <Route path="/" element={<Index />} />
-                          <Route path="/dashboard" element={<Dashboard />} />
-                          <Route path="/model-viewer" element={<ModelViewer />} />
-                          <Route path="/add-asset" element={<AddAsset />} />
-                          <Route path="/submit-property" element={<SubmitProperty />} />
-                          <Route path="/options" element={<Options />} />
-                          <Route path="/admin" element={<AdminDashboard />} />
-                          <Route path="/affiliate-earnings" element={<AffiliateEarningsDashboard />} />
-                          <Route path="/account" element={<AccountPage />} />
-                          <Route path="/rooftop" element={<RooftopDashboard />} />
-                          <Route path="/internet" element={<InternetDashboard />} />
-                          <Route path="/ev-charging" element={<EVChargingDashboard />} />
-                          <Route path="*" element={<NotFound />} />
-                        </Routes>
-                      </Suspense>
-                      <Toaster />
-                      <Sonner />
-                    </div>
-                  </ServiceProviderProvider>
-                </ErrorBoundary>
+                  }>
+                    <PublicRoutes />
+                  </Suspense>
+                  <Toaster />
+                  <Sonner />
+                </div>
               </AuthProvider>
             </TooltipProvider>
           </BrowserRouter>

@@ -21,35 +21,60 @@ export const useProviderData = () => {
   useEffect(() => {
     const fetchServiceProviders = async () => {
       if (!user) {
+        console.log('🔄 No user found, skipping provider data fetch');
         setIsLoading(false);
+        setError(null);
         return;
       }
 
       try {
+        console.log('🔄 Fetching service providers for user:', user.email);
         setIsLoading(true);
         setError(null);
 
-        // Fetch all available service providers
-        const { data: servicesData, error: servicesError } = await supabase
-          .from('services')
-          .select('*');
+        // Fetch all available service providers with error handling
+        let servicesData;
+        try {
+          const { data, error: servicesError } = await supabase
+            .from('services')
+            .select('*');
 
-        if (servicesError) throw servicesError;
+          if (servicesError) {
+            console.warn('⚠️ Services table error:', servicesError);
+            // If services table doesn't exist or has issues, use empty array
+            servicesData = [];
+          } else {
+            servicesData = data || [];
+          }
+        } catch (servicesErr) {
+          console.warn('⚠️ Failed to fetch services, using empty array:', servicesErr);
+          servicesData = [];
+        }
 
         // Format the service provider data
-        const formattedProviders: ServiceProviderInfo[] = (servicesData || []).map(formatProviderInfo);
-
+        const formattedProviders: ServiceProviderInfo[] = servicesData.map(formatProviderInfo);
         setAvailableProviders(formattedProviders);
 
-        // Fetch user's connected providers
-        const { data: credentialsData, error: credentialsError } = await supabase
-          .from('affiliate_credentials')
-          .select('*')
-          .eq('user_id', user.id);
+        // Fetch user's connected providers with error handling
+        let credentialsData;
+        try {
+          const { data, error: credentialsError } = await supabase
+            .from('affiliate_credentials')
+            .select('*')
+            .eq('user_id', user.id);
 
-        if (credentialsError) throw credentialsError;
+          if (credentialsError) {
+            console.warn('⚠️ Affiliate credentials error:', credentialsError);
+            credentialsData = [];
+          } else {
+            credentialsData = data || [];
+          }
+        } catch (credentialsErr) {
+          console.warn('⚠️ Failed to fetch credentials, using empty array:', credentialsErr);
+          credentialsData = [];
+        }
 
-        // Check FlexOffers sub-affiliate mappings - using direct query since RPC doesn't exist
+        // Check FlexOffers sub-affiliate mappings with error handling
         let hasFlexOffersMapping = false;
         try {
           const { data: flexoffersData } = await supabase
@@ -61,12 +86,12 @@ export const useProviderData = () => {
           
           hasFlexOffersMapping = !!flexoffersData;
         } catch (err) {
-          // No FlexOffers mapping found
+          // No FlexOffers mapping found or table doesn't exist
           hasFlexOffersMapping = false;
         }
 
         // Mark which providers are connected
-        const connected = new Set((credentialsData || []).map(cred => cred.service.toLowerCase()));
+        const connected = new Set((credentialsData || []).map(cred => cred.service?.toLowerCase()));
         
         // Add FlexOffers if mapping exists
         if (hasFlexOffersMapping) {
@@ -75,7 +100,7 @@ export const useProviderData = () => {
         
         const updatedProviders = formattedProviders.map(provider => ({
           ...provider,
-          connected: connected.has(provider.id)
+          connected: connected.has(provider.id.toLowerCase())
         }));
 
         const connectedProvidersList = updatedProviders.filter(p => p.connected);
@@ -83,31 +108,41 @@ export const useProviderData = () => {
         setAvailableProviders(updatedProviders);
         setConnectedProviders(connectedProvidersList);
 
-        // Fetch earnings data
+        // Fetch earnings data with error handling
         if (connectedProvidersList.length > 0) {
-          const { data: earningsData, error: earningsError } = await supabase
-            .from('affiliate_earnings')
-            .select('*')
-            .eq('user_id', user.id);
+          try {
+            const { data: earningsData, error: earningsError } = await supabase
+              .from('affiliate_earnings')
+              .select('*')
+              .eq('user_id', user.id);
 
-          if (earningsError) throw earningsError;
-
-          setEarnings((earningsData || []).map(e => ({
-            id: e.id,
-            service: e.service,
-            earnings: e.earnings || 0,
-            lastSyncStatus: (e.last_sync_status as 'pending' | 'completed' | 'failed') || 'pending',
-            updatedAt: new Date(e.updated_at)
-          })));
+            if (earningsError) {
+              console.warn('⚠️ Earnings data error:', earningsError);
+              setEarnings([]);
+            } else {
+              setEarnings((earningsData || []).map(e => ({
+                id: e.id,
+                service: e.service,
+                earnings: e.earnings || 0,
+                lastSyncStatus: (e.last_sync_status as 'pending' | 'completed' | 'failed') || 'pending',
+                updatedAt: new Date(e.updated_at)
+              })));
+            }
+          } catch (earningsErr) {
+            console.warn('⚠️ Failed to fetch earnings:', earningsErr);
+            setEarnings([]);
+          }
+        } else {
+          setEarnings([]);
         }
+
+        console.log('✅ Service providers loaded successfully');
       } catch (err) {
-        console.error('Error fetching service providers:', err);
-        setError('Failed to load service providers');
-        toast({
-          title: 'Error',
-          description: 'Failed to load service providers',
-          variant: 'destructive'
-        });
+        console.error('❌ Critical error fetching service providers:', err);
+        setError('Failed to load service providers. This may be due to database connectivity issues.');
+        
+        // Don't show toast for database connectivity issues
+        // The error will be handled by the parent component
       } finally {
         setIsLoading(false);
       }
