@@ -92,9 +92,9 @@ const Index = () => {
             {!analysisComplete && !isAnalyzing && <AssetIcons />}
           </div>
 
-          {/* Add spacing between search area and analysis results */}
+          {/* Push analysis results to near bottom of viewport */}
           {analysisComplete && (
-            <div className="w-full mt-16 sm:mt-20 md:mt-24 lg:mt-32">
+            <div className="w-full mt-[60vh] sm:mt-[65vh] md:mt-[70vh] lg:mt-[75vh]">
               <AssetResultList analysisResults={analysisResults} />
             </div>
           )}
