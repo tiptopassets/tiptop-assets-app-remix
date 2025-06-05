@@ -92,19 +92,19 @@ const Index = () => {
             {!analysisComplete && !isAnalyzing && <AssetIcons />}
           </div>
 
-          {/* Push content to the edge of the map bottom when analysis is complete */}
-          <div className={`w-full flex flex-col justify-end items-center flex-1 ${
-            analysisComplete 
-              ? 'pb-[300px]' // Large padding to push content near bottom edge
-              : 'mt-6 sm:mt-8'
-          }`}>
-            {/* Asset results - positioned near bottom when analysis complete */}
-            {analysisComplete && (
-              <div className="w-full flex flex-col justify-center items-center mb-4">
-                <AssetResultList analysisResults={analysisResults} />
-              </div>
-            )}
-          </div>
+          {/* Add spacing between search area and analysis results */}
+          {analysisComplete && (
+            <div className="mt-16 sm:mt-20 md:mt-24 w-full">
+              <AssetResultList analysisResults={analysisResults} />
+            </div>
+          )}
+
+          {/* Push content to the edge of the map bottom when analysis is NOT complete */}
+          {!analysisComplete && (
+            <div className={`w-full flex flex-col justify-end items-center flex-1 mt-6 sm:mt-8`}>
+              {/* This ensures non-analysis content is pushed down */}
+            </div>
+          )}
 
           {/* 3D Model Viewer */}
           {(analysisComplete || isAnalyzing) && <HomeModelViewer />}
