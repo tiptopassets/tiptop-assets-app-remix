@@ -2,7 +2,6 @@
 import React, { useEffect } from 'react';
 import { useGoogleMap } from '@/contexts/GoogleMapContext';
 import MapMarker from './map/MapMarker';
-import MapControls from './map/MapControls';
 import MapErrorOverlay from './map/MapErrorOverlay';
 import MapVisualEffects from './map/MapVisualEffects';
 import { useGoogleMapInstance } from '@/hooks/useGoogleMapInstance';
@@ -126,13 +125,7 @@ const GoogleMap = () => {
         className="h-full w-full"
       />
       
-      {/* Custom zoom controls */}
-      {addressCoordinates && (
-        <MapControls
-          handleZoomIn={handleZoomIn}
-          handleZoomOut={handleZoomOut}
-        />
-      )}
+      {/* Zoom controls are now hidden - removed MapControls component */}
       
       {/* Render marker if we have coordinates and analysis is complete */}
       {mapInstance && addressCoordinates && analysisComplete && !isAnalyzing && (
