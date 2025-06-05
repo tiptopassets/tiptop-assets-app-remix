@@ -55,7 +55,7 @@ const PropertySummaryCard: React.FC<PropertySummaryCardProps> = ({
                   Property Analysis Complete
                 </h1>
                 <p className="text-gray-300 text-sm">
-                  Analysis for {analysisResults?.address || "Property Address"}
+                  {analysisResults?.address || "Property Address"}
                 </p>
               </div>
             </div>
@@ -96,7 +96,7 @@ const PropertySummaryCard: React.FC<PropertySummaryCardProps> = ({
               <div className="text-4xl font-bold text-white">{selectedAssetsCount}</div>
             </div>
             <div>
-              <h4 className="text-gray-400 text-sm font-medium mb-2">Monthly Revenue</h4>
+              <h4 className="text-gray-400 text-sm font-medium mb-2">Monthly Potential Revenue</h4>
               <div className="text-4xl font-bold text-tiptop-purple">${totalMonthlyIncome}</div>
             </div>
           </div>
