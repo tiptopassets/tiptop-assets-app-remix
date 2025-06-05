@@ -29,7 +29,7 @@ export const useGoogleMapInstance = (zoomLevel: number | undefined, setZoomLevel
           zoom: 12, // Initial zoom level of 12 for city overview
           mapTypeId: 'satellite',
           disableDefaultUI: true,
-          zoomControl: true,
+          zoomControl: false, // Explicitly disable zoom controls
           styles: mapStyles,
           tilt: 45 // Add a 45-degree tilt for better building visualization
         });
@@ -73,25 +73,5 @@ export const useGoogleMapInstance = (zoomLevel: number | undefined, setZoomLevel
     };
   }, [zoomLevel, setZoomLevel, toast]);
 
-  const handleZoomIn = () => {
-    if (mapInstance) {
-      const newZoom = mapInstance.getZoom() + 1;
-      mapInstance.setZoom(newZoom);
-      if (setZoomLevel) {
-        setZoomLevel(newZoom);
-      }
-    }
-  };
-
-  const handleZoomOut = () => {
-    if (mapInstance) {
-      const newZoom = mapInstance.getZoom() - 1;
-      mapInstance.setZoom(newZoom);
-      if (setZoomLevel) {
-        setZoomLevel(newZoom);
-      }
-    }
-  };
-
-  return { mapRef, mapInstance, mapLoadError, handleZoomIn, handleZoomOut };
+  return { mapRef, mapInstance, mapLoadError };
 };

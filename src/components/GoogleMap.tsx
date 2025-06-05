@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { useGoogleMap } from '@/contexts/GoogleMapContext';
 import MapMarker from './map/MapMarker';
@@ -23,7 +22,7 @@ const GoogleMap = () => {
     setUseLocalAnalysis
   } = useGoogleMap();
   
-  const { mapRef, mapInstance, mapLoadError, handleZoomIn, handleZoomOut } = useGoogleMapInstance(zoomLevel, setZoomLevel);
+  const { mapRef, mapInstance, mapLoadError } = useGoogleMapInstance(zoomLevel, setZoomLevel);
 
   // Effect for updating the map instance in the context
   useEffect(() => {
@@ -125,7 +124,7 @@ const GoogleMap = () => {
         className="h-full w-full"
       />
       
-      {/* Zoom controls are now hidden - removed MapControls component */}
+      {/* Zoom controls removed completely */}
       
       {/* Render marker if we have coordinates and analysis is complete */}
       {mapInstance && addressCoordinates && analysisComplete && !isAnalyzing && (
