@@ -18,6 +18,7 @@ import { useAuth } from '@/contexts/AuthContext';
 const Index = () => {
   const { isAnalyzing, analysisComplete, address, analysisResults } = useGoogleMap();
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [showingFormSection, setShowingFormSection] = useState(false);
   const isMobile = useIsMobile();
   const hasAddress = !!address;
   const { user, loading } = useAuth();
@@ -92,10 +93,13 @@ const Index = () => {
             {!analysisComplete && !isAnalyzing && <AssetIcons />}
           </div>
 
-          {/* Push analysis results to near bottom of viewport */}
+          {/* Analysis results positioned based on whether form is showing */}
           {analysisComplete && (
-            <div className="w-full mt-[60vh] sm:mt-[65vh] md:mt-[70vh] lg:mt-[75vh]">
-              <AssetResultList analysisResults={analysisResults} />
+            <div className={`w-full ${showingFormSection ? 'mt-0' : 'mt-[60vh] sm:mt-[65vh] md:mt-[70vh] lg:mt-[75vh]'}`}>
+              <AssetResultList 
+                analysisResults={analysisResults} 
+                onFormSectionToggle={setShowingFormSection}
+              />
             </div>
           )}
         </main>

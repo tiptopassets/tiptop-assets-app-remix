@@ -1,5 +1,5 @@
 
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { motion } from "framer-motion";
 import { useAdditionalOpportunities } from '@/hooks/useAdditionalOpportunities';
 import { SelectedAsset } from '@/types/analysis';
@@ -13,9 +13,13 @@ import { useGoogleMap } from '@/contexts/GoogleMapContext';
 
 interface AssetResultListProps {
   analysisResults: any;
+  onFormSectionToggle?: (isShowing: boolean) => void;
 }
 
-const AssetResultList: React.FC<AssetResultListProps> = ({ analysisResults }) => {
+const AssetResultList: React.FC<AssetResultListProps> = ({ 
+  analysisResults, 
+  onFormSectionToggle 
+}) => {
   const { additionalOpportunities, opportunitiesByTier, opportunitiesByCategory } = useAdditionalOpportunities();
   const [selectedAssets, setSelectedAssets] = useState<string[]>([]);
   const [selectedAssetsData, setSelectedAssetsData] = useState<SelectedAsset[]>([]);
@@ -29,6 +33,13 @@ const AssetResultList: React.FC<AssetResultListProps> = ({ analysisResults }) =>
     showAssetForm,
     additionalOpportunitiesCount: additionalOpportunities.length
   });
+
+  // Notify parent component when form section visibility changes
+  useEffect(() => {
+    if (onFormSectionToggle) {
+      onFormSectionToggle(showAssetForm);
+    }
+  }, [showAssetForm, onFormSectionToggle]);
 
   // Memoize the asset toggle handler to prevent unnecessary re-renders
   const handleAssetToggle = useCallback((assetTitle: string) => {
