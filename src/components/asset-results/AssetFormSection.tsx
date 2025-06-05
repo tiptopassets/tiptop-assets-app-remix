@@ -1,4 +1,3 @@
-
 import { useState, useMemo, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -114,8 +113,8 @@ const AssetFormSection = ({
 
   return (
     <div className="relative z-10 min-h-screen flex flex-col items-center px-3 sm:px-4 md:px-6">
-      {/* Position content directly below the address bar area */}
-      <div className="w-full mt-32 sm:mt-36 md:mt-40">
+      {/* Position content closer to the top, just below header */}
+      <div className="w-full mt-8 sm:mt-12 md:mt-16">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
