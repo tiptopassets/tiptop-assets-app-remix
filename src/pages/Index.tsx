@@ -92,22 +92,12 @@ const Index = () => {
             {!analysisComplete && !isAnalyzing && <AssetIcons />}
           </div>
 
-          {/* Push content to bottom edge when analysis is complete */}
-          <div className={`w-full flex flex-col justify-end items-center flex-1 ${
-            analysisComplete 
-              ? 'pb-4 sm:pb-6 md:pb-8' // Small padding from absolute bottom
-              : 'mt-6 sm:mt-8'
-          }`}>
-            {/* Asset results - positioned at very bottom when analysis complete */}
-            {analysisComplete && (
-              <div className="w-full">
-                <AssetResultList analysisResults={analysisResults} />
-              </div>
-            )}
-          </div>
-
-          {/* 3D Model Viewer */}
-          {(analysisComplete || isAnalyzing) && <HomeModelViewer />}
+          {/* Add spacing between search area and analysis results */}
+          {analysisComplete && (
+            <div className="w-full mt-16 sm:mt-20 md:mt-24 lg:mt-32">
+              <AssetResultList analysisResults={analysisResults} />
+            </div>
+          )}
         </main>
         
         {/* Footer with carousel - responsive spacing */}
@@ -129,6 +119,9 @@ const Index = () => {
             © 2025 Tiptop by Kolonia. All rights reserved.
           </p>
         </motion.div>
+
+        {/* 3D Model Viewer */}
+        {(analysisComplete || isAnalyzing) && <HomeModelViewer />}
       </div>
 
       {/* Model Generation Progress Sheet */}
