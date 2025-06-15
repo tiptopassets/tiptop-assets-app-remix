@@ -29,6 +29,7 @@ interface EnhancedAdditionalAssetsCarouselProps {
     logistics: AdditionalOpportunity[];
     community: AdditionalOpportunity[];
     tech: AdditionalOpportunity[];
+    homeServices?: AdditionalOpportunity[];
   };
 }
 
@@ -70,6 +71,9 @@ const EnhancedAdditionalAssetsCarousel = ({
         break;
       case "tech":
         filtered = opportunitiesByCategory.tech;
+        break;
+      case "home-services":
+        filtered = opportunitiesByCategory.homeServices || [];
         break;
       default:
         filtered = opportunities;
@@ -130,11 +134,12 @@ const EnhancedAdditionalAssetsCarousel = ({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Opportunities</SelectItem>
-              <SelectItem value="high-revenue">High Revenue ($150+)</SelectItem>
-              <SelectItem value="medium-revenue">Medium Revenue ($50-$149)</SelectItem>
-              <SelectItem value="low-revenue">Lower Revenue ($15-$49)</SelectItem>
+              <SelectItem value="high-revenue">High Revenue ($200+)</SelectItem>
+              <SelectItem value="medium-revenue">Medium Revenue ($75-$199)</SelectItem>
+              <SelectItem value="low-revenue">Lower Revenue ($25-$74)</SelectItem>
               <SelectItem value="space-rentals">Space Rentals</SelectItem>
-              <SelectItem value="pet-services">Pet Services</SelectItem>
+              <SelectItem value="home-services">Home Services</SelectItem>
+              <SelectItem value="pet-services">Pet & Care Services</SelectItem>
               <SelectItem value="logistics">Logistics & Storage</SelectItem>
               <SelectItem value="community">Community Services</SelectItem>
               <SelectItem value="tech">Tech Infrastructure</SelectItem>

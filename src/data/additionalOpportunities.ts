@@ -2,7 +2,35 @@
 import { AdditionalOpportunity } from '@/types/analysis';
 
 export const additionalOpportunities: AdditionalOpportunity[] = [
-  // High Revenue Tier ($100-400/month)
+  // High Revenue Tier ($200+ /month)
+  {
+    title: "ADU Rental",
+    icon: "storage",
+    monthlyRevenue: 1200,
+    description: "Rent out your accessory dwelling unit on Airbnb for consistent income.",
+    provider: "Airbnb",
+    setupCost: 2500,
+    roi: 2,
+    formFields: [
+      { type: "select", name: "unitType", label: "ADU Type", value: "Studio", options: ["Studio", "1 Bedroom", "2 Bedroom"] },
+      { type: "select", name: "amenities", label: "Included Amenities", value: "Basic", options: ["Basic", "Standard", "Luxury"] },
+      { type: "select", name: "availability", label: "Availability", value: "Full-time", options: ["Weekends", "Part-time", "Full-time"] }
+    ]
+  },
+  {
+    title: "Rent Your Pool",
+    icon: "swimming-pool",
+    monthlyRevenue: 450,
+    description: "Transform your pool into a revenue stream by renting it out by the hour.",
+    provider: "Swimply",
+    setupCost: 0,
+    roi: 1,
+    formFields: [
+      { type: "number", name: "capacity", label: "Max Capacity (people)", value: 8 },
+      { type: "select", name: "amenities", label: "Pool Amenities", value: "Basic", options: ["Basic", "Standard", "Premium"] },
+      { type: "select", name: "availability", label: "Rental Hours", value: "Weekends", options: ["Weekends", "Evenings", "Full Day"] }
+    ]
+  },
   {
     title: "Event Space Rental",
     icon: "garden",
@@ -16,6 +44,34 @@ export const additionalOpportunities: AdditionalOpportunity[] = [
       { type: "select", name: "spaceType", label: "Space Type", value: "Indoor", options: ["Indoor", "Outdoor", "Both"] },
       { type: "select", name: "amenities", label: "Included Amenities", value: "Basic", options: ["Basic", "Standard", "Premium"] },
       { type: "select", name: "eventTypes", label: "Suitable Event Types", value: "All", options: ["Parties", "Meetings", "Workshops", "All"] }
+    ]
+  },
+  {
+    title: "Event Space Rental (Large)",
+    icon: "storage",
+    monthlyRevenue: 320,
+    description: "Rent out large rooms for events, meetings, and celebrations.",
+    provider: "Eventbrite",
+    setupCost: 200,
+    roi: 1,
+    formFields: [
+      { type: "number", name: "capacity", label: "Max Capacity (people)", value: 50 },
+      { type: "select", name: "insurance", label: "Event Insurance", value: "Basic", options: ["Basic", "Comprehensive"] },
+      { type: "select", name: "setup", label: "Event Setup", value: "Client", options: ["Client", "Included", "Optional"] }
+    ]
+  },
+  {
+    title: "EV Charging Station",
+    icon: "ev-charger",
+    monthlyRevenue: 300,
+    description: "Install and rent out electric vehicle charging stations.",
+    provider: "ChargePoint",
+    setupCost: 1500,
+    roi: 5,
+    formFields: [
+      { type: "select", name: "chargerType", label: "Charger Type", value: "Level 2", options: ["Level 1", "Level 2", "DC Fast"] },
+      { type: "number", name: "parkingSpots", label: "Parking Spots", value: 2 },
+      { type: "select", name: "electricalUpgrade", label: "Electrical Upgrade", value: "Required", options: ["Required", "Optional", "Not Needed"] }
     ]
   },
   {
@@ -33,6 +89,34 @@ export const additionalOpportunities: AdditionalOpportunity[] = [
     ]
   },
   {
+    title: "Childcare Services",
+    icon: "garden",
+    monthlyRevenue: 280,
+    description: "Provide professional childcare services from your home.",
+    provider: "Care.com",
+    setupCost: 150,
+    roi: 1,
+    formFields: [
+      { type: "number", name: "childCapacity", label: "Max Children", value: 4 },
+      { type: "select", name: "ageRange", label: "Age Range", value: "All Ages", options: ["Infants", "Toddlers", "School Age", "All Ages"] },
+      { type: "select", name: "certification", label: "Certification Level", value: "Basic", options: ["Basic", "CPR Certified", "Professional"] }
+    ]
+  },
+  {
+    title: "Home Gym Rental",
+    icon: "storage",
+    monthlyRevenue: 220,
+    description: "Rent out your home gym space for personal training sessions.",
+    provider: "Gympass",
+    setupCost: 800,
+    roi: 4,
+    formFields: [
+      { type: "select", name: "equipment", label: "Equipment Level", value: "Basic", options: ["Basic", "Intermediate", "Professional"] },
+      { type: "number", name: "capacity", label: "Max Users", value: 3 },
+      { type: "select", name: "hours", label: "Available Hours", value: "Evenings", options: ["Mornings", "Evenings", "Weekends", "All Day"] }
+    ]
+  },
+  {
     title: "Photography Studio",
     icon: "storage",
     monthlyRevenue: 220,
@@ -44,6 +128,22 @@ export const additionalOpportunities: AdditionalOpportunity[] = [
       { type: "select", name: "lighting", label: "Lighting Setup", value: "Natural", options: ["Natural", "Basic", "Professional"] },
       { type: "number", name: "spaceSize", label: "Studio Size (sq ft)", value: 200 },
       { type: "select", name: "backdrop", label: "Backdrop Options", value: "Wall", options: ["Wall", "Portable", "Multiple"] }
+    ]
+  },
+
+  // Medium Revenue Tier ($100-199/month)
+  {
+    title: "Dog Boarding",
+    icon: "garden",
+    monthlyRevenue: 180,
+    description: "Provide dog boarding services in your fenced yard.",
+    provider: "Rover",
+    setupCost: 100,
+    roi: 1,
+    formFields: [
+      { type: "number", name: "dogCapacity", label: "Max Dogs", value: 3 },
+      { type: "select", name: "yardSize", label: "Yard Size", value: "Medium", options: ["Small", "Medium", "Large"] },
+      { type: "select", name: "experience", label: "Experience Level", value: "Beginner", options: ["Beginner", "Experienced", "Professional"] }
     ]
   },
   {
@@ -61,6 +161,19 @@ export const additionalOpportunities: AdditionalOpportunity[] = [
     ]
   },
   {
+    title: "Music Lessons",
+    icon: "storage",
+    monthlyRevenue: 160,
+    description: "Teach music lessons from your home studio space.",
+    setupCost: 0,
+    roi: 1,
+    formFields: [
+      { type: "select", name: "instrument", label: "Primary Instrument", value: "Piano", options: ["Piano", "Guitar", "Drums", "Voice", "Multiple"] },
+      { type: "select", name: "studentLevel", label: "Student Level", value: "Beginner", options: ["Beginner", "Intermediate", "Advanced", "All Levels"] },
+      { type: "number", name: "hoursPerWeek", label: "Teaching Hours/Week", value: 5 }
+    ]
+  },
+  {
     title: "Fitness Studio",
     icon: "garden",
     monthlyRevenue: 160,
@@ -74,8 +187,33 @@ export const additionalOpportunities: AdditionalOpportunity[] = [
       { type: "select", name: "flooring", label: "Flooring Type", value: "Mats", options: ["Carpet", "Mats", "Hardwood", "Rubber"] }
     ]
   },
-
-  // Medium Revenue Tier ($50-150/month)
+  {
+    title: "Art Studio Space",
+    icon: "storage",
+    monthlyRevenue: 150,
+    description: "Creative space for artists, painters, and crafters.",
+    setupCost: 250,
+    roi: 3,
+    formFields: [
+      { type: "select", name: "artType", label: "Art Focus", value: "General", options: ["Painting", "Sculpture", "Digital", "General"] },
+      { type: "select", name: "supplies", label: "Supplies Included", value: "Basic", options: ["None", "Basic", "Complete"] },
+      { type: "number", name: "easels", label: "Number of Easels", value: 3 }
+    ]
+  },
+  {
+    title: "Gaming Server Hosting",
+    icon: "wifi",
+    monthlyRevenue: 150,
+    description: "Host gaming servers for online communities.",
+    provider: "GameServers",
+    setupCost: 150,
+    roi: 3,
+    formFields: [
+      { type: "select", name: "gameType", label: "Game Type", value: "Minecraft", options: ["Minecraft", "CS:GO", "Rust", "Multiple"] },
+      { type: "number", name: "players", label: "Max Players", value: 20 },
+      { type: "select", name: "serverType", label: "Server Type", value: "Shared", options: ["Shared", "Dedicated", "VPS"] }
+    ]
+  },
   {
     title: "Workshop Space",
     icon: "storage",
@@ -87,6 +225,20 @@ export const additionalOpportunities: AdditionalOpportunity[] = [
       { type: "number", name: "toolsProvided", label: "Tools Provided", value: 10 },
       { type: "select", name: "workspaceType", label: "Workshop Type", value: "General", options: ["Woodworking", "Electronics", "Crafts", "General"] },
       { type: "select", name: "safety", label: "Safety Equipment", value: "Basic", options: ["Basic", "Standard", "Complete"] }
+    ]
+  },
+  {
+    title: "Package Storage",
+    icon: "storage",
+    monthlyRevenue: 120,
+    description: "Secure package receiving and storage for neighbors.",
+    provider: "Stashbee",
+    setupCost: 50,
+    roi: 1,
+    formFields: [
+      { type: "number", name: "storageCapacity", label: "Package Capacity", value: 20 },
+      { type: "select", name: "security", label: "Security Level", value: "Standard", options: ["Basic", "Standard", "High Security"] },
+      { type: "select", name: "hours", label: "Access Hours", value: "Business", options: ["24/7", "Extended", "Business"] }
     ]
   },
   {
@@ -103,6 +255,20 @@ export const additionalOpportunities: AdditionalOpportunity[] = [
     ]
   },
   {
+    title: "Home Security Monitoring",
+    icon: "wifi",
+    monthlyRevenue: 95,
+    description: "Provide home security monitoring services using smart cameras.",
+    provider: "Nest Aware",
+    setupCost: 300,
+    roi: 3,
+    formFields: [
+      { type: "number", name: "cameras", label: "Number of Cameras", value: 4 },
+      { type: "select", name: "coverage", label: "Coverage Area", value: "Full Property", options: ["Entry Points", "Partial", "Full Property"] },
+      { type: "select", name: "monitoring", label: "Monitoring Level", value: "24/7", options: ["Business Hours", "Extended", "24/7"] }
+    ]
+  },
+  {
     title: "Music Practice Room",
     icon: "storage",
     monthlyRevenue: 90,
@@ -116,16 +282,17 @@ export const additionalOpportunities: AdditionalOpportunity[] = [
     ]
   },
   {
-    title: "Art Studio Space",
-    icon: "storage",
+    title: "Garden Produce Sales",
+    icon: "garden",
     monthlyRevenue: 85,
-    description: "Creative space for artists, painters, and crafters.",
-    setupCost: 250,
+    description: "Sell fresh produce from your garden at local markets.",
+    provider: "Local Markets",
+    setupCost: 200,
     roi: 3,
     formFields: [
-      { type: "select", name: "artType", label: "Art Focus", value: "General", options: ["Painting", "Sculpture", "Digital", "General"] },
-      { type: "select", name: "supplies", label: "Supplies Included", value: "Basic", options: ["None", "Basic", "Complete"] },
-      { type: "number", name: "easels", label: "Number of Easels", value: 3 }
+      { type: "select", name: "produceType", label: "Produce Type", value: "Vegetables", options: ["Vegetables", "Fruits", "Herbs", "Mixed"] },
+      { type: "select", name: "certification", label: "Organic Certification", value: "No", options: ["No", "In Progress", "Certified"] },
+      { type: "number", name: "gardenSize", label: "Garden Size (sq ft)", value: 100 }
     ]
   },
   {
@@ -141,51 +308,95 @@ export const additionalOpportunities: AdditionalOpportunity[] = [
       { type: "select", name: "catering", label: "Catering Options", value: "None", options: ["None", "Basic", "Full Service"] }
     ]
   },
-
-  // Lower Revenue Tier ($15-80/month)
   {
-    title: "Pet Daycare Service",
-    icon: "garden",
-    monthlyRevenue: 60,
-    description: "Supervised pet care in your yard or dedicated space.",
-    setupCost: 150,
-    roi: 3,
+    title: "Grocery Pickup Point",
+    icon: "storage",
+    monthlyRevenue: 75,
+    description: "Serve as a grocery pickup point for delivery services.",
+    provider: "Instacart",
+    setupCost: 0,
+    roi: 1,
     formFields: [
-      { type: "number", name: "petCapacity", label: "Max Pets", value: 5 },
-      { type: "select", name: "petTypes", label: "Pet Types", value: "Dogs Only", options: ["Dogs Only", "Cats Only", "Both", "Small Pets"] },
-      { type: "select", name: "supervision", label: "Supervision Level", value: "Moderate", options: ["Light", "Moderate", "Full"] }
+      { type: "select", name: "storageType", label: "Storage Type", value: "Refrigerated", options: ["Dry", "Refrigerated", "Both"] },
+      { type: "number", name: "capacity", label: "Order Capacity", value: 10 },
+      { type: "select", name: "availability", label: "Pickup Hours", value: "Business", options: ["Business", "Extended", "24/7"] }
+    ]
+  },
+
+  // Lower Revenue Tier ($25-74/month)
+  {
+    title: "Composting Service",
+    icon: "garden",
+    monthlyRevenue: 55,
+    description: "Provide composting services for your local community.",
+    provider: "Local Composting",
+    setupCost: 100,
+    roi: 2,
+    formFields: [
+      { type: "select", name: "compostType", label: "Composting Method", value: "Bin", options: ["Bin", "Tumbler", "Pile", "Vermicomposting"] },
+      { type: "number", name: "capacity", label: "Weekly Capacity (lbs)", value: 50 },
+      { type: "select", name: "pickup", label: "Pickup Schedule", value: "Weekly", options: ["Bi-weekly", "Weekly", "On-demand"] }
     ]
   },
   {
-    title: "Package Storage Hub",
+    title: "Gift Wrapping Service",
     icon: "storage",
     monthlyRevenue: 45,
-    description: "Secure package receiving and storage for neighbors.",
-    setupCost: 100,
-    roi: 3,
+    description: "Seasonal gift wrapping service for holidays and special occasions.",
+    setupCost: 75,
+    roi: 2,
     formFields: [
-      { type: "number", name: "storageCapacity", label: "Package Capacity", value: 20 },
-      { type: "select", name: "security", label: "Security Level", value: "Standard", options: ["Basic", "Standard", "High Security"] },
-      { type: "select", name: "hours", label: "Access Hours", value: "Business", options: ["24/7", "Extended", "Business"] }
+      { type: "select", name: "season", label: "Service Season", value: "Holiday", options: ["Holiday", "Year-round", "Special Events"] },
+      { type: "select", name: "complexity", label: "Wrapping Complexity", value: "Standard", options: ["Basic", "Standard", "Premium"] },
+      { type: "number", name: "capacity", label: "Gifts per Week", value: 20 }
     ]
   },
   {
-    title: "Bike Storage & Repair",
+    title: "Bike Repair Station",
     icon: "storage",
     monthlyRevenue: 40,
-    description: "Secure bike storage with basic maintenance services.",
+    description: "Community bike repair station with tools and expertise.",
+    provider: "Local Community",
     setupCost: 200,
     roi: 5,
     formFields: [
-      { type: "number", name: "bikeCapacity", label: "Bike Capacity", value: 8 },
-      { type: "select", name: "repairServices", label: "Repair Services", value: "Basic", options: ["Storage Only", "Basic", "Full Service"] },
-      { type: "select", name: "security", label: "Security Features", value: "Locked", options: ["Basic", "Locked", "Monitored"] }
+      { type: "select", name: "services", label: "Repair Services", value: "Basic", options: ["Basic", "Advanced", "Full Service"] },
+      { type: "number", name: "tools", label: "Tool Set Size", value: 15 },
+      { type: "select", name: "expertise", label: "Repair Expertise", value: "Intermediate", options: ["Beginner", "Intermediate", "Expert"] }
+    ]
+  },
+  {
+    title: "Internet Bandwidth Sharing",
+    icon: "wifi",
+    monthlyRevenue: 35,
+    description: "Share unused internet bandwidth for passive income.",
+    provider: "Honeygain",
+    setupCost: 0,
+    roi: 1,
+    formFields: [
+      { type: "select", name: "speed", label: "Internet Speed", value: "High", options: ["Medium", "High", "Very High"] },
+      { type: "number", name: "devices", label: "Connected Devices", value: 3 },
+      { type: "select", name: "dataLimit", label: "Data Limit", value: "Unlimited", options: ["Limited", "High", "Unlimited"] }
+    ]
+  },
+  {
+    title: "Coffee Bean Roasting",
+    icon: "storage",
+    monthlyRevenue: 35,
+    description: "Roast and sell coffee beans to local cafes and customers.",
+    provider: "Local Sales",
+    setupCost: 300,
+    roi: 8,
+    formFields: [
+      { type: "select", name: "roasterSize", label: "Roaster Size", value: "Small", options: ["Small", "Medium", "Large"] },
+      { type: "select", name: "beanType", label: "Bean Types", value: "Single Origin", options: ["Single Origin", "Blends", "Both"] },
+      { type: "number", name: "weeklyCapacity", label: "Weekly Capacity (lbs)", value: 10 }
     ]
   },
   {
     title: "Tool Library",
     icon: "storage",
-    monthlyRevenue: 35,
+    monthlyRevenue: 30,
     description: "Community tool sharing and rental service.",
     setupCost: 300,
     roi: 9,
@@ -196,61 +407,53 @@ export const additionalOpportunities: AdditionalOpportunity[] = [
     ]
   },
   {
-    title: "Laundry Service",
+    title: "Book Library Sharing",
     icon: "storage",
-    monthlyRevenue: 30,
-    description: "Shared laundry facilities for apartment residents.",
-    setupCost: 800,
-    roi: 27,
-    formFields: [
-      { type: "number", name: "machines", label: "Number of Machines", value: 2 },
-      { type: "select", name: "paymentSystem", label: "Payment System", value: "Coin", options: ["Coin", "App-based", "Card"] },
-      { type: "select", name: "detergent", label: "Detergent Provided", value: "Optional", options: ["No", "Optional", "Included"] }
-    ]
-  },
-  {
-    title: "Smart Charging Station",
-    icon: "wifi",
     monthlyRevenue: 25,
-    description: "Device charging hub with WiFi access for community use.",
-    setupCost: 150,
-    roi: 6,
+    description: "Little Free Library for community book sharing.",
+    provider: "Little Free Library",
+    setupCost: 75,
+    roi: 3,
     formFields: [
-      { type: "number", name: "chargingPorts", label: "Charging Ports", value: 8 },
-      { type: "select", name: "deviceTypes", label: "Supported Devices", value: "Universal", options: ["Phone Only", "Tablets", "Laptops", "Universal"] },
-      { type: "select", name: "wifiAccess", label: "WiFi Access", value: "Included", options: ["None", "Basic", "Premium", "Included"] }
+      { type: "number", name: "bookCapacity", label: "Book Capacity", value: 50 },
+      { type: "select", name: "genres", label: "Book Genres", value: "Mixed", options: ["Children", "Fiction", "Non-fiction", "Mixed"] },
+      { type: "select", name: "location", label: "Library Location", value: "Front Yard", options: ["Front Yard", "Community", "School"] }
     ]
   }
 ];
 
 export const getOpportunitiesByRevenueTier = () => {
-  const high = additionalOpportunities.filter(opp => opp.monthlyRevenue >= 150);
-  const medium = additionalOpportunities.filter(opp => opp.monthlyRevenue >= 50 && opp.monthlyRevenue < 150);
-  const low = additionalOpportunities.filter(opp => opp.monthlyRevenue < 50);
+  const high = additionalOpportunities.filter(opp => opp.monthlyRevenue >= 200);
+  const medium = additionalOpportunities.filter(opp => opp.monthlyRevenue >= 75 && opp.monthlyRevenue < 200);
+  const low = additionalOpportunities.filter(opp => opp.monthlyRevenue < 75);
   
   return { high, medium, low };
 };
 
 export const getOpportunitiesByCategory = () => {
   const spaceRentals = additionalOpportunities.filter(opp => 
-    ['Event Space Rental', 'Co-working Space', 'Photography Studio', 'Content Creator Studio', 'Fitness Studio', 'Game Room Rental', 'Music Practice Room', 'Art Studio Space', 'Meeting Room Rental'].includes(opp.title)
+    ['ADU Rental', 'Event Space Rental', 'Event Space Rental (Large)', 'Co-working Space', 'Photography Studio', 'Content Creator Studio', 'Fitness Studio', 'Art Studio Space', 'Home Gym Rental', 'Game Room Rental', 'Music Practice Room', 'Meeting Room Rental'].includes(opp.title)
   );
   
   const petServices = additionalOpportunities.filter(opp => 
-    ['Pet Daycare Service'].includes(opp.title)
+    ['Dog Boarding', 'Childcare Services'].includes(opp.title)
   );
   
   const logistics = additionalOpportunities.filter(opp => 
-    ['Package Storage Hub', 'Bike Storage & Repair'].includes(opp.title)
+    ['Package Storage', 'Bike Repair Station', 'Tool Library', 'Grocery Pickup Point'].includes(opp.title)
   );
   
   const community = additionalOpportunities.filter(opp => 
-    ['Workshop Space', 'Tool Library', 'Laundry Service'].includes(opp.title)
+    ['Workshop Space', 'Book Library Sharing', 'Composting Service', 'Coffee Bean Roasting'].includes(opp.title)
   );
   
   const tech = additionalOpportunities.filter(opp => 
-    ['Smart Charging Station'].includes(opp.title)
+    ['EV Charging Station', 'Internet Bandwidth Sharing', 'Gaming Server Hosting', 'Home Security Monitoring'].includes(opp.title)
   );
   
-  return { spaceRentals, petServices, logistics, community, tech };
+  const homeServices = additionalOpportunities.filter(opp => 
+    ['Rent Your Pool', 'Music Lessons', 'Gift Wrapping Service', 'Garden Produce Sales'].includes(opp.title)
+  );
+  
+  return { spaceRentals, petServices, logistics, community, tech, homeServices };
 };
