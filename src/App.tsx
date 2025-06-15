@@ -7,7 +7,6 @@ import { AuthProvider } from '@/contexts/AuthContext';
 import { GoogleMapProvider } from '@/contexts/GoogleMapContext';
 import { ModelGenerationProvider } from '@/contexts/ModelGeneration';
 import { ServiceProviderProvider } from '@/contexts/ServiceProviders';
-import { useGoogleMapInstance } from '@/hooks/useGoogleMapInstance';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import DataSyncNotification from '@/components/DataSyncNotification';
 
@@ -40,7 +39,6 @@ const queryClient = new QueryClient({
 
 function App() {
   const [mapLoaded, setMapLoaded] = useState(false);
-  useGoogleMapInstance(setMapLoaded, mapLoaded);
 
   useEffect(() => {
     console.log('🗺️ Google Maps loaded:', mapLoaded);
