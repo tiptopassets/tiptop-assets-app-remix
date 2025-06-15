@@ -960,9 +960,17 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_user_role: {
+        Args: { user_uuid: string }
+        Returns: string
+      }
       sum_login_count: {
         Args: Record<PropertyKey, never>
         Returns: number
+      }
+      update_user_login_stats: {
+        Args: { user_uuid: string; ip_address: string; user_agent: string }
+        Returns: undefined
       }
     }
     Enums: {

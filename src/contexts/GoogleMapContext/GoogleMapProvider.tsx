@@ -25,82 +25,115 @@ export const GoogleMapProvider = ({ children }: { children: ReactNode }) => {
   const handlePropertyAnalysis = async (propertyAddress: string) => {
     console.log('🚀 Starting property analysis for:', propertyAddress, 'User:', user?.id);
     
-    await generatePropertyAnalysis({
-      propertyAddress,
-      addressCoordinates,
-      useLocalAnalysis,
-      setIsGeneratingAnalysis,
-      setIsAnalyzing,
-      setAnalysisResults: async (results: AnalysisResults | null) => {
-        console.log('📊 Analysis results received:', !!results);
-        setAnalysisResults(results);
-        
-        // Save to database if user is authenticated and we have results
-        if (results && propertyAddress && user && !authLoading) {
-          try {
-            console.log('💾 Attempting to save analysis to database...');
-            
-            // Import the service functions
-            const { saveAddress } = await import('@/services/userAddressService');
-            const { savePropertyAnalysis } = await import('@/services/userAnalysisService');
-            
-            // First save the address
-            console.log('📍 Saving address to database...');
-            const addressId = await saveAddress(
-              user.id,
-              propertyAddress,
-              addressCoordinates,
-              propertyAddress,
-              true // Set as primary address for now
-            );
-            
-            if (addressId) {
-              console.log('✅ Address saved with ID:', addressId);
+    if (!propertyAddress) {
+      console.error('❌ No property address provided');
+      toast({
+        title: "Address Required",
+        description: "Please enter a property address to analyze",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Reset any previous errors
+    setAnalysisError(null);
+    
+    try {
+      await generatePropertyAnalysis({
+        propertyAddress,
+        addressCoordinates,
+        useLocalAnalysis,
+        setIsGeneratingAnalysis,
+        setIsAnalyzing,
+        setAnalysisResults: async (results: AnalysisResults | null) => {
+          console.log('📊 Analysis results received:', !!results);
+          setAnalysisResults(results);
+          
+          // Save to database if user is authenticated and we have results
+          if (results && propertyAddress && user && !authLoading) {
+            try {
+              console.log('💾 Attempting to save analysis to database...');
               
-              // Then save the analysis results
-              console.log('📊 Saving analysis results to database...');
-              const analysisId = await savePropertyAnalysis(
+              // Import the service functions
+              const { saveAddress } = await import('@/services/userAddressService');
+              const { savePropertyAnalysis } = await import('@/services/userAnalysisService');
+              
+              // First save the address
+              console.log('📍 Saving address to database...');
+              const addressId = await saveAddress(
                 user.id,
-                addressId,
-                results,
-                addressCoordinates
+                propertyAddress,
+                addressCoordinates,
+                propertyAddress,
+                true // Set as primary address for now
               );
               
-              if (analysisId) {
-                console.log('✅ Analysis saved with ID:', analysisId);
-                toast({
-                  title: "Analysis Saved",
-                  description: "Your property analysis has been saved to your dashboard",
-                });
+              if (addressId) {
+                console.log('✅ Address saved with ID:', addressId);
+                
+                // Then save the analysis results
+                console.log('📊 Saving analysis results to database...');
+                const analysisId = await savePropertyAnalysis(
+                  user.id,
+                  addressId,
+                  results,
+                  addressCoordinates
+                );
+                
+                if (analysisId) {
+                  console.log('✅ Analysis saved with ID:', analysisId);
+                  toast({
+                    title: "Analysis Saved",
+                    description: "Your property analysis has been saved to your dashboard",
+                  });
+                } else {
+                  console.error('❌ Failed to save analysis - no ID returned');
+                  toast({
+                    title: "Save Error",
+                    description: "Analysis completed but couldn't save to dashboard. Please try again.",
+                    variant: "destructive"
+                  });
+                }
               } else {
-                console.error('❌ Failed to save analysis - no ID returned');
+                console.error('❌ Failed to save address - no ID returned');
+                toast({
+                  title: "Save Error",
+                  description: "Could not save address. Please try again.",
+                  variant: "destructive"
+                });
               }
-            } else {
-              console.error('❌ Failed to save address - no ID returned');
+            } catch (error) {
+              console.error('❌ Failed to save analysis to database:', error);
+              toast({
+                title: "Save Warning",
+                description: "Analysis completed but couldn't save to dashboard. Data is available locally.",
+                variant: "destructive"
+              });
             }
-          } catch (error) {
-            console.error('❌ Failed to save analysis to database:', error);
-            toast({
-              title: "Save Warning",
-              description: "Analysis completed but couldn't save to dashboard. Data is available locally.",
-              variant: "destructive"
-            });
-          }
-        } else {
-          if (!user) {
-            console.log('ℹ️ User not authenticated - analysis not saved to database');
-          } else if (!results) {
-            console.log('ℹ️ No results to save');
           } else {
-            console.log('ℹ️ Auth still loading or missing data - analysis not saved');
+            if (!user) {
+              console.log('ℹ️ User not authenticated - analysis not saved to database');
+            } else if (!results) {
+              console.log('ℹ️ No results to save');
+            } else {
+              console.log('ℹ️ Auth still loading or missing data - analysis not saved');
+            }
           }
-        }
-      },
-      setAnalysisComplete,
-      setUseLocalAnalysis,
-      setAnalysisError,
-      toast
-    });
+        },
+        setAnalysisComplete,
+        setUseLocalAnalysis,
+        setAnalysisError,
+        toast
+      });
+    } catch (error) {
+      console.error('❌ Error in handlePropertyAnalysis:', error);
+      setAnalysisError('Failed to analyze property. Please try again.');
+      toast({
+        title: "Analysis Failed",
+        description: "There was an error analyzing your property. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
 
   return (

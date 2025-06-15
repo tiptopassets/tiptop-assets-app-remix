@@ -4,11 +4,11 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useGoogleMap } from '@/contexts/GoogleMapContext';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
-import { Database, AlertCircle } from 'lucide-react';
+import { Database, AlertCircle, CheckCircle2 } from 'lucide-react';
 
 const DataSyncNotification = () => {
   const { user } = useAuth();
-  const { analysisComplete, analysisResults, address } = useGoogleMap();
+  const { analysisComplete, analysisResults, address, analysisError } = useGoogleMap();
   const { toast } = useToast();
   const [hasShownSyncNotification, setHasShownSyncNotification] = useState(false);
 
@@ -53,14 +53,33 @@ const DataSyncNotification = () => {
         });
       }, 1000);
     }
-  }, [analysisComplete, analysisResults, address, user, hasShownSyncNotification, toast]);
+
+    // Show error notification if analysis failed
+    if (analysisError && !hasShownSyncNotification) {
+      setHasShownSyncNotification(true);
+      
+      toast({
+        title: "Analysis Error",
+        description: analysisError,
+        variant: "destructive",
+        action: (
+          <Button asChild variant="outline" size="sm">
+            <a href="/">
+              <AlertCircle className="w-4 h-4 mr-2" />
+              Try Again
+            </a>
+          </Button>
+        )
+      });
+    }
+  }, [analysisComplete, analysisResults, address, user, analysisError, hasShownSyncNotification, toast]);
 
   // Reset notification state when starting new analysis
   useEffect(() => {
-    if (!analysisComplete) {
+    if (!analysisComplete && !analysisError) {
       setHasShownSyncNotification(false);
     }
-  }, [analysisComplete]);
+  }, [analysisComplete, analysisError]);
 
   return null; // This component only handles notifications
 };

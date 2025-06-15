@@ -5,7 +5,7 @@ import { Progress } from '@/components/ui/progress';
 import { useGoogleMap } from '@/contexts/GoogleMapContext';
 import { useEnhancedAnalysis } from '@/hooks/useEnhancedAnalysis';
 import { useAuth } from '@/contexts/AuthContext';
-import { Zap, CheckCircle, Database } from 'lucide-react';
+import { Zap, CheckCircle, Database, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const AnalyzeButton = () => {
@@ -13,6 +13,7 @@ const AnalyzeButton = () => {
     address, 
     generatePropertyAnalysis, 
     isAnalyzing,
+    analysisError,
     setAnalysisResults,
     setAnalysisComplete 
   } = useGoogleMap();
@@ -117,6 +118,7 @@ const AnalyzeButton = () => {
       });
       setProgress(0);
       setCurrentStep('');
+      setAnalysisStarted(false);
     } finally {
       clearInterval(progressInterval);
     }
@@ -124,6 +126,7 @@ const AnalyzeButton = () => {
 
   const isLoading = isAnalyzing || isEnhancedLoading;
   const hasAddress = !!address;
+  const hasError = !!analysisError;
 
   return (
     <div className="w-full max-w-md mx-auto">
@@ -131,7 +134,9 @@ const AnalyzeButton = () => {
         onClick={handleUnifiedAnalysis}
         disabled={isLoading || analysisStarted || !hasAddress}
         className={`w-full ${hasAddress 
-          ? 'bg-gradient-to-r from-tiptop-purple to-purple-600 hover:from-purple-600 hover:to-purple-700' 
+          ? hasError 
+            ? 'bg-red-600 hover:bg-red-700' 
+            : 'bg-gradient-to-r from-tiptop-purple to-purple-600 hover:from-purple-600 hover:to-purple-700'
           : 'bg-gray-600 hover:bg-gray-700'
         } text-white font-semibold py-3 px-6 rounded-full transition-all duration-300 transform hover:scale-105`}
         size="lg"
@@ -140,6 +145,11 @@ const AnalyzeButton = () => {
           <div className="flex items-center gap-2">
             <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
             {user ? 'Enhanced AI Analysis...' : 'Analyzing Property...'}
+          </div>
+        ) : hasError ? (
+          <div className="flex items-center gap-2">
+            <AlertCircle className="w-5 h-5" />
+            Try Again
           </div>
         ) : analysisStarted ? (
           <div className="flex items-center gap-2">
@@ -168,7 +178,14 @@ const AnalyzeButton = () => {
         </div>
       )}
       
-      {!analysisStarted && (
+      {/* Error State */}
+      {hasError && (
+        <div className="mt-2 p-2 bg-red-100 border border-red-300 rounded text-red-700 text-sm">
+          {analysisError}
+        </div>
+      )}
+      
+      {!analysisStarted && !hasError && (
         <p className="text-center text-sm text-gray-400 mt-2">
           {hasAddress ? (
             user ? (
