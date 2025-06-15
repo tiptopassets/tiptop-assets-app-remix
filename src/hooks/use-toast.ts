@@ -192,6 +192,23 @@ const useToast = () => {
   return toast
 }
 
+// Standalone toast function for non-React contexts
+const toast = (props: Omit<ToasterToast, "id">) => {
+  const id = genId()
+
+  if (dispatch) {
+    dispatch({
+      type: actionTypes.ADD_TOAST,
+      toast: {
+        id,
+        ...props,
+      },
+    })
+  }
+
+  return id
+}
+
 // Export both the hook and a simple toast function
-export { useToast }
+export { useToast, toast }
 export type { ToasterToast }
