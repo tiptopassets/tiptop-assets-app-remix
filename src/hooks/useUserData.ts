@@ -127,7 +127,7 @@ export const useUserData = () => {
       // Convert the response data to match our interface
       const analysisData: UserPropertyAnalysis = {
         ...data,
-        analysis_results: data.analysis_results as AnalysisResults
+        analysis_results: data.analysis_results as unknown as AnalysisResults
       };
 
       setAnalyses(prev => [...prev, analysisData]);
@@ -215,7 +215,7 @@ export const useUserData = () => {
       // Convert analysis data to match our interface
       const typedAnalysisData: UserPropertyAnalysis[] = (analysisData || []).map(item => ({
         ...item,
-        analysis_results: item.analysis_results as AnalysisResults
+        analysis_results: item.analysis_results as unknown as AnalysisResults
       }));
       
       setAnalyses(typedAnalysisData);
