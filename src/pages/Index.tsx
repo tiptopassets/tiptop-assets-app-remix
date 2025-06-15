@@ -42,7 +42,7 @@ const Index = () => {
   }
 
   return (
-    <div className="min-h-screen relative overflow-hidden flex flex-col">
+    <div className="min-h-screen relative overflow-hidden flex flex-col bg-gradient-to-b from-gray-900 to-black">
       {/* Google Map as background */}
       <GoogleMap />
 
