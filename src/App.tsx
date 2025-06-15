@@ -6,7 +6,6 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { GoogleMapProvider } from "@/contexts/GoogleMapContext";
-import { ModelGenerationProvider } from "@/contexts/ModelGeneration";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ServiceProviderProvider } from "@/contexts/ServiceProviders";
 import ErrorBoundary from "@/components/ErrorBoundary";
@@ -72,32 +71,30 @@ const ProtectedRoutes = () => (
 
 const App = () => (
   <ErrorBoundary>
-    <GoogleMapProvider>
-      <ModelGenerationProvider>
-        <QueryClientProvider client={queryClient}>
-          <BrowserRouter>
-            <TooltipProvider>
-              <AuthProvider>
-                <div className="min-h-screen bg-gradient-to-b from-black to-purple-900">
-                  <Suspense fallback={
-                    <div className="min-h-screen flex items-center justify-center">
-                      <div className="text-white text-center">
-                        <div className="animate-spin h-8 w-8 border-4 border-tiptop-purple border-t-transparent rounded-full mx-auto mb-4"></div>
-                        <p>Loading...</p>
-                      </div>
+    <QueryClientProvider client={queryClient}>
+      <BrowserRouter>
+        <TooltipProvider>
+          <AuthProvider>
+            <GoogleMapProvider>
+              <div className="min-h-screen bg-gradient-to-b from-black to-purple-900">
+                <Suspense fallback={
+                  <div className="min-h-screen flex items-center justify-center">
+                    <div className="text-white text-center">
+                      <div className="animate-spin h-8 w-8 border-4 border-tiptop-purple border-t-transparent rounded-full mx-auto mb-4"></div>
+                      <p>Loading...</p>
                     </div>
-                  }>
-                    <PublicRoutes />
-                  </Suspense>
-                  <Toaster />
-                  <Sonner />
-                </div>
-              </AuthProvider>
-            </TooltipProvider>
-          </BrowserRouter>
-        </QueryClientProvider>
-      </ModelGenerationProvider>
-    </GoogleMapProvider>
+                  </div>
+                }>
+                  <PublicRoutes />
+                </Suspense>
+                <Toaster />
+                <Sonner />
+              </div>
+            </GoogleMapProvider>
+          </AuthProvider>
+        </TooltipProvider>
+      </BrowserRouter>
+    </QueryClientProvider>
   </ErrorBoundary>
 );
 
