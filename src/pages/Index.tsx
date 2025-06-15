@@ -41,12 +41,12 @@ const Index = () => {
   }
 
   return (
-    <div className="min-h-screen relative overflow-hidden">
+    <div className="min-h-screen relative overflow-hidden flex flex-col">
       {/* Google Map as background */}
       <GoogleMap />
 
-      {/* Content overlay */}
-      <div className="relative z-10 min-h-screen flex flex-col items-center">
+      {/* Content overlay - flex-1 to take available space */}
+      <div className="relative z-10 flex-1 flex flex-col items-center">
         {/* Header - Responsive */}
         <header className="w-full p-3 sm:p-4 md:p-6 flex justify-between items-center">
           <Link to="/" className="text-xl sm:text-2xl md:text-3xl font-bold text-tiptop-purple hover:scale-105 transition-transform flex items-center">
@@ -75,7 +75,7 @@ const Index = () => {
           </div>
         </header>
 
-        {/* Main content - Responsive layout */}
+        {/* Main content - flex-1 to take available space */}
         <main className="flex-1 w-full flex flex-col items-center justify-start px-3 sm:px-4 md:px-6 transition-all duration-500">
           <div className={`text-center mb-4 sm:mb-6 md:mb-8 transform transition-all duration-500 ${isCollapsed ? 'scale-0 h-0 mb-0' : 'scale-100'}`}>
             <h1 className="text-xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-2 drop-shadow-lg px-4">
@@ -106,27 +106,27 @@ const Index = () => {
         
         {/* Footer with carousel - responsive spacing */}
         {!analysisComplete && !isAnalyzing && !hasAddress && (
-          <footer className="w-full mt-auto">
+          <footer className="w-full">
             <div className={`${isMobile ? 'py-12 sm:py-16 pb-20 sm:pb-24' : 'py-16 md:py-20 lg:py-32'}`}></div>
             <FooterCarousel />
           </footer>
         )}
-        
-        {/* Copyright footer - responsive text */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.7, duration: 0.5 }}
-          className="w-full py-2 sm:py-3 md:py-4 text-center px-4"
-        >
-          <p className="text-white/60 text-xs sm:text-sm backdrop-blur-sm py-1 sm:py-2 px-2 sm:px-4 rounded-full inline-block bg-black/30 border border-white/10">
-            © 2025 Tiptop by Kolonia. All rights reserved.
-          </p>
-        </motion.div>
 
         {/* 3D Model Viewer */}
         {(analysisComplete || isAnalyzing) && <HomeModelViewer />}
       </div>
+
+      {/* Copyright footer - Always at the bottom with fixed positioning */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.7, duration: 0.5 }}
+        className="relative z-20 w-full py-2 sm:py-3 md:py-4 text-center px-4 mt-auto"
+      >
+        <p className="text-white/60 text-xs sm:text-sm backdrop-blur-sm py-1 sm:py-2 px-2 sm:px-4 rounded-full inline-block bg-black/30 border border-white/10">
+          © 2025 Tiptop by Kolonia. All rights reserved.
+        </p>
+      </motion.div>
 
       {/* Model Generation Progress Sheet */}
       <ModelGenerationSheet />
