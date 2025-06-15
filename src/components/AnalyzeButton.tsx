@@ -5,7 +5,7 @@ import { Progress } from '@/components/ui/progress';
 import { useGoogleMap } from '@/contexts/GoogleMapContext';
 import { useEnhancedAnalysis } from '@/hooks/useEnhancedAnalysis';
 import { useAuth } from '@/contexts/AuthContext';
-import { Zap, CheckCircle } from 'lucide-react';
+import { Zap, CheckCircle, Database } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const AnalyzeButton = () => {
@@ -21,6 +21,7 @@ const AnalyzeButton = () => {
   const { toast } = useToast();
   const [analysisStarted, setAnalysisStarted] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [currentStep, setCurrentStep] = useState('');
 
   const handleUnifiedAnalysis = async () => {
     if (!address) {
@@ -34,26 +35,40 @@ const AnalyzeButton = () => {
 
     setAnalysisStarted(true);
     setProgress(0);
+    setCurrentStep('Starting analysis...');
     
-    // Simulate progress updates
+    // Simulate progress updates with descriptive steps
     const progressInterval = setInterval(() => {
       setProgress(prev => {
         if (prev >= 90) {
           clearInterval(progressInterval);
           return 90;
         }
-        return prev + Math.random() * 15;
+        const newProgress = prev + Math.random() * 15;
+        
+        // Update step based on progress
+        if (newProgress < 30) {
+          setCurrentStep('Analyzing property features...');
+        } else if (newProgress < 60) {
+          setCurrentStep('Calculating revenue potential...');
+        } else if (newProgress < 90) {
+          setCurrentStep(user ? 'Saving to dashboard...' : 'Finalizing results...');
+        }
+        
+        return newProgress;
       });
     }, 500);
     
     try {
       // First run the basic analysis
       setProgress(30);
+      setCurrentStep('Processing property data...');
       await generatePropertyAnalysis(address);
       setProgress(60);
       
       // If user is authenticated, also run enhanced analysis
       if (user) {
+        setCurrentStep('Running enhanced analysis...');
         const enhancedResult = await analyzeProperty(address);
         setProgress(90);
         
@@ -62,17 +77,35 @@ const AnalyzeButton = () => {
           setAnalysisResults(enhancedResult.results);
           setAnalysisComplete(true);
           setProgress(100);
+          setCurrentStep('Analysis complete!');
           
           toast({
             title: "Enhanced Analysis Complete",
-            description: `Property analysis completed with ${Math.round(enhancedResult.dataQuality.accuracyScore * 100)}% accuracy using multi-source data`
+            description: `Property analysis completed and saved to your dashboard with ${Math.round(enhancedResult.dataQuality.accuracyScore * 100)}% accuracy`,
+            action: (
+              <Button asChild variant="outline" size="sm">
+                <a href="/dashboard">
+                  <Database className="w-4 h-4 mr-2" />
+                  View Dashboard
+                </a>
+              </Button>
+            )
           });
         }
       } else {
         setProgress(100);
+        setCurrentStep('Analysis complete!');
         toast({
           title: "Basic Analysis Complete",
-          description: "Property analysis completed. Sign in for enhanced AI analysis with Google Solar data."
+          description: "Property analysis completed. Sign in for enhanced AI analysis and dashboard saving.",
+          action: (
+            <Button asChild variant="outline" size="sm">
+              <a href="/dashboard">
+                <Database className="w-4 h-4 mr-2" />
+                View Results
+              </a>
+            </Button>
+          )
         });
       }
     } catch (error) {
@@ -83,6 +116,7 @@ const AnalyzeButton = () => {
         variant: "destructive"
       });
       setProgress(0);
+      setCurrentStep('');
     } finally {
       clearInterval(progressInterval);
     }
@@ -128,7 +162,7 @@ const AnalyzeButton = () => {
             className="h-2 bg-black/40 border border-white/10"
           />
           <div className="flex justify-between text-xs text-gray-400">
-            <span>Analyzing property...</span>
+            <span>{currentStep}</span>
             <span>{Math.round(progress)}%</span>
           </div>
         </div>
@@ -138,9 +172,11 @@ const AnalyzeButton = () => {
         <p className="text-center text-sm text-gray-400 mt-2">
           {hasAddress ? (
             user ? (
-              <>🚀 Multi-source analysis with Google Solar + GPT-4o</>
+              <>🚀 Multi-source analysis with Google Solar + GPT-4o<br/>
+              <span className="text-xs">✅ Results will be saved to your dashboard</span></>
             ) : (
-              <>🏠 Basic property analysis - sign in for enhanced features</>
+              <>🏠 Basic property analysis - sign in for enhanced features<br/>
+              <span className="text-xs">ℹ️ Sign in to save results to dashboard</span></>
             )
           ) : (
             <>📍 Enter an address above to start analysis</>

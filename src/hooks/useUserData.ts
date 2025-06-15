@@ -1,5 +1,5 @@
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { AnalysisResults } from '@/contexts/GoogleMapContext/types';
@@ -36,8 +36,7 @@ export const useUserData = () => {
       const addressId = await saveAddress(user.id, address, coordinates, formattedAddress, addresses.length === 0);
       
       // Reload addresses to get the updated data
-      const updatedAddresses = await loadUserAddresses(user.id);
-      setAddresses(updatedAddresses);
+      await refreshUserData();
       
       return addressId;
     } catch (err) {
@@ -66,9 +65,8 @@ export const useUserData = () => {
       console.log('💾 Saving property analysis for address:', addressId);
       const analysisId = await savePropertyAnalysis(user.id, addressId, analysisResults, coordinates);
       
-      // Reload analyses to get the updated data
-      const updatedAnalyses = await loadUserAnalyses(user.id);
-      setAnalyses(updatedAnalyses);
+      // Reload all data to get the updated analysis
+      await refreshUserData();
       
       return analysisId;
     } catch (err) {
@@ -109,8 +107,7 @@ export const useUserData = () => {
       );
       
       // Reload asset selections to get the updated data
-      const updatedSelections = await loadUserAssetSelections(user.id);
-      setAssetSelections(updatedSelections);
+      await refreshUserData();
       
       return selectionId;
     } catch (err) {
@@ -121,6 +118,40 @@ export const useUserData = () => {
         variant: "destructive"
       });
       return null;
+    }
+  };
+
+  // Refresh user data function for external use
+  const refreshUserData = async () => {
+    if (!user) {
+      console.warn('❌ Cannot refresh data: User not authenticated');
+      return;
+    }
+
+    console.log('🔄 Refreshing user data for:', user.id);
+    try {
+      const [addressData, analysisData, assetData, prefData] = await Promise.all([
+        loadUserAddresses(user.id),
+        loadUserAnalyses(user.id),
+        loadUserAssetSelections(user.id),
+        loadUserPreferences(user.id)
+      ]);
+
+      console.log('✅ Refreshed user data:', {
+        addresses: addressData.length,
+        analyses: analysisData.length,
+        assetSelections: assetData.length,
+        preferences: !!prefData
+      });
+
+      setAddresses(addressData);
+      setAnalyses(analysisData);
+      setAssetSelections(assetData);
+      setDashboardPreferences(prefData);
+
+    } catch (err) {
+      console.error('❌ Error refreshing user data:', err);
+      throw err;
     }
   };
 
@@ -137,25 +168,7 @@ export const useUserData = () => {
     setError(null);
 
     try {
-      const [addressData, analysisData, assetData, prefData] = await Promise.all([
-        loadUserAddresses(user.id),
-        loadUserAnalyses(user.id),
-        loadUserAssetSelections(user.id),
-        loadUserPreferences(user.id)
-      ]);
-
-      console.log('✅ Successfully loaded user data:', {
-        addresses: addressData.length,
-        analyses: analysisData.length,
-        assetSelections: assetData.length,
-        preferences: !!prefData
-      });
-
-      setAddresses(addressData);
-      setAnalyses(analysisData);
-      setAssetSelections(assetData);
-      setDashboardPreferences(prefData);
-
+      await refreshUserData();
     } catch (err) {
       console.error('❌ Error loading user data:', err);
       const errorMessage = err instanceof Error ? err.message : 'Failed to load user data';
@@ -169,6 +182,20 @@ export const useUserData = () => {
       setLoading(false);
     }
   }, [user, toast]);
+
+  // Auto-refresh when user changes
+  useEffect(() => {
+    if (user) {
+      loadUserData();
+    } else {
+      // Clear data when user logs out
+      setAddresses([]);
+      setAnalyses([]);
+      setAssetSelections([]);
+      setDashboardPreferences(null);
+      setError(null);
+    }
+  }, [user, loadUserData]);
 
   // Get primary address
   const getPrimaryAddress = (): UserAddress | null => {
@@ -191,6 +218,7 @@ export const useUserData = () => {
     savePropertyAnalysis: handleSavePropertyAnalysis,
     saveAssetSelection: handleSaveAssetSelection,
     loadUserData,
+    refreshUserData,
     getPrimaryAddress,
     getLatestAnalysis
   };

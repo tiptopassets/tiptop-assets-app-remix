@@ -23,6 +23,8 @@ export const GoogleMapProvider = ({ children }: { children: ReactNode }) => {
   const { user, loading: authLoading } = useAuth();
 
   const handlePropertyAnalysis = async (propertyAddress: string) => {
+    console.log('🚀 Starting property analysis for:', propertyAddress, 'User:', user?.id);
+    
     await generatePropertyAnalysis({
       propertyAddress,
       addressCoordinates,
@@ -30,18 +32,20 @@ export const GoogleMapProvider = ({ children }: { children: ReactNode }) => {
       setIsGeneratingAnalysis,
       setIsAnalyzing,
       setAnalysisResults: async (results: AnalysisResults | null) => {
+        console.log('📊 Analysis results received:', !!results);
         setAnalysisResults(results);
         
-        // Sync to database if user is logged in and we have results
+        // Save to database if user is authenticated and we have results
         if (results && propertyAddress && user && !authLoading) {
           try {
-            // Import the sync functions
+            console.log('💾 Attempting to save analysis to database...');
+            
+            // Import the service functions
             const { saveAddress } = await import('@/services/userAddressService');
             const { savePropertyAnalysis } = await import('@/services/userAnalysisService');
             
-            console.log('💾 Syncing analysis to database for user:', user.id);
-            
             // First save the address
+            console.log('📍 Saving address to database...');
             const addressId = await saveAddress(
               user.id,
               propertyAddress,
@@ -51,7 +55,10 @@ export const GoogleMapProvider = ({ children }: { children: ReactNode }) => {
             );
             
             if (addressId) {
+              console.log('✅ Address saved with ID:', addressId);
+              
               // Then save the analysis results
+              console.log('📊 Saving analysis results to database...');
               const analysisId = await savePropertyAnalysis(
                 user.id,
                 addressId,
@@ -60,17 +67,32 @@ export const GoogleMapProvider = ({ children }: { children: ReactNode }) => {
               );
               
               if (analysisId) {
-                console.log('✅ Successfully synced analysis to database');
+                console.log('✅ Analysis saved with ID:', analysisId);
                 toast({
                   title: "Analysis Saved",
                   description: "Your property analysis has been saved to your dashboard",
                 });
+              } else {
+                console.error('❌ Failed to save analysis - no ID returned');
               }
+            } else {
+              console.error('❌ Failed to save address - no ID returned');
             }
           } catch (error) {
-            console.error('❌ Failed to sync analysis to database:', error);
-            // Don't show error toast as the analysis still worked locally
-            console.log('Analysis will be available locally but not saved to dashboard');
+            console.error('❌ Failed to save analysis to database:', error);
+            toast({
+              title: "Save Warning",
+              description: "Analysis completed but couldn't save to dashboard. Data is available locally.",
+              variant: "destructive"
+            });
+          }
+        } else {
+          if (!user) {
+            console.log('ℹ️ User not authenticated - analysis not saved to database');
+          } else if (!results) {
+            console.log('ℹ️ No results to save');
+          } else {
+            console.log('ℹ️ Auth still loading or missing data - analysis not saved');
           }
         }
       },

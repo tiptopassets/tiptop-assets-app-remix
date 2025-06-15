@@ -11,7 +11,7 @@ import { useUserData } from '@/hooks/useUserData';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { MapPin, AlertCircle } from 'lucide-react';
+import { MapPin, AlertCircle, RefreshCw } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const Dashboard = () => {
@@ -23,17 +23,10 @@ const Dashboard = () => {
     loading: dataLoading, 
     error,
     loadUserData,
+    refreshUserData,
     getPrimaryAddress,
     getLatestAnalysis 
   } = useUserData();
-
-  // Load user data when component mounts and user is authenticated
-  useEffect(() => {
-    if (user && !authLoading) {
-      console.log('🔄 Loading user data for user:', user.id);
-      loadUserData();
-    }
-  }, [user, authLoading, loadUserData]);
 
   const primaryAddress = getPrimaryAddress();
   const latestAnalysis = getLatestAnalysis();
@@ -110,8 +103,12 @@ const Dashboard = () => {
               <h2 className="text-xl font-semibold mb-2">Error Loading Dashboard</h2>
               <p className="text-red-600 mb-4">{error}</p>
               <div className="space-y-2">
+                <Button onClick={() => refreshUserData()} variant="outline" className="w-full">
+                  <RefreshCw className="w-4 h-4 mr-2" />
+                  Refresh Data
+                </Button>
                 <Button onClick={loadUserData} variant="outline" className="w-full">
-                  Try Again
+                  Reload Dashboard
                 </Button>
                 <Button asChild variant="outline" className="w-full">
                   <Link to="/">Go to Home</Link>
@@ -129,6 +126,24 @@ const Dashboard = () => {
     return (
       <DashboardLayout>
         <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">Property Dashboard</h1>
+              <p className="text-gray-600">Get started by analyzing your first property</p>
+            </div>
+            <div className="flex gap-2">
+              <Button onClick={() => refreshUserData()} variant="outline" size="sm">
+                <RefreshCw className="w-4 h-4 mr-2" />
+                Refresh
+              </Button>
+              <Button asChild>
+                <Link to="/">
+                  <MapPin className="mr-2 h-4 w-4" />
+                  Analyze Property
+                </Link>
+              </Button>
+            </div>
+          </div>
           <DashboardEmptyState />
         </div>
       </DashboardLayout>
@@ -156,12 +171,18 @@ const Dashboard = () => {
                 {primaryAddress?.address || 'Your monetization overview'}
               </p>
             </div>
-            <Button asChild variant="outline">
-              <Link to="/">
-                <MapPin className="mr-2 h-4 w-4" />
-                Analyze New Property
-              </Link>
-            </Button>
+            <div className="flex gap-2">
+              <Button onClick={() => refreshUserData()} variant="outline" size="sm">
+                <RefreshCw className="w-4 h-4 mr-2" />
+                Refresh
+              </Button>
+              <Button asChild variant="outline">
+                <Link to="/">
+                  <MapPin className="mr-2 h-4 w-4" />
+                  Analyze New Property
+                </Link>
+              </Button>
+            </div>
           </div>
 
           {/* Stats Cards */}

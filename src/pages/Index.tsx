@@ -8,6 +8,7 @@ import AssetIcons from '@/components/AssetIcons';
 import AssetResultList from '@/components/asset-results/AssetResultList';
 import ModelGenerationSheet from '@/components/ModelGenerationSheet';
 import HomeModelViewer from '@/components/home-model-viewer';
+import DataSyncNotification from '@/components/DataSyncNotification';
 import { useGoogleMap } from '@/contexts/GoogleMapContext';
 import { PlusCircle } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -45,6 +46,9 @@ const Index = () => {
       {/* Google Map as background */}
       <GoogleMap />
 
+      {/* Data Sync Notification Handler */}
+      <DataSyncNotification />
+
       {/* Content overlay - flex-1 to take available space */}
       <div className="relative z-10 flex-1 flex flex-col items-center">
         {/* Header - Responsive */}
@@ -66,6 +70,7 @@ const Index = () => {
               className="glass-effect px-2 py-1 sm:px-3 sm:py-2 md:px-4 md:py-2 rounded-full flex items-center gap-1 sm:gap-2 text-white hover:scale-105 transition-transform text-xs sm:text-sm md:text-base relative"
             >
               <span className="text-gray-100">Dashboard</span>
+              {user && <div className="w-2 h-2 bg-green-400 rounded-full"></div>}
               <div className="absolute -inset-0.5 bg-gradient-to-r from-purple-500/20 to-violet-500/20 rounded-full blur-sm -z-10"></div>
             </Link>
           </div>
