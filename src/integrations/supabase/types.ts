@@ -639,6 +639,39 @@ export type Database = {
         }
         Relationships: []
       }
+      user_addresses: {
+        Row: {
+          address: string
+          coordinates: Json | null
+          created_at: string | null
+          formatted_address: string | null
+          id: string
+          is_primary: boolean | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          address: string
+          coordinates?: Json | null
+          created_at?: string | null
+          formatted_address?: string | null
+          id?: string
+          is_primary?: boolean | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          address?: string
+          coordinates?: Json | null
+          created_at?: string | null
+          formatted_address?: string | null
+          id?: string
+          is_primary?: boolean | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_affiliate_journeys: {
         Row: {
           affiliate_clicks: Json | null
@@ -692,6 +725,53 @@ export type Database = {
           },
         ]
       }
+      user_asset_selections: {
+        Row: {
+          analysis_id: string
+          asset_data: Json
+          asset_type: string
+          id: string
+          monthly_revenue: number | null
+          roi_months: number | null
+          selected_at: string | null
+          setup_cost: number | null
+          status: string | null
+          user_id: string
+        }
+        Insert: {
+          analysis_id: string
+          asset_data: Json
+          asset_type: string
+          id?: string
+          monthly_revenue?: number | null
+          roi_months?: number | null
+          selected_at?: string | null
+          setup_cost?: number | null
+          status?: string | null
+          user_id: string
+        }
+        Update: {
+          analysis_id?: string
+          asset_data?: Json
+          asset_type?: string
+          id?: string
+          monthly_revenue?: number | null
+          roi_months?: number | null
+          selected_at?: string | null
+          setup_cost?: number | null
+          status?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_asset_selections_analysis_id_fkey"
+            columns: ["analysis_id"]
+            isOneToOne: false
+            referencedRelation: "user_property_analyses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_bundle_selections: {
         Row: {
           bundle_id: string | null
@@ -733,6 +813,44 @@ export type Database = {
           },
         ]
       }
+      user_dashboard_preferences: {
+        Row: {
+          created_at: string | null
+          dashboard_layout: Json | null
+          id: string
+          notification_settings: Json | null
+          primary_address_id: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          dashboard_layout?: Json | null
+          id?: string
+          notification_settings?: Json | null
+          primary_address_id?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          dashboard_layout?: Json | null
+          id?: string
+          notification_settings?: Json | null
+          primary_address_id?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_dashboard_preferences_primary_address_id_fkey"
+            columns: ["primary_address_id"]
+            isOneToOne: false
+            referencedRelation: "user_addresses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_login_stats: {
         Row: {
           first_login_at: string
@@ -762,6 +880,59 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      user_property_analyses: {
+        Row: {
+          address_id: string
+          analysis_results: Json
+          analysis_version: string | null
+          coordinates: Json | null
+          created_at: string | null
+          id: string
+          property_type: string | null
+          total_monthly_revenue: number | null
+          total_opportunities: number | null
+          updated_at: string | null
+          user_id: string
+          using_real_solar_data: boolean | null
+        }
+        Insert: {
+          address_id: string
+          analysis_results: Json
+          analysis_version?: string | null
+          coordinates?: Json | null
+          created_at?: string | null
+          id?: string
+          property_type?: string | null
+          total_monthly_revenue?: number | null
+          total_opportunities?: number | null
+          updated_at?: string | null
+          user_id: string
+          using_real_solar_data?: boolean | null
+        }
+        Update: {
+          address_id?: string
+          analysis_results?: Json
+          analysis_version?: string | null
+          coordinates?: Json | null
+          created_at?: string | null
+          id?: string
+          property_type?: string | null
+          total_monthly_revenue?: number | null
+          total_opportunities?: number | null
+          updated_at?: string | null
+          user_id?: string
+          using_real_solar_data?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_property_analyses_address_id_fkey"
+            columns: ["address_id"]
+            isOneToOne: false
+            referencedRelation: "user_addresses"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {

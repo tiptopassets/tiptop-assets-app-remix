@@ -3,6 +3,8 @@ import { createContext, useContext, useState, ReactNode } from 'react';
 import { GoogleMapContextType, AnalysisResults } from './types';
 import { generatePropertyAnalysis } from './propertyAnalysis';
 import { useToast } from '@/hooks/use-toast';
+import { useUserData } from '@/hooks/useUserData';
+import { createDataSyncManager } from './dataSync';
 
 const GoogleMapContext = createContext<GoogleMapContextType | undefined>(undefined);
 
@@ -17,8 +19,10 @@ export const GoogleMapProvider = ({ children }: { children: ReactNode }) => {
   const [isGeneratingAnalysis, setIsGeneratingAnalysis] = useState(false);
   const [analysisError, setAnalysisError] = useState<string | null>(null);
   const [useLocalAnalysis, setUseLocalAnalysis] = useState(false);
-  const [zoomLevel, setZoomLevel] = useState(20); // Default zoom level
+  const [zoomLevel, setZoomLevel] = useState(20);
   const { toast } = useToast();
+  const userData = useUserData();
+  const dataSyncManager = createDataSyncManager(userData);
 
   const handlePropertyAnalysis = async (propertyAddress: string) => {
     await generatePropertyAnalysis({
@@ -27,7 +31,28 @@ export const GoogleMapProvider = ({ children }: { children: ReactNode }) => {
       useLocalAnalysis,
       setIsGeneratingAnalysis,
       setIsAnalyzing,
-      setAnalysisResults,
+      setAnalysisResults: async (results: AnalysisResults | null) => {
+        setAnalysisResults(results);
+        
+        // Sync to database when analysis is complete
+        if (results && propertyAddress) {
+          try {
+            await dataSyncManager.syncAnalysisToDatabase(
+              propertyAddress, 
+              results, 
+              addressCoordinates
+            );
+            
+            toast({
+              title: "Analysis Saved",
+              description: "Your property analysis has been saved to your account",
+            });
+          } catch (error) {
+            console.error('Failed to sync analysis to database:', error);
+            // Don't show error toast as the analysis still worked
+          }
+        }
+      },
       setAnalysisComplete,
       setUseLocalAnalysis,
       setAnalysisError,

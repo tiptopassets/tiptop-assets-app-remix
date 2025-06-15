@@ -12,6 +12,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useGoogleMap } from '@/contexts/GoogleMapContext';
 import { useModelGeneration } from '@/contexts/ModelGeneration';
 import { useToast } from '@/hooks/use-toast';
+import { useUserData } from '@/hooks/useUserData';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { motion } from 'framer-motion';
@@ -22,6 +23,7 @@ const Dashboard = () => {
   const { analysisResults, address } = useGoogleMap();
   const { toast } = useToast();
   const { contentFromGPT, googleImages } = useModelGeneration();
+  const userData = useUserData();
   const navigate = useNavigate();
   
   useEffect(() => {
@@ -67,29 +69,44 @@ const Dashboard = () => {
     );
   }
 
+  // Use saved data if available, fall back to current analysis
+  const currentAnalysis = userData.getLatestAnalysis();
+  const displayResults = currentAnalysis?.analysis_results || analysisResults;
+  const displayAddress = userData.getPrimaryAddress()?.formatted_address || address || "No address analyzed yet";
+
   // Generate property description
   const getPropertyDescription = () => {
-    if (!analysisResults) {
+    if (!displayResults) {
       return "No property analyzed yet. Try analyzing a property to see personalized insights.";
     }
     
-    let description = `${analysisResults.propertyType} with ${analysisResults.rooftop.area} sq ft roof area`;
+    let description = `${displayResults.propertyType} with ${displayResults.rooftop.area} sq ft roof area`;
     
-    if (analysisResults.parking.spaces > 0) {
-      description += `, ${analysisResults.parking.spaces} parking spaces`;
+    if (displayResults.parking.spaces > 0) {
+      description += `, ${displayResults.parking.spaces} parking spaces`;
     }
     
-    if (analysisResults.garden.area > 0) {
-      description += `, and ${analysisResults.garden.area} sq ft garden space`;
+    if (displayResults.garden.area > 0) {
+      description += `, and ${displayResults.garden.area} sq ft garden space`;
     }
     
-    if (analysisResults.pool && analysisResults.pool.present) {
-      description += `, includes a ${analysisResults.pool.type} pool`;
+    if (displayResults.pool && displayResults.pool.present) {
+      description += `, includes a ${displayResults.pool.type} pool`;
     }
     
-    description += `. Potential monthly revenue: $${analysisResults.topOpportunities.reduce((sum, opp) => sum + opp.monthlyRevenue, 0)}.`;
+    description += `. Potential monthly revenue: $${displayResults.topOpportunities.reduce((sum, opp) => sum + opp.monthlyRevenue, 0)}.`;
     
     return description;
+  };
+
+  // Calculate total revenue from user's saved data
+  const getTotalRevenue = () => {
+    if (currentAnalysis) {
+      return currentAnalysis.total_monthly_revenue;
+    }
+    return displayResults ? 
+      displayResults.topOpportunities.reduce((sum, opp) => sum + opp.monthlyRevenue, 0) : 
+      1200;
   };
 
   return (
@@ -100,9 +117,16 @@ const Dashboard = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
-          <h1 className="text-3xl font-bold mb-6">Enhanced Dashboard</h1>
+          <div className="flex items-center justify-between mb-6">
+            <h1 className="text-3xl font-bold">Your Dashboard</h1>
+            {userData.addresses.length > 0 && (
+              <div className="text-sm text-gray-400">
+                {userData.addresses.length} saved {userData.addresses.length === 1 ? 'property' : 'properties'}
+              </div>
+            )}
+          </div>
           
-          {!analysisResults ? (
+          {!displayResults ? (
             <div className="mb-8 text-center">
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
@@ -154,18 +178,16 @@ const Dashboard = () => {
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
                 <div className="lg:col-span-2">
                   <PropertyOverviewCard 
-                    address={address || "No address analyzed yet"} 
+                    address={displayAddress} 
                     description={getPropertyDescription()} 
-                    imageUrl={analysisResults ? "https://picsum.photos/id/1048/600/400" : "/lovable-uploads/33b65ff0-5489-400b-beba-1248db897a30.png"} 
+                    imageUrl={displayResults ? "https://picsum.photos/id/1048/600/400" : "/lovable-uploads/33b65ff0-5489-400b-beba-1248db897a30.png"} 
                   />
                 </div>
                 <div>
                   <StatsCard 
                     title="Monthly Revenue Potential"
-                    value={`$${analysisResults ? 
-                      analysisResults.topOpportunities.reduce((sum, opp) => sum + opp.monthlyRevenue, 0) : 
-                      "1,200"}`}
-                    description="Based on property analysis"
+                    value={`$${getTotalRevenue()}`}
+                    description={currentAnalysis ? "From saved analysis" : "Based on property analysis"}
                     trend="up"
                     trendValue="12.5%"
                     variant="purple"
@@ -184,10 +206,10 @@ const Dashboard = () => {
               )}
               
               {/* Assets Table */}
-              {analysisResults ? (
+              {displayResults ? (
                 <div className="bg-white rounded-lg shadow-md p-6 dark:bg-gray-800">
                   <h2 className="text-xl font-bold mb-4">Your Assets</h2>
-                  <AssetsTable analysisResults={analysisResults} />
+                  <AssetsTable analysisResults={displayResults} />
                 </div>
               ) : (
                 <div className="bg-white rounded-lg shadow-md p-6 dark:bg-gray-800">
@@ -212,8 +234,8 @@ const Dashboard = () => {
 
             <TabsContent value="insights" className="space-y-6">
               <PropertyInsights 
-                address={address}
-                analysisResults={analysisResults}
+                address={displayAddress}
+                analysisResults={displayResults}
               />
             </TabsContent>
           </Tabs>
