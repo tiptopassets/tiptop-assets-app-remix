@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -81,10 +80,10 @@ export const PropertyInsights = ({ address, analysisResults }: PropertyInsightsP
 
   const getImpactColor = (impact: string) => {
     switch (impact) {
-      case 'High': return 'bg-green-100 text-green-800 border-green-200';
-      case 'Medium': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'Low': return 'bg-blue-100 text-blue-800 border-blue-200';
-      default: return 'bg-gray-100 text-gray-800 border-gray-200';
+      case 'High': return 'bg-green-500/20 text-green-400 border-green-500/30';
+      case 'Medium': return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30';
+      case 'Low': return 'bg-blue-500/20 text-blue-400 border-blue-500/30';
+      default: return 'bg-gray-500/20 text-gray-400 border-gray-500/30';
     }
   };
 
@@ -100,11 +99,11 @@ export const PropertyInsights = ({ address, analysisResults }: PropertyInsightsP
   return (
     <div className="space-y-6">
       {/* Property Overview */}
-      <Card className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-purple-50 to-blue-50"></div>
+      <Card className="relative overflow-hidden bg-gray-800 border-gray-600">
+        <div className="absolute inset-0 bg-gradient-to-br from-purple-900/20 to-blue-900/20"></div>
         <CardHeader className="relative z-10">
-          <CardTitle className="flex items-center gap-2">
-            <Home className="h-6 w-6 text-purple-600" />
+          <CardTitle className="flex items-center gap-2 text-white">
+            <Home className="h-6 w-6 text-purple-400" />
             Property Intelligence Overview
           </CardTitle>
         </CardHeader>
@@ -114,14 +113,14 @@ export const PropertyInsights = ({ address, analysisResults }: PropertyInsightsP
               <div className="relative w-24 h-24 mx-auto mb-3">
                 <svg className="w-24 h-24 transform -rotate-90" viewBox="0 0 36 36">
                   <path
-                    className="text-gray-200"
+                    className="text-gray-600"
                     stroke="currentColor"
                     strokeWidth="3"
                     fill="none"
                     d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
                   />
                   <path
-                    className="text-purple-600"
+                    className="text-purple-400"
                     stroke="currentColor"
                     strokeWidth="3"
                     strokeDasharray={`${insights.propertyScore}, 100`}
@@ -131,27 +130,27 @@ export const PropertyInsights = ({ address, analysisResults }: PropertyInsightsP
                   />
                 </svg>
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <span className="text-2xl font-bold text-purple-600">{insights.propertyScore}</span>
+                  <span className="text-2xl font-bold text-purple-400">{insights.propertyScore}</span>
                 </div>
               </div>
-              <p className="font-semibold">Property Score</p>
-              <Badge className="mt-1 bg-purple-100 text-purple-800">{insights.marketPosition}</Badge>
+              <p className="font-semibold text-white">Property Score</p>
+              <Badge className="mt-1 bg-purple-500/20 text-purple-400 border-purple-500/30">{insights.marketPosition}</Badge>
             </div>
 
             <div className="text-center">
-              <div className="text-3xl font-bold text-green-600 mb-2">
+              <div className="text-3xl font-bold text-green-400 mb-2">
                 ${insights.currentRevenue.toLocaleString()}
               </div>
-              <p className="text-gray-600">Current Monthly Revenue</p>
-              <p className="text-sm text-green-600 mt-1">
+              <p className="text-gray-300">Current Monthly Revenue</p>
+              <p className="text-sm text-green-400 mt-1">
                 +${(insights.potentialRevenue - insights.currentRevenue).toLocaleString()} potential
               </p>
             </div>
 
             <div className="text-center">
-              <div className="text-3xl font-bold text-blue-600 mb-2">{insights.efficiency}%</div>
-              <p className="text-gray-600">Asset Efficiency</p>
-              <p className="text-sm text-blue-600 mt-1">Above neighborhood average</p>
+              <div className="text-3xl font-bold text-blue-400 mb-2">{insights.efficiency}%</div>
+              <p className="text-gray-300">Asset Efficiency</p>
+              <p className="text-sm text-blue-400 mt-1">Above neighborhood average</p>
             </div>
           </div>
         </CardContent>
@@ -159,10 +158,10 @@ export const PropertyInsights = ({ address, analysisResults }: PropertyInsightsP
 
       {/* Detailed Insights Tabs */}
       <Tabs defaultValue="recommendations" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="recommendations">Smart Recommendations</TabsTrigger>
-          <TabsTrigger value="market">Market Analysis</TabsTrigger>
-          <TabsTrigger value="competitive">Competitive Position</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-3 bg-gray-800 border-gray-600">
+          <TabsTrigger value="recommendations" className="text-white data-[state=active]:bg-tiptop-purple">Smart Recommendations</TabsTrigger>
+          <TabsTrigger value="market" className="text-white data-[state=active]:bg-tiptop-purple">Market Analysis</TabsTrigger>
+          <TabsTrigger value="competitive" className="text-white data-[state=active]:bg-tiptop-purple">Competitive Position</TabsTrigger>
         </TabsList>
 
         <TabsContent value="recommendations" className="space-y-4">
@@ -174,14 +173,14 @@ export const PropertyInsights = ({ address, analysisResults }: PropertyInsightsP
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.1 }}
               >
-                <Card className="relative overflow-hidden hover:shadow-lg transition-shadow">
+                <Card className="relative overflow-hidden hover:shadow-lg transition-shadow bg-gray-800 border-gray-600">
                   <CardContent className="p-6">
                     <div className="flex items-start justify-between mb-4">
                       <div className="flex items-center gap-3">
                         {getStatusIcon(rec.status)}
                         <div>
-                          <h3 className="font-semibold text-lg">{rec.title}</h3>
-                          <p className="text-gray-600 text-sm">{rec.description}</p>
+                          <h3 className="font-semibold text-lg text-white">{rec.title}</h3>
+                          <p className="text-gray-300 text-sm">{rec.description}</p>
                         </div>
                       </div>
                       <Badge className={getImpactColor(rec.impact)}>
@@ -190,20 +189,20 @@ export const PropertyInsights = ({ address, analysisResults }: PropertyInsightsP
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
-                      <div className="text-center p-3 bg-green-50 rounded-lg">
-                        <p className="text-lg font-bold text-green-600">+${rec.revenue}</p>
-                        <p className="text-xs text-gray-600">Monthly Revenue</p>
+                      <div className="text-center p-3 bg-green-500/20 rounded-lg border border-green-500/30">
+                        <p className="text-lg font-bold text-green-400">+${rec.revenue}</p>
+                        <p className="text-xs text-gray-300">Monthly Revenue</p>
                       </div>
-                      <div className="text-center p-3 bg-blue-50 rounded-lg">
-                        <p className="text-lg font-bold text-blue-600">{rec.effort}</p>
-                        <p className="text-xs text-gray-600">Implementation</p>
+                      <div className="text-center p-3 bg-blue-500/20 rounded-lg border border-blue-500/30">
+                        <p className="text-lg font-bold text-blue-400">{rec.effort}</p>
+                        <p className="text-xs text-gray-300">Implementation</p>
                       </div>
-                      <div className="text-center p-3 bg-purple-50 rounded-lg">
-                        <p className="text-lg font-bold text-purple-600">{rec.timeframe}</p>
-                        <p className="text-xs text-gray-600">Timeline</p>
+                      <div className="text-center p-3 bg-purple-500/20 rounded-lg border border-purple-500/30">
+                        <p className="text-lg font-bold text-purple-400">{rec.timeframe}</p>
+                        <p className="text-xs text-gray-300">Timeline</p>
                       </div>
-                      <div className="text-center p-3 bg-orange-50 rounded-lg">
-                        <Button size="sm" className="w-full">
+                      <div className="text-center p-3 bg-orange-500/20 rounded-lg border border-orange-500/30">
+                        <Button size="sm" className="w-full bg-orange-600 hover:bg-orange-700">
                           <ExternalLink className="h-3 w-3 mr-1" />
                           Learn More
                         </Button>
@@ -217,27 +216,27 @@ export const PropertyInsights = ({ address, analysisResults }: PropertyInsightsP
         </TabsContent>
 
         <TabsContent value="market" className="space-y-4">
-          <Card>
+          <Card className="bg-gray-800 border-gray-600">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle className="flex items-center gap-2 text-white">
                 <TrendingUp className="h-5 w-5 text-blue-500" />
                 Market Demand Trends
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               {Object.entries(insights.marketTrends).map(([key, data]) => (
-                <div key={key} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <div key={key} className="flex items-center justify-between p-3 bg-gray-700/50 rounded-lg border border-gray-600">
                   <div className="flex-1">
-                    <p className="font-medium capitalize">{key.replace(/([A-Z])/g, ' $1')}</p>
+                    <p className="font-medium capitalize text-white">{key.replace(/([A-Z])/g, ' $1')}</p>
                     <div className="flex items-center gap-2 mt-1">
                       <Progress value={data.value} className="flex-1" />
-                      <span className="text-sm font-medium">{data.value}%</span>
+                      <span className="text-sm font-medium text-white">{data.value}%</span>
                     </div>
                   </div>
                   <div className="ml-4 text-right">
                     <span className={`text-sm font-medium ${
-                      data.trend === 'up' ? 'text-green-600' : 
-                      data.trend === 'down' ? 'text-red-600' : 'text-gray-600'
+                      data.trend === 'up' ? 'text-green-400' : 
+                      data.trend === 'down' ? 'text-red-400' : 'text-gray-400'
                     }`}>
                       {data.change > 0 ? '+' : ''}{data.change}%
                     </span>
@@ -250,9 +249,9 @@ export const PropertyInsights = ({ address, analysisResults }: PropertyInsightsP
 
         <TabsContent value="competitive" className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <Card>
+            <Card className="bg-gray-800 border-gray-600">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+                <CardTitle className="flex items-center gap-2 text-white">
                   <Target className="h-5 w-5 text-green-500" />
                   Performance Comparison
                 </CardTitle>
@@ -260,51 +259,51 @@ export const PropertyInsights = ({ address, analysisResults }: PropertyInsightsP
               <CardContent>
                 <div className="space-y-4">
                   <div className="flex justify-between items-center">
-                    <span>Your Revenue</span>
-                    <span className="font-bold text-green-600">
+                    <span className="text-gray-300">Your Revenue</span>
+                    <span className="font-bold text-green-400">
                       ${insights.competitiveAnalysis.yourRevenue.toLocaleString()}
                     </span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span>Area Average</span>
-                    <span className="font-bold text-gray-600">
+                    <span className="text-gray-300">Area Average</span>
+                    <span className="font-bold text-gray-400">
                       ${insights.competitiveAnalysis.averageRevenue.toLocaleString()}
                     </span>
                   </div>
-                  <div className="text-center p-4 bg-green-50 rounded-lg">
-                    <p className="text-lg font-bold text-green-600">
+                  <div className="text-center p-4 bg-green-500/20 rounded-lg border border-green-500/30">
+                    <p className="text-lg font-bold text-green-400">
                       {insights.competitiveAnalysis.ranking}
                     </p>
-                    <p className="text-sm text-gray-600">in your area</p>
+                    <p className="text-sm text-gray-300">in your area</p>
                   </div>
                 </div>
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="bg-gray-800 border-gray-600">
               <CardHeader>
-                <CardTitle>Strengths & Opportunities</CardTitle>
+                <CardTitle className="text-white">Strengths & Opportunities</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
                   <div>
-                    <h4 className="font-medium text-green-600 mb-2">Strengths</h4>
+                    <h4 className="font-medium text-green-400 mb-2">Strengths</h4>
                     <div className="space-y-1">
                       {insights.competitiveAnalysis.strengths.map((strength, index) => (
                         <div key={index} className="flex items-center gap-2">
                           <CheckCircle className="h-4 w-4 text-green-500" />
-                          <span className="text-sm">{strength}</span>
+                          <span className="text-sm text-white">{strength}</span>
                         </div>
                       ))}
                     </div>
                   </div>
                   <div>
-                    <h4 className="font-medium text-blue-600 mb-2">Improvement Areas</h4>
+                    <h4 className="font-medium text-blue-400 mb-2">Improvement Areas</h4>
                     <div className="space-y-1">
                       {insights.competitiveAnalysis.improvements.map((improvement, index) => (
                         <div key={index} className="flex items-center gap-2">
                           <Lightbulb className="h-4 w-4 text-blue-500" />
-                          <span className="text-sm">{improvement}</span>
+                          <span className="text-sm text-white">{improvement}</span>
                         </div>
                       ))}
                     </div>

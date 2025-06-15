@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -80,10 +79,10 @@ export const RealTimeMetrics = () => {
 
   const getColorClasses = (color: string, trend: string) => {
     const baseClasses = {
-      green: trend === 'up' ? 'bg-green-500/10 text-green-600 border-green-500/20' : 'bg-gray-100 text-gray-600',
-      blue: 'bg-blue-500/10 text-blue-600 border-blue-500/20',
-      yellow: 'bg-yellow-500/10 text-yellow-600 border-yellow-500/20',
-      purple: 'bg-purple-500/10 text-purple-600 border-purple-500/20'
+      green: trend === 'up' ? 'bg-green-500/20 text-green-400 border-green-500/30' : 'bg-gray-700 text-gray-300 border-gray-600',
+      blue: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
+      yellow: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
+      purple: 'bg-purple-500/20 text-purple-400 border-purple-500/30'
     };
     return baseClasses[color as keyof typeof baseClasses] || baseClasses.blue;
   };
@@ -100,11 +99,11 @@ export const RealTimeMetrics = () => {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <div className={`w-2 h-2 rounded-full ${isOnline ? 'bg-green-500' : 'bg-red-500'} animate-pulse`}></div>
-          <span className="text-sm text-gray-600">
+          <span className="text-sm text-gray-300">
             {isOnline ? 'Live Data' : 'Reconnecting...'}
           </span>
         </div>
-        <div className="flex items-center gap-2 text-xs text-gray-500">
+        <div className="flex items-center gap-2 text-xs text-gray-400">
           <Wifi className="h-3 w-3" />
           Last updated: {lastUpdated.toLocaleTimeString()}
         </div>
@@ -120,7 +119,7 @@ export const RealTimeMetrics = () => {
             transition={{ delay: index * 0.1 }}
             whileHover={{ scale: 1.02 }}
           >
-            <Card className={`relative overflow-hidden border ${getColorClasses(metric.color, metric.trend)}`}>
+            <Card className={`relative overflow-hidden border bg-gray-800 border-gray-600 ${getColorClasses(metric.color, metric.trend)}`}>
               <div className="absolute top-0 right-0 w-16 h-16 opacity-10">
                 <div className="absolute top-2 right-2 text-2xl">
                   {metric.icon}
@@ -130,7 +129,7 @@ export const RealTimeMetrics = () => {
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2">
                     {metric.icon}
-                    <span className="text-sm font-medium">{metric.label}</span>
+                    <span className="text-sm font-medium text-white">{metric.label}</span>
                   </div>
                   {isOnline && (
                     <div className="flex items-center gap-1">
@@ -144,9 +143,9 @@ export const RealTimeMetrics = () => {
                     </div>
                   )}
                 </div>
-                <div className="text-2xl font-bold">{metric.value}</div>
+                <div className="text-2xl font-bold text-white">{metric.value}</div>
                 {metric.trend === 'up' && (
-                  <Badge className="mt-1 text-xs bg-green-100 text-green-800">
+                  <Badge className="mt-1 text-xs bg-green-500/20 text-green-400 border-green-500/30">
                     Trending Up
                   </Badge>
                 )}
@@ -157,10 +156,10 @@ export const RealTimeMetrics = () => {
       </div>
 
       {/* Live Activity Feed */}
-      <Card className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-white/80 to-white/40 backdrop-blur-sm"></div>
+      <Card className="relative overflow-hidden bg-gray-800 border-gray-600">
+        <div className="absolute inset-0 bg-gradient-to-br from-gray-800/80 to-gray-900/40 backdrop-blur-sm"></div>
         <CardHeader className="relative z-10">
-          <CardTitle className="flex items-center gap-2">
+          <CardTitle className="flex items-center gap-2 text-white">
             <Activity className="h-5 w-5 text-green-500" />
             Live Activity Feed
           </CardTitle>
@@ -179,15 +178,15 @@ export const RealTimeMetrics = () => {
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: index * 0.05 }}
-                className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50"
+                className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-700/50"
               >
                 <div className={`w-2 h-2 rounded-full ${
                   activity.type === 'success' ? 'bg-green-500' :
                   activity.type === 'info' ? 'bg-blue-500' : 'bg-yellow-500'
                 }`}></div>
                 <div className="flex-1">
-                  <p className="text-sm">{activity.action}</p>
-                  <p className="text-xs text-gray-500">{activity.time}</p>
+                  <p className="text-sm text-white">{activity.action}</p>
+                  <p className="text-xs text-gray-400">{activity.time}</p>
                 </div>
               </motion.div>
             ))}

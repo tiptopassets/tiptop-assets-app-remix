@@ -1,4 +1,3 @@
-
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -76,11 +75,11 @@ const RooftopDashboard = () => {
             </div>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" className="bg-white/10 border-white/20 text-white hover:bg-white/20">
+            <Button variant="outline" size="sm" className="bg-gray-800 border-gray-600 text-white hover:bg-gray-700">
               <Settings className="h-4 w-4 mr-2" />
               Settings
             </Button>
-            <Button variant="outline" size="sm" className="bg-white/10 border-white/20 text-white hover:bg-white/20">
+            <Button variant="outline" size="sm" className="bg-gray-800 border-gray-600 text-white hover:bg-gray-700">
               <Activity className="h-4 w-4 mr-2" />
               Live Monitor
             </Button>
@@ -89,11 +88,11 @@ const RooftopDashboard = () => {
 
         {/* Key Metrics Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card className="bg-black/40 backdrop-blur-sm border-white/10">
+          <Card className="bg-gray-800 border-gray-600">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-white/70">System Capacity</p>
+                  <p className="text-sm text-gray-300">System Capacity</p>
                   <p className="text-2xl font-bold text-white">{solarSystemData.totalCapacity} kW</p>
                   <p className="text-xs text-green-400">Efficiency: {solarSystemData.efficiency}%</p>
                 </div>
@@ -102,11 +101,11 @@ const RooftopDashboard = () => {
             </CardContent>
           </Card>
 
-          <Card className="bg-black/40 backdrop-blur-sm border-white/10">
+          <Card className="bg-gray-800 border-gray-600">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-white/70">Monthly Production</p>
+                  <p className="text-sm text-gray-300">Monthly Production</p>
                   <p className="text-2xl font-bold text-white">{solarSystemData.monthlyProduction} kWh</p>
                   <p className="text-xs text-green-400">+12% vs last month</p>
                 </div>
@@ -115,11 +114,11 @@ const RooftopDashboard = () => {
             </CardContent>
           </Card>
 
-          <Card className="bg-black/40 backdrop-blur-sm border-white/10">
+          <Card className="bg-gray-800 border-gray-600">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-white/70">Monthly Revenue</p>
+                  <p className="text-sm text-gray-300">Monthly Revenue</p>
                   <p className="text-2xl font-bold text-white">${solarSystemData.monthlyRevenue}</p>
                   <p className="text-xs text-green-400">Est. savings</p>
                 </div>
@@ -128,11 +127,11 @@ const RooftopDashboard = () => {
             </CardContent>
           </Card>
 
-          <Card className="bg-black/40 backdrop-blur-sm border-white/10">
+          <Card className="bg-gray-800 border-gray-600">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-white/70">CO₂ Saved</p>
+                  <p className="text-sm text-gray-300">CO₂ Saved</p>
                   <p className="text-2xl font-bold text-white">{solarSystemData.co2Saved} kg</p>
                   <p className="text-xs text-green-400">This month</p>
                 </div>
@@ -144,7 +143,7 @@ const RooftopDashboard = () => {
 
         {/* Main Content Tabs */}
         <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4 bg-black/40">
+          <TabsList className="grid w-full grid-cols-4 bg-gray-800 border-gray-600">
             <TabsTrigger value="overview" className="text-white data-[state=active]:bg-tiptop-purple">Overview</TabsTrigger>
             <TabsTrigger value="performance" className="text-white data-[state=active]:bg-tiptop-purple">Performance</TabsTrigger>
             <TabsTrigger value="analytics" className="text-white data-[state=active]:bg-tiptop-purple">Analytics</TabsTrigger>
@@ -154,7 +153,7 @@ const RooftopDashboard = () => {
           <TabsContent value="overview" className="space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* System Overview */}
-              <Card className="bg-black/40 backdrop-blur-sm border-white/10">
+              <Card className="bg-gray-800 border-gray-600">
                 <CardHeader>
                   <CardTitle className="text-white flex items-center gap-2">
                     <Sun className="h-5 w-5 text-yellow-500" />
@@ -164,28 +163,28 @@ const RooftopDashboard = () => {
                 <CardContent className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <p className="text-sm text-white/70">Panel Count</p>
+                      <p className="text-sm text-gray-300">Panel Count</p>
                       <p className="text-xl font-bold text-white">{solarSystemData.panelCount}</p>
                     </div>
                     <div>
-                      <p className="text-sm text-white/70">Roof Coverage</p>
+                      <p className="text-sm text-gray-300">Roof Coverage</p>
                       <p className="text-xl font-bold text-white">{solarSystemData.roofArea} sq ft</p>
                     </div>
                     <div>
-                      <p className="text-sm text-white/70">Install Date</p>
+                      <p className="text-sm text-gray-300">Install Date</p>
                       <p className="text-sm text-white">{new Date(solarSystemData.installDate).toLocaleDateString()}</p>
                     </div>
                     <div>
-                      <p className="text-sm text-white/70">System Age</p>
+                      <p className="text-sm text-gray-300">System Age</p>
                       <p className="text-sm text-white">16 months</p>
                     </div>
                   </div>
                   
-                  <Separator className="bg-white/20" />
+                  <Separator className="bg-gray-600" />
                   
                   <div>
                     <div className="flex justify-between text-sm mb-2">
-                      <span className="text-white/70">Current Efficiency</span>
+                      <span className="text-gray-300">Current Efficiency</span>
                       <span className="text-white">{solarSystemData.efficiency}%</span>
                     </div>
                     <Progress value={solarSystemData.efficiency} className="h-2" />
@@ -194,7 +193,7 @@ const RooftopDashboard = () => {
               </Card>
 
               {/* Today's Production */}
-              <Card className="bg-black/40 backdrop-blur-sm border-white/10">
+              <Card className="bg-gray-800 border-gray-600">
                 <CardHeader>
                   <CardTitle className="text-white flex items-center gap-2">
                     <Activity className="h-5 w-5 text-green-500" />
@@ -209,8 +208,8 @@ const RooftopDashboard = () => {
                       <YAxis stroke="rgba(255,255,255,0.7)" fontSize={12} />
                       <Tooltip 
                         contentStyle={{ 
-                          backgroundColor: 'rgba(0,0,0,0.8)', 
-                          border: '1px solid rgba(255,255,255,0.2)',
+                          backgroundColor: 'rgb(31, 41, 55)', 
+                          border: '1px solid rgb(75, 85, 99)',
                           borderRadius: '8px',
                           color: 'white'
                         }}
@@ -235,7 +234,7 @@ const RooftopDashboard = () => {
             </div>
 
             {/* Financial Summary */}
-            <Card className="bg-black/40 backdrop-blur-sm border-white/10">
+            <Card className="bg-gray-800 border-gray-600">
               <CardHeader>
                 <CardTitle className="text-white flex items-center gap-2">
                   <DollarSign className="h-5 w-5 text-green-500" />
@@ -244,25 +243,25 @@ const RooftopDashboard = () => {
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                  <div className="text-center p-4 bg-green-500/10 rounded-lg border border-green-500/20">
-                    <p className="text-sm text-white/70">Total Savings</p>
+                  <div className="text-center p-4 bg-green-500/20 rounded-lg border border-green-500/30">
+                    <p className="text-sm text-gray-300">Total Savings</p>
                     <p className="text-2xl font-bold text-green-400">${solarSystemData.totalSavings}</p>
-                    <p className="text-xs text-white/60">Since installation</p>
+                    <p className="text-xs text-gray-400">Since installation</p>
                   </div>
-                  <div className="text-center p-4 bg-blue-500/10 rounded-lg border border-blue-500/20">
-                    <p className="text-sm text-white/70">Monthly Avg</p>
+                  <div className="text-center p-4 bg-blue-500/20 rounded-lg border border-blue-500/30">
+                    <p className="text-sm text-gray-300">Monthly Avg</p>
                     <p className="text-2xl font-bold text-blue-400">${Math.round(solarSystemData.totalSavings / 16)}</p>
-                    <p className="text-xs text-white/60">Per month</p>
+                    <p className="text-xs text-gray-400">Per month</p>
                   </div>
-                  <div className="text-center p-4 bg-purple-500/10 rounded-lg border border-purple-500/20">
-                    <p className="text-sm text-white/70">ROI Progress</p>
+                  <div className="text-center p-4 bg-purple-500/20 rounded-lg border border-purple-500/30">
+                    <p className="text-sm text-gray-300">ROI Progress</p>
                     <p className="text-2xl font-bold text-purple-400">34%</p>
-                    <p className="text-xs text-white/60">6.2 years to payback</p>
+                    <p className="text-xs text-gray-400">6.2 years to payback</p>
                   </div>
-                  <div className="text-center p-4 bg-orange-500/10 rounded-lg border border-orange-500/20">
-                    <p className="text-sm text-white/70">Energy Value</p>
+                  <div className="text-center p-4 bg-orange-500/20 rounded-lg border border-orange-500/30">
+                    <p className="text-sm text-gray-300">Energy Value</p>
                     <p className="text-2xl font-bold text-orange-400">$0.15</p>
-                    <p className="text-xs text-white/60">Per kWh saved</p>
+                    <p className="text-xs text-gray-400">Per kWh saved</p>
                   </div>
                 </div>
               </CardContent>
@@ -271,7 +270,7 @@ const RooftopDashboard = () => {
 
           <TabsContent value="performance" className="space-y-6">
             {/* Monthly Performance Chart */}
-            <Card className="bg-black/40 backdrop-blur-sm border-white/10">
+            <Card className="bg-gray-800 border-gray-600">
               <CardHeader>
                 <CardTitle className="text-white flex items-center gap-2">
                   <TrendingUp className="h-5 w-5 text-tiptop-purple" />
@@ -286,8 +285,8 @@ const RooftopDashboard = () => {
                     <YAxis stroke="rgba(255,255,255,0.7)" />
                     <Tooltip 
                       contentStyle={{ 
-                        backgroundColor: 'rgba(0,0,0,0.8)', 
-                        border: '1px solid rgba(255,255,255,0.2)',
+                        backgroundColor: 'rgb(31, 41, 55)', 
+                        border: '1px solid rgb(75, 85, 99)',
                         borderRadius: '8px',
                         color: 'white'
                       }}
@@ -301,7 +300,7 @@ const RooftopDashboard = () => {
             </Card>
 
             {/* Weather Impact Analysis */}
-            <Card className="bg-black/40 backdrop-blur-sm border-white/10">
+            <Card className="bg-gray-800 border-gray-600">
               <CardHeader>
                 <CardTitle className="text-white flex items-center gap-2">
                   <Sun className="h-5 w-5 text-yellow-500" />
@@ -316,8 +315,8 @@ const RooftopDashboard = () => {
                     <YAxis stroke="rgba(255,255,255,0.7)" />
                     <Tooltip 
                       contentStyle={{ 
-                        backgroundColor: 'rgba(0,0,0,0.8)', 
-                        border: '1px solid rgba(255,255,255,0.2)',
+                        backgroundColor: 'rgb(31, 41, 55)', 
+                        border: '1px solid rgb(75, 85, 99)',
                         borderRadius: '8px',
                         color: 'white'
                       }}
@@ -333,7 +332,7 @@ const RooftopDashboard = () => {
           <TabsContent value="analytics" className="space-y-6">
             {/* Environmental Impact */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <Card className="bg-black/40 backdrop-blur-sm border-white/10">
+              <Card className="bg-gray-800 border-gray-600">
                 <CardHeader>
                   <CardTitle className="text-white flex items-center gap-2">
                     <Leaf className="h-5 w-5 text-green-500" />
@@ -343,31 +342,31 @@ const RooftopDashboard = () => {
                 <CardContent className="space-y-4">
                   <div className="space-y-3">
                     <div className="flex justify-between">
-                      <span className="text-white/70">CO₂ Avoided</span>
+                      <span className="text-gray-300">CO₂ Avoided</span>
                       <span className="text-white font-semibold">{solarSystemData.co2Saved * 16} kg total</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-white/70">Trees Equivalent</span>
+                      <span className="text-gray-300">Trees Equivalent</span>
                       <span className="text-white font-semibold">{Math.round((solarSystemData.co2Saved * 16) / 22)} trees</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-white/70">Miles Not Driven</span>
+                      <span className="text-gray-300">Miles Not Driven</span>
                       <span className="text-white font-semibold">{Math.round((solarSystemData.co2Saved * 16) * 2.4)} miles</span>
                     </div>
                   </div>
                   
-                  <Separator className="bg-white/20" />
+                  <Separator className="bg-gray-600" />
                   
-                  <div className="text-center p-4 bg-green-500/10 rounded-lg">
-                    <p className="text-sm text-white/70">Environmental Score</p>
+                  <div className="text-center p-4 bg-green-500/20 rounded-lg border border-green-500/30">
+                    <p className="text-sm text-gray-300">Environmental Score</p>
                     <p className="text-3xl font-bold text-green-400">A+</p>
-                    <p className="text-xs text-white/60">Excellent impact</p>
+                    <p className="text-xs text-gray-400">Excellent impact</p>
                   </div>
                 </CardContent>
               </Card>
 
               {/* System Health */}
-              <Card className="bg-black/40 backdrop-blur-sm border-white/10">
+              <Card className="bg-gray-800 border-gray-600">
                 <CardHeader>
                   <CardTitle className="text-white flex items-center gap-2">
                     <Activity className="h-5 w-5 text-blue-500" />
@@ -378,34 +377,34 @@ const RooftopDashboard = () => {
                   <div className="space-y-3">
                     <div>
                       <div className="flex justify-between text-sm mb-1">
-                        <span className="text-white/70">Panel Performance</span>
+                        <span className="text-gray-300">Panel Performance</span>
                         <span className="text-green-400">98%</span>
                       </div>
                       <Progress value={98} className="h-2" />
                     </div>
                     <div>
                       <div className="flex justify-between text-sm mb-1">
-                        <span className="text-white/70">Inverter Efficiency</span>
+                        <span className="text-gray-300">Inverter Efficiency</span>
                         <span className="text-green-400">96%</span>
                       </div>
                       <Progress value={96} className="h-2" />
                     </div>
                     <div>
                       <div className="flex justify-between text-sm mb-1">
-                        <span className="text-white/70">System Cleanliness</span>
+                        <span className="text-gray-300">System Cleanliness</span>
                         <span className="text-yellow-400">85%</span>
                       </div>
                       <Progress value={85} className="h-2" />
                     </div>
                   </div>
                   
-                  <Separator className="bg-white/20" />
+                  <Separator className="bg-gray-600" />
                   
                   <div className="space-y-2">
-                    <Badge variant="outline" className="text-green-400 border-green-400/30">
+                    <Badge variant="outline" className="text-green-400 border-green-400/50">
                       All Systems Operational
                     </Badge>
-                    <Badge variant="outline" className="text-yellow-400 border-yellow-400/30">
+                    <Badge variant="outline" className="text-yellow-400 border-yellow-400/50">
                       Cleaning Recommended
                     </Badge>
                   </div>
@@ -416,7 +415,7 @@ const RooftopDashboard = () => {
 
           <TabsContent value="maintenance" className="space-y-6">
             {/* Maintenance Schedule */}
-            <Card className="bg-black/40 backdrop-blur-sm border-white/10">
+            <Card className="bg-gray-800 border-gray-600">
               <CardHeader>
                 <CardTitle className="text-white flex items-center gap-2">
                   <Calendar className="h-5 w-5 text-tiptop-purple" />
@@ -425,40 +424,40 @@ const RooftopDashboard = () => {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="p-4 bg-white/5 rounded-lg border border-white/10">
+                  <div className="p-4 bg-gray-700/50 rounded-lg border border-gray-600">
                     <div className="flex items-center gap-3 mb-2">
                       <Clock className="h-5 w-5 text-blue-400" />
                       <span className="text-white font-medium">Next Inspection</span>
                     </div>
-                    <p className="text-sm text-white/70">Professional system check</p>
+                    <p className="text-sm text-gray-300">Professional system check</p>
                     <p className="text-sm text-blue-400 font-medium">{new Date(solarSystemData.nextMaintenance).toLocaleDateString()}</p>
                   </div>
                   
-                  <div className="p-4 bg-white/5 rounded-lg border border-white/10">
+                  <div className="p-4 bg-gray-700/50 rounded-lg border border-gray-600">
                     <div className="flex items-center gap-3 mb-2">
                       <Settings className="h-5 w-5 text-yellow-400" />
                       <span className="text-white font-medium">Panel Cleaning</span>
                     </div>
-                    <p className="text-sm text-white/70">Recommended cleaning</p>
+                    <p className="text-sm text-gray-300">Recommended cleaning</p>
                     <p className="text-sm text-yellow-400 font-medium">Due in 2 weeks</p>
                   </div>
                 </div>
                 
-                <Separator className="bg-white/20" />
+                <Separator className="bg-gray-600" />
                 
                 <div>
                   <h4 className="text-white font-medium mb-3">Maintenance History</h4>
                   <div className="space-y-2">
                     <div className="flex justify-between text-sm">
-                      <span className="text-white/70">Panel cleaning</span>
+                      <span className="text-gray-300">Panel cleaning</span>
                       <span className="text-white">Aug 15, 2024</span>
                     </div>
                     <div className="flex justify-between text-sm">
-                      <span className="text-white/70">System inspection</span>
+                      <span className="text-gray-300">System inspection</span>
                       <span className="text-white">Jun 10, 2024</span>
                     </div>
                     <div className="flex justify-between text-sm">
-                      <span className="text-white/70">Inverter check</span>
+                      <span className="text-gray-300">Inverter check</span>
                       <span className="text-white">Mar 22, 2024</span>
                     </div>
                   </div>
@@ -467,36 +466,36 @@ const RooftopDashboard = () => {
             </Card>
 
             {/* Performance Alerts */}
-            <Card className="bg-black/40 backdrop-blur-sm border-white/10">
+            <Card className="bg-gray-800 border-gray-600">
               <CardHeader>
                 <CardTitle className="text-white flex items-center gap-2">
                   <Activity className="h-5 w-5 text-orange-500" />
-                  Performance Alerts & Recommendations
+                  Performance Alerts & Health
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                <div className="p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
-                  <div className="flex items-center gap-2 mb-1">
-                    <div className="w-2 h-2 bg-yellow-400 rounded-full"></div>
-                    <span className="text-yellow-400 text-sm font-medium">Panel Cleaning Needed</span>
-                  </div>
-                  <p className="text-xs text-white/70">Production efficiency has dropped to 85%. Schedule cleaning to restore optimal performance.</p>
-                </div>
-                
-                <div className="p-3 bg-green-500/10 border border-green-500/20 rounded-lg">
+                <div className="p-3 bg-green-500/20 border border-green-500/30 rounded-lg">
                   <div className="flex items-center gap-2 mb-1">
                     <div className="w-2 h-2 bg-green-400 rounded-full"></div>
-                    <span className="text-green-400 text-sm font-medium">Excellent Performance</span>
+                    <span className="text-green-400 text-sm font-medium">System Operating Normally</span>
                   </div>
-                  <p className="text-xs text-white/70">System is performing above expected levels for this time of year.</p>
+                  <p className="text-xs text-gray-300">All panels are functioning properly and generating expected power output.</p>
                 </div>
                 
-                <div className="p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+                <div className="p-3 bg-yellow-500/20 border border-yellow-500/30 rounded-lg">
+                  <div className="flex items-center gap-2 mb-1">
+                    <div className="w-2 h-2 bg-yellow-400 rounded-full"></div>
+                    <span className="text-yellow-400 text-sm font-medium">Panel Cleaning Recommended</span>
+                  </div>
+                  <p className="text-xs text-gray-300">Slight decrease in efficiency detected. Professional cleaning recommended within 2 weeks.</p>
+                </div>
+                
+                <div className="p-3 bg-blue-500/20 border border-blue-500/30 rounded-lg">
                   <div className="flex items-center gap-2 mb-1">
                     <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
-                    <span className="text-blue-400 text-sm font-medium">Weather Forecast</span>
+                    <span className="text-blue-400 text-sm font-medium">Weather Forecast Optimal</span>
                   </div>
-                  <p className="text-xs text-white/70">Sunny weather expected next week - anticipate 15% increase in production.</p>
+                  <p className="text-xs text-gray-300">Next 7 days show excellent solar conditions with peak production expected.</p>
                 </div>
               </CardContent>
             </Card>
