@@ -130,20 +130,20 @@ const Dashboard = () => {
           
           {/* Main Dashboard Content */}
           <Tabs defaultValue="overview" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-4 bg-white/10 backdrop-blur-sm">
-              <TabsTrigger value="overview" className="text-white data-[state=active]:bg-tiptop-purple">
+            <TabsList className="grid w-full grid-cols-4 bg-gray-800 border-gray-600">
+              <TabsTrigger value="overview" className="text-white data-[state=active]:bg-tiptop-purple data-[state=active]:text-white">
                 <Home className="h-4 w-4 mr-2" />
                 Overview
               </TabsTrigger>
-              <TabsTrigger value="analytics" className="text-white data-[state=active]:bg-tiptop-purple">
+              <TabsTrigger value="analytics" className="text-white data-[state=active]:bg-tiptop-purple data-[state=active]:text-white">
                 <BarChart className="h-4 w-4 mr-2" />
                 Analytics
               </TabsTrigger>
-              <TabsTrigger value="realtime" className="text-white data-[state=active]:bg-tiptop-purple">
+              <TabsTrigger value="realtime" className="text-white data-[state=active]:bg-tiptop-purple data-[state=active]:text-white">
                 <Activity className="h-4 w-4 mr-2" />
                 Real-time
               </TabsTrigger>
-              <TabsTrigger value="insights" className="text-white data-[state=active]:bg-tiptop-purple">
+              <TabsTrigger value="insights" className="text-white data-[state=active]:bg-tiptop-purple data-[state=active]:text-white">
                 <Lightbulb className="h-4 w-4 mr-2" />
                 Insights
               </TabsTrigger>
