@@ -1,4 +1,3 @@
-
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -71,19 +70,19 @@ const InternetDashboard = () => {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-gradient-to-br from-blue-400/20 to-purple-500/20 rounded-lg">
-              <Wifi className="h-8 w-8 text-blue-400" />
+              <Wifi className="h-8 w-8 text-blue-500" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold text-white">Internet Bandwidth Sharing</h1>
-              <p className="text-white/70">Monetize your unused internet bandwidth</p>
+              <h1 className="text-3xl font-bold text-gray-800">Internet Bandwidth Sharing</h1>
+              <p className="text-gray-600">Monetize your unused internet bandwidth</p>
             </div>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" className="bg-white/10 border-white/20 text-white hover:bg-white/20">
+            <Button variant="outline" size="sm" className="border-gray-300 text-gray-700 hover:bg-gray-50">
               <Settings className="h-4 w-4 mr-2" />
               Settings
             </Button>
-            <Button variant="outline" size="sm" className="bg-white/10 border-white/20 text-white hover:bg-white/20">
+            <Button variant="outline" size="sm" className="border-gray-300 text-gray-700 hover:bg-gray-50">
               <Activity className="h-4 w-4 mr-2" />
               Live Monitor
             </Button>
@@ -92,52 +91,52 @@ const InternetDashboard = () => {
 
         {/* Key Metrics Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card className="bg-black/40 backdrop-blur-sm border-white/10">
+          <Card className="bg-white border-gray-200">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-white/70">Available Bandwidth</p>
-                  <p className="text-2xl font-bold text-white">{bandwidthData.totalBandwidth} Mbps</p>
-                  <p className="text-xs text-blue-400">Sharing: {bandwidthData.sharedBandwidth} Mbps</p>
+                  <p className="text-sm text-gray-600">Available Bandwidth</p>
+                  <p className="text-2xl font-bold text-gray-900">{bandwidthData.totalBandwidth} Mbps</p>
+                  <p className="text-xs text-blue-600">Sharing: {bandwidthData.sharedBandwidth} Mbps</p>
                 </div>
                 <Router className="h-8 w-8 text-blue-500" />
               </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-black/40 backdrop-blur-sm border-white/10">
+          <Card className="bg-white border-gray-200">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-white/70">Monthly Earnings</p>
-                  <p className="text-2xl font-bold text-white">${bandwidthData.monthlyEarnings}</p>
-                  <p className="text-xs text-green-400">+8% vs last month</p>
+                  <p className="text-sm text-gray-600">Monthly Earnings</p>
+                  <p className="text-2xl font-bold text-gray-900">${bandwidthData.monthlyEarnings}</p>
+                  <p className="text-xs text-green-600">+8% vs last month</p>
                 </div>
                 <DollarSign className="h-8 w-8 text-green-500" />
               </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-black/40 backdrop-blur-sm border-white/10">
+          <Card className="bg-white border-gray-200">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-white/70">Data Shared</p>
-                  <p className="text-2xl font-bold text-white">{bandwidthData.dataShared} TB</p>
-                  <p className="text-xs text-purple-400">This month</p>
+                  <p className="text-sm text-gray-600">Data Shared</p>
+                  <p className="text-2xl font-bold text-gray-900">{bandwidthData.dataShared} TB</p>
+                  <p className="text-xs text-purple-600">This month</p>
                 </div>
                 <Upload className="h-8 w-8 text-purple-500" />
               </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-black/40 backdrop-blur-sm border-white/10">
+          <Card className="bg-white border-gray-200">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-white/70">Network Uptime</p>
-                  <p className="text-2xl font-bold text-white">{bandwidthData.uptime}%</p>
-                  <p className="text-xs text-green-400">Excellent</p>
+                  <p className="text-sm text-gray-600">Network Uptime</p>
+                  <p className="text-2xl font-bold text-gray-900">{bandwidthData.uptime}%</p>
+                  <p className="text-xs text-green-600">Excellent</p>
                 </div>
                 <Shield className="h-8 w-8 text-green-500" />
               </div>
@@ -147,11 +146,11 @@ const InternetDashboard = () => {
 
         {/* Main Content Tabs */}
         <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4 bg-black/40">
-            <TabsTrigger value="overview" className="text-white data-[state=active]:bg-tiptop-purple">Overview</TabsTrigger>
-            <TabsTrigger value="bandwidth" className="text-white data-[state=active]:bg-tiptop-purple">Bandwidth</TabsTrigger>
-            <TabsTrigger value="devices" className="text-white data-[state=active]:bg-tiptop-purple">Devices</TabsTrigger>
-            <TabsTrigger value="security" className="text-white data-[state=active]:bg-tiptop-purple">Security</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-4 bg-white border-gray-200">
+            <TabsTrigger value="overview" className="text-gray-700 data-[state=active]:bg-tiptop-purple data-[state=active]:text-white">Overview</TabsTrigger>
+            <TabsTrigger value="bandwidth" className="text-gray-700 data-[state=active]:bg-tiptop-purple data-[state=active]:text-white">Bandwidth</TabsTrigger>
+            <TabsTrigger value="devices" className="text-gray-700 data-[state=active]:bg-tiptop-purple data-[state=active]:text-white">Devices</TabsTrigger>
+            <TabsTrigger value="security" className="text-gray-700 data-[state=active]:bg-tiptop-purple data-[state=active]:text-white">Security</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview" className="space-y-6">

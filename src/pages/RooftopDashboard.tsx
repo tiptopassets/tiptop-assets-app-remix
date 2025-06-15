@@ -70,16 +70,16 @@ const RooftopDashboard = () => {
               <Sun className="h-8 w-8 text-yellow-500" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold text-white">Solar Rooftop System</h1>
-              <p className="text-white/70">Monitor your solar energy production and savings</p>
+              <h1 className="text-3xl font-bold text-gray-800">Solar Rooftop System</h1>
+              <p className="text-gray-600">Monitor your solar energy production and savings</p>
             </div>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" className="bg-gray-800 border-gray-600 text-white hover:bg-gray-700">
+            <Button variant="outline" size="sm" className="border-gray-300 text-gray-700 hover:bg-gray-50">
               <Settings className="h-4 w-4 mr-2" />
               Settings
             </Button>
-            <Button variant="outline" size="sm" className="bg-gray-800 border-gray-600 text-white hover:bg-gray-700">
+            <Button variant="outline" size="sm" className="border-gray-300 text-gray-700 hover:bg-gray-50">
               <Activity className="h-4 w-4 mr-2" />
               Live Monitor
             </Button>
@@ -88,52 +88,52 @@ const RooftopDashboard = () => {
 
         {/* Key Metrics Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card className="bg-gray-800 border-gray-600">
+          <Card className="bg-white border-gray-200">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-300">System Capacity</p>
-                  <p className="text-2xl font-bold text-white">{solarSystemData.totalCapacity} kW</p>
-                  <p className="text-xs text-green-400">Efficiency: {solarSystemData.efficiency}%</p>
+                  <p className="text-sm text-gray-600">System Capacity</p>
+                  <p className="text-2xl font-bold text-gray-900">{solarSystemData.totalCapacity} kW</p>
+                  <p className="text-xs text-green-600">Efficiency: {solarSystemData.efficiency}%</p>
                 </div>
                 <Zap className="h-8 w-8 text-yellow-500" />
               </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-gray-800 border-gray-600">
+          <Card className="bg-white border-gray-200">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-300">Monthly Production</p>
-                  <p className="text-2xl font-bold text-white">{solarSystemData.monthlyProduction} kWh</p>
-                  <p className="text-xs text-green-400">+12% vs last month</p>
+                  <p className="text-sm text-gray-600">Monthly Production</p>
+                  <p className="text-2xl font-bold text-gray-900">{solarSystemData.monthlyProduction} kWh</p>
+                  <p className="text-xs text-green-600">+12% vs last month</p>
                 </div>
                 <Activity className="h-8 w-8 text-green-500" />
               </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-gray-800 border-gray-600">
+          <Card className="bg-white border-gray-200">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-300">Monthly Revenue</p>
-                  <p className="text-2xl font-bold text-white">${solarSystemData.monthlyRevenue}</p>
-                  <p className="text-xs text-green-400">Est. savings</p>
+                  <p className="text-sm text-gray-600">Monthly Revenue</p>
+                  <p className="text-2xl font-bold text-gray-900">${solarSystemData.monthlyRevenue}</p>
+                  <p className="text-xs text-green-600">Est. savings</p>
                 </div>
                 <DollarSign className="h-8 w-8 text-green-500" />
               </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-gray-800 border-gray-600">
+          <Card className="bg-white border-gray-200">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-300">CO₂ Saved</p>
-                  <p className="text-2xl font-bold text-white">{solarSystemData.co2Saved} kg</p>
-                  <p className="text-xs text-green-400">This month</p>
+                  <p className="text-sm text-gray-600">CO₂ Saved</p>
+                  <p className="text-2xl font-bold text-gray-900">{solarSystemData.co2Saved} kg</p>
+                  <p className="text-xs text-green-600">This month</p>
                 </div>
                 <Leaf className="h-8 w-8 text-green-500" />
               </div>
@@ -143,17 +143,17 @@ const RooftopDashboard = () => {
 
         {/* Main Content Tabs */}
         <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4 bg-gray-800 border-gray-600">
-            <TabsTrigger value="overview" className="text-white data-[state=active]:bg-tiptop-purple">Overview</TabsTrigger>
-            <TabsTrigger value="performance" className="text-white data-[state=active]:bg-tiptop-purple">Performance</TabsTrigger>
-            <TabsTrigger value="analytics" className="text-white data-[state=active]:bg-tiptop-purple">Analytics</TabsTrigger>
-            <TabsTrigger value="maintenance" className="text-white data-[state=active]:bg-tiptop-purple">Maintenance</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-4 bg-white border-gray-200">
+            <TabsTrigger value="overview" className="text-gray-700 data-[state=active]:bg-tiptop-purple data-[state=active]:text-white">Overview</TabsTrigger>
+            <TabsTrigger value="performance" className="text-gray-700 data-[state=active]:bg-tiptop-purple data-[state=active]:text-white">Performance</TabsTrigger>
+            <TabsTrigger value="analytics" className="text-gray-700 data-[state=active]:bg-tiptop-purple data-[state=active]:text-white">Analytics</TabsTrigger>
+            <TabsTrigger value="maintenance" className="text-gray-700 data-[state=active]:bg-tiptop-purple data-[state=active]:text-white">Maintenance</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview" className="space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* System Overview */}
-              <Card className="bg-gray-800 border-gray-600">
+              <Card className="bg-white border-gray-200">
                 <CardHeader>
                   <CardTitle className="text-white flex items-center gap-2">
                     <Sun className="h-5 w-5 text-yellow-500" />
@@ -193,7 +193,7 @@ const RooftopDashboard = () => {
               </Card>
 
               {/* Today's Production */}
-              <Card className="bg-gray-800 border-gray-600">
+              <Card className="bg-white border-gray-200">
                 <CardHeader>
                   <CardTitle className="text-white flex items-center gap-2">
                     <Activity className="h-5 w-5 text-green-500" />
@@ -234,7 +234,7 @@ const RooftopDashboard = () => {
             </div>
 
             {/* Financial Summary */}
-            <Card className="bg-gray-800 border-gray-600">
+            <Card className="bg-white border-gray-200">
               <CardHeader>
                 <CardTitle className="text-white flex items-center gap-2">
                   <DollarSign className="h-5 w-5 text-green-500" />
@@ -270,7 +270,7 @@ const RooftopDashboard = () => {
 
           <TabsContent value="performance" className="space-y-6">
             {/* Monthly Performance Chart */}
-            <Card className="bg-gray-800 border-gray-600">
+            <Card className="bg-white border-gray-200">
               <CardHeader>
                 <CardTitle className="text-white flex items-center gap-2">
                   <TrendingUp className="h-5 w-5 text-tiptop-purple" />
@@ -300,7 +300,7 @@ const RooftopDashboard = () => {
             </Card>
 
             {/* Weather Impact Analysis */}
-            <Card className="bg-gray-800 border-gray-600">
+            <Card className="bg-white border-gray-200">
               <CardHeader>
                 <CardTitle className="text-white flex items-center gap-2">
                   <Sun className="h-5 w-5 text-yellow-500" />
@@ -332,7 +332,7 @@ const RooftopDashboard = () => {
           <TabsContent value="analytics" className="space-y-6">
             {/* Environmental Impact */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <Card className="bg-gray-800 border-gray-600">
+              <Card className="bg-white border-gray-200">
                 <CardHeader>
                   <CardTitle className="text-white flex items-center gap-2">
                     <Leaf className="h-5 w-5 text-green-500" />
@@ -366,7 +366,7 @@ const RooftopDashboard = () => {
               </Card>
 
               {/* System Health */}
-              <Card className="bg-gray-800 border-gray-600">
+              <Card className="bg-white border-gray-200">
                 <CardHeader>
                   <CardTitle className="text-white flex items-center gap-2">
                     <Activity className="h-5 w-5 text-blue-500" />
@@ -415,7 +415,7 @@ const RooftopDashboard = () => {
 
           <TabsContent value="maintenance" className="space-y-6">
             {/* Maintenance Schedule */}
-            <Card className="bg-gray-800 border-gray-600">
+            <Card className="bg-white border-gray-200">
               <CardHeader>
                 <CardTitle className="text-white flex items-center gap-2">
                   <Calendar className="h-5 w-5 text-tiptop-purple" />
@@ -466,7 +466,7 @@ const RooftopDashboard = () => {
             </Card>
 
             {/* Performance Alerts */}
-            <Card className="bg-gray-800 border-gray-600">
+            <Card className="bg-white border-gray-200">
               <CardHeader>
                 <CardTitle className="text-white flex items-center gap-2">
                   <Activity className="h-5 w-5 text-orange-500" />

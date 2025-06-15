@@ -1,3 +1,4 @@
+
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -70,19 +71,19 @@ const EVChargingDashboard = () => {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-gradient-to-br from-green-400/20 to-blue-500/20 rounded-lg">
-              <BatteryCharging className="h-8 w-8 text-green-400" />
+              <BatteryCharging className="h-8 w-8 text-green-500" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold text-white">EV Charging Station</h1>
-              <p className="text-white/70">Monitor your electric vehicle charging business</p>
+              <h1 className="text-3xl font-bold text-gray-800">EV Charging Station</h1>
+              <p className="text-gray-600">Monitor your electric vehicle charging business</p>
             </div>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" className="bg-gray-800 border-gray-600 text-white hover:bg-gray-700">
+            <Button variant="outline" size="sm" className="border-gray-300 text-gray-700 hover:bg-gray-50">
               <Settings className="h-4 w-4 mr-2" />
               Settings
             </Button>
-            <Button variant="outline" size="sm" className="bg-gray-800 border-gray-600 text-white hover:bg-gray-700">
+            <Button variant="outline" size="sm" className="border-gray-300 text-gray-700 hover:bg-gray-50">
               <Activity className="h-4 w-4 mr-2" />
               Live Status
             </Button>
@@ -91,52 +92,52 @@ const EVChargingDashboard = () => {
 
         {/* Key Metrics Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card className="bg-gray-800 border-gray-600">
+          <Card className="bg-white border-gray-200">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-300">Station Capacity</p>
-                  <p className="text-2xl font-bold text-white">{chargingData.stationCapacity} kW</p>
-                  <p className="text-xs text-green-400">Level 2 Charging</p>
+                  <p className="text-sm text-gray-600">Station Capacity</p>
+                  <p className="text-2xl font-bold text-gray-900">{chargingData.stationCapacity} kW</p>
+                  <p className="text-xs text-green-600">Level 2 Charging</p>
                 </div>
                 <Zap className="h-8 w-8 text-yellow-500" />
               </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-gray-800 border-gray-600">
+          <Card className="bg-white border-gray-200">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-300">Monthly Revenue</p>
-                  <p className="text-2xl font-bold text-white">${chargingData.monthlyRevenue}</p>
-                  <p className="text-xs text-green-400">+12% vs last month</p>
+                  <p className="text-sm text-gray-600">Monthly Revenue</p>
+                  <p className="text-2xl font-bold text-gray-900">${chargingData.monthlyRevenue}</p>
+                  <p className="text-xs text-green-600">+12% vs last month</p>
                 </div>
                 <DollarSign className="h-8 w-8 text-green-500" />
               </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-gray-800 border-gray-600">
+          <Card className="bg-white border-gray-200">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-300">Charging Sessions</p>
-                  <p className="text-2xl font-bold text-white">{chargingData.totalSessions}</p>
-                  <p className="text-xs text-blue-400">This month</p>
+                  <p className="text-sm text-gray-600">Charging Sessions</p>
+                  <p className="text-2xl font-bold text-gray-900">{chargingData.totalSessions}</p>
+                  <p className="text-xs text-blue-600">This month</p>
                 </div>
                 <Car className="h-8 w-8 text-blue-500" />
               </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-gray-800 border-gray-600">
+          <Card className="bg-white border-gray-200">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-300">Utilization Rate</p>
-                  <p className="text-2xl font-bold text-white">{chargingData.utilizationRate}%</p>
-                  <p className="text-xs text-purple-400">Excellent</p>
+                  <p className="text-sm text-gray-600">Utilization Rate</p>
+                  <p className="text-2xl font-bold text-gray-900">{chargingData.utilizationRate}%</p>
+                  <p className="text-xs text-purple-600">Excellent</p>
                 </div>
                 <Activity className="h-8 w-8 text-purple-500" />
               </div>
@@ -146,11 +147,11 @@ const EVChargingDashboard = () => {
 
         {/* Main Content Tabs */}
         <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4 bg-gray-800 border-gray-600">
-            <TabsTrigger value="overview" className="text-white data-[state=active]:bg-tiptop-purple">Overview</TabsTrigger>
-            <TabsTrigger value="usage" className="text-white data-[state=active]:bg-tiptop-purple">Usage Analytics</TabsTrigger>
-            <TabsTrigger value="customers" className="text-white data-[state=active]:bg-tiptop-purple">Customers</TabsTrigger>
-            <TabsTrigger value="maintenance" className="text-white data-[state=active]:bg-tiptop-purple">Maintenance</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-4 bg-white border-gray-200">
+            <TabsTrigger value="overview" className="text-gray-700 data-[state=active]:bg-tiptop-purple data-[state=active]:text-white">Overview</TabsTrigger>
+            <TabsTrigger value="usage" className="text-gray-700 data-[state=active]:bg-tiptop-purple data-[state=active]:text-white">Usage Analytics</TabsTrigger>
+            <TabsTrigger value="customers" className="text-gray-700 data-[state=active]:bg-tiptop-purple data-[state=active]:text-white">Customers</TabsTrigger>
+            <TabsTrigger value="maintenance" className="text-gray-700 data-[state=active]:bg-tiptop-purple data-[state=active]:text-white">Maintenance</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview" className="space-y-6">
