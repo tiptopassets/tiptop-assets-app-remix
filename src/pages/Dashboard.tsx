@@ -11,35 +11,38 @@ import { useUserData } from '@/hooks/useUserData';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { MapPin } from 'lucide-react';
+import { MapPin, AlertCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const Dashboard = () => {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const { 
     addresses, 
     analyses, 
     assetSelections, 
-    loading, 
+    loading: dataLoading, 
     error,
     loadUserData,
     getPrimaryAddress,
     getLatestAnalysis 
   } = useUserData();
 
-  // Load user data when component mounts
+  // Load user data when component mounts and user is authenticated
   useEffect(() => {
-    if (user) {
+    if (user && !authLoading) {
+      console.log('🔄 Loading user data for user:', user.id);
       loadUserData();
     }
-  }, [user, loadUserData]);
+  }, [user, authLoading, loadUserData]);
 
   const primaryAddress = getPrimaryAddress();
   const latestAnalysis = getLatestAnalysis();
 
-  console.log('📊 Dashboard render:', {
+  console.log('📊 Dashboard render state:', {
+    authLoading,
+    dataLoading,
     user: !!user,
-    loading,
+    userId: user?.id,
     error,
     addressesCount: addresses.length,
     analysesCount: analyses.length,
@@ -48,28 +51,32 @@ const Dashboard = () => {
     latestAnalysis: !!latestAnalysis
   });
 
-  if (loading) {
+  // Show loading state while auth is loading
+  if (authLoading) {
     return (
       <DashboardLayout>
         <div className="flex items-center justify-center min-h-96">
           <div className="text-center">
             <div className="w-8 h-8 border-4 border-tiptop-purple border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-            <p className="text-gray-600">Loading your dashboard...</p>
+            <p className="text-gray-600">Loading authentication...</p>
           </div>
         </div>
       </DashboardLayout>
     );
   }
 
-  if (error) {
+  // Redirect to login if not authenticated
+  if (!user) {
     return (
       <DashboardLayout>
         <div className="flex items-center justify-center min-h-96">
-          <Card className="w-full max-w-md">
-            <CardContent className="pt-6 text-center">
-              <p className="text-red-600 mb-4">Error loading dashboard data</p>
-              <Button onClick={loadUserData} variant="outline">
-                Try Again
+          <Card className="w-full max-w-md text-center">
+            <CardContent className="pt-6">
+              <AlertCircle className="w-12 h-12 text-yellow-500 mx-auto mb-4" />
+              <h2 className="text-xl font-semibold mb-2">Authentication Required</h2>
+              <p className="text-gray-600 mb-4">Please sign in to view your dashboard</p>
+              <Button asChild>
+                <Link to="/">Go to Home</Link>
               </Button>
             </CardContent>
           </Card>
@@ -78,8 +85,47 @@ const Dashboard = () => {
     );
   }
 
-  // No analysis data found
-  if (!latestAnalysis) {
+  // Show loading state while data is loading
+  if (dataLoading) {
+    return (
+      <DashboardLayout>
+        <div className="flex items-center justify-center min-h-96">
+          <div className="text-center">
+            <div className="w-8 h-8 border-4 border-tiptop-purple border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading your dashboard data...</p>
+          </div>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  // Show error state if there's an error
+  if (error) {
+    return (
+      <DashboardLayout>
+        <div className="flex items-center justify-center min-h-96">
+          <Card className="w-full max-w-md">
+            <CardContent className="pt-6 text-center">
+              <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
+              <h2 className="text-xl font-semibold mb-2">Error Loading Dashboard</h2>
+              <p className="text-red-600 mb-4">{error}</p>
+              <div className="space-y-2">
+                <Button onClick={loadUserData} variant="outline" className="w-full">
+                  Try Again
+                </Button>
+                <Button asChild variant="outline" className="w-full">
+                  <Link to="/">Go to Home</Link>
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  // Show empty state if no analysis data is found
+  if (analyses.length === 0) {
     return (
       <DashboardLayout>
         <div className="space-y-6">
@@ -90,9 +136,9 @@ const Dashboard = () => {
   }
 
   // Calculate total revenue from analysis results
-  const analysisResults = latestAnalysis.analysis_results;
-  const totalMonthlyRevenue = latestAnalysis.total_monthly_revenue || 0;
-  const totalOpportunities = latestAnalysis.total_opportunities || 0;
+  const analysisResults = latestAnalysis?.analysis_results;
+  const totalMonthlyRevenue = latestAnalysis?.total_monthly_revenue || 0;
+  const totalOpportunities = latestAnalysis?.total_opportunities || 0;
 
   return (
     <DashboardLayout>
@@ -127,38 +173,44 @@ const Dashboard = () => {
         </motion.div>
 
         {/* Property Overview */}
-        <DashboardPropertyOverview 
-          address={primaryAddress?.address || "Property Address"}
-          createdAt={latestAnalysis.created_at}
-          totalOpportunities={totalOpportunities}
-          totalMonthlyRevenue={totalMonthlyRevenue}
-        />
+        {latestAnalysis && (
+          <DashboardPropertyOverview 
+            address={primaryAddress?.address || "Property Address"}
+            createdAt={latestAnalysis.created_at}
+            totalOpportunities={totalOpportunities}
+            totalMonthlyRevenue={totalMonthlyRevenue}
+          />
+        )}
 
         {/* Assets Table */}
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="space-y-4"
-        >
-          <Card>
-            <CardHeader>
-              <CardTitle>Asset Analysis</CardTitle>
-              <CardDescription>
-                Detailed breakdown of your property's monetization potential
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <AssetsTable analysisResults={analysisResults} />
-            </CardContent>
-          </Card>
-        </motion.div>
+        {analysisResults && (
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="space-y-4"
+          >
+            <Card>
+              <CardHeader>
+                <CardTitle>Asset Analysis</CardTitle>
+                <CardDescription>
+                  Detailed breakdown of your property's monetization potential
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <AssetsTable analysisResults={analysisResults} />
+              </CardContent>
+            </Card>
+          </motion.div>
+        )}
 
         {/* Revenue Charts */}
-        <DashboardCharts 
-          analysisResults={analysisResults}
-          totalMonthlyRevenue={totalMonthlyRevenue}
-        />
+        {analysisResults && (
+          <DashboardCharts 
+            analysisResults={analysisResults}
+            totalMonthlyRevenue={totalMonthlyRevenue}
+          />
+        )}
       </div>
     </DashboardLayout>
   );

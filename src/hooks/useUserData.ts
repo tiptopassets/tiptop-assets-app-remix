@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { AnalysisResults } from '@/contexts/GoogleMapContext/types';
@@ -26,9 +26,13 @@ export const useUserData = () => {
 
   // Save address to database
   const handleSaveAddress = async (address: string, coordinates?: any, formattedAddress?: string): Promise<string | null> => {
-    if (!user) return null;
+    if (!user) {
+      console.warn('❌ Cannot save address: User not authenticated');
+      return null;
+    }
 
     try {
+      console.log('💾 Saving address:', address);
       const addressId = await saveAddress(user.id, address, coordinates, formattedAddress, addresses.length === 0);
       
       // Reload addresses to get the updated data
@@ -37,7 +41,7 @@ export const useUserData = () => {
       
       return addressId;
     } catch (err) {
-      console.error('Error saving address:', err);
+      console.error('❌ Error saving address:', err);
       toast({
         title: "Error",
         description: "Failed to save address",
@@ -53,9 +57,13 @@ export const useUserData = () => {
     analysisResults: AnalysisResults,
     coordinates?: any
   ): Promise<string | null> => {
-    if (!user) return null;
+    if (!user) {
+      console.warn('❌ Cannot save analysis: User not authenticated');
+      return null;
+    }
 
     try {
+      console.log('💾 Saving property analysis for address:', addressId);
       const analysisId = await savePropertyAnalysis(user.id, addressId, analysisResults, coordinates);
       
       // Reload analyses to get the updated data
@@ -64,7 +72,7 @@ export const useUserData = () => {
       
       return analysisId;
     } catch (err) {
-      console.error('Error saving property analysis:', err);
+      console.error('❌ Error saving property analysis:', err);
       toast({
         title: "Error",
         description: "Failed to save property analysis",
@@ -83,9 +91,13 @@ export const useUserData = () => {
     setupCost: number = 0,
     roiMonths?: number
   ): Promise<string | null> => {
-    if (!user) return null;
+    if (!user) {
+      console.warn('❌ Cannot save asset selection: User not authenticated');
+      return null;
+    }
 
     try {
+      console.log('💾 Saving asset selection:', assetType);
       const selectionId = await saveAssetSelection(
         user.id, 
         analysisId, 
@@ -102,7 +114,7 @@ export const useUserData = () => {
       
       return selectionId;
     } catch (err) {
-      console.error('Error saving asset selection:', err);
+      console.error('❌ Error saving asset selection:', err);
       toast({
         title: "Error",
         description: "Failed to save asset selection",
@@ -113,9 +125,14 @@ export const useUserData = () => {
   };
 
   // Load user data
-  const loadUserData = async () => {
-    if (!user) return;
+  const loadUserData = useCallback(async () => {
+    if (!user) {
+      console.warn('❌ Cannot load data: User not authenticated');
+      setLoading(false);
+      return;
+    }
 
+    console.log('🔄 Loading user data for:', user.id);
     setLoading(true);
     setError(null);
 
@@ -127,23 +144,31 @@ export const useUserData = () => {
         loadUserPreferences(user.id)
       ]);
 
+      console.log('✅ Successfully loaded user data:', {
+        addresses: addressData.length,
+        analyses: analysisData.length,
+        assetSelections: assetData.length,
+        preferences: !!prefData
+      });
+
       setAddresses(addressData);
       setAnalyses(analysisData);
       setAssetSelections(assetData);
       setDashboardPreferences(prefData);
 
     } catch (err) {
-      console.error('Error loading user data:', err);
-      setError('Failed to load user data');
+      console.error('❌ Error loading user data:', err);
+      const errorMessage = err instanceof Error ? err.message : 'Failed to load user data';
+      setError(errorMessage);
       toast({
         title: "Error",
-        description: "Failed to load your data",
+        description: "Failed to load your data. Please try refreshing the page.",
         variant: "destructive"
       });
     } finally {
       setLoading(false);
     }
-  };
+  }, [user, toast]);
 
   // Get primary address
   const getPrimaryAddress = (): UserAddress | null => {
@@ -154,18 +179,6 @@ export const useUserData = () => {
   const getLatestAnalysis = (): UserPropertyAnalysis | null => {
     return analyses[0] || null;
   };
-
-  // Load data when user changes
-  useEffect(() => {
-    if (user) {
-      loadUserData();
-    } else {
-      setAddresses([]);
-      setAnalyses([]);
-      setAssetSelections([]);
-      setDashboardPreferences(null);
-    }
-  }, [user]);
 
   return {
     addresses,
