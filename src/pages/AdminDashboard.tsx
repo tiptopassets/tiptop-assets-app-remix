@@ -8,6 +8,7 @@ import { LoginStatsSummary } from '@/components/admin/LoginStatsSummary';
 import { LoginStatsTable } from '@/components/admin/LoginStatsTable';
 import { LoginChartsSection } from '@/components/admin/LoginChartsSection';
 import ServiceIntegrationsManagement from '@/components/admin/ServiceIntegrationsManagement';
+import PropertyManagement from '@/components/admin/PropertyManagement';
 import { useToast } from '@/hooks/use-toast';
 import { motion } from 'framer-motion';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -83,12 +84,7 @@ const AdminDashboard = () => {
           </TabsContent>
           
           <TabsContent value="properties">
-            <div className="p-8 border rounded-lg text-center">
-              <h3 className="text-xl font-semibold mb-2">Property Management</h3>
-              <p className="text-muted-foreground">
-                Property management features are coming soon in Phase 2 of development.
-              </p>
-            </div>
+            <PropertyManagement />
           </TabsContent>
         </Tabs>
       </motion.div>
