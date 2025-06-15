@@ -24,6 +24,24 @@ export interface OnboardingMessage {
   created_at: string;
 }
 
+// Helper function to convert database row to OnboardingData
+const convertToOnboardingData = (row: any): OnboardingData => {
+  return {
+    ...row,
+    chat_history: Array.isArray(row.chat_history) ? row.chat_history : [],
+    progress_data: row.progress_data || {}
+  };
+};
+
+// Helper function to convert database row to OnboardingMessage
+const convertToOnboardingMessage = (row: any): OnboardingMessage => {
+  return {
+    ...row,
+    role: row.role as 'user' | 'assistant' | 'system',
+    metadata: row.metadata || {}
+  };
+};
+
 export const createOnboarding = async (
   userId: string,
   selectedOption: 'manual' | 'concierge'
@@ -47,7 +65,7 @@ export const createOnboarding = async (
     }
 
     console.log('✅ Onboarding session created:', data.id);
-    return data;
+    return convertToOnboardingData(data);
   } catch (err) {
     console.error('❌ Error in createOnboarding:', err);
     throw err;
@@ -71,7 +89,7 @@ export const getOnboarding = async (userId: string): Promise<OnboardingData | nu
     }
 
     console.log('✅ Found onboarding:', !!data);
-    return data;
+    return data ? convertToOnboardingData(data) : null;
   } catch (err) {
     console.error('❌ Error in getOnboarding:', err);
     throw err;
@@ -98,7 +116,7 @@ export const updateOnboardingProgress = async (
     }
 
     console.log('✅ Onboarding updated successfully');
-    return data;
+    return convertToOnboardingData(data);
   } catch (err) {
     console.error('❌ Error in updateOnboardingProgress:', err);
     throw err;
@@ -131,7 +149,7 @@ export const addOnboardingMessage = async (
     }
 
     console.log('✅ Message added successfully');
-    return data;
+    return convertToOnboardingMessage(data);
   } catch (err) {
     console.error('❌ Error in addOnboardingMessage:', err);
     throw err;
@@ -154,7 +172,7 @@ export const getOnboardingMessages = async (onboardingId: string): Promise<Onboa
     }
 
     console.log('✅ Found messages:', data?.length || 0);
-    return data || [];
+    return data ? data.map(convertToOnboardingMessage) : [];
   } catch (err) {
     console.error('❌ Error in getOnboardingMessages:', err);
     throw err;

@@ -40,7 +40,7 @@ const queryClient = new QueryClient({
 
 function App() {
   const [mapLoaded, setMapLoaded] = useState(false);
-  useGoogleMapInstance({ setMapLoaded });
+  useGoogleMapInstance(setMapLoaded, mapLoaded);
 
   useEffect(() => {
     console.log('🗺️ Google Maps loaded:', mapLoaded);
@@ -49,11 +49,11 @@ function App() {
   return (
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
-        <AuthProvider>
-          <ServiceProviderProvider>
-            <GoogleMapProvider>
-              <ModelGenerationProvider>
-                <Router>
+        <Router>
+          <AuthProvider>
+            <ServiceProviderProvider>
+              <GoogleMapProvider>
+                <ModelGenerationProvider>
                   <div className="min-h-screen bg-background">
                     <Routes>
                       <Route path="/" element={<Index />} />
@@ -74,11 +74,11 @@ function App() {
                     <DataSyncNotification />
                     <Toaster />
                   </div>
-                </Router>
-              </ModelGenerationProvider>
-            </GoogleMapProvider>
-          </ServiceProviderProvider>
-        </AuthProvider>
+                </ModelGenerationProvider>
+              </GoogleMapProvider>
+            </ServiceProviderProvider>
+          </AuthProvider>
+        </Router>
       </QueryClientProvider>
     </ErrorBoundary>
   );

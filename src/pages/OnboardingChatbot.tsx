@@ -9,7 +9,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
 import { 
   Send, 
   Bot, 
@@ -24,24 +23,15 @@ import {
   Home
 } from 'lucide-react';
 import DashboardLayout from '@/components/dashboard/DashboardLayout';
-
-interface OnboardingData {
-  id: string;
-  selected_option: 'manual' | 'concierge';
-  status: 'not_started' | 'in_progress' | 'completed' | 'paused';
-  current_step: number;
-  total_steps: number;
-  completed_assets: string[];
-  progress_data: any;
-}
-
-interface ChatMessage {
-  id: string;
-  role: 'user' | 'assistant' | 'system';
-  content: string;
-  metadata?: any;
-  created_at: string;
-}
+import {
+  createOnboarding,
+  getOnboarding,
+  updateOnboardingProgress,
+  addOnboardingMessage,
+  getOnboardingMessages,
+  OnboardingData,
+  OnboardingMessage
+} from '@/services/onboardingService';
 
 const OnboardingChatbot = () => {
   const { user, loading: authLoading } = useAuth();
@@ -52,7 +42,7 @@ const OnboardingChatbot = () => {
   const [sending, setSending] = useState(false);
   const [message, setMessage] = useState('');
   const [onboardingData, setOnboardingData] = useState<OnboardingData | null>(null);
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [messages, setMessages] = useState<OnboardingMessage[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const selectedOption = searchParams.get('option') as 'manual' | 'concierge' | null;
@@ -88,41 +78,29 @@ const OnboardingChatbot = () => {
       console.log('🚀 Initializing onboarding for:', user.id, 'option:', selectedOption);
       
       // Check if onboarding already exists
-      const { data: existing, error: checkError } = await supabase
-        .from('user_onboarding')
-        .select('*')
-        .eq('user_id', user.id)
-        .maybeSingle();
-
-      if (checkError && checkError.code !== 'PGRST116') {
-        throw checkError;
-      }
+      const existing = await getOnboarding(user.id);
 
       if (existing) {
         setOnboardingData(existing);
-        await loadMessages(existing.id);
+        const existingMessages = await getOnboardingMessages(existing.id);
+        setMessages(existingMessages);
       } else {
         // Create new onboarding session
-        const { data: newOnboarding, error: insertError } = await supabase
-          .from('user_onboarding')
-          .insert({
-            user_id: user.id,
-            selected_option: selectedOption,
-            status: 'in_progress'
-          })
-          .select()
-          .single();
+        const newOnboarding = await createOnboarding(user.id, selectedOption);
+        
+        if (newOnboarding) {
+          setOnboardingData(newOnboarding);
 
-        if (insertError) throw insertError;
+          // Add welcome message
+          const welcomeContent = selectedOption === 'manual' 
+            ? "Welcome to TipTop's Asset Onboarding! 🎉 I'll guide you through uploading your assets manually to our partner platforms. Let's start by understanding what assets you'd like to monetize. What type of property do you have?"
+            : "Welcome to TipTop Concierge! 🌟 I'll handle the entire onboarding process for you. For just $20, we'll professionally optimize and list your assets. Let's start by gathering some information about your property. What type of property do you have?";
 
-        setOnboardingData(newOnboarding);
-
-        // Add welcome message
-        const welcomeContent = selectedOption === 'manual' 
-          ? "Welcome to TipTop's Asset Onboarding! 🎉 I'll guide you through uploading your assets manually to our partner platforms. Let's start by understanding what assets you'd like to monetize. What type of property do you have?"
-          : "Welcome to TipTop Concierge! 🌟 I'll handle the entire onboarding process for you. For just $20, we'll professionally optimize and list your assets. Let's start by gathering some information about your property. What type of property do you have?";
-
-        await addMessage(newOnboarding.id, 'assistant', welcomeContent);
+          const welcomeMessage = await addOnboardingMessage(newOnboarding.id, 'assistant', welcomeContent);
+          if (welcomeMessage) {
+            setMessages([welcomeMessage]);
+          }
+        }
       }
     } catch (error) {
       console.error('❌ Error initializing onboarding:', error);
@@ -140,18 +118,12 @@ const OnboardingChatbot = () => {
     if (!user) return;
 
     try {
-      const { data, error } = await supabase
-        .from('user_onboarding')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
-        .maybeSingle();
-
-      if (error && error.code !== 'PGRST116') throw error;
+      const data = await getOnboarding(user.id);
 
       if (data) {
         setOnboardingData(data);
-        await loadMessages(data.id);
+        const existingMessages = await getOnboardingMessages(data.id);
+        setMessages(existingMessages);
       } else {
         // No existing onboarding, redirect to options
         navigate('/options');
@@ -168,44 +140,6 @@ const OnboardingChatbot = () => {
     }
   };
 
-  const loadMessages = async (onboardingId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('onboarding_messages')
-        .select('*')
-        .eq('onboarding_id', onboardingId)
-        .order('created_at', { ascending: true });
-
-      if (error) throw error;
-      setMessages(data || []);
-    } catch (error) {
-      console.error('❌ Error loading messages:', error);
-    }
-  };
-
-  const addMessage = async (onboardingId: string, role: 'user' | 'assistant', content: string, metadata?: any) => {
-    try {
-      const { data, error } = await supabase
-        .from('onboarding_messages')
-        .insert({
-          onboarding_id: onboardingId,
-          role,
-          content,
-          metadata
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      setMessages(prev => [...prev, data]);
-      return data;
-    } catch (error) {
-      console.error('❌ Error adding message:', error);
-      throw error;
-    }
-  };
-
   const sendMessage = async () => {
     if (!message.trim() || !onboardingData || sending) return;
 
@@ -215,14 +149,20 @@ const OnboardingChatbot = () => {
 
     try {
       // Add user message
-      await addMessage(onboardingData.id, 'user', userMessage);
+      const userMsg = await addOnboardingMessage(onboardingData.id, 'user', userMessage);
+      if (userMsg) {
+        setMessages(prev => [...prev, userMsg]);
+      }
 
       // Generate AI response (simplified for now)
       const aiResponse = generateAIResponse(userMessage, onboardingData);
       
-      // Add AI response
+      // Add AI response with delay
       setTimeout(async () => {
-        await addMessage(onboardingData.id, 'assistant', aiResponse);
+        const aiMsg = await addOnboardingMessage(onboardingData.id, 'assistant', aiResponse);
+        if (aiMsg) {
+          setMessages(prev => [...prev, aiMsg]);
+        }
         setSending(false);
       }, 1000);
 
