@@ -2,15 +2,16 @@
 import React, { useEffect } from 'react';
 import { motion } from "framer-motion";
 import DashboardLayout from '@/components/dashboard/DashboardLayout';
-import { PropertyOverviewCard } from '@/components/dashboard/PropertyOverviewCard';
 import { AssetsTable } from '@/components/dashboard/AssetsTable';
-import { StatsCard } from '@/components/dashboard/StatsCard';
-import { AssetDistributionChart, TodayRevenueChart, RevenueOverTimeChart } from '@/components/dashboard/RevenueCharts';
+import { DashboardStats } from '@/components/dashboard/DashboardStats';
+import { DashboardPropertyOverview } from '@/components/dashboard/DashboardPropertyOverview';
+import { DashboardCharts } from '@/components/dashboard/DashboardCharts';
+import { DashboardEmptyState } from '@/components/dashboard/DashboardEmptyState';
 import { useUserData } from '@/hooks/useUserData';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { MapPin, TrendingUp, DollarSign, Home } from 'lucide-react';
+import { MapPin } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const Dashboard = () => {
@@ -82,43 +83,7 @@ const Dashboard = () => {
     return (
       <DashboardLayout>
         <div className="space-y-6">
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-center py-12"
-          >
-            <Card className="mx-auto max-w-2xl">
-              <CardHeader>
-                <div className="mx-auto w-16 h-16 bg-tiptop-purple/10 rounded-full flex items-center justify-center mb-4">
-                  <Home className="w-8 h-8 text-tiptop-purple" />
-                </div>
-                <CardTitle className="text-2xl">No Property Analysis Yet</CardTitle>
-                <CardDescription className="text-lg">
-                  Start by analyzing your property to see monetization opportunities
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <p className="text-gray-600">
-                    Get started by analyzing your property to discover how you can monetize your home assets.
-                  </p>
-                  <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                    <Button asChild size="lg">
-                      <Link to="/">
-                        <MapPin className="mr-2 h-4 w-4" />
-                        Analyze Property
-                      </Link>
-                    </Button>
-                    <Button asChild variant="outline" size="lg">
-                      <Link to="/submit-property">
-                        Submit Property Details
-                      </Link>
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
+          <DashboardEmptyState />
         </div>
       </DashboardLayout>
     );
@@ -128,27 +93,6 @@ const Dashboard = () => {
   const analysisResults = latestAnalysis.analysis_results;
   const totalMonthlyRevenue = latestAnalysis.total_monthly_revenue || 0;
   const totalOpportunities = latestAnalysis.total_opportunities || 0;
-
-  // Prepare chart data from analysis results
-  const chartData = [];
-  if (analysisResults?.rooftop?.revenue) {
-    chartData.push({ name: 'Solar/Rooftop', value: analysisResults.rooftop.revenue });
-  }
-  if (analysisResults?.parking?.revenue) {
-    chartData.push({ name: 'Parking', value: analysisResults.parking.revenue });
-  }
-  if (analysisResults?.garden?.revenue) {
-    chartData.push({ name: 'Garden', value: analysisResults.garden.revenue });
-  }
-  if (analysisResults?.pool?.revenue) {
-    chartData.push({ name: 'Pool', value: analysisResults.pool.revenue });
-  }
-  if (analysisResults?.storage?.revenue) {
-    chartData.push({ name: 'Storage', value: analysisResults.storage.revenue });
-  }
-  if (analysisResults?.bandwidth?.revenue) {
-    chartData.push({ name: 'Internet', value: analysisResults.bandwidth.revenue });
-  }
 
   return (
     <DashboardLayout>
@@ -175,42 +119,20 @@ const Dashboard = () => {
           </div>
 
           {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <StatsCard
-              title="Monthly Revenue Potential"
-              value={`$${totalMonthlyRevenue.toLocaleString()}`}
-              icon={<DollarSign className="h-6 w-6" />}
-              trend={totalMonthlyRevenue > 0 ? "up" : "neutral"}
-              trendValue={totalMonthlyRevenue > 0 ? "Ready to earn" : "Analyze property"}
-            />
-            <StatsCard
-              title="Monetization Opportunities"
-              value={totalOpportunities.toString()}
-              icon={<TrendingUp className="h-6 w-6" />}
-              trend={totalOpportunities > 0 ? "up" : "neutral"}
-              trendValue={totalOpportunities > 0 ? "Available now" : "Get started"}
-            />
-            <StatsCard
-              title="Properties Analyzed"
-              value={analyses.length.toString()}
-              icon={<Home className="h-6 w-6" />}
-              trend={analyses.length > 0 ? "up" : "neutral"}
-              trendValue={analyses.length > 1 ? `${analyses.length} properties` : "First property"}
-            />
-          </div>
+          <DashboardStats 
+            totalMonthlyRevenue={totalMonthlyRevenue}
+            totalOpportunities={totalOpportunities}
+            analysesCount={analyses.length}
+          />
         </motion.div>
 
         {/* Property Overview */}
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-        >
-          <PropertyOverviewCard 
-            address={primaryAddress?.address || "Property Address"}
-            description={`Property analysis completed on ${new Date(latestAnalysis.created_at).toLocaleDateString()}. Found ${totalOpportunities} monetization opportunities with potential monthly revenue of $${totalMonthlyRevenue}.`}
-          />
-        </motion.div>
+        <DashboardPropertyOverview 
+          address={primaryAddress?.address || "Property Address"}
+          createdAt={latestAnalysis.created_at}
+          totalOpportunities={totalOpportunities}
+          totalMonthlyRevenue={totalMonthlyRevenue}
+        />
 
         {/* Assets Table */}
         <motion.div 
@@ -233,24 +155,10 @@ const Dashboard = () => {
         </motion.div>
 
         {/* Revenue Charts */}
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-        >
-          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-            <AssetDistributionChart data={chartData} />
-            <TodayRevenueChart amount={totalMonthlyRevenue / 30} increasePercentage={15} />
-            <RevenueOverTimeChart 
-              data={[
-                { name: 'Jan', Solar: analysisResults?.rooftop?.revenue || 0, Parking: analysisResults?.parking?.revenue || 0 },
-                { name: 'Feb', Solar: analysisResults?.rooftop?.revenue || 0, Parking: analysisResults?.parking?.revenue || 0 },
-                { name: 'Mar', Solar: analysisResults?.rooftop?.revenue || 0, Parking: analysisResults?.parking?.revenue || 0 },
-              ]}
-              keys={['Solar', 'Parking']}
-            />
-          </div>
-        </motion.div>
+        <DashboardCharts 
+          analysisResults={analysisResults}
+          totalMonthlyRevenue={totalMonthlyRevenue}
+        />
       </div>
     </DashboardLayout>
   );
