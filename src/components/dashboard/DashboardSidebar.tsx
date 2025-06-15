@@ -12,7 +12,8 @@ import {
   Menu, 
   X, 
   Lock,
-  DollarSign
+  DollarSign,
+  MessageSquare
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
@@ -48,6 +49,11 @@ const navItems = [
     path: '/dashboard/add-asset', 
     icon: <Plus className="h-5 w-5 mr-3" />, 
     label: 'Add Asset'
+  },
+  {
+    path: '/dashboard/onboarding',
+    icon: <MessageSquare className="h-5 w-5 mr-3" />,
+    label: 'Asset Onboarding'
   }
 ];
 

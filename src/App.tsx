@@ -52,7 +52,7 @@ function App() {
             <ServiceProviderProvider>
               <GoogleMapProvider>
                 <ModelGenerationProvider>
-                  <div className="min-h-screen bg-background">
+                  <div className="min-h-screen w-full bg-background">
                     <Routes>
                       <Route path="/" element={<Index />} />
                       <Route path="/dashboard" element={<Dashboard />} />
@@ -61,6 +61,7 @@ function App() {
                       <Route path="/dashboard/ev-charging" element={<EVChargingDashboard />} />
                       <Route path="/dashboard/affiliate" element={<AffiliateEarningsDashboard />} />
                       <Route path="/dashboard/add-asset" element={<AddAsset />} />
+                      <Route path="/dashboard/onboarding" element={<OnboardingChatbot />} />
                       <Route path="/dashboard/admin" element={<AdminDashboard />} />
                       <Route path="/dashboard/account" element={<AccountPage />} />
                       <Route path="/options" element={<Options />} />
