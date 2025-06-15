@@ -1,3 +1,4 @@
+
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -153,7 +154,7 @@ const RooftopDashboard = () => {
           <TabsContent value="overview" className="space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* System Overview */}
-              <Card className="bg-white border-gray-200">
+              <Card className="bg-gray-800 border-gray-600">
                 <CardHeader>
                   <CardTitle className="text-white flex items-center gap-2">
                     <Sun className="h-5 w-5 text-yellow-500" />
@@ -193,7 +194,7 @@ const RooftopDashboard = () => {
               </Card>
 
               {/* Today's Production */}
-              <Card className="bg-white border-gray-200">
+              <Card className="bg-gray-800 border-gray-600">
                 <CardHeader>
                   <CardTitle className="text-white flex items-center gap-2">
                     <Activity className="h-5 w-5 text-green-500" />
@@ -234,7 +235,7 @@ const RooftopDashboard = () => {
             </div>
 
             {/* Financial Summary */}
-            <Card className="bg-white border-gray-200">
+            <Card className="bg-gray-800 border-gray-600">
               <CardHeader>
                 <CardTitle className="text-white flex items-center gap-2">
                   <DollarSign className="h-5 w-5 text-green-500" />
@@ -270,7 +271,7 @@ const RooftopDashboard = () => {
 
           <TabsContent value="performance" className="space-y-6">
             {/* Monthly Performance Chart */}
-            <Card className="bg-white border-gray-200">
+            <Card className="bg-gray-800 border-gray-600">
               <CardHeader>
                 <CardTitle className="text-white flex items-center gap-2">
                   <TrendingUp className="h-5 w-5 text-tiptop-purple" />
@@ -300,7 +301,7 @@ const RooftopDashboard = () => {
             </Card>
 
             {/* Weather Impact Analysis */}
-            <Card className="bg-white border-gray-200">
+            <Card className="bg-gray-800 border-gray-600">
               <CardHeader>
                 <CardTitle className="text-white flex items-center gap-2">
                   <Sun className="h-5 w-5 text-yellow-500" />
@@ -332,7 +333,7 @@ const RooftopDashboard = () => {
           <TabsContent value="analytics" className="space-y-6">
             {/* Environmental Impact */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <Card className="bg-white border-gray-200">
+              <Card className="bg-gray-800 border-gray-600">
                 <CardHeader>
                   <CardTitle className="text-white flex items-center gap-2">
                     <Leaf className="h-5 w-5 text-green-500" />
@@ -366,7 +367,7 @@ const RooftopDashboard = () => {
               </Card>
 
               {/* System Health */}
-              <Card className="bg-white border-gray-200">
+              <Card className="bg-gray-800 border-gray-600">
                 <CardHeader>
                   <CardTitle className="text-white flex items-center gap-2">
                     <Activity className="h-5 w-5 text-blue-500" />
@@ -415,7 +416,7 @@ const RooftopDashboard = () => {
 
           <TabsContent value="maintenance" className="space-y-6">
             {/* Maintenance Schedule */}
-            <Card className="bg-white border-gray-200">
+            <Card className="bg-gray-800 border-gray-600">
               <CardHeader>
                 <CardTitle className="text-white flex items-center gap-2">
                   <Calendar className="h-5 w-5 text-tiptop-purple" />
@@ -466,7 +467,7 @@ const RooftopDashboard = () => {
             </Card>
 
             {/* Performance Alerts */}
-            <Card className="bg-white border-gray-200">
+            <Card className="bg-gray-800 border-gray-600">
               <CardHeader>
                 <CardTitle className="text-white flex items-center gap-2">
                   <Activity className="h-5 w-5 text-orange-500" />

@@ -1,3 +1,4 @@
+
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -156,7 +157,7 @@ const InternetDashboard = () => {
           <TabsContent value="overview" className="space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Connection Overview */}
-              <Card className="bg-black/40 backdrop-blur-sm border-white/10">
+              <Card className="bg-gray-800 border-gray-600">
                 <CardHeader>
                   <CardTitle className="text-white flex items-center gap-2">
                     <Globe className="h-5 w-5 text-blue-500" />
@@ -166,30 +167,30 @@ const InternetDashboard = () => {
                 <CardContent className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <p className="text-sm text-white/70">Download Speed</p>
+                      <p className="text-sm text-gray-300">Download Speed</p>
                       <p className="text-xl font-bold text-white">{bandwidthData.avgSpeed} Mbps</p>
                     </div>
                     <div>
-                      <p className="text-sm text-white/70">Upload Speed</p>
+                      <p className="text-sm text-gray-300">Upload Speed</p>
                       <p className="text-xl font-bold text-white">{Math.round(bandwidthData.avgSpeed * 0.1)} Mbps</p>
                     </div>
                     <div>
-                      <p className="text-sm text-white/70">Connected Devices</p>
+                      <p className="text-sm text-gray-300">Connected Devices</p>
                       <p className="text-xl font-bold text-white">{bandwidthData.connectedDevices}</p>
                     </div>
                     <div>
-                      <p className="text-sm text-white/70">Active Sharing</p>
-                      <Badge variant="outline" className="text-green-400 border-green-400/30">
+                      <p className="text-sm text-gray-300">Active Sharing</p>
+                      <Badge variant="outline" className="text-green-400 border-green-400/50">
                         Active
                       </Badge>
                     </div>
                   </div>
                   
-                  <Separator className="bg-white/20" />
+                  <Separator className="bg-gray-600" />
                   
                   <div>
                     <div className="flex justify-between text-sm mb-2">
-                      <span className="text-white/70">Bandwidth Utilization</span>
+                      <span className="text-gray-300">Bandwidth Utilization</span>
                       <span className="text-white">{Math.round((bandwidthData.sharedBandwidth / bandwidthData.totalBandwidth) * 100)}%</span>
                     </div>
                     <Progress value={(bandwidthData.sharedBandwidth / bandwidthData.totalBandwidth) * 100} className="h-2" />
@@ -198,7 +199,7 @@ const InternetDashboard = () => {
               </Card>
 
               {/* Real-time Usage */}
-              <Card className="bg-black/40 backdrop-blur-sm border-white/10">
+              <Card className="bg-gray-800 border-gray-600">
                 <CardHeader>
                   <CardTitle className="text-white flex items-center gap-2">
                     <Activity className="h-5 w-5 text-purple-500" />
@@ -213,8 +214,8 @@ const InternetDashboard = () => {
                       <YAxis stroke="rgba(255,255,255,0.7)" fontSize={12} />
                       <Tooltip 
                         contentStyle={{ 
-                          backgroundColor: 'rgba(0,0,0,0.8)', 
-                          border: '1px solid rgba(255,255,255,0.2)',
+                          backgroundColor: 'rgb(31, 41, 55)', 
+                          border: '1px solid rgb(75, 85, 99)',
                           borderRadius: '8px',
                           color: 'white'
                         }}
@@ -229,7 +230,7 @@ const InternetDashboard = () => {
             </div>
 
             {/* Earnings Summary */}
-            <Card className="bg-black/40 backdrop-blur-sm border-white/10">
+            <Card className="bg-gray-800 border-gray-600">
               <CardHeader>
                 <CardTitle className="text-white flex items-center gap-2">
                   <DollarSign className="h-5 w-5 text-green-500" />
@@ -238,25 +239,25 @@ const InternetDashboard = () => {
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                  <div className="text-center p-4 bg-green-500/10 rounded-lg border border-green-500/20">
-                    <p className="text-sm text-white/70">Total Earnings</p>
+                  <div className="text-center p-4 bg-green-500/20 rounded-lg border border-green-500/30">
+                    <p className="text-sm text-gray-300">Total Earnings</p>
                     <p className="text-2xl font-bold text-green-400">${bandwidthData.totalEarnings}</p>
-                    <p className="text-xs text-white/60">All time</p>
+                    <p className="text-xs text-gray-400">All time</p>
                   </div>
-                  <div className="text-center p-4 bg-blue-500/10 rounded-lg border border-blue-500/20">
-                    <p className="text-sm text-white/70">Per GB Rate</p>
+                  <div className="text-center p-4 bg-blue-500/20 rounded-lg border border-blue-500/30">
+                    <p className="text-sm text-gray-300">Per GB Rate</p>
                     <p className="text-2xl font-bold text-blue-400">$0.018</p>
-                    <p className="text-xs text-white/60">Current rate</p>
+                    <p className="text-xs text-gray-400">Current rate</p>
                   </div>
-                  <div className="text-center p-4 bg-purple-500/10 rounded-lg border border-purple-500/20">
-                    <p className="text-sm text-white/70">This Week</p>
+                  <div className="text-center p-4 bg-purple-500/20 rounded-lg border border-purple-500/30">
+                    <p className="text-sm text-gray-300">This Week</p>
                     <p className="text-2xl font-bold text-purple-400">${Math.round(bandwidthData.monthlyEarnings * 0.25)}</p>
-                    <p className="text-xs text-white/60">Week earnings</p>
+                    <p className="text-xs text-gray-400">Week earnings</p>
                   </div>
-                  <div className="text-center p-4 bg-orange-500/10 rounded-lg border border-orange-500/20">
-                    <p className="text-sm text-white/70">Projected</p>
+                  <div className="text-center p-4 bg-orange-500/20 rounded-lg border border-orange-500/30">
+                    <p className="text-sm text-gray-300">Projected</p>
                     <p className="text-2xl font-bold text-orange-400">${Math.round(bandwidthData.monthlyEarnings * 1.08)}</p>
-                    <p className="text-xs text-white/60">Next month</p>
+                    <p className="text-xs text-gray-400">Next month</p>
                   </div>
                 </div>
               </CardContent>
@@ -265,7 +266,7 @@ const InternetDashboard = () => {
 
           <TabsContent value="bandwidth" className="space-y-6">
             {/* Bandwidth Performance */}
-            <Card className="bg-black/40 backdrop-blur-sm border-white/10">
+            <Card className="bg-gray-800 border-gray-600">
               <CardHeader>
                 <CardTitle className="text-white flex items-center gap-2">
                   <TrendingUp className="h-5 w-5 text-tiptop-purple" />
@@ -280,8 +281,8 @@ const InternetDashboard = () => {
                     <YAxis stroke="rgba(255,255,255,0.7)" />
                     <Tooltip 
                       contentStyle={{ 
-                        backgroundColor: 'rgba(0,0,0,0.8)', 
-                        border: '1px solid rgba(255,255,255,0.2)',
+                        backgroundColor: 'rgb(31, 41, 55)', 
+                        border: '1px solid rgb(75, 85, 99)',
                         borderRadius: '8px',
                         color: 'white'
                       }}
@@ -295,7 +296,7 @@ const InternetDashboard = () => {
             </Card>
 
             {/* Network Performance */}
-            <Card className="bg-black/40 backdrop-blur-sm border-white/10">
+            <Card className="bg-gray-800 border-gray-600">
               <CardHeader>
                 <CardTitle className="text-white flex items-center gap-2">
                   <Activity className="h-5 w-5 text-blue-500" />
@@ -310,8 +311,8 @@ const InternetDashboard = () => {
                     <YAxis stroke="rgba(255,255,255,0.7)" />
                     <Tooltip 
                       contentStyle={{ 
-                        backgroundColor: 'rgba(0,0,0,0.8)', 
-                        border: '1px solid rgba(255,255,255,0.2)',
+                        backgroundColor: 'rgb(31, 41, 55)', 
+                        border: '1px solid rgb(75, 85, 99)',
                         borderRadius: '8px',
                         color: 'white'
                       }}
@@ -327,7 +328,7 @@ const InternetDashboard = () => {
           <TabsContent value="devices" className="space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Device Distribution */}
-              <Card className="bg-black/40 backdrop-blur-sm border-white/10">
+              <Card className="bg-gray-800 border-gray-600">
                 <CardHeader>
                   <CardTitle className="text-white flex items-center gap-2">
                     <Router className="h-5 w-5 text-orange-500" />
@@ -352,8 +353,8 @@ const InternetDashboard = () => {
                       </Pie>
                       <Tooltip 
                         contentStyle={{ 
-                          backgroundColor: 'rgba(0,0,0,0.8)', 
-                          border: '1px solid rgba(255,255,255,0.2)',
+                          backgroundColor: 'rgb(31, 41, 55)', 
+                          border: '1px solid rgb(75, 85, 99)',
                           borderRadius: '8px',
                           color: 'white'
                         }}
@@ -364,7 +365,7 @@ const InternetDashboard = () => {
               </Card>
 
               {/* Device Management */}
-              <Card className="bg-black/40 backdrop-blur-sm border-white/10">
+              <Card className="bg-gray-800 border-gray-600">
                 <CardHeader>
                   <CardTitle className="text-white flex items-center gap-2">
                     <Settings className="h-5 w-5 text-gray-400" />
@@ -373,38 +374,38 @@ const InternetDashboard = () => {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="space-y-3">
-                    <div className="flex justify-between items-center p-3 bg-white/5 rounded-lg">
+                    <div className="flex justify-between items-center p-3 bg-gray-700/50 rounded-lg border border-gray-600">
                       <div>
                         <p className="text-white text-sm font-medium">iPhone 14 Pro</p>
-                        <p className="text-white/60 text-xs">192.168.1.45</p>
+                        <p className="text-gray-300 text-xs">192.168.1.45</p>
                       </div>
-                      <Badge variant="outline" className="text-green-400 border-green-400/30">
+                      <Badge variant="outline" className="text-green-400 border-green-400/50">
                         Active
                       </Badge>
                     </div>
                     
-                    <div className="flex justify-between items-center p-3 bg-white/5 rounded-lg">
+                    <div className="flex justify-between items-center p-3 bg-gray-700/50 rounded-lg border border-gray-600">
                       <div>
                         <p className="text-white text-sm font-medium">MacBook Pro</p>
-                        <p className="text-white/60 text-xs">192.168.1.22</p>
+                        <p className="text-gray-300 text-xs">192.168.1.22</p>
                       </div>
-                      <Badge variant="outline" className="text-blue-400 border-blue-400/30">
+                      <Badge variant="outline" className="text-blue-400 border-blue-400/50">
                         Sharing
                       </Badge>
                     </div>
                     
-                    <div className="flex justify-between items-center p-3 bg-white/5 rounded-lg">
+                    <div className="flex justify-between items-center p-3 bg-gray-700/50 rounded-lg border border-gray-600">
                       <div>
                         <p className="text-white text-sm font-medium">Smart TV</p>
-                        <p className="text-white/60 text-xs">192.168.1.18</p>
+                        <p className="text-gray-300 text-xs">192.168.1.18</p>
                       </div>
-                      <Badge variant="outline" className="text-gray-400 border-gray-400/30">
+                      <Badge variant="outline" className="text-gray-400 border-gray-400/50">
                         Idle
                       </Badge>
                     </div>
                   </div>
                   
-                  <Separator className="bg-white/20" />
+                  <Separator className="bg-gray-600" />
                   
                   <div className="text-center">
                     <Button variant="outline" size="sm" className="bg-white/10 border-white/20 text-white hover:bg-white/20">
@@ -418,7 +419,7 @@ const InternetDashboard = () => {
 
           <TabsContent value="security" className="space-y-6">
             {/* Security Status */}
-            <Card className="bg-black/40 backdrop-blur-sm border-white/10">
+            <Card className="bg-gray-800 border-gray-600">
               <CardHeader>
                 <CardTitle className="text-white flex items-center gap-2">
                   <Shield className="h-5 w-5 text-green-500" />
@@ -427,49 +428,49 @@ const InternetDashboard = () => {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="text-center p-4 bg-green-500/10 rounded-lg border border-green-500/20">
+                  <div className="text-center p-4 bg-green-500/20 rounded-lg border border-green-500/30">
                     <Shield className="h-8 w-8 text-green-400 mx-auto mb-2" />
-                    <p className="text-sm text-white/70">Network Security</p>
+                    <p className="text-sm text-gray-300">Network Security</p>
                     <p className="text-lg font-bold text-green-400">Secure</p>
                   </div>
                   
-                  <div className="text-center p-4 bg-blue-500/10 rounded-lg border border-blue-500/20">
+                  <div className="text-center p-4 bg-blue-500/20 rounded-lg border border-blue-500/30">
                     <Globe className="h-8 w-8 text-blue-400 mx-auto mb-2" />
-                    <p className="text-sm text-white/70">Data Encryption</p>
+                    <p className="text-sm text-gray-300">Data Encryption</p>
                     <p className="text-lg font-bold text-blue-400">AES-256</p>
                   </div>
                   
-                  <div className="text-center p-4 bg-purple-500/10 rounded-lg border border-purple-500/20">
+                  <div className="text-center p-4 bg-purple-500/20 rounded-lg border border-purple-500/30">
                     <Activity className="h-8 w-8 text-purple-400 mx-auto mb-2" />
-                    <p className="text-sm text-white/70">Privacy Level</p>
+                    <p className="text-sm text-gray-300">Privacy Level</p>
                     <p className="text-lg font-bold text-purple-400">High</p>
                   </div>
                 </div>
                 
-                <Separator className="bg-white/20" />
+                <Separator className="bg-gray-600" />
                 
                 <div className="space-y-3">
                   <div className="flex justify-between items-center">
-                    <span className="text-white/70">Firewall Protection</span>
-                    <Badge variant="outline" className="text-green-400 border-green-400/30">
+                    <span className="text-gray-300">Firewall Protection</span>
+                    <Badge variant="outline" className="text-green-400 border-green-400/50">
                       Enabled
                     </Badge>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-white/70">VPN Tunneling</span>
-                    <Badge variant="outline" className="text-green-400 border-green-400/30">
+                    <span className="text-gray-300">VPN Tunneling</span>
+                    <Badge variant="outline" className="text-green-400 border-green-400/50">
                       Active
                     </Badge>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-white/70">Data Anonymization</span>
-                    <Badge variant="outline" className="text-green-400 border-green-400/30">
+                    <span className="text-gray-300">Data Anonymization</span>
+                    <Badge variant="outline" className="text-green-400 border-green-400/50">
                       Enabled
                     </Badge>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-white/70">Traffic Monitoring</span>
-                    <Badge variant="outline" className="text-blue-400 border-blue-400/30">
+                    <span className="text-gray-300">Traffic Monitoring</span>
+                    <Badge variant="outline" className="text-blue-400 border-blue-400/50">
                       24/7
                     </Badge>
                   </div>
@@ -478,7 +479,7 @@ const InternetDashboard = () => {
             </Card>
 
             {/* Privacy Settings */}
-            <Card className="bg-black/40 backdrop-blur-sm border-white/10">
+            <Card className="bg-gray-800 border-gray-600">
               <CardHeader>
                 <CardTitle className="text-white flex items-center gap-2">
                   <Settings className="h-5 w-5 text-gray-400" />
@@ -486,28 +487,28 @@ const InternetDashboard = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+                <div className="p-3 bg-blue-500/20 border border-blue-500/30 rounded-lg">
                   <div className="flex items-center gap-2 mb-1">
                     <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
                     <span className="text-blue-400 text-sm font-medium">Data Sharing Policy</span>
                   </div>
-                  <p className="text-xs text-white/70">Only anonymous bandwidth is shared. No personal data or browsing history is ever transmitted.</p>
+                  <p className="text-xs text-gray-300">Only anonymous bandwidth is shared. No personal data or browsing history is ever transmitted.</p>
                 </div>
                 
-                <div className="p-3 bg-green-500/10 border border-green-500/20 rounded-lg">
+                <div className="p-3 bg-green-500/20 border border-green-500/30 rounded-lg">
                   <div className="flex items-center gap-2 mb-1">
                     <div className="w-2 h-2 bg-green-400 rounded-full"></div>
                     <span className="text-green-400 text-sm font-medium">Bandwidth Limits</span>
                   </div>
-                  <p className="text-xs text-white/70">You maintain full control over how much bandwidth to share and when.</p>
+                  <p className="text-xs text-gray-300">You maintain full control over how much bandwidth to share and when.</p>
                 </div>
                 
-                <div className="p-3 bg-purple-500/10 border border-purple-500/20 rounded-lg">
+                <div className="p-3 bg-purple-500/20 border border-purple-500/30 rounded-lg">
                   <div className="flex items-center gap-2 mb-1">
                     <div className="w-2 h-2 bg-purple-400 rounded-full"></div>
                     <span className="text-purple-400 text-sm font-medium">Network Isolation</span>
                   </div>
-                  <p className="text-xs text-white/70">Shared bandwidth operates in an isolated environment separate from your personal network.</p>
+                  <p className="text-xs text-gray-300">Shared bandwidth operates in an isolated environment separate from your personal network.</p>
                 </div>
               </CardContent>
             </Card>
