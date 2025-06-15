@@ -340,6 +340,41 @@ export type Database = {
         }
         Relationships: []
       }
+      onboarding_messages: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          metadata: Json | null
+          onboarding_id: string
+          role: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          onboarding_id: string
+          role: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          onboarding_id?: string
+          role?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "onboarding_messages_onboarding_id_fkey"
+            columns: ["onboarding_id"]
+            isOneToOne: false
+            referencedRelation: "user_onboarding"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       partner_earnings_sync: {
         Row: {
           created_at: string | null
@@ -881,6 +916,48 @@ export type Database = {
         }
         Relationships: []
       }
+      user_onboarding: {
+        Row: {
+          chat_history: Json | null
+          completed_assets: string[] | null
+          created_at: string
+          current_step: number | null
+          id: string
+          progress_data: Json | null
+          selected_option: Database["public"]["Enums"]["onboarding_option"]
+          status: Database["public"]["Enums"]["onboarding_status"]
+          total_steps: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          chat_history?: Json | null
+          completed_assets?: string[] | null
+          created_at?: string
+          current_step?: number | null
+          id?: string
+          progress_data?: Json | null
+          selected_option: Database["public"]["Enums"]["onboarding_option"]
+          status?: Database["public"]["Enums"]["onboarding_status"]
+          total_steps?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          chat_history?: Json | null
+          completed_assets?: string[] | null
+          created_at?: string
+          current_step?: number | null
+          id?: string
+          progress_data?: Json | null
+          selected_option?: Database["public"]["Enums"]["onboarding_option"]
+          status?: Database["public"]["Enums"]["onboarding_status"]
+          total_steps?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_property_analyses: {
         Row: {
           address_id: string
@@ -974,7 +1051,8 @@ export type Database = {
       }
     }
     Enums: {
-      [_ in never]: never
+      onboarding_option: "manual" | "concierge"
+      onboarding_status: "not_started" | "in_progress" | "completed" | "paused"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1089,6 +1167,9 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      onboarding_option: ["manual", "concierge"],
+      onboarding_status: ["not_started", "in_progress", "completed", "paused"],
+    },
   },
 } as const

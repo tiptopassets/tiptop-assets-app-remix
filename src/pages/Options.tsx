@@ -29,13 +29,21 @@ const Options = () => {
     return () => clearTimeout(timer);
   }, []);
 
-  // Redirect authenticated users to dashboard
+  // Redirect authenticated users to onboarding with their last selection or dashboard
   useEffect(() => {
     if (user && !authLoading) {
-      console.log('🔄 User is authenticated, redirecting to dashboard');
-      window.location.href = '/dashboard';
+      console.log('🔄 User is authenticated, checking for onboarding redirect');
+      
+      // If we have a selected option, redirect to onboarding
+      if (selectedOption) {
+        console.log('🎯 Redirecting to onboarding with option:', selectedOption);
+        window.location.href = `/onboarding?option=${selectedOption}`;
+      } else {
+        console.log('🔄 No selected option, redirecting to dashboard');
+        window.location.href = '/dashboard';
+      }
     }
-  }, [user, authLoading]);
+  }, [user, authLoading, selectedOption]);
 
   const handleOptionSelect = (option: 'manual' | 'concierge') => {
     console.log('✅ Option selected:', option);
@@ -61,8 +69,9 @@ const Options = () => {
     });
     
     try {
-      console.log('🔐 Starting Google authentication');
-      // Trigger Google authentication - this will redirect to Google and then to dashboard
+      console.log('🔐 Starting Google authentication with selected option:', selectedOption);
+      // Trigger Google authentication - this will redirect to Google and then back
+      // The useEffect above will handle the redirect to onboarding once authenticated
       await signInWithGoogle();
     } catch (error) {
       console.error('❌ Google sign in error:', error);
