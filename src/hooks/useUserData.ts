@@ -112,7 +112,7 @@ export const useUserData = () => {
         .insert({
           user_id: user.id,
           address_id: addressId,
-          analysis_results: analysisResults,
+          analysis_results: analysisResults as any, // Cast to any for Json compatibility
           total_monthly_revenue: totalRevenue,
           total_opportunities: analysisResults.topOpportunities.length,
           property_type: analysisResults.propertyType,
@@ -124,7 +124,13 @@ export const useUserData = () => {
 
       if (error) throw error;
 
-      setAnalyses(prev => [...prev, data]);
+      // Convert the response data to match our interface
+      const analysisData: UserPropertyAnalysis = {
+        ...data,
+        analysis_results: data.analysis_results as AnalysisResults
+      };
+
+      setAnalyses(prev => [...prev, analysisData]);
       return data.id;
     } catch (err) {
       console.error('Error saving property analysis:', err);
@@ -205,7 +211,14 @@ export const useUserData = () => {
         .order('created_at', { ascending: false });
 
       if (analysisError) throw analysisError;
-      setAnalyses(analysisData || []);
+      
+      // Convert analysis data to match our interface
+      const typedAnalysisData: UserPropertyAnalysis[] = (analysisData || []).map(item => ({
+        ...item,
+        analysis_results: item.analysis_results as AnalysisResults
+      }));
+      
+      setAnalyses(typedAnalysisData);
 
       // Load asset selections
       const { data: assetData, error: assetError } = await supabase
