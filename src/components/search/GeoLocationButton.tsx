@@ -34,25 +34,28 @@ const GeoLocationButton = ({ onLocationFound, disabled = false }: GeoLocationBut
           const { latitude, longitude } = position.coords;
           const coordinates = { lat: latitude, lng: longitude };
           
-          // Ensure Google Maps is loaded before using geocoder
+          // Ensure Google Maps is loaded
           await loadGoogleMaps();
           
-          // Use Google's Geocoder to get address from coordinates
+          // Use Google's Geocoder to get address
           const geocoder = new google.maps.Geocoder();
           geocoder.geocode({ location: coordinates }, (results, status) => {
+            setIsLocating(false);
+            
             if (status === 'OK' && results?.[0]) {
+              console.log('GeoLocationButton: Geocoding successful');
               onLocationFound(results[0].formatted_address, coordinates);
             } else {
+              console.error('GeoLocationButton: Geocoding failed:', status);
               toast({
                 title: "Geocoding Error",
                 description: "Could not find an address for your location",
                 variant: "destructive"
               });
             }
-            setIsLocating(false);
           });
         } catch (error) {
-          console.error('Error getting location:', error);
+          console.error('GeoLocationButton: Error processing location:', error);
           toast({
             title: "Location Error",
             description: "Failed to get your current location. Please try switching to Demo Mode.",
@@ -62,7 +65,7 @@ const GeoLocationButton = ({ onLocationFound, disabled = false }: GeoLocationBut
         }
       },
       (error) => {
-        console.error('Geolocation error:', error);
+        console.error('GeoLocationButton: Geolocation error:', error);
         
         let message = "Failed to get your current location";
         if (error.code === 1) {

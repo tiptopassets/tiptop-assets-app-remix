@@ -51,17 +51,17 @@ const SearchBar = ({ isCollapsed }: SearchBarProps) => {
     }
   };
 
-  // Handle geolocation success - FIXED: Pass the formatted address to startAnalysis
+  // Handle geolocation success - simplified
   const handleLocationFound = (formattedAddress: string, coordinates: google.maps.LatLngLiteral) => {
     console.log('SearchBar: Location found:', formattedAddress, coordinates);
     setAddress(formattedAddress);
     setHasSelectedAddress(true);
     setAddressCoordinates(coordinates);
     
-    // Capture property images for 3D model 
+    // Capture property images
     capturePropertyImages(formattedAddress, coordinates);
     
-    // Start analysis with the formatted address - FIXED: Pass the address parameter
+    // Start analysis
     startAnalysis(formattedAddress);
   };
 
@@ -78,7 +78,7 @@ const SearchBar = ({ isCollapsed }: SearchBarProps) => {
             setAddress(e.target.value);
             setHasSelectedAddress(false);
             
-            // Clear error state when user starts typing again
+            // Clear error state when user starts typing
             if (analysisError) {
               setAnalysisError(null);
             }
@@ -86,7 +86,7 @@ const SearchBar = ({ isCollapsed }: SearchBarProps) => {
           className="flex-1 bg-transparent outline-none text-white placeholder-gray-300"
         />
         
-        {/* Clear button - only show when has address */}
+        {/* Clear button */}
         {address && <ClearSearchButton onClear={clearSearch} />}
         
         {/* Geolocation button */}
@@ -95,7 +95,7 @@ const SearchBar = ({ isCollapsed }: SearchBarProps) => {
           disabled={isGeneratingAnalysis || !mapLoaded}
         />
         
-        {/* Add light reflection effect */}
+        {/* Light reflection effect */}
         <div 
           className="absolute inset-0 pointer-events-none" 
           style={{

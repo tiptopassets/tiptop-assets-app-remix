@@ -110,11 +110,30 @@ const reducer = (state: State, action: Action): State => {
   }
 }
 
-// Create a singleton instance that can be imported directly
+// Create a stable singleton dispatch function
+let dispatch: React.Dispatch<Action> | null = null
+let listeners: Array<() => void> = []
+
+const getState = (): State => {
+  if (!dispatch) {
+    return { toasts: [] }
+  }
+  // This will be properly managed by the React component
+  return { toasts: [] }
+}
+
 const useToast = () => {
-  const [state, dispatch] = React.useReducer(reducer, {
+  const [state, localDispatch] = React.useReducer(reducer, {
     toasts: [],
   })
+
+  // Set the global dispatch on first render
+  React.useEffect(() => {
+    dispatch = localDispatch
+    return () => {
+      dispatch = null
+    }
+  }, [localDispatch])
 
   React.useEffect(() => {
     return () => {
@@ -130,33 +149,41 @@ const useToast = () => {
       toast: (props: Omit<ToasterToast, "id">) => {
         const id = genId()
 
-        dispatch({
-          type: actionTypes.ADD_TOAST,
-          toast: {
-            id,
-            ...props,
-          },
-        })
+        if (dispatch) {
+          dispatch({
+            type: actionTypes.ADD_TOAST,
+            toast: {
+              id,
+              ...props,
+            },
+          })
+        }
 
         return id
       },
       update: (props: Partial<ToasterToast> & { id: string }) => {
-        dispatch({
-          type: actionTypes.UPDATE_TOAST,
-          toast: props,
-        })
+        if (dispatch) {
+          dispatch({
+            type: actionTypes.UPDATE_TOAST,
+            toast: props,
+          })
+        }
       },
       dismiss: (toastId?: string) => {
-        dispatch({
-          type: actionTypes.DISMISS_TOAST,
-          toastId,
-        })
+        if (dispatch) {
+          dispatch({
+            type: actionTypes.DISMISS_TOAST,
+            toastId,
+          })
+        }
       },
       remove: (toastId?: string) => {
-        dispatch({
-          type: actionTypes.REMOVE_TOAST,
-          toastId,
-        })
+        if (dispatch) {
+          dispatch({
+            type: actionTypes.REMOVE_TOAST,
+            toastId,
+          })
+        }
       },
     }),
     [state]
@@ -165,12 +192,6 @@ const useToast = () => {
   return toast
 }
 
-// Create a singleton instance for direct imports
-const toast = (props: Omit<ToasterToast, "id">) => {
-  const { toast: toastFunction } = useToast()
-  return toastFunction(props)
-}
-
-// Export both the hook and the singleton function
-export { useToast, toast }
+// Export both the hook and a simple toast function
+export { useToast }
 export type { ToasterToast }

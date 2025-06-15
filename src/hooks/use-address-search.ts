@@ -22,122 +22,77 @@ export const useAddressSearch = () => {
   const [hasSelectedAddress, setHasSelectedAddress] = useState(false);
   const { capturePropertyImages } = useModelGeneration();
 
-  // Start analysis with optional address parameter to avoid state timing issues
-  const startAnalysis = (addressToAnalyze?: string) => {
-    const targetAddress = addressToAnalyze || address;
-    
-    if (!targetAddress) {
-      console.warn('startAnalysis: No address provided for analysis');
-      return;
-    }
-
-    console.log('startAnalysis: Starting analysis for address:', targetAddress);
+  // Start analysis function - simplified without timing dependencies
+  const startAnalysis = useCallback((addressToAnalyze: string) => {
+    console.log('startAnalysis: Starting analysis for address:', addressToAnalyze);
 
     // Clear previous errors
     if (analysisError) {
       setAnalysisError(null);
     }
 
-    // Use the GPT-powered analysis with the provided address
-    generatePropertyAnalysis(targetAddress);
-  };
+    // Use the GPT-powered analysis
+    generatePropertyAnalysis(addressToAnalyze);
+  }, [generatePropertyAnalysis, analysisError, setAnalysisError]);
 
-  // Check if place data is complete
-  const isPlaceDataComplete = (place: google.maps.places.PlaceResult): boolean => {
-    return !!(place.place_id && 
-             place.geometry && 
-             place.geometry.location && 
-             place.formatted_address);
-  };
-
-  // Process complete place data
-  const processCompletePlace = useCallback((place: google.maps.places.PlaceResult) => {
-    if (!mapInstance) return;
-
-    const formattedAddress = place.formatted_address!;
-    console.log('useAddressSearch: Processing complete place:', formattedAddress);
-    
-    setAddress(formattedAddress);
-    setHasSelectedAddress(true);
-    
-    // Save coordinates
-    const lat = place.geometry!.location!.lat();
-    const lng = place.geometry!.location!.lng();
-    const coordinates = { lat, lng };
-    setAddressCoordinates(coordinates);
-    
-    console.log('useAddressSearch: Setting coordinates:', coordinates);
-    
-    // Center map to selected address and zoom in to level 18
-    mapInstance.setCenter(place.geometry!.location!);
-    mapInstance.setZoom(18);
-    
-    // Capture property images for 3D model generation
-    capturePropertyImages(formattedAddress, coordinates);
-    
-    // Start analysis immediately with the formatted address
-    console.log('useAddressSearch: Starting analysis for:', formattedAddress);
-    startAnalysis(formattedAddress);
-    
-    toast({
-      title: "Address Selected",
-      description: `Selected: ${formattedAddress}`,
-    });
-  }, [mapInstance, setAddress, setAddressCoordinates, capturePropertyImages, startAnalysis, toast]);
-
-  // Place change handler with retry logic
+  // Simplified place change handler - no retry logic
   const handlePlaceChanged = useCallback(() => {
-    if (!autocompleteRef.current) return;
+    if (!autocompleteRef.current || !mapInstance) return;
     
     try {
       const place = autocompleteRef.current.getPlace();
-      console.log('useAddressSearch: Initial place data:', place);
+      console.log('handlePlaceChanged: Place data received:', place);
       
-      // Check if place data is complete
-      if (isPlaceDataComplete(place)) {
-        console.log('useAddressSearch: Place data is complete, processing immediately');
-        processCompletePlace(place);
-      } else {
-        console.log('useAddressSearch: Place data incomplete, retrying in 150ms...');
-        
-        // Retry after 150ms to get complete data
-        setTimeout(() => {
-          if (!autocompleteRef.current) return;
-          
-          try {
-            const retryPlace = autocompleteRef.current.getPlace();
-            console.log('useAddressSearch: Retry place data:', retryPlace);
-            
-            if (isPlaceDataComplete(retryPlace)) {
-              console.log('useAddressSearch: Retry successful, processing place');
-              processCompletePlace(retryPlace);
-            } else {
-              console.warn('useAddressSearch: Retry failed, place data still incomplete');
-              toast({
-                title: "Invalid Address",
-                description: "Please select a valid address from the dropdown.",
-                variant: "destructive"
-              });
-            }
-          } catch (retryError) {
-            console.error('useAddressSearch: Error during retry:', retryError);
-            toast({
-              title: "Address Selection Error",
-              description: "There was an issue selecting the address. Please try again.",
-              variant: "destructive"
-            });
-          }
-        }, 150);
+      // Validate essential place data
+      if (!place.place_id || !place.geometry?.location || !place.formatted_address) {
+        console.warn('handlePlaceChanged: Incomplete place data, showing error');
+        toast({
+          title: "Invalid Address",
+          description: "Please select a valid address from the dropdown.",
+          variant: "destructive"
+        });
+        return;
       }
+
+      const formattedAddress = place.formatted_address;
+      const lat = place.geometry.location.lat();
+      const lng = place.geometry.location.lng();
+      const coordinates = { lat, lng };
+      
+      console.log('handlePlaceChanged: Processing complete place data');
+      console.log('- Address:', formattedAddress);
+      console.log('- Coordinates:', coordinates);
+      
+      // Update state synchronously
+      setAddress(formattedAddress);
+      setHasSelectedAddress(true);
+      setAddressCoordinates(coordinates);
+      
+      // Center map and zoom
+      mapInstance.setCenter(place.geometry.location);
+      mapInstance.setZoom(18);
+      
+      // Capture property images
+      capturePropertyImages(formattedAddress, coordinates);
+      
+      // Start analysis immediately
+      startAnalysis(formattedAddress);
+      
+      // Show success toast
+      toast({
+        title: "Address Selected",
+        description: `Selected: ${formattedAddress}`,
+      });
+      
     } catch (error) {
-      console.error('useAddressSearch: Error handling place selection:', error);
+      console.error('handlePlaceChanged: Error processing place:', error);
       toast({
         title: "Address Selection Error",
         description: "There was an issue selecting the address. Please try again.",
         variant: "destructive"
       });
     }
-  }, [processCompletePlace, toast]);
+  }, [mapInstance, setAddress, setAddressCoordinates, capturePropertyImages, startAnalysis, toast, setHasSelectedAddress]);
 
   // Initialize Google Places Autocomplete
   useEffect(() => {
@@ -150,17 +105,19 @@ export const useAddressSearch = () => {
     }
 
     try {
-      // Initialize the Places Autocomplete with worldwide support
+      // Initialize the Places Autocomplete
       autocompleteRef.current = new google.maps.places.Autocomplete(searchInputRef.current, {
         types: ['address'],
         fields: ['formatted_address', 'geometry', 'place_id']
       });
 
-      // Add immediate event listener (no debouncing)
+      // Add event listener
       autocompleteRef.current.addListener('place_changed', handlePlaceChanged);
 
+      console.log('useAddressSearch: Autocomplete initialized successfully');
+
     } catch (error) {
-      console.error("useAddressSearch: Error initializing Google Places Autocomplete:", error);
+      console.error("useAddressSearch: Error initializing autocomplete:", error);
       toast({
         title: "Error",
         description: "Failed to load address search. Please try again later.",
