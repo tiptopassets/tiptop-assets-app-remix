@@ -57,22 +57,27 @@ export const useAddressSearch = () => {
       autocompleteRef.current = new google.maps.places.Autocomplete(searchInputRef.current, {
         types: ['address'],
         fields: ['formatted_address', 'geometry', 'place_id']
-        // Removed componentRestrictions to enable worldwide search
       });
 
-      // Add listener for place changed with improved error handling
+      // Add listener for place changed with improved validation
       const placeChangedListener = () => {
         if (!autocompleteRef.current) return;
         
         try {
           const place = autocompleteRef.current.getPlace();
           
-          console.log('useAddressSearch: Place selected:', place); // Debug log
+          console.log('useAddressSearch: Place selected:', place);
           
-          if (place.geometry && place.geometry.location && place.formatted_address && mapInstance) {
-            // Set the address
+          // Validate that we have complete place data
+          const hasCompleteData = place.place_id && 
+                                 place.geometry && 
+                                 place.geometry.location && 
+                                 place.formatted_address;
+          
+          if (hasCompleteData && mapInstance) {
             const formattedAddress = place.formatted_address;
-            console.log('useAddressSearch: Setting address:', formattedAddress);
+            console.log('useAddressSearch: Processing valid place:', formattedAddress);
+            
             setAddress(formattedAddress);
             setHasSelectedAddress(true);
             
@@ -82,7 +87,7 @@ export const useAddressSearch = () => {
             const coordinates = { lat, lng };
             setAddressCoordinates(coordinates);
             
-            console.log('useAddressSearch: Setting coordinates:', coordinates); // Debug log
+            console.log('useAddressSearch: Setting coordinates:', coordinates);
             
             // Center map to selected address and zoom in to level 18
             mapInstance.setCenter(place.geometry.location);
@@ -92,8 +97,7 @@ export const useAddressSearch = () => {
             capturePropertyImages(formattedAddress, coordinates);
             
             // Start analysis immediately with the formatted address
-            // This avoids the state timing issue by passing the address directly
-            console.log('useAddressSearch: Calling startAnalysis with:', formattedAddress);
+            console.log('useAddressSearch: Starting analysis for:', formattedAddress);
             startAnalysis(formattedAddress);
             
             toast({
@@ -101,12 +105,21 @@ export const useAddressSearch = () => {
               description: `Selected: ${formattedAddress}`,
             });
           } else {
-            console.warn('useAddressSearch: Invalid place selected:', place); // Debug log
-            toast({
-              title: "Invalid Address",
-              description: "Please select a valid address from the dropdown.",
-              variant: "destructive"
+            console.warn('useAddressSearch: Incomplete place data received:', {
+              hasPlaceId: !!place.place_id,
+              hasGeometry: !!place.geometry,
+              hasLocation: !!(place.geometry && place.geometry.location),
+              hasFormattedAddress: !!place.formatted_address
             });
+            
+            // Don't show error for incomplete data - user might still be typing
+            if (place.formatted_address) {
+              toast({
+                title: "Invalid Address",
+                description: "Please select a valid address from the dropdown.",
+                variant: "destructive"
+              });
+            }
           }
         } catch (error) {
           console.error('useAddressSearch: Error handling place selection:', error);
@@ -135,7 +148,7 @@ export const useAddressSearch = () => {
         autocompleteRef.current = null;
       }
     };
-  }, [mapLoaded, mapInstance, setAddress, toast, setAddressCoordinates, capturePropertyImages, generatePropertyAnalysis]); // FIXED: Added generatePropertyAnalysis to dependency array
+  }, [mapLoaded, mapInstance, setAddress, toast, setAddressCoordinates, capturePropertyImages, generatePropertyAnalysis]);
 
   return {
     searchInputRef,
