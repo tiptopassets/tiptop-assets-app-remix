@@ -56,14 +56,14 @@ const ProtectedRoutes = () => (
     <ServiceProviderProvider>
       <Routes>
         <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/dashboard/rooftop" element={<RooftopDashboard />} />
+        <Route path="/dashboard/internet" element={<InternetDashboard />} />
+        <Route path="/dashboard/ev-charging" element={<EVChargingDashboard />} />
+        <Route path="/dashboard/affiliate" element={<AffiliateEarningsDashboard />} />
+        <Route path="/dashboard/add-asset" element={<AddAsset />} />
+        <Route path="/dashboard/admin" element={<AdminDashboard />} />
+        <Route path="/dashboard/account" element={<AccountPage />} />
         <Route path="/model-viewer" element={<ModelViewer />} />
-        <Route path="/add-asset" element={<AddAsset />} />
-        <Route path="/admin" element={<AdminDashboard />} />
-        <Route path="/affiliate-earnings" element={<AffiliateEarningsDashboard />} />
-        <Route path="/account" element={<AccountPage />} />
-        <Route path="/rooftop" element={<RooftopDashboard />} />
-        <Route path="/internet" element={<InternetDashboard />} />
-        <Route path="/ev-charging" element={<EVChargingDashboard />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </ServiceProviderProvider>
