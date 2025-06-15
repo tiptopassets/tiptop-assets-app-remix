@@ -22,19 +22,24 @@ export const useAddressSearch = () => {
   const [hasSelectedAddress, setHasSelectedAddress] = useState(false);
   const { capturePropertyImages } = useModelGeneration();
 
-  // Start analysis when an address is selected
-  const startAnalysis = () => {
-    if (!address) {
+  // Start analysis with optional address parameter to avoid state timing issues
+  const startAnalysis = (addressToAnalyze?: string) => {
+    const targetAddress = addressToAnalyze || address;
+    
+    if (!targetAddress) {
+      console.warn('No address provided for analysis');
       return;
     }
+
+    console.log('Starting analysis for address:', targetAddress);
 
     // Clear previous errors
     if (analysisError) {
       setAnalysisError(null);
     }
 
-    // Use the GPT-powered analysis 
-    generatePropertyAnalysis(address);
+    // Use the GPT-powered analysis with the provided address
+    generatePropertyAnalysis(targetAddress);
   };
 
   // Initialize Google Places Autocomplete
@@ -85,10 +90,9 @@ export const useAddressSearch = () => {
             // Capture property images for 3D model generation
             capturePropertyImages(formattedAddress, coordinates);
             
-            // Auto trigger analysis when address is selected
-            setTimeout(() => {
-              startAnalysis();
-            }, 100); // Small delay to ensure state is updated
+            // Start analysis immediately with the formatted address
+            // This avoids the state timing issue by passing the address directly
+            startAnalysis(formattedAddress);
             
             toast({
               title: "Address Selected",
