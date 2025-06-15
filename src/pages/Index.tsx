@@ -55,21 +55,17 @@ const Index = () => {
           <div className="flex gap-2 sm:gap-3 md:gap-4">
             <Link
               to="/submit-property"
-              className="glass-effect px-2 py-1 sm:px-3 sm:py-2 md:px-4 md:py-2 rounded-full flex items-center gap-1 sm:gap-2 text-white hover:scale-105 transition-transform text-xs sm:text-sm md:text-base"
+              className="glass-effect px-2 py-1 sm:px-3 sm:py-2 md:px-4 md:py-2 rounded-full flex items-center gap-1 sm:gap-2 text-white hover:scale-105 transition-transform text-xs sm:text-sm md:text-base relative"
             >
               <PlusCircle size={isMobile ? 12 : 16} className="sm:w-4 sm:h-4 md:w-5 md:h-5" />
               <span className="text-gray-100">{isMobile ? 'Submit' : 'Submit Property'}</span>
-              
-              {/* Glow effect for hover */}
               <div className="absolute -inset-0.5 bg-gradient-to-r from-purple-500/20 to-violet-500/20 rounded-full blur-sm -z-10"></div>
             </Link>
             <Link 
               to="/dashboard" 
-              className="glass-effect px-2 py-1 sm:px-3 sm:py-2 md:px-4 md:py-2 rounded-full flex items-center gap-1 sm:gap-2 text-white hover:scale-105 transition-transform text-xs sm:text-sm md:text-base"
+              className="glass-effect px-2 py-1 sm:px-3 sm:py-2 md:px-4 md:py-2 rounded-full flex items-center gap-1 sm:gap-2 text-white hover:scale-105 transition-transform text-xs sm:text-sm md:text-base relative"
             >
               <span className="text-gray-100">Dashboard</span>
-              
-              {/* Glow effect for hover */}
               <div className="absolute -inset-0.5 bg-gradient-to-r from-purple-500/20 to-violet-500/20 rounded-full blur-sm -z-10"></div>
             </Link>
           </div>
@@ -94,7 +90,7 @@ const Index = () => {
           </div>
 
           {/* Analysis results positioned based on whether form is showing */}
-          {analysisComplete && (
+          {analysisComplete && analysisResults && (
             <div className={`w-full ${showingFormSection ? 'mt-0' : 'mt-[60vh] sm:mt-[65vh] md:mt-[70vh] lg:mt-[75vh]'}`}>
               <AssetResultList 
                 analysisResults={analysisResults} 
