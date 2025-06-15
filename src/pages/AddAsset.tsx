@@ -95,8 +95,37 @@ const SmallAssetCard = ({ title, monthlyRevenue, description, onSelect, setupCos
   );
 };
 
+const CategorySection = ({ title, opportunities, onAssetSelect }: { 
+  title: string; 
+  opportunities: any[]; 
+  onAssetSelect: (assetType: string) => void; 
+}) => {
+  if (opportunities.length === 0) return null;
+  
+  return (
+    <motion.div variants={{
+      hidden: { y: 20, opacity: 0 },
+      visible: { y: 0, opacity: 1, transition: { type: "spring", stiffness: 100 } }
+    }}>
+      <h3 className="text-lg font-semibold mb-3 text-gray-800">{title}</h3>
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 mb-6">
+        {opportunities.map((opportunity, index) => (
+          <SmallAssetCard
+            key={index}
+            title={opportunity.title}
+            monthlyRevenue={opportunity.monthlyRevenue}
+            description={opportunity.description}
+            setupCost={opportunity.setupCost}
+            onSelect={() => onAssetSelect(opportunity.title.toLowerCase().replace(/\s+/g, '-'))}
+          />
+        ))}
+      </div>
+    </motion.div>
+  );
+};
+
 const AddAsset = () => {
-  const { additionalOpportunities } = useAdditionalOpportunities();
+  const { opportunitiesByCategory } = useAdditionalOpportunities();
 
   const handleAssetSelect = (assetType: string) => {
     console.log(`Selected asset: ${assetType}`);
@@ -190,21 +219,45 @@ const AddAsset = () => {
           </div>
         </motion.div>
 
-        {/* Additional Opportunities */}
+        {/* Categorized Additional Opportunities */}
         <motion.div variants={itemVariants}>
-          <h2 className="text-xl font-semibold mb-4">Additional Opportunities</h2>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
-            {additionalOpportunities.slice(0, 24).map((opportunity, index) => (
-              <SmallAssetCard
-                key={index}
-                title={opportunity.title}
-                monthlyRevenue={opportunity.monthlyRevenue}
-                description={opportunity.description}
-                setupCost={opportunity.setupCost}
-                onSelect={() => handleAssetSelect(opportunity.title.toLowerCase().replace(/\s+/g, '-'))}
-              />
-            ))}
-          </div>
+          <h2 className="text-xl font-semibold mb-6">Additional Opportunities by Category</h2>
+          
+          <CategorySection 
+            title="🏠 Space Rentals" 
+            opportunities={opportunitiesByCategory.spaceRentals} 
+            onAssetSelect={handleAssetSelect}
+          />
+          
+          <CategorySection 
+            title="⚡ Technology & Infrastructure" 
+            opportunities={opportunitiesByCategory.tech} 
+            onAssetSelect={handleAssetSelect}
+          />
+          
+          <CategorySection 
+            title="🏡 Home Services" 
+            opportunities={opportunitiesByCategory.homeServices} 
+            onAssetSelect={handleAssetSelect}
+          />
+          
+          <CategorySection 
+            title="🐕 Pet & Childcare Services" 
+            opportunities={opportunitiesByCategory.petServices} 
+            onAssetSelect={handleAssetSelect}
+          />
+          
+          <CategorySection 
+            title="📦 Logistics & Storage" 
+            opportunities={opportunitiesByCategory.logistics} 
+            onAssetSelect={handleAssetSelect}
+          />
+          
+          <CategorySection 
+            title="🌱 Community Services" 
+            opportunities={opportunitiesByCategory.community} 
+            onAssetSelect={handleAssetSelect}
+          />
         </motion.div>
       </motion.div>
     </DashboardLayout>
