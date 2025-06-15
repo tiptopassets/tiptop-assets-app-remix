@@ -10,6 +10,8 @@ import ContinueButton from './ContinueButton';
 import PropertySummaryCard from './PropertySummaryCard';
 import RestrictionsCard from './RestrictionsCard';
 import { useGoogleMap } from '@/contexts/GoogleMapContext';
+import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/hooks/use-toast';
 
 interface AssetResultListProps {
   analysisResults: any;
@@ -24,7 +26,9 @@ const AssetResultList: React.FC<AssetResultListProps> = ({
   const [selectedAssets, setSelectedAssets] = useState<string[]>([]);
   const [selectedAssetsData, setSelectedAssetsData] = useState<SelectedAsset[]>([]);
   const [showAssetForm, setShowAssetForm] = useState(false);
-  const { analysisComplete } = useGoogleMap();
+  const { analysisComplete, address, addressCoordinates } = useGoogleMap();
+  const { user } = useAuth();
+  const { toast } = useToast();
 
   console.log('🏠 AssetResultList render:', {
     analysisComplete,
@@ -113,11 +117,68 @@ const AssetResultList: React.FC<AssetResultListProps> = ({
     }
   }, [selectedAssets.length, selectedAssetsData]);
 
-  const handleFormComplete = useCallback(() => {
+  const handleFormComplete = useCallback(async () => {
     console.log('✅ Form completed');
+    
+    // Save asset selections to database if user is logged in
+    if (user && selectedAssetsData.length > 0 && address) {
+      try {
+        const { saveAddress } = await import('@/services/userAddressService');
+        const { loadUserAnalyses } = await import('@/services/userAnalysisService');
+        const { saveAssetSelection } = await import('@/services/userAssetService');
+        
+        console.log('💾 Saving asset selections to database...');
+        
+        // Get or create address
+        const addressId = await saveAddress(
+          user.id,
+          address,
+          addressCoordinates,
+          address,
+          false
+        );
+        
+        if (addressId) {
+          // Get the latest analysis for this address
+          const userAnalyses = await loadUserAnalyses(user.id);
+          const latestAnalysis = userAnalyses[0]; // Most recent first
+          
+          if (latestAnalysis) {
+            // Save each selected asset
+            const savePromises = selectedAssetsData.map(asset => 
+              saveAssetSelection(
+                user.id,
+                latestAnalysis.id,
+                asset.title,
+                asset.formData,
+                asset.monthlyRevenue,
+                asset.setupCost,
+                asset.roi
+              )
+            );
+            
+            await Promise.all(savePromises);
+            
+            console.log('✅ Successfully saved all asset selections');
+            toast({
+              title: "Assets Saved",
+              description: `${selectedAssetsData.length} asset selections saved to your dashboard`,
+            });
+          }
+        }
+      } catch (error) {
+        console.error('❌ Failed to save asset selections:', error);
+        toast({
+          title: "Save Error",
+          description: "Failed to save asset selections, but your local data is preserved",
+          variant: "destructive"
+        });
+      }
+    }
+    
     setShowAssetForm(false);
     // Here you could navigate to dashboard or next step
-  }, []);
+  }, [user, selectedAssetsData, address, addressCoordinates, toast]);
 
   // Memoize calculations to prevent unnecessary re-computation
   const { totalSelectedRevenue, totalSetupCost, analysisRevenue, totalMonthlyIncome } = useMemo(() => {

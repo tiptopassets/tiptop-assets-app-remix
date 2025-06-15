@@ -32,22 +32,45 @@ export const GoogleMapProvider = ({ children }: { children: ReactNode }) => {
       setAnalysisResults: async (results: AnalysisResults | null) => {
         setAnalysisResults(results);
         
-        // Only sync to database if user is logged in and auth is ready
+        // Sync to database if user is logged in and we have results
         if (results && propertyAddress && user && !authLoading) {
           try {
-            // Import userData hook dynamically to avoid initialization issues
-            const { useUserData } = await import('@/hooks/useUserData');
+            // Import the sync functions
+            const { saveAddress } = await import('@/services/userAddressService');
+            const { savePropertyAnalysis } = await import('@/services/userAnalysisService');
             
-            // Note: We can't use hooks here, so we'll skip the database sync for now
-            // This will be handled when the user navigates to the dashboard
+            console.log('💾 Syncing analysis to database for user:', user.id);
             
-            toast({
-              title: "Analysis Complete",
-              description: "Your property analysis is ready",
-            });
+            // First save the address
+            const addressId = await saveAddress(
+              user.id,
+              propertyAddress,
+              addressCoordinates,
+              propertyAddress,
+              true // Set as primary address for now
+            );
+            
+            if (addressId) {
+              // Then save the analysis results
+              const analysisId = await savePropertyAnalysis(
+                user.id,
+                addressId,
+                results,
+                addressCoordinates
+              );
+              
+              if (analysisId) {
+                console.log('✅ Successfully synced analysis to database');
+                toast({
+                  title: "Analysis Saved",
+                  description: "Your property analysis has been saved to your dashboard",
+                });
+              }
+            }
           } catch (error) {
-            console.error('Failed to sync analysis to database:', error);
-            // Don't show error toast as the analysis still worked
+            console.error('❌ Failed to sync analysis to database:', error);
+            // Don't show error toast as the analysis still worked locally
+            console.log('Analysis will be available locally but not saved to dashboard');
           }
         }
       },

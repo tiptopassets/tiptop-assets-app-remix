@@ -1,244 +1,223 @@
 
 import React, { useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { motion } from "framer-motion";
 import DashboardLayout from '@/components/dashboard/DashboardLayout';
 import { PropertyOverviewCard } from '@/components/dashboard/PropertyOverviewCard';
-import { StatsCard } from '@/components/dashboard/StatsCard';
 import { AssetsTable } from '@/components/dashboard/AssetsTable';
-import { InteractiveCharts } from '@/components/dashboard/InteractiveCharts';
-import { RealTimeMetrics } from '@/components/dashboard/RealTimeMetrics';
-import { PropertyInsights } from '@/components/dashboard/PropertyInsights';
-import { useAuth } from '@/contexts/AuthContext';
-import { useGoogleMap } from '@/contexts/GoogleMapContext';
-import { useModelGeneration } from '@/contexts/ModelGeneration';
-import { useToast } from '@/hooks/use-toast';
+import StatsCard from '@/components/dashboard/StatsCard';
+import RevenueCharts from '@/components/dashboard/RevenueCharts';
 import { useUserData } from '@/hooks/useUserData';
+import { useAuth } from '@/contexts/AuthContext';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { motion } from 'framer-motion';
-import { Home, ChartPie, Info, BarChart, Activity, Lightbulb } from 'lucide-react';
+import { MapPin, TrendingUp, DollarSign, Home } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 const Dashboard = () => {
-  const { user, loading } = useAuth();
-  const { analysisResults, address } = useGoogleMap();
-  const { toast } = useToast();
-  const { contentFromGPT, googleImages } = useModelGeneration();
-  const userData = useUserData();
-  const navigate = useNavigate();
-  
+  const { user } = useAuth();
+  const { 
+    addresses, 
+    analyses, 
+    assetSelections, 
+    loading, 
+    error,
+    loadUserData,
+    getPrimaryAddress,
+    getLatestAnalysis 
+  } = useUserData();
+
+  // Load user data when component mounts
   useEffect(() => {
-    if (!loading && !user) {
-      toast({
-        title: "Authentication Required",
-        description: "Please sign in to view your dashboard",
-        variant: "destructive"
-      });
-      navigate('/');
+    if (user) {
+      loadUserData();
     }
-  }, [user, loading, toast, navigate]);
+  }, [user, loadUserData]);
 
-  const handleAnalyzeProperty = () => {
-    navigate('/');
-  };
+  const primaryAddress = getPrimaryAddress();
+  const latestAnalysis = getLatestAnalysis();
 
-  // Show loading screen while auth is checking
+  console.log('📊 Dashboard render:', {
+    user: !!user,
+    loading,
+    error,
+    addressesCount: addresses.length,
+    analysesCount: analyses.length,
+    assetSelectionsCount: assetSelections.length,
+    primaryAddress: primaryAddress?.address,
+    latestAnalysis: !!latestAnalysis
+  });
+
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black flex items-center justify-center">
-        <div className="text-white text-center">
-          <div className="w-16 h-16 border-4 border-tiptop-purple border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p>Loading dashboard...</p>
+      <DashboardLayout>
+        <div className="flex items-center justify-center min-h-96">
+          <div className="text-center">
+            <div className="w-8 h-8 border-4 border-tiptop-purple border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading your dashboard...</p>
+          </div>
         </div>
-      </div>
+      </DashboardLayout>
     );
   }
 
-  // Redirect if not authenticated
-  if (!user) {
+  if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black text-white flex flex-col items-center justify-center p-4">
-        <h1 className="text-3xl font-bold mb-6">Authentication Required</h1>
-        <p className="mb-8 text-gray-300">Please sign in to access your dashboard</p>
-        <Link 
-          to="/" 
-          className="bg-tiptop-purple hover:bg-purple-700 text-white px-6 py-3 rounded-full transition-colors"
-        >
-          Go to Home Page
-        </Link>
-      </div>
+      <DashboardLayout>
+        <div className="flex items-center justify-center min-h-96">
+          <Card className="w-full max-w-md">
+            <CardContent className="pt-6 text-center">
+              <p className="text-red-600 mb-4">Error loading dashboard data</p>
+              <Button onClick={loadUserData} variant="outline">
+                Try Again
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </DashboardLayout>
     );
   }
 
-  // Use saved data if available, fall back to current analysis
-  const currentAnalysis = userData.getLatestAnalysis();
-  const displayResults = currentAnalysis?.analysis_results || analysisResults;
-  const displayAddress = userData.getPrimaryAddress()?.formatted_address || address || "No address analyzed yet";
+  // No analysis data found
+  if (!latestAnalysis) {
+    return (
+      <DashboardLayout>
+        <div className="space-y-6">
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="text-center py-12"
+          >
+            <Card className="mx-auto max-w-2xl">
+              <CardHeader>
+                <div className="mx-auto w-16 h-16 bg-tiptop-purple/10 rounded-full flex items-center justify-center mb-4">
+                  <Home className="w-8 h-8 text-tiptop-purple" />
+                </div>
+                <CardTitle className="text-2xl">No Property Analysis Yet</CardTitle>
+                <CardDescription className="text-lg">
+                  Start by analyzing your property to see monetization opportunities
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <p className="text-gray-600">
+                    Get started by analyzing your property to discover how you can monetize your home assets.
+                  </p>
+                  <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                    <Button asChild size="lg">
+                      <Link to="/">
+                        <MapPin className="mr-2 h-4 w-4" />
+                        Analyze Property
+                      </Link>
+                    </Button>
+                    <Button asChild variant="outline" size="lg">
+                      <Link to="/submit-property">
+                        Submit Property Details
+                      </Link>
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
-  // Generate property description
-  const getPropertyDescription = () => {
-    if (!displayResults) {
-      return "No property analyzed yet. Try analyzing a property to see personalized insights.";
-    }
-    
-    let description = `${displayResults.propertyType} with ${displayResults.rooftop.area} sq ft roof area`;
-    
-    if (displayResults.parking.spaces > 0) {
-      description += `, ${displayResults.parking.spaces} parking spaces`;
-    }
-    
-    if (displayResults.garden.area > 0) {
-      description += `, and ${displayResults.garden.area} sq ft garden space`;
-    }
-    
-    if (displayResults.pool && displayResults.pool.present) {
-      description += `, includes a ${displayResults.pool.type} pool`;
-    }
-    
-    description += `. Potential monthly revenue: $${displayResults.topOpportunities.reduce((sum, opp) => sum + opp.monthlyRevenue, 0)}.`;
-    
-    return description;
-  };
-
-  // Calculate total revenue from user's saved data
-  const getTotalRevenue = () => {
-    if (currentAnalysis) {
-      return currentAnalysis.total_monthly_revenue;
-    }
-    return displayResults ? 
-      displayResults.topOpportunities.reduce((sum, opp) => sum + opp.monthlyRevenue, 0) : 
-      1200;
-  };
+  // Calculate total revenue from analysis results
+  const analysisResults = latestAnalysis.analysis_results;
+  const totalMonthlyRevenue = latestAnalysis.total_monthly_revenue || 0;
+  const totalOpportunities = latestAnalysis.total_opportunities || 0;
 
   return (
     <DashboardLayout>
-      <div className="px-6 py-8">
-        <motion.div
+      <div className="space-y-6">
+        {/* Header with Property Info */}
+        <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
+          className="space-y-4"
         >
-          <div className="flex items-center justify-between mb-6">
-            <h1 className="text-3xl font-bold">Your Dashboard</h1>
-            {userData.addresses.length > 0 && (
-              <div className="text-sm text-gray-400">
-                {userData.addresses.length} saved {userData.addresses.length === 1 ? 'property' : 'properties'}
-              </div>
-            )}
-          </div>
-          
-          {!displayResults ? (
-            <div className="mb-8 text-center">
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5 }}
-                className="bg-white/5 backdrop-blur-sm p-8 rounded-lg border border-white/10 max-w-2xl mx-auto"
-              >
-                <div className="text-6xl mb-4 text-tiptop-purple flex justify-center">
-                  <Info />
-                </div>
-                <h2 className="text-xl font-bold mb-3 text-white">No Property Analysis Yet</h2>
-                <p className="text-gray-300 mb-6">
-                  Analyze a property to see personalized monetization insights, revenue potential, and recommendations.
-                </p>
-                <Button
-                  onClick={handleAnalyzeProperty}
-                  className="bg-tiptop-purple hover:bg-purple-700 text-white px-6 py-6 rounded-full transition-colors"
-                  size="lg"
-                >
-                  <Home className="mr-2 h-5 w-5" /> Analyze Your Property
-                </Button>
-              </motion.div>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">Property Dashboard</h1>
+              <p className="text-gray-600">
+                {primaryAddress?.address || 'Your monetization overview'}
+              </p>
             </div>
-          ) : null}
-          
-          {/* Main Dashboard Content */}
-          <Tabs defaultValue="overview" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-4 bg-gray-800 border-gray-600">
-              <TabsTrigger value="overview" className="text-white data-[state=active]:bg-tiptop-purple data-[state=active]:text-white">
-                <Home className="h-4 w-4 mr-2" />
-                Overview
-              </TabsTrigger>
-              <TabsTrigger value="analytics" className="text-white data-[state=active]:bg-tiptop-purple data-[state=active]:text-white">
-                <BarChart className="h-4 w-4 mr-2" />
-                Analytics
-              </TabsTrigger>
-              <TabsTrigger value="realtime" className="text-white data-[state=active]:bg-tiptop-purple data-[state=active]:text-white">
-                <Activity className="h-4 w-4 mr-2" />
-                Real-time
-              </TabsTrigger>
-              <TabsTrigger value="insights" className="text-white data-[state=active]:bg-tiptop-purple data-[state=active]:text-white">
-                <Lightbulb className="h-4 w-4 mr-2" />
-                Insights
-              </TabsTrigger>
-            </TabsList>
+            <Button asChild variant="outline">
+              <Link to="/">
+                <MapPin className="mr-2 h-4 w-4" />
+                Analyze New Property
+              </Link>
+            </Button>
+          </div>
 
-            <TabsContent value="overview" className="space-y-6">
-              {/* Property Overview */}
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-                <div className="lg:col-span-2">
-                  <PropertyOverviewCard 
-                    address={displayAddress} 
-                    description={getPropertyDescription()} 
-                    imageUrl={displayResults ? "https://picsum.photos/id/1048/600/400" : "/lovable-uploads/33b65ff0-5489-400b-beba-1248db897a30.png"} 
-                  />
-                </div>
-                <div>
-                  <StatsCard 
-                    title="Monthly Revenue Potential"
-                    value={`$${getTotalRevenue()}`}
-                    description={currentAnalysis ? "From saved analysis" : "Based on property analysis"}
-                    trend="up"
-                    trendValue="12.5%"
-                    variant="purple"
-                  />
-                </div>
-              </div>
-              
-              {/* GPT Content */}
-              {contentFromGPT && (
-                <div className="bg-white rounded-lg shadow-md p-6 mb-6 dark:bg-gray-800">
-                  <h2 className="text-xl font-bold mb-4">Property Potential Analysis</h2>
-                  <div className="whitespace-pre-line text-gray-700 dark:text-gray-300">
-                    {contentFromGPT}
-                  </div>
-                </div>
-              )}
-              
-              {/* Assets Table */}
-              {displayResults ? (
-                <div className="bg-white rounded-lg shadow-md p-6 dark:bg-gray-800">
-                  <h2 className="text-xl font-bold mb-4">Your Assets</h2>
-                  <AssetsTable analysisResults={displayResults} />
-                </div>
-              ) : (
-                <div className="bg-white rounded-lg shadow-md p-6 dark:bg-gray-800">
-                  <h2 className="text-xl font-bold mb-4">Potential Assets</h2>
-                  <div className="text-center py-8">
-                    <ChartPie className="mx-auto h-16 w-16 text-gray-400 mb-4" />
-                    <p className="text-gray-500">
-                      Analyze a property to see your specific asset breakdown and monetization opportunities
-                    </p>
-                  </div>
-                </div>
-              )}
-            </TabsContent>
+          {/* Stats Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <StatsCard
+              title="Monthly Revenue Potential"
+              value={`$${totalMonthlyRevenue.toLocaleString()}`}
+              icon={<DollarSign className="h-6 w-6" />}
+              trend={totalMonthlyRevenue > 0 ? "up" : "neutral"}
+              trendValue={totalMonthlyRevenue > 0 ? "Ready to earn" : "Analyze property"}
+            />
+            <StatsCard
+              title="Monetization Opportunities"
+              value={totalOpportunities.toString()}
+              icon={<TrendingUp className="h-6 w-6" />}
+              trend={totalOpportunities > 0 ? "up" : "neutral"}
+              trendValue={totalOpportunities > 0 ? "Available now" : "Get started"}
+            />
+            <StatsCard
+              title="Properties Analyzed"
+              value={analyses.length.toString()}
+              icon={<Home className="h-6 w-6" />}
+              trend={analyses.length > 0 ? "up" : "neutral"}
+              trendValue={analyses.length > 1 ? `${analyses.length} properties` : "First property"}
+            />
+          </div>
+        </motion.div>
 
-            <TabsContent value="analytics" className="space-y-6">
-              <InteractiveCharts />
-            </TabsContent>
+        {/* Property Overview */}
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+        >
+          <PropertyOverviewCard 
+            address={primaryAddress?.address || "Property Address"}
+            description={`Property analysis completed on ${new Date(latestAnalysis.created_at).toLocaleDateString()}. Found ${totalOpportunities} monetization opportunities with potential monthly revenue of $${totalMonthlyRevenue}.`}
+          />
+        </motion.div>
 
-            <TabsContent value="realtime" className="space-y-6">
-              <RealTimeMetrics />
-            </TabsContent>
+        {/* Assets Table */}
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="space-y-4"
+        >
+          <Card>
+            <CardHeader>
+              <CardTitle>Asset Analysis</CardTitle>
+              <CardDescription>
+                Detailed breakdown of your property's monetization potential
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <AssetsTable analysisResults={analysisResults} />
+            </CardContent>
+          </Card>
+        </motion.div>
 
-            <TabsContent value="insights" className="space-y-6">
-              <PropertyInsights 
-                address={displayAddress}
-                analysisResults={displayResults}
-              />
-            </TabsContent>
-          </Tabs>
+        {/* Revenue Charts */}
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+        >
+          <RevenueCharts analysisResults={analysisResults} />
         </motion.div>
       </div>
     </DashboardLayout>

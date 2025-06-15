@@ -1,32 +1,23 @@
 
-import { AnalysisResults } from './types';
+// This file is deprecated - data syncing is now handled directly in GoogleMapProvider
+// using the service functions from /services/ directory
 
 export interface DataSyncManager {
-  syncAnalysisToDatabase: (address: string, analysis: AnalysisResults, coordinates?: any) => Promise<void>;
+  syncAnalysisToDatabase: (address: string, analysis: any, coordinates?: any) => Promise<void>;
   syncAddressToDatabase: (address: string, coordinates?: any, formattedAddress?: string) => Promise<string | null>;
 }
 
-// Simple implementation that doesn't depend on useUserData hook
+// Legacy compatibility - redirect to proper services
 export const createDataSyncManager = (): DataSyncManager => {
-  const syncAddressToDatabase = async (
-    address: string, 
-    coordinates?: any, 
-    formattedAddress?: string
-  ): Promise<string | null> => {
-    console.log('Address sync deferred - will be handled in dashboard');
-    return null;
-  };
-
-  const syncAnalysisToDatabase = async (
-    address: string, 
-    analysis: AnalysisResults, 
-    coordinates?: any
-  ): Promise<void> => {
-    console.log('Analysis sync deferred - will be handled in dashboard');
-  };
-
+  console.warn('⚠️ createDataSyncManager is deprecated. Use service functions directly.');
+  
   return {
-    syncAnalysisToDatabase,
-    syncAddressToDatabase
+    syncAnalysisToDatabase: async () => {
+      console.log('Use savePropertyAnalysis from userAnalysisService instead');
+    },
+    syncAddressToDatabase: async () => {
+      console.log('Use saveAddress from userAddressService instead');
+      return null;
+    }
   };
 };
