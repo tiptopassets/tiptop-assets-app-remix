@@ -51,8 +51,9 @@ const SearchBar = ({ isCollapsed }: SearchBarProps) => {
     }
   };
 
-  // Handle geolocation success
+  // Handle geolocation success - FIXED: Pass the formatted address to startAnalysis
   const handleLocationFound = (formattedAddress: string, coordinates: google.maps.LatLngLiteral) => {
+    console.log('SearchBar: Location found:', formattedAddress, coordinates);
     setAddress(formattedAddress);
     setHasSelectedAddress(true);
     setAddressCoordinates(coordinates);
@@ -60,8 +61,8 @@ const SearchBar = ({ isCollapsed }: SearchBarProps) => {
     // Capture property images for 3D model 
     capturePropertyImages(formattedAddress, coordinates);
     
-    // Start analysis
-    startAnalysis();
+    // Start analysis with the formatted address - FIXED: Pass the address parameter
+    startAnalysis(formattedAddress);
   };
 
   return (

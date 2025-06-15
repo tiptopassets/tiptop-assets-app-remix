@@ -27,11 +27,11 @@ export const useAddressSearch = () => {
     const targetAddress = addressToAnalyze || address;
     
     if (!targetAddress) {
-      console.warn('No address provided for analysis');
+      console.warn('startAnalysis: No address provided for analysis');
       return;
     }
 
-    console.log('Starting analysis for address:', targetAddress);
+    console.log('startAnalysis: Starting analysis for address:', targetAddress);
 
     // Clear previous errors
     if (analysisError) {
@@ -67,11 +67,12 @@ export const useAddressSearch = () => {
         try {
           const place = autocompleteRef.current.getPlace();
           
-          console.log('Place selected:', place); // Debug log
+          console.log('useAddressSearch: Place selected:', place); // Debug log
           
           if (place.geometry && place.geometry.location && place.formatted_address && mapInstance) {
             // Set the address
             const formattedAddress = place.formatted_address;
+            console.log('useAddressSearch: Setting address:', formattedAddress);
             setAddress(formattedAddress);
             setHasSelectedAddress(true);
             
@@ -81,7 +82,7 @@ export const useAddressSearch = () => {
             const coordinates = { lat, lng };
             setAddressCoordinates(coordinates);
             
-            console.log('Setting coordinates:', coordinates); // Debug log
+            console.log('useAddressSearch: Setting coordinates:', coordinates); // Debug log
             
             // Center map to selected address and zoom in to level 18
             mapInstance.setCenter(place.geometry.location);
@@ -92,6 +93,7 @@ export const useAddressSearch = () => {
             
             // Start analysis immediately with the formatted address
             // This avoids the state timing issue by passing the address directly
+            console.log('useAddressSearch: Calling startAnalysis with:', formattedAddress);
             startAnalysis(formattedAddress);
             
             toast({
@@ -99,7 +101,7 @@ export const useAddressSearch = () => {
               description: `Selected: ${formattedAddress}`,
             });
           } else {
-            console.warn('Invalid place selected:', place); // Debug log
+            console.warn('useAddressSearch: Invalid place selected:', place); // Debug log
             toast({
               title: "Invalid Address",
               description: "Please select a valid address from the dropdown.",
@@ -107,7 +109,7 @@ export const useAddressSearch = () => {
             });
           }
         } catch (error) {
-          console.error('Error handling place selection:', error);
+          console.error('useAddressSearch: Error handling place selection:', error);
           toast({
             title: "Address Selection Error",
             description: "There was an issue selecting the address. Please try again.",
@@ -119,7 +121,7 @@ export const useAddressSearch = () => {
       autocompleteRef.current.addListener('place_changed', placeChangedListener);
 
     } catch (error) {
-      console.error("Error initializing Google Places Autocomplete:", error);
+      console.error("useAddressSearch: Error initializing Google Places Autocomplete:", error);
       toast({
         title: "Error",
         description: "Failed to load address search. Please try again later.",
@@ -133,7 +135,7 @@ export const useAddressSearch = () => {
         autocompleteRef.current = null;
       }
     };
-  }, [mapLoaded, mapInstance, setAddress, toast, setAddressCoordinates, capturePropertyImages]);
+  }, [mapLoaded, mapInstance, setAddress, toast, setAddressCoordinates, capturePropertyImages, generatePropertyAnalysis]); // FIXED: Added generatePropertyAnalysis to dependency array
 
   return {
     searchInputRef,
