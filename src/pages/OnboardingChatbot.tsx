@@ -1,10 +1,10 @@
+
 import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Badge } from '@/components/ui/badge';
-import { Loader2, Send, MessageSquare, Settings2, Bot, User, Sparkles } from 'lucide-react';
+import { Loader2, Send, MessageSquare, Settings2, Bot, User } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { useOnboarding } from '@/hooks/useOnboarding';
@@ -15,6 +15,8 @@ import {
   type PartnerRecommendation 
 } from '@/services/partnerRecommendationService';
 import PartnerRecommendationCard from '@/components/onboarding/PartnerRecommendationCard';
+import OnboardingHeader from '@/components/onboarding/OnboardingHeader';
+import AssetSelectionCards from '@/components/onboarding/AssetSelectionCards';
 
 const OnboardingChatbot = () => {
   const { user, loading: authLoading } = useAuth();
@@ -35,14 +37,16 @@ const OnboardingChatbot = () => {
   const [detectedAssets, setDetectedAssets] = useState<string[]>([]);
   const [partnerRecommendations, setPartnerRecommendations] = useState<PartnerRecommendation[]>([]);
   const [showRecommendations, setShowRecommendations] = useState(false);
+  const [showAssetSelection, setShowAssetSelection] = useState(false);
   const [integratingPartners, setIntegratingPartners] = useState<Set<string>>(new Set());
   const [completedIntegrations, setCompletedIntegrations] = useState<Set<string>>(new Set());
+  const [selectedAsset, setSelectedAsset] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, showRecommendations]);
+  }, [messages, showRecommendations, showAssetSelection]);
 
   // Clear error when component mounts
   useEffect(() => {
@@ -88,11 +92,40 @@ const OnboardingChatbot = () => {
     if (data) {
       // Add welcome message
       const welcomeMessage = option === 'manual' 
-        ? "Hi! I'm here to help you identify and set up monetization opportunities for your property assets. Let's start by telling me about your property. What type of property do you own?"
-        : "Welcome to our concierge service! I'll personally guide you through setting up your property assets for maximum revenue. Let's begin with understanding your property better. Can you describe your property to me?";
+        ? "Hi! I'm here to help you identify and set up monetization opportunities for your property assets. Let's start by telling me about your property. What type of property do you own and what features does it have?"
+        : "Welcome to our concierge service! I'll personally guide you through setting up your property assets for maximum revenue. Let's begin with understanding your property better. Can you describe your property and its features to me?";
       
       await addMessage('assistant', welcomeMessage);
     }
+  };
+
+  const handleAssetSelection = async (assetId: string) => {
+    setSelectedAsset(assetId);
+    
+    // Add message about starting the asset setup process
+    await addMessage('assistant', 
+      `Perfect! Let's set up your ${assetId.replace('_', ' ')} for monetization. I'll guide you through the specific requirements and connect you with the best service providers.`
+    );
+
+    // Generate targeted recommendations for this specific asset
+    if (onboardingData) {
+      try {
+        const recommendations = await generatePartnerRecommendations(onboardingData.id, [assetId]);
+        setPartnerRecommendations(recommendations);
+        setShowRecommendations(true);
+        
+        if (recommendations.length > 0) {
+          await addMessage('assistant', 
+            `I found ${recommendations.length} partner${recommendations.length > 1 ? 's' : ''} that specialize in ${assetId.replace('_', ' ')} monetization. Check out the recommendations below to get started!`
+          );
+        }
+      } catch (error) {
+        console.error('Error generating recommendations:', error);
+      }
+    }
+    
+    // Hide asset selection cards
+    setShowAssetSelection(false);
   };
 
   const handleSendMessage = async () => {
@@ -120,21 +153,8 @@ const OnboardingChatbot = () => {
         response = `Great! I can see you have ${foundAssets.join(', ')} assets. `;
         
         if (allDetectedAssets.length >= 2) {
-          response += "You have multiple monetizable assets! Let me generate some personalized partner recommendations for you.";
-          
-          // Generate partner recommendations
-          try {
-            const recommendations = await generatePartnerRecommendations(onboardingData.id, allDetectedAssets);
-            setPartnerRecommendations(recommendations);
-            setShowRecommendations(true);
-            
-            if (recommendations.length > 0) {
-              response += ` I found ${recommendations.length} perfect partners that match your assets. Check out the recommendations below!`;
-            }
-          } catch (error) {
-            console.error('Error generating recommendations:', error);
-            response += " I'll help you find the best monetization opportunities for your assets.";
-          }
+          response += "You have multiple monetizable assets! Let me show you what we can set up for you.";
+          setShowAssetSelection(true);
         } else {
           response += "Tell me about any other assets you have - like parking spaces, internet connection, storage areas, or unique spaces that could be monetized.";
         }
@@ -225,10 +245,10 @@ const OnboardingChatbot = () => {
   // Show loading state while auth is being checked
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black flex items-center justify-center">
-        <div className="text-center text-white">
-          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
-          <p>Loading...</p>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-tiptop-purple" />
+          <p className="text-gray-600">Loading...</p>
         </div>
       </div>
     );
@@ -237,19 +257,19 @@ const OnboardingChatbot = () => {
   // Show auth required message
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black flex items-center justify-center p-4">
-        <Card className="w-full max-w-md glassmorphism-card border-white/20 text-white">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <Card className="w-full max-w-md border shadow-sm">
           <CardHeader className="text-center">
             <MessageSquare className="h-12 w-12 mx-auto mb-4 text-tiptop-purple" />
-            <CardTitle className="text-xl">Authentication Required</CardTitle>
+            <CardTitle className="text-xl text-gray-900">Authentication Required</CardTitle>
           </CardHeader>
           <CardContent className="text-center">
-            <p className="text-gray-300 mb-4">
+            <p className="text-gray-600 mb-4">
               Please log in to access the asset onboarding chatbot.
             </p>
             <Button 
               onClick={() => window.location.href = '/dashboard'}
-              className="w-full"
+              className="w-full bg-tiptop-purple hover:bg-purple-600"
             >
               Go to Dashboard
             </Button>
@@ -262,13 +282,13 @@ const OnboardingChatbot = () => {
   // Show error state
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black flex items-center justify-center p-4">
-        <Card className="w-full max-w-md glassmorphism-card border-red-500/20 text-white">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <Card className="w-full max-w-md border border-red-200 shadow-sm">
           <CardHeader className="text-center">
-            <CardTitle className="text-xl text-red-400">Error</CardTitle>
+            <CardTitle className="text-xl text-red-600">Error</CardTitle>
           </CardHeader>
           <CardContent className="text-center">
-            <p className="text-gray-300 mb-4">{error}</p>
+            <p className="text-gray-600 mb-4">{error}</p>
             <Button 
               onClick={clearError}
               variant="outline"
@@ -283,46 +303,20 @@ const OnboardingChatbot = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black flex flex-col">
-      {/* Header */}
-      <header className="border-b border-white/10 bg-black/20 backdrop-blur-sm">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Bot className="h-8 w-8 text-tiptop-purple" />
-              <div>
-                <h1 className="text-xl font-bold text-white">Asset Onboarding Assistant</h1>
-                <p className="text-sm text-gray-400">
-                  {onboardingData?.selected_option === 'concierge' ? 'Concierge Service' : 'Self-Service Setup'}
-                </p>
-              </div>
-            </div>
-            {onboardingData && (
-              <div className="flex items-center gap-3">
-                {detectedAssets.length > 0 && (
-                  <Badge variant="outline" className="border-green-500 text-green-500">
-                    {detectedAssets.length} Assets Detected
-                  </Badge>
-                )}
-                <Badge variant="outline" className="border-tiptop-purple text-tiptop-purple">
-                  Step {onboardingData.current_step} of {onboardingData.total_steps}
-                </Badge>
-              </div>
-            )}
-          </div>
-        </div>
-      </header>
+    <div className="min-h-screen bg-gray-50 flex flex-col">
+      {/* Header with Dashboard Navigation */}
+      <OnboardingHeader onboardingData={onboardingData} detectedAssets={detectedAssets} />
 
       {/* Chat Area */}
       <div className="flex-1 flex flex-col max-w-4xl mx-auto w-full p-4">
         {!onboardingData ? (
           // Onboarding Selection
           <div className="flex-1 flex items-center justify-center">
-            <Card className="w-full max-w-2xl glassmorphism-card border-white/20 text-white">
+            <Card className="w-full max-w-2xl border shadow-sm bg-white">
               <CardHeader className="text-center">
                 <MessageSquare className="h-16 w-16 mx-auto mb-4 text-tiptop-purple" />
-                <CardTitle className="text-2xl mb-2">Welcome to Asset Onboarding</CardTitle>
-                <p className="text-gray-300">
+                <CardTitle className="text-2xl mb-2 text-gray-900">Welcome to Asset Onboarding</CardTitle>
+                <p className="text-gray-600">
                   Choose how you'd like to set up your property assets for monetization
                 </p>
               </CardHeader>
@@ -330,12 +324,12 @@ const OnboardingChatbot = () => {
                 <Button
                   onClick={() => handleStartOnboarding('manual')}
                   disabled={loading}
-                  className="w-full h-16 text-left flex items-center gap-4 bg-gradient-to-r from-tiptop-purple to-purple-600 hover:from-purple-600 hover:to-tiptop-purple"
+                  className="w-full h-16 text-left flex items-center gap-4 bg-tiptop-purple hover:bg-purple-600 text-white"
                 >
                   <Settings2 className="h-8 w-8" />
                   <div>
                     <div className="font-semibold">Self-Service Setup</div>
-                    <div className="text-sm opacity-80">Guide yourself through the process</div>
+                    <div className="text-sm opacity-90">Guide yourself through the process</div>
                   </div>
                 </Button>
                 <Button
@@ -356,7 +350,7 @@ const OnboardingChatbot = () => {
         ) : (
           // Chat Interface
           <>
-            <Card className="flex-1 glassmorphism-card border-white/20 mb-4">
+            <Card className="flex-1 border shadow-sm bg-white mb-4">
               <ScrollArea className="h-[500px] p-4">
                 <div className="space-y-4">
                   <AnimatePresence>
@@ -369,17 +363,19 @@ const OnboardingChatbot = () => {
                       >
                         <div className={`flex gap-3 max-w-[80%] ${message.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
                           <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                            message.role === 'user' ? 'bg-tiptop-purple' : 'bg-gray-700'
+                            message.role === 'user' ? 'bg-tiptop-purple' : 'bg-gray-200'
                           }`}>
-                            {message.role === 'user' ? <User className="h-4 w-4" /> : <Bot className="h-4 w-4" />}
+                            {message.role === 'user' ? <User className="h-4 w-4 text-white" /> : <Bot className="h-4 w-4 text-gray-600" />}
                           </div>
                           <div className={`rounded-lg p-3 ${
                             message.role === 'user' 
                               ? 'bg-tiptop-purple text-white' 
-                              : 'bg-gray-800 text-gray-100'
+                              : 'bg-gray-100 text-gray-900'
                           }`}>
                             <p className="text-sm">{message.content}</p>
-                            <div className="text-xs opacity-70 mt-1">
+                            <div className={`text-xs mt-1 ${
+                              message.role === 'user' ? 'text-purple-200' : 'text-gray-500'
+                            }`}>
                               {new Date(message.created_at).toLocaleTimeString()}
                             </div>
                           </div>
@@ -388,6 +384,14 @@ const OnboardingChatbot = () => {
                     ))}
                   </AnimatePresence>
                   
+                  {/* Asset Selection Cards */}
+                  {showAssetSelection && (
+                    <AssetSelectionCards 
+                      detectedAssets={detectedAssets}
+                      onAssetSelect={handleAssetSelection}
+                    />
+                  )}
+                  
                   {/* Partner Recommendations */}
                   {showRecommendations && partnerRecommendations.length > 0 && (
                     <motion.div
@@ -395,10 +399,6 @@ const OnboardingChatbot = () => {
                       animate={{ opacity: 1, y: 0 }}
                       className="space-y-4"
                     >
-                      <div className="flex items-center gap-2 text-tiptop-purple font-medium">
-                        <Sparkles className="w-5 h-5" />
-                        <span>Recommended Partners</span>
-                      </div>
                       <div className="grid gap-3">
                         {partnerRecommendations.map((recommendation) => (
                           <PartnerRecommendationCard
@@ -419,10 +419,10 @@ const OnboardingChatbot = () => {
                       animate={{ opacity: 1, y: 0 }}
                       className="flex gap-3"
                     >
-                      <div className="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center">
-                        <Bot className="h-4 w-4" />
+                      <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">
+                        <Bot className="h-4 w-4 text-gray-600" />
                       </div>
-                      <div className="bg-gray-800 rounded-lg p-3">
+                      <div className="bg-gray-100 rounded-lg p-3">
                         <div className="flex gap-1">
                           <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" />
                           <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }} />
@@ -437,7 +437,7 @@ const OnboardingChatbot = () => {
             </Card>
 
             {/* Message Input */}
-            <Card className="glassmorphism-card border-white/20">
+            <Card className="border shadow-sm bg-white">
               <CardContent className="p-4">
                 <div className="flex gap-2">
                   <Input
@@ -446,7 +446,7 @@ const OnboardingChatbot = () => {
                     onKeyPress={handleKeyPress}
                     placeholder="Describe your property assets..."
                     disabled={isTyping}
-                    className="flex-1 bg-gray-800/50 border-gray-600 text-white placeholder:text-gray-400"
+                    className="flex-1 border-gray-300 focus:border-tiptop-purple focus:ring-tiptop-purple"
                   />
                   <Button
                     onClick={handleSendMessage}
