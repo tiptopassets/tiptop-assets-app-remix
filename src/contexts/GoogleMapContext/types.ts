@@ -105,6 +105,26 @@ export interface GoogleMapContextType {
   setAnalysisError: React.Dispatch<React.SetStateAction<string | null>>;
   useLocalAnalysis: boolean;
   setUseLocalAnalysis: React.Dispatch<React.SetStateAction<boolean>>;
-  zoomLevel?: number;
-  setZoomLevel?: React.Dispatch<React.SetStateAction<number>>;
+  zoomLevel: number;
+  setZoomLevel: React.Dispatch<React.SetStateAction<number>>;
+}
+
+// Update the interface used by the provider
+export interface GoogleMapContextProps extends GoogleMapContextType {
+  // Additional properties that were in the original provider
+  addressCoordinates: google.maps.LatLngLiteral | null;
+  setAddressCoordinates: (coords: google.maps.LatLngLiteral | null) => void;
+  isLocating: boolean;
+  setIsLocating: (isLocating: boolean) => void;
+  isAddressValid: boolean;
+  setAddressValid: (isValid: boolean) => void;
+  generateAnalysis: (address: string, coords?: google.maps.LatLngLiteral, satelliteImageBase64?: string) => Promise<void>;
+  syncAnalysisToDatabase: (address: string, analysis: any, coordinates?: any, satelliteImageUrl?: string) => Promise<void>;
+  dataSyncEnabled: boolean;
+  setDataSyncEnabled: (enabled: boolean) => void;
+  propertyType: string | null;
+  setPropertyType: (type: string | null) => void;
+  satelliteImageBase64: string | null;
+  setSatelliteImageBase64: (base64: string | null) => void;
+  resetMapContext: () => void;
 }

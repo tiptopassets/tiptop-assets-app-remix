@@ -1,3 +1,4 @@
+
 import React, {
   createContext,
   useState,
@@ -11,36 +12,12 @@ import { useUserData } from '@/hooks/useUserData';
 import { saveAddress } from '@/services/userAddressService';
 import { savePropertyAnalysis } from '@/services/userAnalysisService';
 import { Address } from '@/types/address';
-import { AnalysisResults } from '@/contexts/GoogleMapContext/types';
-import { useToast } from "@/hooks/use-toast"
+import { AnalysisResults, GoogleMapContextProps } from '@/contexts/GoogleMapContext/types';
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from '@/integrations/supabase/client';
+import { generatePropertyAnalysis } from './propertyAnalysis';
 
 const googleMapsApiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '';
-
-interface GoogleMapContextProps {
-  address: string;
-  setAddress: (address: string) => void;
-  addressCoordinates: google.maps.LatLngLiteral | null;
-  setAddressCoordinates: (coords: google.maps.LatLngLiteral | null) => void;
-  isLocating: boolean;
-  setIsLocating: (isLocating: boolean) => void;
-  isAddressValid: boolean;
-  setAddressValid: (isValid: boolean) => void;
-  mapInstance: google.maps.Map | null;
-  setMapInstance: (map: google.maps.Map | null) => void;
-  analysisResults: AnalysisResults | null;
-  setAnalysisResults: (results: AnalysisResults | null) => void;
-  isGeneratingAnalysis: boolean;
-  setIsGeneratingAnalysis: (isGenerating: boolean) => void;
-  generateAnalysis: (address: string, coords?: google.maps.LatLngLiteral, satelliteImageBase64?: string) => Promise<void>;
-  syncAnalysisToDatabase: (address: string, analysis: any, coordinates?: any, satelliteImageUrl?: string) => Promise<void>;
-  dataSyncEnabled: boolean;
-  setDataSyncEnabled: (enabled: boolean) => void;
-  propertyType: string | null;
-  setPropertyType: (type: string | null) => void;
-  satelliteImageBase64: string | null;
-  setSatelliteImageBase64: (base64: string | null) => void;
-  resetMapContext: () => void;
-}
 
 const GoogleMapContext = createContext<GoogleMapContextProps | undefined>(
   undefined
@@ -83,7 +60,16 @@ const GoogleMapProvider = ({ children }: { children: React.ReactNode }) => {
   const [dataSyncEnabled, setDataSyncEnabled] = useState<boolean>(true);
   const [propertyType, setPropertyType] = useState<string | null>(null);
   const [satelliteImageBase64, setSatelliteImageBase64] = useState<string | null>(null);
-  const { toast } = useToast()
+  
+  // Additional state properties that components expect
+  const [isAnalyzing, setIsAnalyzing] = useState<boolean>(false);
+  const [analysisComplete, setAnalysisComplete] = useState<boolean>(false);
+  const [mapLoaded, setMapLoaded] = useState<boolean>(false);
+  const [analysisError, setAnalysisError] = useState<string | null>(null);
+  const [useLocalAnalysis, setUseLocalAnalysis] = useState<boolean>(false);
+  const [zoomLevel, setZoomLevel] = useState<number>(12);
+  
+  const { toast } = useToast();
 
   useEffect(() => {
     if (loadError) {
@@ -101,6 +87,9 @@ const GoogleMapProvider = ({ children }: { children: React.ReactNode }) => {
     setIsGeneratingAnalysis(false);
     setPropertyType(null);
     setSatelliteImageBase64(null);
+    setIsAnalyzing(false);
+    setAnalysisComplete(false);
+    setAnalysisError(null);
   }, []);
 
   const syncAnalysisToDatabase = async (address: string, analysis: any, coordinates?: any, satelliteImageUrl?: string) => {
@@ -145,7 +134,9 @@ const GoogleMapProvider = ({ children }: { children: React.ReactNode }) => {
     }
 
     setIsGeneratingAnalysis(true);
+    setIsAnalyzing(true);
     setAnalysisResults(null);
+    setAnalysisError(null);
     
     try {
       console.log('🔍 Generating analysis for:', address);
@@ -170,6 +161,7 @@ const GoogleMapProvider = ({ children }: { children: React.ReactNode }) => {
 
       console.log('✅ Analysis completed successfully');
       setAnalysisResults(data.analysis);
+      setAnalysisComplete(true);
       
       // Sync to database with satellite image URL if user is authenticated
       if (user?.id) {
@@ -183,15 +175,33 @@ const GoogleMapProvider = ({ children }: { children: React.ReactNode }) => {
       
     } catch (error) {
       console.error('❌ Error generating analysis:', error);
+      setAnalysisError(error.message || "Failed to analyze property");
       toast({
         title: "Analysis Failed",
         description: error.message || "Failed to analyze property",
         variant: "destructive"
-      })
+      });
       throw error;
     } finally {
       setIsGeneratingAnalysis(false);
+      setIsAnalyzing(false);
     }
+  };
+
+  // Wrapper function that matches the expected signature
+  const generatePropertyAnalysisWrapper = async (propertyAddress: string) => {
+    return generatePropertyAnalysis({
+      propertyAddress,
+      addressCoordinates,
+      useLocalAnalysis,
+      setIsGeneratingAnalysis,
+      setIsAnalyzing,
+      setAnalysisResults,
+      setAnalysisComplete,
+      setUseLocalAnalysis,
+      setAnalysisError,
+      toast
+    });
   };
 
   const value: GoogleMapContextProps = {
@@ -218,6 +228,20 @@ const GoogleMapProvider = ({ children }: { children: React.ReactNode }) => {
     satelliteImageBase64,
     setSatelliteImageBase64,
     resetMapContext,
+    // Additional properties
+    isAnalyzing,
+    setIsAnalyzing,
+    analysisComplete,
+    setAnalysisComplete,
+    mapLoaded,
+    setMapLoaded,
+    generatePropertyAnalysis: generatePropertyAnalysisWrapper,
+    analysisError,
+    setAnalysisError,
+    useLocalAnalysis,
+    setUseLocalAnalysis,
+    zoomLevel,
+    setZoomLevel,
   };
 
   return (
