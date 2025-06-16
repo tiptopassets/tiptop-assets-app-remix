@@ -22,6 +22,25 @@ export interface PartnerIntegrationProgress {
   next_steps: string[];
 }
 
+// Database type from Supabase (what we get from the database)
+interface DatabaseServiceProvider {
+  id: string;
+  name: string;
+  category: string;
+  api_type: string;
+  affiliate_base_url: string | null;
+  supported_assets: any; // JSON field from database
+  priority_score: number | null;
+  avg_earnings_low: number | null;
+  avg_earnings_high: number | null;
+  commission_rate: number | null;
+  setup_requirements: any; // JSON field from database
+  integration_status: string;
+  created_at: string;
+  updated_at: string;
+}
+
+// Our application interface (what we use in the code)
 export interface ServiceProvider {
   name: string;
   category: string;
@@ -51,7 +70,22 @@ export const generatePartnerRecommendations = async (
 
     const recommendations: PartnerRecommendation[] = [];
     
-    providers?.forEach((provider: ServiceProvider) => {
+    providers?.forEach((dbProvider: DatabaseServiceProvider) => {
+      // Convert database provider to our application interface
+      const provider: ServiceProvider = {
+        name: dbProvider.name,
+        category: dbProvider.category,
+        affiliate_base_url: dbProvider.affiliate_base_url || '',
+        supported_assets: Array.isArray(dbProvider.supported_assets) 
+          ? dbProvider.supported_assets 
+          : [],
+        priority_score: dbProvider.priority_score || 5,
+        avg_earnings_low: dbProvider.avg_earnings_low || 0,
+        avg_earnings_high: dbProvider.avg_earnings_high || 0,
+        commission_rate: dbProvider.commission_rate || 0,
+        setup_requirements: dbProvider.setup_requirements || {}
+      };
+
       // Check if provider supports any of the detected assets
       const supportedAssets = provider.supported_assets || [];
       const matchingAssets = detectedAssets.filter(asset => 
@@ -66,7 +100,7 @@ export const generatePartnerRecommendations = async (
           id: `${onboardingId}_${provider.name}`,
           partner_name: provider.name,
           asset_type: matchingAssets[0],
-          priority_score: provider.priority_score || 5,
+          priority_score: provider.priority_score,
           estimated_monthly_earnings: (provider.avg_earnings_low + provider.avg_earnings_high) / 2,
           setup_complexity: getSetupComplexity(provider.setup_requirements),
           recommendation_reason: `Perfect match for your ${matchingAssets.join(', ')} asset${matchingAssets.length > 1 ? 's' : ''}`,
@@ -126,7 +160,7 @@ export const initializePartnerIntegration = async (
         user_id: userId,
         onboarding_id: onboardingId,
         partner_name: partnerName,
-        integration_status: 'in_progress',
+        integration_status: 'in_progress' as const,
         referral_link: referralLink,
         next_steps: getNextSteps(partnerName)
       })
@@ -138,11 +172,11 @@ export const initializePartnerIntegration = async (
     return {
       id: data.id,
       partner_name: data.partner_name,
-      integration_status: data.integration_status,
+      integration_status: data.integration_status as 'pending' | 'in_progress' | 'completed' | 'failed',
       referral_link: data.referral_link,
       registration_data: data.registration_data || {},
       earnings_data: data.earnings_data || {},
-      next_steps: data.next_steps || []
+      next_steps: Array.isArray(data.next_steps) ? data.next_steps : []
     };
 
   } catch (error) {
@@ -200,11 +234,11 @@ export const getUserIntegrationProgress = async (
     return data?.map(item => ({
       id: item.id,
       partner_name: item.partner_name,
-      integration_status: item.integration_status,
+      integration_status: item.integration_status as 'pending' | 'in_progress' | 'completed' | 'failed',
       referral_link: item.referral_link,
       registration_data: item.registration_data || {},
       earnings_data: item.earnings_data || {},
-      next_steps: item.next_steps || []
+      next_steps: Array.isArray(item.next_steps) ? item.next_steps : []
     })) || [];
 
   } catch (error) {
