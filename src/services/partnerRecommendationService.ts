@@ -53,6 +53,12 @@ export interface ServiceProvider {
   setup_requirements: any;
 }
 
+// Helper function to safely convert Json array to string array
+const jsonArrayToStringArray = (jsonArray: any): string[] => {
+  if (!Array.isArray(jsonArray)) return [];
+  return jsonArray.filter((item): item is string => typeof item === 'string');
+};
+
 export const generatePartnerRecommendations = async (
   onboardingId: string,
   detectedAssets: string[]
@@ -176,7 +182,7 @@ export const initializePartnerIntegration = async (
       referral_link: data.referral_link,
       registration_data: data.registration_data || {},
       earnings_data: data.earnings_data || {},
-      next_steps: Array.isArray(data.next_steps) ? data.next_steps : []
+      next_steps: jsonArrayToStringArray(data.next_steps)
     };
 
   } catch (error) {
@@ -235,10 +241,10 @@ export const getUserIntegrationProgress = async (
       id: item.id,
       partner_name: item.partner_name,
       integration_status: item.integration_status as 'pending' | 'in_progress' | 'completed' | 'failed',
-      referral_link: item.referral_link,
+      referral_link: item.referral_link || '',
       registration_data: item.registration_data || {},
       earnings_data: item.earnings_data || {},
-      next_steps: Array.isArray(item.next_steps) ? item.next_steps : []
+      next_steps: jsonArrayToStringArray(item.next_steps)
     })) || [];
 
   } catch (error) {
