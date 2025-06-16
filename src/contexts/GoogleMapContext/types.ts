@@ -127,4 +127,6 @@ export interface GoogleMapContextProps extends GoogleMapContextType {
   satelliteImageBase64: string | null;
   setSatelliteImageBase64: (base64: string | null) => void;
   resetMapContext: () => void;
+  isGeneratingAnalysis: boolean;
+  setIsGeneratingAnalysis: React.Dispatch<React.SetStateAction<boolean>>;
 }

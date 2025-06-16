@@ -1,4 +1,3 @@
-
 import React, {
   createContext,
   useState,
@@ -34,7 +33,6 @@ export const useGoogleMap = (): GoogleMapContextProps => {
 const libraries: (
   | 'drawing'
   | 'geometry'
-  | 'localContext'
   | 'places'
   | 'visualization'
 )[] = ['places'];
@@ -218,7 +216,6 @@ const GoogleMapProvider = ({ children }: { children: React.ReactNode }) => {
     analysisResults,
     setAnalysisResults,
     isGeneratingAnalysis,
-    setIsGeneratingAnalysis,
     generateAnalysis,
     syncAnalysisToDatabase,
     dataSyncEnabled,
