@@ -1,15 +1,20 @@
-
 import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Send, MessageSquare, Settings2, Bot, User } from 'lucide-react';
+import { Loader2, Send, MessageSquare, Settings2, Bot, User, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { useOnboarding } from '@/hooks/useOnboarding';
 import { toast } from '@/hooks/use-toast';
+import { 
+  generatePartnerRecommendations, 
+  initializePartnerIntegration, 
+  type PartnerRecommendation 
+} from '@/services/partnerRecommendationService';
+import PartnerRecommendationCard from '@/components/onboarding/PartnerRecommendationCard';
 
 const OnboardingChatbot = () => {
   const { user, loading: authLoading } = useAuth();
@@ -27,12 +32,17 @@ const OnboardingChatbot = () => {
 
   const [inputMessage, setInputMessage] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const [detectedAssets, setDetectedAssets] = useState<string[]>([]);
+  const [partnerRecommendations, setPartnerRecommendations] = useState<PartnerRecommendation[]>([]);
+  const [showRecommendations, setShowRecommendations] = useState(false);
+  const [integratingPartners, setIntegratingPartners] = useState<Set<string>>(new Set());
+  const [completedIntegrations, setCompletedIntegrations] = useState<Set<string>>(new Set());
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+  }, [messages, showRecommendations]);
 
   // Clear error when component mounts
   useEffect(() => {
@@ -49,6 +59,29 @@ const OnboardingChatbot = () => {
       });
     }
   }, [authLoading, isAuthenticated]);
+
+  const analyzeUserMessage = (message: string): string[] => {
+    const assetKeywords = {
+      'rooftop': ['roof', 'rooftop', 'solar', 'panels'],
+      'parking': ['parking', 'driveway', 'garage', 'car space'],
+      'pool': ['pool', 'swimming', 'swim'],
+      'internet': ['internet', 'bandwidth', 'wifi', 'connection'],
+      'storage': ['storage', 'basement', 'attic', 'space'],
+      'garden': ['garden', 'yard', 'lawn', 'outdoor space'],
+      'unique_spaces': ['unique', 'special', 'event', 'photoshoot']
+    };
+
+    const detected: string[] = [];
+    const lowerMessage = message.toLowerCase();
+
+    Object.entries(assetKeywords).forEach(([asset, keywords]) => {
+      if (keywords.some(keyword => lowerMessage.includes(keyword))) {
+        detected.push(asset);
+      }
+    });
+
+    return detected;
+  };
 
   const handleStartOnboarding = async (option: 'manual' | 'concierge') => {
     const data = await startOnboarding(option);
@@ -71,23 +104,115 @@ const OnboardingChatbot = () => {
     // Add user message
     await addMessage('user', userMessage);
     
+    // Analyze user message for assets
+    const foundAssets = analyzeUserMessage(userMessage);
+    const allDetectedAssets = [...new Set([...detectedAssets, ...foundAssets])];
+    setDetectedAssets(allDetectedAssets);
+    
     // Simulate AI typing
     setIsTyping(true);
     
-    // Simulate AI response (in a real implementation, this would call an AI service)
+    // Generate contextual response
     setTimeout(async () => {
-      const responses = [
-        "That's helpful information! Based on what you've shared, I can see several potential opportunities for your property.",
-        "Great! Let me analyze the assets you've mentioned. I'll help you prioritize them based on potential revenue and setup complexity.",
-        "Excellent! I'm gathering information about your property. This will help me provide personalized recommendations for monetizing your assets.",
-        "Thanks for sharing that detail. Let me ask a follow-up question to better understand your property's potential.",
-        "I can see good opportunities here. Would you like me to focus on quick-win assets first, or are you interested in long-term revenue streams?"
-      ];
+      let response = '';
       
-      const randomResponse = responses[Math.floor(Math.random() * responses.length)];
-      await addMessage('assistant', randomResponse);
+      if (foundAssets.length > 0) {
+        response = `Great! I can see you have ${foundAssets.join(', ')} assets. `;
+        
+        if (allDetectedAssets.length >= 2) {
+          response += "You have multiple monetizable assets! Let me generate some personalized partner recommendations for you.";
+          
+          // Generate partner recommendations
+          try {
+            const recommendations = await generatePartnerRecommendations(onboardingData.id, allDetectedAssets);
+            setPartnerRecommendations(recommendations);
+            setShowRecommendations(true);
+            
+            if (recommendations.length > 0) {
+              response += ` I found ${recommendations.length} perfect partners that match your assets. Check out the recommendations below!`;
+            }
+          } catch (error) {
+            console.error('Error generating recommendations:', error);
+            response += " I'll help you find the best monetization opportunities for your assets.";
+          }
+        } else {
+          response += "Tell me about any other assets you have - like parking spaces, internet connection, storage areas, or unique spaces that could be monetized.";
+        }
+      } else {
+        const responses = [
+          "That's helpful information! Can you tell me more about your property? Do you have a rooftop, parking space, pool, or high-speed internet?",
+          "I'm gathering details about your property assets. What other features does your property have that we could potentially monetize?",
+          "Excellent! Let me ask about specific assets - do you have any parking spaces, storage areas, or unique outdoor spaces?",
+          "Thanks for that detail. To give you the best recommendations, can you describe your property's key features like rooftop space, parking, or internet setup?"
+        ];
+        response = responses[Math.floor(Math.random() * responses.length)];
+      }
+      
+      await addMessage('assistant', response);
       setIsTyping(false);
+      
+      // Update progress if we have enough assets
+      if (allDetectedAssets.length >= 2) {
+        await updateProgress({
+          current_step: 3,
+          progress_data: { detected_assets: allDetectedAssets }
+        });
+      }
     }, 1500);
+  };
+
+  const handlePartnerIntegration = async (partnerName: string, referralLink: string) => {
+    if (!user || !onboardingData) return;
+    
+    setIntegratingPartners(prev => new Set([...prev, partnerName]));
+    
+    try {
+      // Initialize integration tracking
+      const integration = await initializePartnerIntegration(
+        user.id,
+        onboardingData.id,
+        partnerName,
+        referralLink
+      );
+      
+      if (integration) {
+        // Open referral link in new tab
+        window.open(referralLink, '_blank', 'noopener,noreferrer');
+        
+        // Add assistant message about the integration
+        await addMessage('assistant', 
+          `Great! I've opened the ${partnerName} registration page for you. Follow the steps to create your account and start earning. I'll track your progress and help you optimize your setup!`
+        );
+        
+        // Mark as completed (in real app, this would be triggered by actual completion)
+        setTimeout(() => {
+          setCompletedIntegrations(prev => new Set([...prev, partnerName]));
+          setIntegratingPartners(prev => {
+            const newSet = new Set(prev);
+            newSet.delete(partnerName);
+            return newSet;
+          });
+          
+          toast({
+            title: "Integration Started",
+            description: `Successfully opened ${partnerName} registration. Complete the signup to start earning!`,
+          });
+        }, 2000);
+      }
+    } catch (error) {
+      console.error('Error integrating partner:', error);
+      toast({
+        title: "Integration Error",
+        description: `Failed to start integration with ${partnerName}. Please try again.`,
+        variant: "destructive",
+      });
+    }
+    
+    setIntegratingPartners(prev => {
+      const newSet = new Set(prev);
+      newSet.delete(partnerName);
+      return newSet;
+    });
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -173,9 +298,16 @@ const OnboardingChatbot = () => {
               </div>
             </div>
             {onboardingData && (
-              <Badge variant="outline" className="border-tiptop-purple text-tiptop-purple">
-                Step {onboardingData.current_step} of {onboardingData.total_steps}
-              </Badge>
+              <div className="flex items-center gap-3">
+                {detectedAssets.length > 0 && (
+                  <Badge variant="outline" className="border-green-500 text-green-500">
+                    {detectedAssets.length} Assets Detected
+                  </Badge>
+                )}
+                <Badge variant="outline" className="border-tiptop-purple text-tiptop-purple">
+                  Step {onboardingData.current_step} of {onboardingData.total_steps}
+                </Badge>
+              </div>
             )}
           </div>
         </div>
@@ -256,6 +388,31 @@ const OnboardingChatbot = () => {
                     ))}
                   </AnimatePresence>
                   
+                  {/* Partner Recommendations */}
+                  {showRecommendations && partnerRecommendations.length > 0 && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="space-y-4"
+                    >
+                      <div className="flex items-center gap-2 text-tiptop-purple font-medium">
+                        <Sparkles className="w-5 h-5" />
+                        <span>Recommended Partners</span>
+                      </div>
+                      <div className="grid gap-3">
+                        {partnerRecommendations.map((recommendation) => (
+                          <PartnerRecommendationCard
+                            key={recommendation.id}
+                            recommendation={recommendation}
+                            onIntegrate={handlePartnerIntegration}
+                            isIntegrating={integratingPartners.has(recommendation.partner_name)}
+                            isCompleted={completedIntegrations.has(recommendation.partner_name)}
+                          />
+                        ))}
+                      </div>
+                    </motion.div>
+                  )}
+                  
                   {isTyping && (
                     <motion.div
                       initial={{ opacity: 0, y: 20 }}
@@ -287,7 +444,7 @@ const OnboardingChatbot = () => {
                     value={inputMessage}
                     onChange={(e) => setInputMessage(e.target.value)}
                     onKeyPress={handleKeyPress}
-                    placeholder="Type your message..."
+                    placeholder="Describe your property assets..."
                     disabled={isTyping}
                     className="flex-1 bg-gray-800/50 border-gray-600 text-white placeholder:text-gray-400"
                   />

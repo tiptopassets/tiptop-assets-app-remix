@@ -429,6 +429,100 @@ export type Database = {
           },
         ]
       }
+      partner_integration_progress: {
+        Row: {
+          created_at: string | null
+          earnings_data: Json | null
+          id: string
+          integration_status: string
+          next_steps: Json | null
+          onboarding_id: string | null
+          partner_name: string
+          referral_link: string | null
+          registration_data: Json | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          earnings_data?: Json | null
+          id?: string
+          integration_status?: string
+          next_steps?: Json | null
+          onboarding_id?: string | null
+          partner_name: string
+          referral_link?: string | null
+          registration_data?: Json | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          earnings_data?: Json | null
+          id?: string
+          integration_status?: string
+          next_steps?: Json | null
+          onboarding_id?: string | null
+          partner_name?: string
+          referral_link?: string | null
+          registration_data?: Json | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_integration_progress_onboarding_id_fkey"
+            columns: ["onboarding_id"]
+            isOneToOne: false
+            referencedRelation: "user_onboarding"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      partner_recommendations: {
+        Row: {
+          asset_type: string
+          created_at: string | null
+          estimated_monthly_earnings: number | null
+          id: string
+          onboarding_id: string | null
+          partner_name: string
+          priority_score: number | null
+          recommendation_reason: string | null
+          setup_complexity: string | null
+        }
+        Insert: {
+          asset_type: string
+          created_at?: string | null
+          estimated_monthly_earnings?: number | null
+          id?: string
+          onboarding_id?: string | null
+          partner_name: string
+          priority_score?: number | null
+          recommendation_reason?: string | null
+          setup_complexity?: string | null
+        }
+        Update: {
+          asset_type?: string
+          created_at?: string | null
+          estimated_monthly_earnings?: number | null
+          id?: string
+          onboarding_id?: string | null
+          partner_name?: string
+          priority_score?: number | null
+          recommendation_reason?: string | null
+          setup_complexity?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_recommendations_onboarding_id_fkey"
+            columns: ["onboarding_id"]
+            isOneToOne: false
+            referencedRelation: "user_onboarding"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       property_analyses: {
         Row: {
           analysis_results: Json
