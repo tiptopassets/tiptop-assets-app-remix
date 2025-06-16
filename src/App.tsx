@@ -44,16 +44,16 @@ function App() {
                     <Routes>
                       <Route path="/" element={<Index />} />
                       <Route path="/dashboard" element={<Dashboard />} />
-                      <Route path="/rooftop" element={<RooftopDashboard />} />
-                      <Route path="/internet" element={<InternetDashboard />} />
-                      <Route path="/ev-charging" element={<EVChargingDashboard />} />
+                      <Route path="/dashboard/rooftop" element={<RooftopDashboard />} />
+                      <Route path="/dashboard/internet" element={<InternetDashboard />} />
+                      <Route path="/dashboard/ev-charging" element={<EVChargingDashboard />} />
+                      <Route path="/dashboard/add-asset" element={<AddAsset />} />
+                      <Route path="/dashboard/affiliate" element={<AffiliateEarningsDashboard />} />
+                      <Route path="/dashboard/account" element={<AccountPage />} />
+                      <Route path="/dashboard/admin" element={<AdminDashboard />} />
+                      <Route path="/dashboard/onboarding" element={<EnhancedOnboardingChatbot />} />
                       <Route path="/submit-property" element={<SubmitProperty />} />
-                      <Route path="/add-asset" element={<AddAsset />} />
-                      <Route path="/account" element={<AccountPage />} />
-                      <Route path="/affiliate-earnings" element={<AffiliateEarningsDashboard />} />
-                      <Route path="/admin" element={<AdminDashboard />} />
                       <Route path="/onboarding" element={<OnboardingChatbot />} />
-                      <Route path="/onboarding-enhanced" element={<EnhancedOnboardingChatbot />} />
                       <Route path="/model-viewer" element={<ModelViewer />} />
                       <Route path="/options" element={<Options />} />
                       <Route path="*" element={<NotFound />} />
