@@ -1,85 +1,71 @@
 
-import React, { useState, useEffect } from 'react';
-import { Toaster } from '@/components/ui/toaster';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { AuthProvider } from '@/contexts/AuthContext';
-import { GoogleMapProvider } from '@/contexts/GoogleMapContext';
-import { ModelGenerationProvider } from '@/contexts/ModelGeneration';
-import { ServiceProviderProvider } from '@/contexts/ServiceProviders';
-import ErrorBoundary from '@/components/ErrorBoundary';
-import DataSyncNotification from '@/components/DataSyncNotification';
+import { Toaster } from "@/components/ui/toaster";
+import { Toaster as Sonner } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { AuthProvider } from "@/contexts/AuthContext";
+import GoogleMapProvider from "@/contexts/GoogleMapContext/GoogleMapProvider";
+import ServiceProviderProvider from "@/contexts/ServiceProviders/ServiceProviderContext";
+import ModelGenerationProvider from "@/contexts/ModelGeneration/ModelGenerationContext";
+import ErrorBoundary from "@/components/ErrorBoundary";
 
 // Pages
-import Index from '@/pages/Index';
-import Dashboard from '@/pages/Dashboard';
-import RooftopDashboard from '@/pages/RooftopDashboard';
-import InternetDashboard from '@/pages/InternetDashboard';
-import EVChargingDashboard from '@/pages/EVChargingDashboard';
-import AffiliateEarningsDashboard from '@/pages/AffiliateEarningsDashboard';
-import AddAsset from '@/pages/AddAsset';
-import Options from '@/pages/Options';
-import OnboardingChatbot from '@/pages/OnboardingChatbot';
-import AdminDashboard from '@/pages/AdminDashboard';
-import AccountPage from '@/pages/AccountPage';
-import SubmitProperty from '@/pages/SubmitProperty';
-import ModelViewer from '@/pages/ModelViewer';
-import NotFound from '@/pages/NotFound';
+import Index from "./pages/Index";
+import Dashboard from "./pages/Dashboard";
+import RooftopDashboard from "./pages/RooftopDashboard";
+import InternetDashboard from "./pages/InternetDashboard";
+import EVChargingDashboard from "./pages/EVChargingDashboard";
+import SubmitProperty from "./pages/SubmitProperty";
+import AddAsset from "./pages/AddAsset";
+import AccountPage from "./pages/AccountPage";
+import AffiliateEarningsDashboard from "./pages/AffiliateEarningsDashboard";
+import AdminDashboard from "./pages/AdminDashboard";
+import OnboardingChatbot from "./pages/OnboardingChatbot";
+import EnhancedOnboardingChatbot from "./pages/EnhancedOnboardingChatbot";
+import ModelViewer from "./pages/ModelViewer";
+import Options from "./pages/Options";
+import NotFound from "./pages/NotFound";
 
-import './App.css';
-
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      retry: 1,
-      refetchOnWindowFocus: false,
-    },
-  },
-});
+const queryClient = new QueryClient();
 
 function App() {
-  const [mapLoaded, setMapLoaded] = useState(false);
-
-  useEffect(() => {
-    console.log('🗺️ Google Maps loaded:', mapLoaded);
-  }, [mapLoaded]);
-
   return (
-    <ErrorBoundary>
-      <QueryClientProvider client={queryClient}>
-        <Router>
-          <AuthProvider>
-            <ServiceProviderProvider>
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <ErrorBoundary>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <AuthProvider>
               <GoogleMapProvider>
-                <ModelGenerationProvider>
-                  <div className="min-h-screen w-full bg-background">
+                <ServiceProviderProvider>
+                  <ModelGenerationProvider>
                     <Routes>
                       <Route path="/" element={<Index />} />
                       <Route path="/dashboard" element={<Dashboard />} />
-                      <Route path="/dashboard/rooftop" element={<RooftopDashboard />} />
-                      <Route path="/dashboard/internet" element={<InternetDashboard />} />
-                      <Route path="/dashboard/ev-charging" element={<EVChargingDashboard />} />
-                      <Route path="/dashboard/affiliate" element={<AffiliateEarningsDashboard />} />
-                      <Route path="/dashboard/add-asset" element={<AddAsset />} />
-                      <Route path="/dashboard/onboarding" element={<OnboardingChatbot />} />
-                      <Route path="/dashboard/admin" element={<AdminDashboard />} />
-                      <Route path="/dashboard/account" element={<AccountPage />} />
-                      <Route path="/options" element={<Options />} />
-                      <Route path="/onboarding" element={<OnboardingChatbot />} />
+                      <Route path="/rooftop" element={<RooftopDashboard />} />
+                      <Route path="/internet" element={<InternetDashboard />} />
+                      <Route path="/ev-charging" element={<EVChargingDashboard />} />
                       <Route path="/submit-property" element={<SubmitProperty />} />
+                      <Route path="/add-asset" element={<AddAsset />} />
+                      <Route path="/account" element={<AccountPage />} />
+                      <Route path="/affiliate-earnings" element={<AffiliateEarningsDashboard />} />
+                      <Route path="/admin" element={<AdminDashboard />} />
+                      <Route path="/onboarding" element={<OnboardingChatbot />} />
+                      <Route path="/onboarding-enhanced" element={<EnhancedOnboardingChatbot />} />
                       <Route path="/model-viewer" element={<ModelViewer />} />
+                      <Route path="/options" element={<Options />} />
                       <Route path="*" element={<NotFound />} />
                     </Routes>
-                    <DataSyncNotification />
-                    <Toaster />
-                  </div>
-                </ModelGenerationProvider>
+                  </ModelGenerationProvider>
+                </ServiceProviderProvider>
               </GoogleMapProvider>
-            </ServiceProviderProvider>
-          </AuthProvider>
-        </Router>
-      </QueryClientProvider>
-    </ErrorBoundary>
+            </AuthProvider>
+          </BrowserRouter>
+        </ErrorBoundary>
+      </TooltipProvider>
+    </QueryClientProvider>
   );
 }
 
