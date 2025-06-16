@@ -6,8 +6,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import GoogleMapProvider from "@/contexts/GoogleMapContext/GoogleMapProvider";
-import ServiceProviderProvider from "@/contexts/ServiceProviders/ServiceProviderContext";
-import ModelGenerationProvider from "@/contexts/ModelGeneration/ModelGenerationContext";
+import { ServiceProviderProvider } from "@/contexts/ServiceProviders/ServiceProviderContext";
+import { ModelGenerationProvider } from "@/contexts/ModelGeneration/ModelGenerationContext";
 import ErrorBoundary from "@/components/ErrorBoundary";
 
 // Pages
