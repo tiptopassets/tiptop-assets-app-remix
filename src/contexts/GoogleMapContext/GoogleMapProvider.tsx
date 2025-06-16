@@ -216,6 +216,7 @@ const GoogleMapProvider = ({ children }: { children: React.ReactNode }) => {
     analysisResults,
     setAnalysisResults,
     isGeneratingAnalysis,
+    setIsGeneratingAnalysis,
     generateAnalysis,
     syncAnalysisToDatabase,
     dataSyncEnabled,
