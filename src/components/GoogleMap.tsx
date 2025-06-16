@@ -1,3 +1,4 @@
+
 import React, { useEffect } from 'react';
 import { useGoogleMap } from '@/contexts/GoogleMapContext';
 import MapMarker from './map/MapMarker';
@@ -6,6 +7,7 @@ import MapVisualEffects from './map/MapVisualEffects';
 import { useGoogleMapInstance } from '@/hooks/useGoogleMapInstance';
 import { Button } from '@/components/ui/button';
 import { AlertCircle, MapPin, RefreshCw } from 'lucide-react';
+import { loadGoogleMaps } from '@/utils/googleMapsLoader';
 
 const GoogleMap = () => {
   const { 
@@ -19,7 +21,8 @@ const GoogleMap = () => {
     analysisError,
     zoomLevel,
     setZoomLevel,
-    setUseLocalAnalysis
+    setUseLocalAnalysis,
+    useLocalAnalysis
   } = useGoogleMap();
   
   const { mapRef, mapInstance, mapLoadError } = useGoogleMapInstance(zoomLevel, setZoomLevel);
@@ -68,7 +71,7 @@ const GoogleMap = () => {
   }, [mapInstance, addressCoordinates]);
 
   // Handle map loading error with improved messaging
-  if (mapLoadError) {
+  if (mapLoadError && !useLocalAnalysis) {
     return (
       <div className="absolute inset-0 z-0 flex flex-col items-center justify-center bg-gradient-to-b from-gray-900 to-purple-900">
         <div className="bg-black/40 backdrop-blur-md p-8 rounded-lg max-w-md text-center border border-white/10">
@@ -110,6 +113,23 @@ const GoogleMap = () => {
     );
   }
 
+  // Show fallback when using local analysis mode
+  if (useLocalAnalysis) {
+    return (
+      <div className="absolute inset-0 z-0 bg-gradient-to-b from-gray-900 to-purple-900">
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+          <div className="w-full h-full flex items-center justify-center">
+            <MapPin className="h-40 w-40 text-purple-400/20 animate-pulse" />
+          </div>
+          <div className="absolute top-4 right-4 bg-blue-600/80 backdrop-blur-sm px-3 py-1 rounded-full text-white text-sm">
+            Demo Mode
+          </div>
+        </div>
+        <MapVisualEffects />
+      </div>
+    );
+  }
+
   return (
     <div 
       className="absolute inset-0 z-0" 
@@ -123,8 +143,6 @@ const GoogleMap = () => {
         id="map" 
         className="h-full w-full"
       />
-      
-      {/* Zoom controls removed completely */}
       
       {/* Render marker if we have coordinates and analysis is complete */}
       {mapInstance && addressCoordinates && analysisComplete && !isAnalyzing && (

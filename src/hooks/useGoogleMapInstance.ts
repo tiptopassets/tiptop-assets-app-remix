@@ -1,6 +1,6 @@
 
 import { useEffect, useState, useRef } from 'react';
-import { initializeGoogleMaps } from '@/utils/googleMapsLoader';
+import { loadGoogleMaps } from '@/utils/googleMapsLoader';
 import { mapStyles } from '@/utils/mapStyles';
 import { useToast } from '@/hooks/use-toast';
 
@@ -15,7 +15,8 @@ export const useGoogleMapInstance = (zoomLevel: number | undefined, setZoomLevel
     
     const loadMap = async () => {
       try {
-        await initializeGoogleMaps();
+        // Use the centralized Google Maps loader
+        await loadGoogleMaps();
         
         if (!mounted || !mapRef.current || !window.google) {
           return null;
