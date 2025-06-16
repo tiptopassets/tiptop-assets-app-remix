@@ -38,6 +38,8 @@ export const useConversationIntelligence = () => {
     setIsAnalyzing(true);
     
     try {
+      console.log('Analyzing message:', message);
+      
       const { data, error } = await supabase.functions.invoke('analyze-conversation', {
         body: {
           message,
@@ -46,31 +48,45 @@ export const useConversationIntelligence = () => {
         }
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase function error:', error);
+        throw new Error(error.message || 'Failed to analyze conversation');
+      }
+
+      console.log('Analysis result:', data);
 
       // Update context based on AI analysis
-      setContext(prev => ({
-        ...prev,
-        detectedAssets: [...new Set([...prev.detectedAssets, ...data.detectedAssets])],
-        conversationStage: data.suggestedStage || prev.conversationStage,
-        userProfile: {
-          ...prev.userProfile,
-          ...data.userProfileUpdates
-        }
-      }));
+      if (data && typeof data === 'object') {
+        setContext(prev => ({
+          ...prev,
+          detectedAssets: data.detectedAssets ? [...new Set([...prev.detectedAssets, ...data.detectedAssets])] : prev.detectedAssets,
+          conversationStage: data.suggestedStage || prev.conversationStage,
+          userProfile: {
+            ...prev.userProfile,
+            ...(data.userProfileUpdates || {})
+          }
+        }));
 
-      return {
-        message: data.response,
-        suggestedActions: data.suggestedActions || [],
-        detectedAssets: data.detectedAssets || [],
-        confidence: data.confidence || 0.8
-      };
+        return {
+          message: data.response || "I understand you're interested in monetizing your property. Could you tell me more about what assets you have available?",
+          suggestedActions: data.suggestedActions || ['Ask about rooftop space', 'Ask about parking', 'Ask about internet speed'],
+          detectedAssets: data.detectedAssets || [],
+          confidence: data.confidence || 0.8
+        };
+      } else {
+        throw new Error('Invalid response format from analysis service');
+      }
     } catch (error) {
       console.error('Error analyzing conversation:', error);
+      
+      // Provide intelligent fallback based on message content
+      const fallbackAssets = detectAssetsLocally(message);
+      const fallbackResponse = generateFallbackResponse(message, fallbackAssets);
+      
       return {
-        message: "I understand you're interested in monetizing your property. Could you tell me more about what assets you have available?",
-        suggestedActions: ['Ask about rooftop space', 'Ask about parking', 'Ask about internet speed'],
-        detectedAssets: [],
+        message: fallbackResponse,
+        suggestedActions: generateFallbackActions(fallbackAssets),
+        detectedAssets: fallbackAssets,
         confidence: 0.5
       };
     } finally {
@@ -110,6 +126,50 @@ export const useConversationIntelligence = () => {
     };
 
     return questionMap[stage] || questionMap.discovery;
+  };
+
+  // Local fallback asset detection
+  const detectAssetsLocally = (message: string): string[] => {
+    const assetKeywords = {
+      'rooftop': ['roof', 'rooftop', 'solar', 'panels'],
+      'parking': ['parking', 'driveway', 'garage', 'car space'],
+      'internet': ['internet', 'wifi', 'broadband', 'connection'],
+      'pool': ['pool', 'swimming', 'spa'],
+      'storage': ['storage', 'basement', 'attic', 'shed'],
+      'garden': ['garden', 'yard', 'outdoor space', 'backyard']
+    };
+
+    const detectedAssets: string[] = [];
+    const lowerMessage = message.toLowerCase();
+
+    for (const [asset, keywords] of Object.entries(assetKeywords)) {
+      if (keywords.some(keyword => lowerMessage.includes(keyword))) {
+        detectedAssets.push(asset);
+      }
+    }
+
+    return detectedAssets;
+  };
+
+  const generateFallbackResponse = (message: string, assets: string[]): string => {
+    if (assets.length > 0) {
+      const assetNames = assets.map(asset => asset.replace('_', ' ')).join(', ');
+      return `I can see you mentioned ${assetNames}. These are great assets for monetization! Let me help you explore the opportunities for each of these.`;
+    }
+    
+    return "I understand you're interested in monetizing your property. Could you tell me more about what assets you have available, such as rooftop space, parking, or high-speed internet?";
+  };
+
+  const generateFallbackActions = (assets: string[]): string[] => {
+    if (assets.includes('rooftop')) {
+      return ['Tell me about solar potential', 'What roof size do you have?', 'Is your roof suitable for solar?'];
+    }
+    
+    if (assets.includes('parking')) {
+      return ['How many parking spaces?', 'Is parking in demand in your area?', 'What are local parking rates?'];
+    }
+    
+    return ['Ask about rooftop space', 'Ask about parking', 'Ask about internet speed'];
   };
 
   return {
