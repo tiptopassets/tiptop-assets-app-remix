@@ -29,7 +29,8 @@ const convertToOnboardingData = (row: any): OnboardingData => {
   return {
     ...row,
     chat_history: Array.isArray(row.chat_history) ? row.chat_history : [],
-    progress_data: row.progress_data || {}
+    progress_data: row.progress_data || {},
+    completed_assets: Array.isArray(row.completed_assets) ? row.completed_assets : []
   };
 };
 
@@ -49,12 +50,23 @@ export const createOnboarding = async (
   try {
     console.log('📝 Creating onboarding session:', { userId, selectedOption });
     
+    // Ensure we have the authenticated user
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user || user.id !== userId) {
+      throw new Error('User must be authenticated to create onboarding session');
+    }
+    
     const { data, error } = await supabase
       .from('user_onboarding')
       .insert({
         user_id: userId,
         selected_option: selectedOption,
-        status: 'in_progress'
+        status: 'in_progress',
+        current_step: 1,
+        total_steps: 5,
+        chat_history: [],
+        completed_assets: [],
+        progress_data: {}
       })
       .select()
       .single();
@@ -75,6 +87,12 @@ export const createOnboarding = async (
 export const getOnboarding = async (userId: string): Promise<OnboardingData | null> => {
   try {
     console.log('🔍 Getting onboarding for user:', userId);
+    
+    // Ensure we have the authenticated user
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user || user.id !== userId) {
+      throw new Error('User must be authenticated to access onboarding data');
+    }
     
     const { data, error } = await supabase
       .from('user_onboarding')
@@ -103,10 +121,17 @@ export const updateOnboardingProgress = async (
   try {
     console.log('🔄 Updating onboarding progress:', { onboardingId, updates });
     
+    // Ensure user is authenticated
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      throw new Error('User must be authenticated to update onboarding');
+    }
+    
     const { data, error } = await supabase
       .from('user_onboarding')
       .update(updates)
       .eq('id', onboardingId)
+      .eq('user_id', user.id) // Ensure user can only update their own data
       .select()
       .single();
 
@@ -132,13 +157,30 @@ export const addOnboardingMessage = async (
   try {
     console.log('💬 Adding onboarding message:', { onboardingId, role, content: content.substring(0, 50) + '...' });
     
+    // Ensure user is authenticated
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      throw new Error('User must be authenticated to add messages');
+    }
+    
+    // Verify the onboarding session belongs to the authenticated user
+    const { data: onboardingData, error: checkError } = await supabase
+      .from('user_onboarding')
+      .select('user_id')
+      .eq('id', onboardingId)
+      .single();
+    
+    if (checkError || !onboardingData || onboardingData.user_id !== user.id) {
+      throw new Error('Access denied: onboarding session not found or not owned by user');
+    }
+    
     const { data, error } = await supabase
       .from('onboarding_messages')
       .insert({
         onboarding_id: onboardingId,
         role,
         content,
-        metadata
+        metadata: metadata || {}
       })
       .select()
       .single();
@@ -160,6 +202,14 @@ export const getOnboardingMessages = async (onboardingId: string): Promise<Onboa
   try {
     console.log('📨 Getting messages for onboarding:', onboardingId);
     
+    // Ensure user is authenticated
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      throw new Error('User must be authenticated to view messages');
+    }
+    
+    // The RLS policy will automatically filter messages to only show those
+    // belonging to onboarding sessions owned by the authenticated user
     const { data, error } = await supabase
       .from('onboarding_messages')
       .select('*')
