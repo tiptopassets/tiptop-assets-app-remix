@@ -1,3 +1,4 @@
+
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.43.1';
 import { corsHeaders } from '../_shared/cors.ts';
 import { analyzeImage } from './imageAnalysis.ts';
@@ -201,6 +202,7 @@ Deno.serve(async (req) => {
         },
         imageAnalysis: imageAnalysis,
         solarData: solarData,
+        satelliteImageUrl: satelliteImageUrl, // Include the satellite image URL in response
         validationApplied: true
       }),
       {

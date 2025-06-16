@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { motion } from "framer-motion";
 import { useNavigate } from 'react-router-dom';
@@ -226,6 +225,7 @@ const Dashboard = () => {
             createdAt={latestAnalysis.created_at}
             totalOpportunities={totalOpportunities}
             totalMonthlyRevenue={totalMonthlyRevenue}
+            satelliteImageUrl={latestAnalysis.satellite_image_url}
           />
         )}
 

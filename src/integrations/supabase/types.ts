@@ -1068,6 +1068,8 @@ export type Database = {
           created_at: string | null
           id: string
           property_type: string | null
+          satellite_image_url: string | null
+          street_view_image_url: string | null
           total_monthly_revenue: number | null
           total_opportunities: number | null
           updated_at: string | null
@@ -1082,6 +1084,8 @@ export type Database = {
           created_at?: string | null
           id?: string
           property_type?: string | null
+          satellite_image_url?: string | null
+          street_view_image_url?: string | null
           total_monthly_revenue?: number | null
           total_opportunities?: number | null
           updated_at?: string | null
@@ -1096,6 +1100,8 @@ export type Database = {
           created_at?: string | null
           id?: string
           property_type?: string | null
+          satellite_image_url?: string | null
+          street_view_image_url?: string | null
           total_monthly_revenue?: number | null
           total_opportunities?: number | null
           updated_at?: string | null

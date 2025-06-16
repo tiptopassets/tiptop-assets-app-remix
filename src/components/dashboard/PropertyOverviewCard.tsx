@@ -17,7 +17,27 @@ export const PropertyOverviewCard = ({ address, description, imageUrl }: Propert
       <div className="grid grid-cols-1 lg:grid-cols-3 relative z-10">
         <div className="lg:col-span-1">
           {imageUrl ? (
-            <div className="h-full min-h-[200px] bg-cover bg-center" style={{ backgroundImage: `url(${imageUrl})` }}></div>
+            <div 
+              className="h-full min-h-[200px] bg-cover bg-center bg-gray-100" 
+              style={{ backgroundImage: `url(${imageUrl})` }}
+            >
+              <img 
+                src={imageUrl} 
+                alt="Property satellite view" 
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  // Hide the image and show fallback if it fails to load
+                  (e.target as HTMLImageElement).style.display = 'none';
+                  const fallback = (e.target as HTMLImageElement).nextElementSibling;
+                  if (fallback) {
+                    (fallback as HTMLElement).style.display = 'flex';
+                  }
+                }}
+              />
+              <div className="h-full min-h-[200px] bg-gray-200 items-center justify-center hidden">
+                <span className="text-gray-400">Satellite View Unavailable</span>
+              </div>
+            </div>
           ) : (
             <div className="h-full min-h-[200px] bg-gray-200 flex items-center justify-center">
               <span className="text-gray-400">Satellite View Unavailable</span>

@@ -8,13 +8,15 @@ interface DashboardPropertyOverviewProps {
   createdAt: string;
   totalOpportunities: number;
   totalMonthlyRevenue: number;
+  satelliteImageUrl?: string;
 }
 
 export const DashboardPropertyOverview = ({ 
   address, 
   createdAt, 
   totalOpportunities, 
-  totalMonthlyRevenue 
+  totalMonthlyRevenue,
+  satelliteImageUrl
 }: DashboardPropertyOverviewProps) => {
   const description = `Property analysis completed on ${new Date(createdAt).toLocaleDateString()}. Found ${totalOpportunities} monetization opportunities with potential monthly revenue of $${totalMonthlyRevenue}.`;
 
@@ -27,6 +29,7 @@ export const DashboardPropertyOverview = ({
       <PropertyOverviewCard 
         address={address}
         description={description}
+        imageUrl={satelliteImageUrl}
       />
     </motion.div>
   );

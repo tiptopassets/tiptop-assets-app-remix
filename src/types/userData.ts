@@ -23,6 +23,8 @@ export interface UserPropertyAnalysis {
   property_type?: string;
   coordinates?: any;
   using_real_solar_data: boolean;
+  satellite_image_url?: string;
+  street_view_image_url?: string;
   created_at: string;
   updated_at: string;
 }
