@@ -1,9 +1,9 @@
-
 import { createContext, useContext, useState, ReactNode } from 'react';
 import { GoogleMapContextType, AnalysisResults } from './types';
 import { generatePropertyAnalysis } from './propertyAnalysis';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
+import { saveUnauthenticatedAnalysis } from '@/services/unauthenticatedAnalysisService';
 
 const GoogleMapContext = createContext<GoogleMapContextType | undefined>(undefined);
 
@@ -49,8 +49,13 @@ export const GoogleMapProvider = ({ children }: { children: ReactNode }) => {
           console.log('📊 Analysis results received:', !!results);
           setAnalysisResults(results);
           
-          // Save to database if user is authenticated and we have results
-          if (results && propertyAddress && user && !authLoading) {
+          if (!results || !propertyAddress) {
+            console.log('ℹ️ No results or address to save');
+            return;
+          }
+          
+          // Save to database if user is authenticated
+          if (user && !authLoading) {
             try {
               console.log('💾 Attempting to save analysis to database...');
               
@@ -82,42 +87,24 @@ export const GoogleMapProvider = ({ children }: { children: ReactNode }) => {
                 
                 if (analysisId) {
                   console.log('✅ Analysis saved with ID:', analysisId);
-                  toast({
-                    title: "Analysis Saved",
-                    description: "Your property analysis has been saved to your dashboard",
-                  });
                 } else {
                   console.error('❌ Failed to save analysis - no ID returned');
-                  toast({
-                    title: "Save Error",
-                    description: "Analysis completed but couldn't save to dashboard. Please try again.",
-                    variant: "destructive"
-                  });
                 }
               } else {
                 console.error('❌ Failed to save address - no ID returned');
-                toast({
-                  title: "Save Error",
-                  description: "Could not save address. Please try again.",
-                  variant: "destructive"
-                });
               }
             } catch (error) {
               console.error('❌ Failed to save analysis to database:', error);
-              toast({
-                title: "Save Warning",
-                description: "Analysis completed but couldn't save to dashboard. Data is available locally.",
-                variant: "destructive"
-              });
             }
           } else {
-            if (!user) {
-              console.log('ℹ️ User not authenticated - analysis not saved to database');
-            } else if (!results) {
-              console.log('ℹ️ No results to save');
-            } else {
-              console.log('ℹ️ Auth still loading or missing data - analysis not saved');
-            }
+            // Save to localStorage for unauthenticated users
+            console.log('📱 User not authenticated - saving to localStorage');
+            saveUnauthenticatedAnalysis(
+              propertyAddress,
+              results,
+              addressCoordinates,
+              propertyAddress
+            );
           }
         },
         setAnalysisComplete,

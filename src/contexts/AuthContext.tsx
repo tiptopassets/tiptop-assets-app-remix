@@ -1,9 +1,12 @@
-
 import { createContext, useState, useEffect, useContext, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Session, User } from '@supabase/supabase-js';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
+import { 
+  recoverAnalysesToDatabase, 
+  hasUnauthenticatedAnalyses 
+} from '@/services/unauthenticatedAnalysisService';
 
 type AuthContextType = {
   session: Session | null;
@@ -63,6 +66,42 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  // Function to handle analysis recovery after sign-in
+  const handleAnalysisRecovery = async (userId: string) => {
+    try {
+      if (!hasUnauthenticatedAnalyses()) {
+        console.log('ℹ️ No unauthenticated analyses to recover');
+        return;
+      }
+      
+      console.log('🔄 Starting analysis recovery for user:', userId);
+      const result = await recoverAnalysesToDatabase(userId);
+      
+      if (result.recovered > 0) {
+        toast({
+          title: "Analysis Recovered",
+          description: `Successfully recovered ${result.recovered} property analysis${result.recovered > 1 ? 'es' : ''} to your dashboard`,
+        });
+      }
+      
+      if (result.failed > 0) {
+        console.error('⚠️ Some analyses failed to recover:', result.errors);
+        toast({
+          title: "Partial Recovery",
+          description: `Recovered ${result.recovered} analyses, but ${result.failed} failed to save`,
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      console.error('❌ Error during analysis recovery:', error);
+      toast({
+        title: "Recovery Error",
+        description: "Failed to recover previous analysis. Please try analyzing your property again.",
+        variant: "destructive"
+      });
+    }
+  };
+
   useEffect(() => {
     let mounted = true;
     let authSubscription: any = null;
@@ -88,6 +127,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               setTimeout(() => {
                 if (mounted) {
                   updateLoginStats(currentSession.user.id);
+                  
+                  // Trigger analysis recovery
+                  handleAnalysisRecovery(currentSession.user.id);
+                  
                   // Always redirect to dashboard when user signs in
                   navigate('/dashboard');
                 }
@@ -121,11 +164,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           setSession(currentSession);
           setUser(currentSession?.user ?? null);
           
-          // If user was already signed in on page load, update login stats
+          // If user was already signed in on page load, update login stats and recover analyses
           if (currentSession?.user) {
             setTimeout(() => {
               if (mounted) {
                 updateLoginStats(currentSession.user.id);
+                handleAnalysisRecovery(currentSession.user.id);
               }
             }, 0);
           }
@@ -149,7 +193,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         authSubscription.data.subscription.unsubscribe();
       }
     };
-  }, [navigate]);
+  }, [navigate, toast]);
 
   const signInWithGoogle = async () => {
     try {

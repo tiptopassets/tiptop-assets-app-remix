@@ -4,16 +4,40 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useGoogleMap } from '@/contexts/GoogleMapContext';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
-import { Database, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Database, AlertCircle, CheckCircle2, Upload } from 'lucide-react';
+import { hasUnauthenticatedAnalyses } from '@/services/unauthenticatedAnalysisService';
 
 const DataSyncNotification = () => {
   const { user } = useAuth();
   const { analysisComplete, analysisResults, address, analysisError } = useGoogleMap();
   const { toast } = useToast();
   const [hasShownSyncNotification, setHasShownSyncNotification] = useState(false);
+  const [hasShownRecoveryPrompt, setHasShownRecoveryPrompt] = useState(false);
 
+  // Show recovery prompt for users who sign in with pending analyses
   useEffect(() => {
-    // Show sync notification when analysis completes for authenticated users
+    if (user && !hasShownRecoveryPrompt && hasUnauthenticatedAnalyses()) {
+      setHasShownRecoveryPrompt(true);
+      
+      setTimeout(() => {
+        toast({
+          title: "Previous Analysis Found",
+          description: "We found property analysis data from before you signed in. Recovery in progress...",
+          action: (
+            <Button asChild variant="outline" size="sm">
+              <a href="/dashboard">
+                <Upload className="w-4 h-4 mr-2" />
+                View Dashboard
+              </a>
+            </Button>
+          )
+        });
+      }, 1000);
+    }
+  }, [user, hasShownRecoveryPrompt, toast]);
+
+  // Show sync notification when analysis completes for authenticated users
+  useEffect(() => {
     if (analysisComplete && analysisResults && address && user && !hasShownSyncNotification) {
       setHasShownSyncNotification(true);
       
@@ -41,7 +65,7 @@ const DataSyncNotification = () => {
       setTimeout(() => {
         toast({
           title: "Analysis Complete",
-          description: "Sign in to save your analysis results to your dashboard",
+          description: "Sign in to save your analysis results to your dashboard and access them later",
           action: (
             <Button asChild variant="outline" size="sm">
               <a href="/dashboard">
@@ -80,6 +104,13 @@ const DataSyncNotification = () => {
       setHasShownSyncNotification(false);
     }
   }, [analysisComplete, analysisError]);
+
+  // Reset recovery prompt when user logs out
+  useEffect(() => {
+    if (!user) {
+      setHasShownRecoveryPrompt(false);
+    }
+  }, [user]);
 
   return null; // This component only handles notifications
 };
