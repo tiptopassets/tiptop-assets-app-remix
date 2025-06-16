@@ -1,6 +1,7 @@
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion } from "framer-motion";
+import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '@/components/dashboard/DashboardLayout';
 import { AssetsTable } from '@/components/dashboard/AssetsTable';
 import { DashboardStats } from '@/components/dashboard/DashboardStats';
@@ -13,9 +14,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { MapPin, AlertCircle, RefreshCw } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { isFirstTimeUser, markUserAsReturning } from '@/services/firstTimeUserService';
 
 const Dashboard = () => {
   const { user, loading: authLoading } = useAuth();
+  const navigate = useNavigate();
+  const [isCheckingFirstTime, setIsCheckingFirstTime] = useState(true);
   const { 
     addresses, 
     analyses, 
@@ -44,14 +48,36 @@ const Dashboard = () => {
     latestAnalysis: !!latestAnalysis
   });
 
-  // Show loading state while auth is loading
-  if (authLoading) {
+  // Check if user is first-time and redirect to onboarding if needed
+  useEffect(() => {
+    if (!authLoading && user) {
+      const isFirstTime = isFirstTimeUser();
+      console.log('🔍 First-time user check:', isFirstTime);
+      
+      if (isFirstTime) {
+        console.log('➡️ Redirecting first-time user to onboarding');
+        navigate('/dashboard/onboarding');
+        return;
+      }
+      
+      // Mark user as returning for future visits
+      markUserAsReturning();
+      setIsCheckingFirstTime(false);
+    } else if (!authLoading && !user) {
+      setIsCheckingFirstTime(false);
+    }
+  }, [authLoading, user, navigate]);
+
+  // Show loading state while auth is loading or checking first-time status
+  if (authLoading || isCheckingFirstTime) {
     return (
       <DashboardLayout>
         <div className="flex items-center justify-center min-h-96">
           <div className="text-center">
             <div className="w-8 h-8 border-4 border-tiptop-purple border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-            <p className="text-gray-600">Loading authentication...</p>
+            <p className="text-gray-600">
+              {authLoading ? 'Loading authentication...' : 'Setting up your dashboard...'}
+            </p>
           </div>
         </div>
       </DashboardLayout>
