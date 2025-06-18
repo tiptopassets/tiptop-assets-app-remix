@@ -1,4 +1,3 @@
-
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.4';
@@ -70,9 +69,9 @@ serve(async (req) => {
       console.log('Solar API not available, using market estimation:', error);
     }
 
-    // Step 5: Market Intelligence Analysis with Enhanced GPT-4o
+    // Step 5: Market Intelligence Analysis with Building Type Restrictions
     const analysisPrompt = `
-You are a PREMIUM property monetization expert with access to real-time market data and 20+ years of investment experience.
+You are a PREMIUM property monetization expert with 20+ years of investment experience and deep knowledge of building type restrictions.
 
 PROPERTY INTELLIGENCE PROFILE:
 - Address: ${address}
@@ -80,125 +79,132 @@ PROPERTY INTELLIGENCE PROFILE:
 - Google Solar Data: ${googleSolarData ? 'VERIFIED REAL DATA AVAILABLE' : 'Using Market Intelligence Models'}
 - Analysis Date: ${new Date().toISOString()}
 
+CRITICAL BUILDING TYPE RESTRICTIONS & DETECTION:
+1. ADDRESS PATTERN ANALYSIS:
+   - Contains "Apt", "Unit", "Suite", "#" → APARTMENT BUILDING
+   - Contains "Condo", "Condominium" → CONDO COMPLEX  
+   - Multi-story building in satellite → MULTI-UNIT BUILDING
+   - When uncertain → ASSUME RESTRICTED ACCESS
+
+2. APARTMENT/CONDO/MULTI-UNIT RESTRICTIONS:
+   - ❌ NO rooftop access (managed by HOA/building owner)
+   - ❌ NO solar panel installation rights
+   - ❌ NO shared garden/outdoor space rental
+   - ❌ NO parking space rental (building-managed)
+   - ❌ NO pool rental (shared amenity)
+   - ✅ ONLY: Internet bandwidth, personal unit storage
+
+3. SINGLE FAMILY HOME OPPORTUNITIES:
+   - ✅ Full rooftop access and solar rights
+   - ✅ Garden and outdoor space control
+   - ✅ Private parking rental options
+   - ✅ Pool rental if present
+   - ✅ All storage opportunities
+
+4. TOWNHOUSE/DUPLEX (MIXED RESTRICTIONS):
+   - ⚠️ Limited rooftop (check HOA)
+   - ⚠️ Shared garden restrictions possible
+   - ✅ Private driveway parking usually available
+
 ${googleSolarData ? `VERIFIED SOLAR INTELLIGENCE:\n${JSON.stringify(googleSolarData, null, 2)}` : ''}
 
-MARKET INTELLIGENCE FRAMEWORK:
+BUILDING-TYPE-AWARE MARKET INTELLIGENCE:
 
-1. ROOFTOP SOLAR MONETIZATION (Real Data Integration)
+1. ROOFTOP SOLAR MONETIZATION (SINGLE FAMILY HOMES ONLY)
    ${googleSolarData ? 
-     `- VERIFIED roof area: ${googleSolarData.solarPotential?.roofSegmentStats?.reduce((total: number, segment: any) => total + (segment.stats?.areaMeters2 || 0), 0) || 'TBD'} m²
-      - VERIFIED solar panels capacity: ${googleSolarData.solarPotential?.maxArrayPanelsCount || 'TBD'} panels
+     `- VERIFIED roof access and solar rights required
+      - VERIFIED solar capacity: ${googleSolarData.solarPotential?.maxArrayPanelsCount || 'TBD'} panels
       - VERIFIED yearly energy: ${googleSolarData.solarPotential?.yearlyEnergyDcKwh || 'TBD'} kWh/year` :
-     `- Estimate roof area using property size indicators
-      - Calculate solar capacity: Area ÷ 17.5 sq ft per 400W panel
-      - Estimate yearly production: Capacity × 1,400 kWh per kW (national average)`
+     `- Must verify property owner has roof access rights
+      - Calculate capacity only if individual roof access confirmed
+      - Apartment/condo buildings: SET REVENUE = $0`
    }
-   - Monthly revenue calculation: (Yearly kWh × $0.12 average rate) ÷ 12
-   - Setup cost: $2.80-$3.50 per watt (2024 market rates)
-   - Net metering benefits: Full retail rate credit in most areas
-   - Tax incentives: 30% federal credit through 2032
+   - IF apartment/condo: Explain "No individual roof access in multi-unit buildings"
+   - IF single family: Full solar potential analysis
 
-2. PARKING MONETIZATION (Location-Based Pricing Intelligence)
-   - Geocoded pricing analysis for ${address}
-   - Urban core (downtown): $150-350/month per space
-   - Suburban residential: $75-175/month per space  
-   - Near transit/airports: Premium +40-60%
-   - Event venues nearby: Premium +25-40%
-   - EV charging stations: Additional $100-200/month revenue
-   - Platform integration: SpotHero, ParkWhiz market rates
+2. PARKING MONETIZATION (PRIVATE ACCESS REQUIRED)
+   - IF apartment/condo: "Parking managed by building - no individual rental rights"
+   - IF single family with driveway: Full market analysis
+   - Geographic pricing only applies to privately controlled spaces
 
-3. POOL RENTAL (Swimply Market Analysis)
-   - Average session rate: $6-12 per person per hour
-   - Peak season earnings: $400-1,200/month (May-September)
-   - Off-season potential: $100-300/month (heated pools)
-   - Setup requirements: $200-500 (insurance, cleaning supplies)
-   - Market saturation check: Analyze competitor density within 3-mile radius
+3. POOL RENTAL (PRIVATE POOLS ONLY)
+   - IF apartment/condo: "Shared pool amenities cannot be individually rented"
+   - IF single family with private pool: Swimply market rates apply
+   - Community pools are NOT monetizable by residents
 
-4. STORAGE SPACE (Neighbor.com Intelligence)
-   - Garage bay rental: $80-250/month (market-dependent)
-   - Basement storage: $40-120/month per 100 sq ft
-   - Attic space: $30-80/month per 100 sq ft  
-   - Shed/outdoor storage: $25-75/month
-   - Market demand analysis: Compare to local self-storage rates (typically 40-60% of commercial rates)
+4. STORAGE SPACE (ACCESS-DEPENDENT)
+   - IF apartment: Only personal unit storage, limited revenue potential
+   - IF single family: Full garage/basement/attic monetization
+   - Shared building storage is NOT individually rentable
 
-5. INTERNET BANDWIDTH (Honeygain + Competitors)
-   - Honeygain: $20-50/month passive (bandwidth dependent)
-   - PacketStream: $15-40/month
-   - Peer2Profit: $25-60/month
-   - Requirements: Stable 25+ Mbps connection
-   - Zero setup costs, immediate revenue potential
+5. INTERNET BANDWIDTH (UNIVERSAL OPPORTUNITY)
+   - Available regardless of building type
+   - Requires individual internet service control
+   - $20-60/month across all property types
 
-6. GARDEN/OUTDOOR MONETIZATION
-   - Community garden plots: $40-100/month per 100 sq ft
-   - Event hosting: $300-1,500 per event (weddings, parties)
-   - Equipment storage: $50-150/month for contractors
-   - Pet exercise area: $30-80/month per dog
+6. GARDEN/OUTDOOR MONETIZATION (PRIVATE ACCESS ONLY)
+   - IF apartment/condo: "No access to shared outdoor spaces for rental"
+   - IF single family: Full garden monetization potential
+   - Balcony gardening: Very limited revenue potential
 
-PARTNER ECOSYSTEM (2024 Active Integrations):
-- Solar: Tesla Energy, Sunrun, SunPower (via affiliate programs)
-- Parking: SpotHero, ParkWhiz (FlexOffers integration)
-- Pool: Swimply (direct partnership)
-- Storage: Neighbor.com, StoreAtMyHouse
-- Internet: Honeygain, PacketStream, Peer2Profit
-- General: FlexOffers affiliate network, Rakuten advertising
-
-RESPONSE FORMAT (STRICT JSON):
+RESPONSE FORMAT (STRICT JSON WITH BUILDING RESTRICTIONS):
 {
   "propertyType": "Single Family Home|Apartment|Condo|Townhouse",
+  "buildingTypeAnalysis": {
+    "detectedFromAddress": boolean,
+    "hasRooftopAccess": boolean,
+    "hasGardenAccess": boolean,
+    "hasParkingControl": boolean,
+    "accessRestrictions": [string],
+    "availableOpportunities": [string]
+  },
   "marketIntelligence": {
     "locationScore": 1-10,
-    "demographicMatch": "Excellent|Good|Fair|Poor",
-    "competitionDensity": "Low|Medium|High",
-    "regulatoryEnvironment": "Favorable|Neutral|Restrictive",
-    "marketTrends": "Growing|Stable|Declining"
+    "buildingTypeScore": 1-10,
+    "opportunityDensity": "High|Medium|Low",
+    "restrictionLevel": "None|Moderate|Severe"
   },
   "rooftop": {
+    "hasAccess": boolean,
     "area": number,
     "solarCapacity": number,
     "monthlyRevenue": number,
     "setupCost": number,
     "paybackYears": number,
     "usingRealSolarData": boolean,
-    "recommendedPartner": "Tesla Energy|Sunrun|SunPower",
-    "confidenceScore": 0.1-1.0,
-    "keyBenefits": [string]
+    "restrictionExplanation": "string or null",
+    "confidenceScore": 0.1-1.0
   },
   "parking": {
+    "hasControl": boolean,
     "spaces": number,
     "monthlyRevenue": number,
-    "evChargerPotential": boolean,
-    "locationPremiums": {
-      "transit": number,
-      "events": number,
-      "downtown": number
-    },
-    "recommendedPartner": "SpotHero|ParkWhiz",
+    "restrictionExplanation": "string or null",
     "confidenceScore": 0.1-1.0
   },
   "pool": {
     "present": boolean,
+    "privateAccess": boolean,
     "monthlyRevenue": number,
-    "seasonalVariation": {"summer": number, "winter": number},
-    "setupCost": number,
-    "recommendedPartner": "Swimply",
+    "restrictionExplanation": "string or null",
     "confidenceScore": 0.1-1.0
   },
   "internet": {
     "monthlyRevenue": number,
-    "recommendedPartners": ["Honeygain", "PacketStream", "Peer2Profit"],
-    "requirements": string,
+    "universallyAvailable": true,
     "confidenceScore": 0.9
   },
   "storage": {
+    "accessLevel": "Full|Limited|None",
     "monthlyRevenue": number,
-    "spaceTypes": [string],
-    "recommendedPartner": "Neighbor.com|StoreAtMyHouse",
+    "storageTypes": [string],
+    "restrictionExplanation": "string or null",
     "confidenceScore": 0.1-1.0
   },
   "garden": {
+    "hasAccess": boolean,
     "monthlyRevenue": number,
-    "opportunities": [string],
-    "seasonalFactors": string,
+    "restrictionExplanation": "string or null",
     "confidenceScore": 0.1-1.0
   },
   "topOpportunities": [
@@ -206,41 +212,33 @@ RESPONSE FORMAT (STRICT JSON):
       "title": string,
       "monthlyRevenue": number,
       "partner": string,
-      "description": string,
+      "availableForBuildingType": boolean,
       "setupCost": number,
       "paybackMonths": number,
       "confidenceScore": 0.1-1.0,
       "actionSteps": [string],
-      "riskMitigation": [string]
+      "buildingTypeRequirements": [string]
     }
   ],
   "totalMonthlyPotential": number,
-  "totalSetupInvestment": number,
-  "overallROI": number,
-  "accuracyScore": 0.1-1.0,
-  "dataSourcesUsed": [string],
-  "premiumInsights": [string],
-  "riskAssessment": {
-    "overall": "Low|Medium|High",
-    "factors": [string],
-    "mitigation": [string]
-  }
+  "buildingTypeWarnings": [string],
+  "recommendedFocus": [string],
+  "accuracyScore": 0.1-1.0
 }
 
 CRITICAL SUCCESS FACTORS:
-1. Use ONLY realistic, market-validated revenue figures
-2. Base estimates on actual 2024 market data and platform rates
-3. Include specific partner recommendations with reasoning
-4. Provide actionable next steps for each opportunity
-5. Account for seasonal variations and market cycles
-6. Include risk assessment and mitigation strategies
-7. Validate against comparable properties in the area
-8. Factor in local regulations and HOA restrictions
+1. DETECT building type from address patterns and context
+2. APPLY appropriate restrictions based on building type
+3. SET revenue to $0 for unavailable opportunities with clear explanations
+4. PRIORITIZE realistic opportunities for the specific building type
+5. PROVIDE building-type-specific action steps
+6. WARN about common misconceptions (apartment dwellers thinking they can rent shared amenities)
+7. FOCUS recommendations on actually available opportunities
 
-This analysis will directly influence investment decisions. Accuracy and actionability are paramount.
+This analysis directly influences investment decisions. Building type accuracy is CRITICAL.
 `;
 
-    console.log('Calling OpenAI for premium market intelligence analysis...');
+    console.log('Calling OpenAI for building-type-aware premium analysis...');
     const gptResponse = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -250,7 +248,7 @@ This analysis will directly influence investment decisions. Accuracy and actiona
       body: JSON.stringify({
         model: 'gpt-4o',
         messages: [
-          { role: 'system', content: 'You are a premium property monetization expert with access to real-time market intelligence. Provide investment-grade analysis with accurate revenue projections. Always respond with valid JSON that exactly matches the required schema.' },
+          { role: 'system', content: 'You are a premium property monetization expert with deep expertise in building type restrictions and property access rights. ALWAYS consider building type when analyzing opportunities. Apartment/condo residents typically have NO access to rooftops, shared gardens, or building-managed parking. Always respond with valid JSON.' },
           { role: 'user', content: analysisPrompt }
         ],
         temperature: 0.1,

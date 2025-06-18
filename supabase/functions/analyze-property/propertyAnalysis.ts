@@ -11,7 +11,7 @@ export const generatePropertyAnalysis = async (propertyInfo: any, imageAnalysis:
     console.log('Generating enhanced property analysis with OpenAI...');
     
     const prompt = `
-PROPERTY MONETIZATION ANALYSIS - EXPERT LEVEL
+PROPERTY MONETIZATION ANALYSIS - EXPERT LEVEL WITH BUILDING TYPE RESTRICTIONS
 You are a certified property investment analyst with 15+ years experience in residential monetization strategies.
 
 PROPERTY PROFILE:
@@ -23,55 +23,84 @@ Market Data: ${propertyInfo.solarData ? 'Real solar data available' : 'Using mar
 ${imageAnalysis?.analysis ? `SATELLITE ANALYSIS INSIGHTS:\n${imageAnalysis.analysis}` : ''}
 ${propertyInfo.solarData ? `VERIFIED SOLAR DATA:\n${JSON.stringify(propertyInfo.solarData)}` : ''}
 
+CRITICAL BUILDING TYPE RESTRICTIONS:
+1. APARTMENT BUILDINGS/CONDOS/MULTI-UNIT PROPERTIES:
+   - NO rooftop access (roof belongs to HOA/building management)
+   - NO solar panel installation rights
+   - NO shared garden/outdoor space rental rights
+   - NO parking space rental (building-managed)
+   - ONLY available: Internet bandwidth, storage (if personal unit storage)
+
+2. SINGLE FAMILY HOMES:
+   - Full access to all monetization opportunities
+   - Owner controls roof, garden, parking, storage
+
+3. TOWNHOUSES/DUPLEXES:
+   - LIMITED rooftop access (check HOA restrictions)
+   - LIMITED garden access (may be shared/restricted)
+   - PARKING may be available if private driveway
+
+4. COMMERCIAL BUILDINGS:
+   - DIFFERENT analysis entirely - higher solar potential
+   - Commercial parking rates apply
+   - Storage opportunities vary
+
+BUILDING TYPE DETECTION RULES:
+- If address contains "Apt", "Unit", "Suite", "#" = APARTMENT (NO roof/garden access)
+- If property type mentions "Condo", "Apartment", "Multi" = NO individual access
+- If building appears multi-story in satellite = ASSUME apartment building
+- When in doubt about building type = ASSUME RESTRICTED ACCESS
+
 ANALYSIS REQUIREMENTS:
 
-1. ROOFTOP MONETIZATION (Market Rate Validation Required)
-   - Base monthly revenue: $75-250 (residential), $200-500 (commercial)
-   - Solar capacity calculation: Area ÷ 17.5 sq ft per panel × 400W
-   - Setup costs: $2.50-4.00 per watt installed
-   - Payback period: 6-12 years typical
-   - Validate against local solar incentives and net metering rates
+1. ROOFTOP MONETIZATION (RESTRICTED FOR APARTMENTS/CONDOS)
+   - IF apartment/condo/multi-unit: SET rooftop revenue = $0, explain restriction
+   - IF single family home: Base monthly revenue: $75-250
+   - Solar capacity: Only if property owner has roof access
+   - Setup costs: Include HOA approval costs if applicable
+   - Payback period: 6-12 years typical for single family homes only
 
-2. PARKING MONETIZATION (Location-Specific Pricing)
-   - Urban areas: $100-300/month per space
-   - Suburban areas: $50-150/month per space
-   - Rural areas: $25-75/month per space
-   - Airport proximity: +50% premium
-   - Event venue proximity: +30% premium
-   - EV charging: Additional $75-150/month
+2. PARKING MONETIZATION (RESTRICTED FOR APARTMENTS)
+   - IF apartment/condo: Parking usually building-managed, revenue = $0
+   - IF single family home with driveway: $50-300/month per space
+   - Geographic pricing adjustments apply
+   - EV charging: Only if private parking available
 
-3. POOL RENTAL (Platform Integration Ready)
-   - Swimply average: $45-85 per session
-   - Monthly potential: $200-800 (seasonal)
+3. POOL RENTAL (VERY RESTRICTED FOR APARTMENTS)
+   - IF apartment/condo: Pool is shared amenity, NOT rentable, revenue = $0
+   - IF single family home: Swimply rates apply
    - Setup requirements: Insurance, cleaning, safety equipment
-   - Geographic restrictions: Check local regulations
 
-4. STORAGE SPACE (Neighbor Platform)
-   - $50-200/month for garage bay
-   - $25-100/month for basement/attic
-   - Market saturation check required
-   - Insurance and access considerations
+4. STORAGE SPACE (LIMITED FOR APARTMENTS)
+   - IF apartment: Only personal unit storage/closets, limited revenue
+   - IF single family: Full garage/basement/attic access
+   - Market rates vary by property type and access
 
-5. INTERNET BANDWIDTH (Honeygain Integration)
-   - $20-50/month passive income
+5. INTERNET BANDWIDTH (AVAILABLE FOR ALL)
+   - $20-50/month passive income regardless of building type
    - Requires stable high-speed connection
    - No setup costs, immediate revenue potential
 
-6. GARDEN/OUTDOOR SPACE
-   - Community garden plots: $30-80/month
-   - Event hosting: $200-1000 per event
-   - Depends on local zoning and HOA restrictions
+6. GARDEN/OUTDOOR SPACE (HEAVILY RESTRICTED FOR APARTMENTS)
+   - IF apartment/condo: NO access to shared spaces, revenue = $0
+   - IF single family: Community garden plots, event hosting available
+   - Zoning and HOA restrictions apply
 
-VALIDATION FRAMEWORK:
-- Cross-reference local market rates (Zillow, Apartments.com data)
-- Apply regional cost-of-living adjustments
-- Factor in competition density
-- Include seasonal variation impacts
-- Account for regulatory restrictions
+PROPERTY TYPE VALIDATION:
+- Cross-reference address format against building type indicators
+- Apply conservative assumptions for ambiguous cases
+- When satellite shows multi-story structure = treat as apartment building
+- Single-story detached = likely single family home with full access
 
 OUTPUT FORMAT (JSON ONLY):
 {
   "propertyType": "Single Family Home|Apartment|Condo|Townhouse",
+  "buildingTypeRestrictions": {
+    "hasRooftopAccess": boolean,
+    "hasGardenAccess": boolean,
+    "hasParkingControl": boolean,
+    "restrictionExplanation": "Detailed explanation of why certain opportunities are restricted"
+  },
   "marketAnalysis": {
     "locationScore": 1-10,
     "competitionLevel": "Low|Medium|High",
@@ -85,7 +114,8 @@ OUTPUT FORMAT (JSON ONLY):
     "setupCost": number,
     "paybackYears": number,
     "confidenceScore": 0.1-1.0,
-    "usingRealSolarData": boolean
+    "usingRealSolarData": boolean,
+    "restrictionReason": "string or null"
   },
   "parking": {
     "spaces": number,
@@ -93,20 +123,23 @@ OUTPUT FORMAT (JSON ONLY):
     "totalMonthlyRevenue": number,
     "evChargerPotential": boolean,
     "locationPremium": number,
-    "confidenceScore": 0.1-1.0
+    "confidenceScore": 0.1-1.0,
+    "restrictionReason": "string or null"
   },
   "pool": {
     "present": boolean,
     "monthlyRevenue": number,
     "seasonalVariation": number,
     "setupCost": number,
-    "confidenceScore": 0.1-1.0
+    "confidenceScore": 0.1-1.0,
+    "restrictionReason": "string or null"
   },
   "storage": {
     "available": boolean,
-    "type": "garage|basement|attic|shed",
+    "type": "garage|basement|attic|shed|unit_storage",
     "monthlyRevenue": number,
-    "confidenceScore": 0.1-1.0
+    "confidenceScore": 0.1-1.0,
+    "restrictionReason": "string or null"
   },
   "internet": {
     "monthlyRevenue": number,
@@ -116,9 +149,10 @@ OUTPUT FORMAT (JSON ONLY):
   "garden": {
     "area": number,
     "monthlyRevenue": number,
-    "opportunity": "High|Medium|Low",
+    "opportunity": "High|Medium|Low|None",
     "restrictions": "Check local zoning",
-    "confidenceScore": 0.1-1.0
+    "confidenceScore": 0.1-1.0,
+    "restrictionReason": "string or null"
   },
   "topOpportunities": [
     {
@@ -129,26 +163,28 @@ OUTPUT FORMAT (JSON ONLY):
       "confidenceScore": 0.1-1.0,
       "description": string,
       "immediateSteps": [string],
-      "riskFactors": [string]
+      "riskFactors": [string],
+      "availableForPropertyType": boolean
     }
   ],
   "totalMonthlyRevenue": number,
   "totalSetupInvestment": number,
   "overallConfidenceScore": 0.1-1.0,
   "keyRecommendations": [string],
-  "marketWarnings": [string]
+  "marketWarnings": [string],
+  "buildingTypeWarnings": [string]
 }
 
 CRITICAL REQUIREMENTS:
-1. Use REALISTIC revenue figures based on actual market data
-2. Include confidence scores for every assessment
-3. Provide specific next steps for top opportunities
-4. Identify potential risks and regulatory issues
-5. Validate all revenue estimates against comparable properties
-6. Account for seasonal variations and market saturation
-7. Include setup costs and payback periods for all opportunities
+1. ALWAYS check building type before assigning revenue opportunities
+2. SET revenue to $0 for restricted opportunities with clear explanation
+3. PRIORITIZE available opportunities based on building type
+4. EXPLAIN restrictions in user-friendly language
+5. FOCUS on realistic opportunities for the specific property type
+6. INCLUDE building type warnings in recommendations
+7. VALIDATE all revenue estimates against property type restrictions
 
-Generate a comprehensive, investment-grade analysis that property owners can use to make informed monetization decisions.
+Generate a building-type-aware analysis that respects property ownership and access limitations.
     `;
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -162,7 +198,7 @@ Generate a comprehensive, investment-grade analysis that property owners can use
         messages: [
           {
             role: 'system',
-            content: 'You are an expert property monetization analyst. Provide accurate, market-validated revenue estimates. Always return valid JSON that matches the required schema exactly.'
+            content: 'You are an expert property monetization analyst with deep knowledge of building type restrictions and property access rights. Always consider building type when analyzing monetization opportunities. Always return valid JSON that matches the required schema exactly.'
           },
           {
             role: 'user',
@@ -197,44 +233,62 @@ Generate a comprehensive, investment-grade analysis that property owners can use
       }
     } catch (parseError) {
       console.error('Failed to parse enhanced analysis JSON:', parseError);
-      // Enhanced fallback analysis with market-realistic estimates
+      // Enhanced fallback analysis with building type restrictions
+      const isApartment = propertyInfo.propertyType?.toLowerCase().includes('apartment') || 
+                         propertyInfo.propertyType?.toLowerCase().includes('condo') ||
+                         propertyInfo.address?.includes('Apt') ||
+                         propertyInfo.address?.includes('Unit') ||
+                         propertyInfo.address?.includes('#');
+      
       analysis = {
-        propertyType: propertyInfo.propertyType || 'Single Family Home',
+        propertyType: propertyInfo.propertyType || (isApartment ? 'Apartment' : 'Single Family Home'),
+        buildingTypeRestrictions: {
+          hasRooftopAccess: !isApartment,
+          hasGardenAccess: !isApartment,
+          hasParkingControl: !isApartment,
+          restrictionExplanation: isApartment ? 
+            'Apartment/condo buildings typically restrict access to rooftops, shared gardens, and parking management to building owners/HOA.' :
+            'Single family home has full access to all property monetization opportunities.'
+        },
         marketAnalysis: {
           locationScore: 7,
           competitionLevel: 'Medium',
           regulatoryRisk: 'Low'
         },
         rooftop: { 
-          area: 1200, 
-          solarCapacity: 8, 
-          solarPotential: true, 
-          monthlyRevenue: 125, 
-          setupCost: 20000,
-          paybackYears: 8,
-          confidenceScore: 0.7,
-          usingRealSolarData: false
+          area: isApartment ? 0 : 1200, 
+          solarCapacity: isApartment ? 0 : 8, 
+          solarPotential: !isApartment, 
+          monthlyRevenue: isApartment ? 0 : 125, 
+          setupCost: isApartment ? 0 : 20000,
+          paybackYears: isApartment ? 0 : 8,
+          confidenceScore: 0.9,
+          usingRealSolarData: false,
+          restrictionReason: isApartment ? 'No rooftop access in apartment/condo buildings' : null
         },
         parking: { 
-          spaces: 2, 
-          monthlyRevenuePerSpace: 85, 
-          totalMonthlyRevenue: 170, 
-          evChargerPotential: true,
+          spaces: isApartment ? 0 : 2, 
+          monthlyRevenuePerSpace: isApartment ? 0 : 85, 
+          totalMonthlyRevenue: isApartment ? 0 : 170, 
+          evChargerPotential: !isApartment,
           locationPremium: 0,
-          confidenceScore: 0.8
+          confidenceScore: 0.8,
+          restrictionReason: isApartment ? 'Parking typically managed by building/HOA' : null
         },
         pool: { 
           present: false, 
           monthlyRevenue: 0,
           seasonalVariation: 0,
           setupCost: 0,
-          confidenceScore: 0.9
+          confidenceScore: 0.9,
+          restrictionReason: isApartment ? 'Shared pool amenities cannot be rented individually' : null
         },
         storage: { 
           available: true, 
-          type: 'garage',
-          monthlyRevenue: 75,
-          confidenceScore: 0.7
+          type: isApartment ? 'unit_storage' : 'garage',
+          monthlyRevenue: isApartment ? 25 : 75,
+          confidenceScore: 0.7,
+          restrictionReason: isApartment ? 'Limited to personal unit storage space only' : null
         },
         internet: { 
           monthlyRevenue: 35,
@@ -242,13 +296,26 @@ Generate a comprehensive, investment-grade analysis that property owners can use
           confidenceScore: 0.9
         },
         garden: { 
-          area: 800, 
-          monthlyRevenue: 60, 
-          opportunity: 'Medium',
+          area: isApartment ? 0 : 800, 
+          monthlyRevenue: isApartment ? 0 : 60, 
+          opportunity: isApartment ? 'None' : 'Medium',
           restrictions: 'Check local zoning',
-          confidenceScore: 0.6
+          confidenceScore: 0.6,
+          restrictionReason: isApartment ? 'No access to shared garden/outdoor spaces' : null
         },
-        topOpportunities: [
+        topOpportunities: isApartment ? [
+          { 
+            title: 'Internet Bandwidth Sharing', 
+            monthlyRevenue: 35, 
+            setupCost: 0, 
+            paybackMonths: 0,
+            confidenceScore: 0.9,
+            description: 'Share unused internet bandwidth passively',
+            immediateSteps: ['Sign up for Honeygain or similar services'],
+            riskFactors: ['Requires stable high-speed internet'],
+            availableForPropertyType: true
+          }
+        ] : [
           { 
             title: 'Parking Space Rental', 
             monthlyRevenue: 170, 
@@ -257,7 +324,8 @@ Generate a comprehensive, investment-grade analysis that property owners can use
             confidenceScore: 0.8,
             description: 'Rent 2 parking spaces to local commuters',
             immediateSteps: ['Post on SpotHero', 'Install basic lighting'],
-            riskFactors: ['Local parking regulations', 'Seasonal demand variation']
+            riskFactors: ['Local parking regulations', 'Seasonal demand variation'],
+            availableForPropertyType: true
           },
           { 
             title: 'Solar Panel Installation', 
@@ -267,20 +335,33 @@ Generate a comprehensive, investment-grade analysis that property owners can use
             confidenceScore: 0.7,
             description: 'Install 8kW solar system for energy savings and potential income',
             immediateSteps: ['Get solar quotes', 'Check local incentives'],
-            riskFactors: ['Weather dependency', 'Initial investment required']
+            riskFactors: ['Weather dependency', 'Initial investment required'],
+            availableForPropertyType: true
           }
         ],
-        totalMonthlyRevenue: 465,
-        totalSetupInvestment: 20050,
+        totalMonthlyRevenue: isApartment ? 35 : 465,
+        totalSetupInvestment: isApartment ? 0 : 20050,
         overallConfidenceScore: 0.75,
-        keyRecommendations: [
+        keyRecommendations: isApartment ? [
+          'Focus on internet bandwidth sharing as primary opportunity',
+          'Check for any unit-specific storage rental possibilities',
+          'Explore personal item storage within your unit'
+        ] : [
           'Start with parking rental for immediate income',
           'Research local solar incentives before installation',
           'Consider storage rental as low-risk additional income'
         ],
         marketWarnings: [
-          'Solar payback period requires long-term commitment',
-          'Verify local zoning regulations for all activities'
+          'Verify local zoning regulations for all activities',
+          isApartment ? 'Building management may restrict certain activities' : 'Solar payback period requires long-term commitment'
+        ],
+        buildingTypeWarnings: isApartment ? [
+          'Apartment/condo buildings have significant restrictions on monetization opportunities',
+          'Most outdoor and structural opportunities are not available',
+          'Focus on interior and internet-based income streams'
+        ] : [
+          'Single family homes have full access to all monetization opportunities',
+          'Verify any HOA restrictions before proceeding'
         ]
       };
     }
