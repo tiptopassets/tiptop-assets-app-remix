@@ -30,6 +30,14 @@ serve(async (req) => {
 
     console.log(`Starting enhanced analysis for: ${address}`);
 
+    // Validate API keys
+    if (!openaiKey) {
+      throw new Error('OpenAI API key not configured');
+    }
+    if (!googleMapsKey) {
+      throw new Error('Google Maps API key not configured');
+    }
+
     // Step 1: Geocode the address
     const geocodeResponse = await fetch(
       `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${googleMapsKey}`
@@ -149,6 +157,7 @@ RESPONSE FORMAT (JSON):
 Be realistic with estimates. Provide specific dollar amounts, not ranges.
 `;
 
+    console.log('Calling OpenAI for enhanced analysis...');
     const gptResponse = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -164,6 +173,12 @@ Be realistic with estimates. Provide specific dollar amounts, not ranges.
         temperature: 0.3,
       }),
     });
+
+    if (!gptResponse.ok) {
+      const errorData = await gptResponse.json();
+      console.error('OpenAI API error:', errorData);
+      throw new Error(`OpenAI API error: ${errorData.error?.message || 'Unknown error'}`);
+    }
 
     const gptData = await gptResponse.json();
     let analysisResults;
@@ -199,19 +214,7 @@ Be realistic with estimates. Provide specific dollar amounts, not ranges.
       throw saveError;
     }
 
-    // Step 7: Create affiliate journey tracking
-    const { error: journeyError } = await supabase
-      .from('user_affiliate_journeys')
-      .insert({
-        user_id: userId,
-        property_analysis_id: savedAnalysis.id,
-        journey_status: 'started',
-        total_estimated_monthly: analysisResults.totalMonthlyPotential || 0
-      });
-
-    if (journeyError) {
-      console.error('Error creating journey:', journeyError);
-    }
+    console.log('Enhanced analysis completed successfully');
 
     return new Response(JSON.stringify({
       success: true,
