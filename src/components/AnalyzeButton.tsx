@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -164,7 +163,6 @@ const AnalyzeButton = () => {
         )}
       </Button>
       
-      {/* Progress Bar */}
       {isLoading && (
         <div className="mt-4 space-y-2">
           <Progress 
@@ -178,7 +176,6 @@ const AnalyzeButton = () => {
         </div>
       )}
       
-      {/* Error State */}
       {hasError && (
         <div className="mt-2 p-2 bg-red-100 border border-red-300 rounded text-red-700 text-sm">
           {analysisError}
@@ -186,14 +183,14 @@ const AnalyzeButton = () => {
       )}
       
       {!analysisStarted && !hasError && (
-        <p className="text-center text-sm text-gray-400 mt-2">
+        <p className="text-center text-sm text-white font-semibold mt-2">
           {hasAddress ? (
             user ? (
               <>🚀 Multi-source analysis with Google Solar + GPT-4o<br/>
-              <span className="text-xs">✅ Results will be saved to your dashboard</span></>
+              <span className="text-xs font-medium">✅ Results will be saved to your dashboard</span></>
             ) : (
               <>🏠 Basic property analysis - sign in for enhanced features<br/>
-              <span className="text-xs">ℹ️ Sign in to save results to dashboard</span></>
+              <span className="text-xs font-medium">ℹ️ Sign in to save results to dashboard</span></>
             )
           ) : (
             <>📍 Enter an address above to start analysis</>
