@@ -1,8 +1,8 @@
 
-import React, { useState } from 'react';
-import { motion, AnimatePresence } from "framer-motion";
-import { Card, CardContent } from "@/components/ui/card";
-import { Check, ChevronUp, ChevronDown } from "lucide-react";
+import React from 'react';
+import { motion } from "framer-motion";
+import { MapPin, DollarSign, TrendingUp, Building2, Zap } from 'lucide-react';
+import { useGoogleMap } from '@/contexts/GoogleMapContext';
 
 interface PropertySummaryCardProps {
   analysisResults: any;
@@ -19,182 +19,144 @@ const PropertySummaryCard: React.FC<PropertySummaryCardProps> = ({
   selectedAssetsCount,
   isCollapsed
 }) => {
-  const [isDetailsCollapsed, setIsDetailsCollapsed] = useState(false); // Start open by default
-
-  if (isCollapsed) {
-    return null;
-  }
-
-  // Calculate confidence level based on available data
-  const confidenceLevel = analysisResults?.confidence || 85;
+  const { address } = useGoogleMap();
   
-  // Determine property type
-  const propertyType = analysisResults?.propertyType || "commercial";
-
-  const toggleDetails = () => {
-    setIsDetailsCollapsed(!isDetailsCollapsed);
+  // Determine property type display
+  const getPropertyTypeDisplay = () => {
+    const propertyType = analysisResults?.propertyType || 'unknown';
+    const buildingType = analysisResults?.buildingTypeRestrictions?.restrictionExplanation;
+    
+    switch (propertyType) {
+      case 'vacant_land':
+        return {
+          icon: <Building2 className="w-5 h-5 text-green-500" />,
+          label: 'Vacant Land',
+          description: buildingType?.includes('commercial') ? 'Commercial Development Site' : 'Development Opportunity'
+        };
+      case 'apartment':
+        return {
+          icon: <Building2 className="w-5 h-5 text-blue-500" />,
+          label: 'Apartment',
+          description: 'Multi-Unit Residential Building'
+        };
+      case 'single_family':
+        return {
+          icon: <Building2 className="w-5 h-5 text-purple-500" />,
+          label: 'Single Family Home',
+          description: 'Residential Property'
+        };
+      case 'commercial':
+        return {
+          icon: <Building2 className="w-5 h-5 text-orange-500" />,
+          label: 'Commercial Property',
+          description: 'Business/Retail Space'
+        };
+      default:
+        return {
+          icon: <Building2 className="w-5 h-5 text-gray-500" />,
+          label: 'Property',
+          description: 'Real Estate Asset'
+        };
+    }
   };
+
+  const propertyDisplay = getPropertyTypeDisplay();
+  const analysisRevenue = analysisResults?.totalMonthlyRevenue || 0;
+  const opportunitiesCount = analysisResults?.topOpportunities?.length || 0;
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 50 }}
+      initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.6 }}
-      className="w-full max-w-7xl mx-auto px-4 sm:px-6 mb-8"
+      transition={{ duration: 0.5 }}
+      className={`glass-effect rounded-2xl p-6 mb-8 transition-all duration-500 ${
+        isCollapsed ? 'scale-95 opacity-90' : 'scale-100'
+      }`}
     >
-      <Card className="bg-black/80 backdrop-blur-xl border border-white/20 rounded-2xl shadow-2xl overflow-hidden">
-        <CardContent className="p-6">
-          {/* Header with collapse button */}
-          <div className="flex items-start justify-between mb-4">
-            <div className="flex items-center gap-3">
-              <div className="flex items-center justify-center w-8 h-8 bg-green-500 rounded-full">
-                <Check className="h-5 w-5 text-white" />
+      {/* Header */}
+      <div className="flex items-start justify-between mb-6">
+        <div className="flex-1">
+          <div className="flex items-center gap-3 mb-2">
+            <MapPin className="w-5 h-5 text-tiptop-purple" />
+            <h2 className="text-xl font-bold text-white">
+              {address || 'Property Analysis'}
+            </h2>
+          </div>
+          
+          <div className="flex items-center gap-2 mb-3">
+            {propertyDisplay.icon}
+            <span className="text-white font-medium">{propertyDisplay.label}</span>
+            <span className="text-gray-400 text-sm">• {propertyDisplay.description}</span>
+          </div>
+
+          {/* Property Type Specific Info */}
+          {analysisResults?.propertyType === 'vacant_land' && (
+            <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-3 mb-4">
+              <div className="flex items-center gap-2 mb-1">
+                <Zap className="w-4 h-4 text-green-400" />
+                <span className="text-green-400 font-medium text-sm">High Development Potential</span>
               </div>
-              <div>
-                <h1 className="text-2xl font-bold text-white">
-                  Property Analysis Complete
-                </h1>
-                <p className="text-gray-300 text-sm">
-                  {analysisResults?.address || "Property Address"}
-                </p>
-              </div>
+              <p className="text-gray-300 text-sm">
+                This vacant land offers multiple development and leasing opportunities for immediate income generation.
+              </p>
             </div>
-            <button 
-              onClick={toggleDetails}
-              className="text-white/60 hover:text-white transition-colors p-1 rounded-lg hover:bg-white/10"
-              aria-label={isDetailsCollapsed ? "Expand details" : "Collapse details"}
-            >
-              {isDetailsCollapsed ? (
-                <ChevronDown className="h-5 w-5" />
-              ) : (
-                <ChevronUp className="h-5 w-5" />
-              )}
-            </button>
-          </div>
+          )}
 
-          {/* Property Type Badge */}
-          <div className="flex items-center gap-3 mb-4">
-            <div className="bg-red-500 text-white px-3 py-1 rounded-full text-sm font-medium">
-              {propertyType}
+          {analysisResults?.buildingTypeWarnings && analysisResults.buildingTypeWarnings.length > 0 && (
+            <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-3 mb-4">
+              <p className="text-amber-300 text-sm">
+                <strong>Property Restrictions:</strong> {analysisResults.buildingTypeWarnings[0]}
+              </p>
             </div>
-            <span className="text-gray-400 text-sm">{confidenceLevel}% confidence</span>
-          </div>
+          )}
+        </div>
+      </div>
 
-          {/* Analysis Summary */}
-          <div className="bg-white/5 rounded-xl p-4 mb-6">
-            <h3 className="text-tiptop-purple text-lg font-semibold mb-2">Analysis Summary:</h3>
-            <p className="text-gray-300 leading-relaxed">
-              {analysisResults?.summary || 
-                "The property has a large flat roof suitable for solar panels, parking spaces available, and additional monetizable assets."}
-            </p>
-          </div>
+      {/* Stats Grid */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="bg-black/20 rounded-xl p-4 text-center">
+          <DollarSign className="w-6 h-6 text-green-400 mx-auto mb-2" />
+          <p className="text-green-400 text-2xl font-bold">
+            ${analysisRevenue.toLocaleString()}
+          </p>
+          <p className="text-gray-400 text-sm">Monthly Potential</p>
+        </div>
 
-          {/* Selected Assets and Monthly Revenue */}
-          <div className="grid grid-cols-2 gap-6 mb-6">
-            <div>
-              <h4 className="text-gray-400 text-sm font-medium mb-2">Selected Assets</h4>
-              <div className="text-4xl font-bold text-white">{selectedAssetsCount}</div>
-            </div>
-            <div>
-              <h4 className="text-gray-400 text-sm font-medium mb-2">Monthly Potential Revenue</h4>
-              <div className="text-4xl font-bold text-tiptop-purple">${totalMonthlyIncome}</div>
-            </div>
-          </div>
+        <div className="bg-black/20 rounded-xl p-4 text-center">
+          <TrendingUp className="w-6 h-6 text-blue-400 mx-auto mb-2" />
+          <p className="text-blue-400 text-2xl font-bold">{opportunitiesCount}</p>
+          <p className="text-gray-400 text-sm">Opportunities</p>
+        </div>
 
-          {/* Collapsible Detailed Analysis */}
-          <AnimatePresence>
-            {!isDetailsCollapsed && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: "auto" }}
-                exit={{ opacity: 0, height: 0 }}
-                transition={{ duration: 0.3, ease: "easeInOut" }}
-                className="overflow-hidden"
-              >
-                {/* Detailed Analysis */}
-                <div className="mb-6">
-                  <h3 className="text-white text-xl font-bold mb-4">Detailed Analysis</h3>
-                  
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    {/* Roof Area */}
-                    <div className="bg-white/5 rounded-xl p-4">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-gray-400 text-sm">Roof Area</span>
-                        <span className="bg-green-500 text-white text-xs px-2 py-1 rounded-full">
-                          Solar Ready
-                        </span>
-                      </div>
-                      <div className="text-2xl font-bold text-white mb-1">
-                        {analysisResults?.rooftop?.area || 12000} sq ft
-                      </div>
-                      <div className="text-tiptop-purple text-sm">
-                        ${analysisResults?.rooftop?.revenue || 500}/mo
-                      </div>
-                    </div>
+        <div className="bg-black/20 rounded-xl p-4 text-center">
+          <Building2 className="w-6 h-6 text-purple-400 mx-auto mb-2" />
+          <p className="text-purple-400 text-2xl font-bold">{selectedAssetsCount}</p>
+          <p className="text-gray-400 text-sm">Selected Assets</p>
+        </div>
 
-                    {/* Parking */}
-                    <div className="bg-white/5 rounded-xl p-4">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-gray-400 text-sm">Parking</span>
-                        <span className="bg-blue-500 text-white text-xs px-2 py-1 rounded-full">
-                          EV Ready
-                        </span>
-                      </div>
-                      <div className="text-2xl font-bold text-white mb-1">
-                        {analysisResults?.parking?.spaces || 15} spaces
-                      </div>
-                      <div className="text-tiptop-purple text-sm">
-                        ${analysisResults?.parking?.revenue || 1000}/mo
-                      </div>
-                      <div className="text-gray-400 text-xs">
-                        ${analysisResults?.parking?.dailyRate || 50}/day rate
-                      </div>
-                    </div>
+        <div className="bg-black/20 rounded-xl p-4 text-center">
+          <DollarSign className="w-6 h-6 text-orange-400 mx-auto mb-2" />
+          <p className="text-orange-400 text-2xl font-bold">
+            ${totalSetupCost.toLocaleString()}
+          </p>
+          <p className="text-gray-400 text-sm">Setup Investment</p>
+        </div>
+      </div>
 
-                    {/* Garden */}
-                    <div className="bg-white/5 rounded-xl p-4">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-gray-400 text-sm">Garden</span>
-                      </div>
-                      <div className="text-2xl font-bold text-white mb-1">
-                        {analysisResults?.garden?.area || 1500} sq ft
-                      </div>
-                      <div className="text-tiptop-purple text-sm">
-                        ${analysisResults?.garden?.revenue || 200}/mo
-                      </div>
-                    </div>
-
-                    {/* Internet Sharing */}
-                    <div className="bg-white/5 rounded-xl p-4">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-gray-400 text-sm">Internet Sharing</span>
-                        <span className="bg-purple-500 text-white text-xs px-2 py-1 rounded-full">
-                          Passive Income
-                        </span>
-                      </div>
-                      <div className="text-2xl font-bold text-white mb-1">
-                        {analysisResults?.bandwidth?.capacity || 100} GB
-                      </div>
-                      <div className="text-tiptop-purple text-sm">
-                        ${analysisResults?.bandwidth?.revenue || 50}/mo
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Important Considerations */}
-                <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-xl p-4">
-                  <h4 className="text-yellow-400 font-semibold mb-2">Important Considerations:</h4>
-                  <p className="text-gray-300 text-sm">
-                    {analysisResults?.considerations || 
-                      "Zoning laws may limit certain types of usage; check local regulations."}
-                  </p>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </CardContent>
-      </Card>
+      {/* Quick Insights */}
+      {analysisResults?.keyRecommendations && analysisResults.keyRecommendations.length > 0 && (
+        <div className="mt-6 p-4 bg-tiptop-purple/10 border border-tiptop-purple/20 rounded-xl">
+          <h3 className="text-white font-medium mb-2">Key Recommendations</h3>
+          <ul className="space-y-1">
+            {analysisResults.keyRecommendations.slice(0, 2).map((rec: string, index: number) => (
+              <li key={index} className="text-gray-300 text-sm flex items-start gap-2">
+                <span className="text-tiptop-purple">•</span>
+                {rec}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
     </motion.div>
   );
 };

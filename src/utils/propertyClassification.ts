@@ -14,6 +14,20 @@ export interface PropertyClassificationResult {
 
 // Enhanced address analysis patterns
 const PROPERTY_TYPE_PATTERNS = {
+  vacant_land: {
+    keywords: [
+      'vacant', 'empty', 'lot', 'land', 'parcel', 'acres', 'development',
+      'undeveloped', 'raw', 'buildable', 'zoned', 'site', 'plot',
+      'development opportunity', 'investment land', 'commercial land'
+    ],
+    addressPatterns: [
+      /\b(lot|parcel)\s*\d+/i,
+      /\b\d+\s*acres?\b/i,
+      /vacant\s+(lot|land|parcel)/i,
+      /undeveloped\s+(land|lot)/i,
+      /development\s+(site|opportunity)/i
+    ]
+  },
   commercial: {
     keywords: [
       'office', 'retail', 'store', 'shop', 'mall', 'plaza', 'center', 'building',
@@ -24,17 +38,6 @@ const PROPERTY_TYPE_PATTERNS = {
       /\b(suite|ste|unit|#)\s*\d+/i,
       /\b\d+\s*(office|retail|commercial)\b/i,
       /\b(business|industrial)\s+(park|center|district)/i
-    ]
-  },
-  vacant_land: {
-    keywords: [
-      'vacant', 'empty', 'lot', 'land', 'parcel', 'acres', 'development',
-      'undeveloped', 'raw', 'buildable', 'zoned'
-    ],
-    addressPatterns: [
-      /\b(lot|parcel)\s*\d+/i,
-      /\b\d+\s*acres?\b/i,
-      /vacant\s+(lot|land|parcel)/i
     ]
   },
   residential: {
@@ -55,34 +58,41 @@ export const classifyPropertyFromAddress = (address: string, propertyType?: stri
   const lowerPropertyType = propertyType?.toLowerCase() || '';
   
   let scores = {
-    commercial: 0,
     vacant_land: 0,
+    commercial: 0,
     residential: 0,
     industrial: 0,
     mixed_use: 0
   };
 
-  // Score based on keywords in address
+  // Enhanced scoring for vacant land detection
   Object.entries(PROPERTY_TYPE_PATTERNS).forEach(([type, patterns]) => {
     patterns.keywords.forEach(keyword => {
       if (lowerAddress.includes(keyword) || lowerPropertyType.includes(keyword)) {
-        scores[type as keyof typeof scores] += 1;
+        // Give higher score for vacant land keywords
+        const multiplier = type === 'vacant_land' ? 2 : 1;
+        scores[type as keyof typeof scores] += multiplier;
       }
     });
 
-    // Check regex patterns
     patterns.addressPatterns.forEach(pattern => {
       if (pattern.test(lowerAddress) || pattern.test(lowerPropertyType)) {
-        scores[type as keyof typeof scores] += 2;
+        const multiplier = type === 'vacant_land' ? 3 : 2;
+        scores[type as keyof typeof scores] += multiplier;
       }
     });
   });
+
+  // Additional context-based scoring
+  if (lowerAddress.includes('commercial') && (lowerAddress.includes('vacant') || lowerAddress.includes('land'))) {
+    scores.vacant_land += 5;
+  }
 
   // Determine primary type
   const maxScore = Math.max(...Object.values(scores));
   const primaryType = Object.entries(scores).find(([_, score]) => score === maxScore)?.[0] || 'residential';
   
-  const confidence = maxScore > 0 ? Math.min(0.9, 0.5 + (maxScore * 0.1)) : 0.3;
+  const confidence = maxScore > 0 ? Math.min(0.95, 0.6 + (maxScore * 0.05)) : 0.3;
 
   return buildClassificationResult(primaryType as any, lowerAddress, confidence);
 };
@@ -90,16 +100,22 @@ export const classifyPropertyFromAddress = (address: string, propertyType?: stri
 export const classifyPropertyFromImageAnalysis = (imageAnalysis: string): PropertyClassificationResult => {
   const lowerAnalysis = imageAnalysis.toLowerCase();
   
+  // Vacant land indicators (highest priority)
+  if ((lowerAnalysis.includes('vacant') || lowerAnalysis.includes('empty') || lowerAnalysis.includes('undeveloped')) && 
+      (lowerAnalysis.includes('lot') || lowerAnalysis.includes('land') || lowerAnalysis.includes('site'))) {
+    return buildClassificationResult('vacant_land', lowerAnalysis, 0.9);
+  }
+
+  // Commercial vacant land
+  if (lowerAnalysis.includes('commercial') && 
+      (lowerAnalysis.includes('vacant') || lowerAnalysis.includes('undeveloped'))) {
+    return buildClassificationResult('vacant_land', lowerAnalysis, 0.85);
+  }
+
   // Commercial indicators
   if (lowerAnalysis.includes('parking lot') && 
       (lowerAnalysis.includes('commercial') || lowerAnalysis.includes('business') || lowerAnalysis.includes('retail'))) {
     return buildClassificationResult('commercial', lowerAnalysis, 0.8);
-  }
-
-  // Vacant land indicators
-  if ((lowerAnalysis.includes('vacant') || lowerAnalysis.includes('empty')) && 
-      (lowerAnalysis.includes('lot') || lowerAnalysis.includes('land'))) {
-    return buildClassificationResult('vacant_land', lowerAnalysis, 0.9);
   }
 
   // Industrial indicators
@@ -126,27 +142,28 @@ const buildClassificationResult = (
   };
 
   switch (primaryType) {
+    case 'vacant_land':
+      return {
+        ...baseResult,
+        subType: context.includes('commercial') ? 'commercial_land' : 'undeveloped_land',
+        availableOpportunities: ['land_lease', 'parking_lot', 'solar_farm', 'agriculture', 'storage_facility', 'ev_charging', 'advertising_space'],
+        restrictions: ['Zoning compliance required', 'Environmental permits may be needed', 'Utility access verification'],
+        marketContext: {
+          developmentPotential: 'high',
+          commercialViability: context.includes('commercial') ? 'high' : 'medium',
+          zoning: context.includes('commercial') ? 'commercial' : 'mixed'
+        }
+      };
+
     case 'commercial':
       return {
         ...baseResult,
         subType: determineCommercialSubType(context),
         availableOpportunities: ['parking_rental', 'ev_charging', 'rooftop_solar', 'advertising_space', 'storage_rental'],
-        restrictions: ['Requires commercial zoning compliance', 'May need business permits'],
+        restrictions: ['Commercial zoning compliance required', 'Business permits may be needed'],
         marketContext: {
           commercialViability: 'high',
           developmentPotential: 'medium'
-        }
-      };
-
-    case 'vacant_land':
-      return {
-        ...baseResult,
-        subType: 'undeveloped',
-        availableOpportunities: ['land_lease', 'parking_lot', 'solar_farm', 'agriculture', 'storage_facility'],
-        restrictions: ['Zoning restrictions may apply', 'Development permits required', 'Utility access needed'],
-        marketContext: {
-          developmentPotential: 'high',
-          commercialViability: 'medium'
         }
       };
 

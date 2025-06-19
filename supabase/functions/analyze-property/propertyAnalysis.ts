@@ -1,32 +1,72 @@
-
 const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
 
-// Building type detection helper
+// Enhanced building type detection helper
 const detectBuildingType = (propertyInfo: any, imageAnalysis: any) => {
   const address = propertyInfo.address?.toLowerCase() || '';
   const propertyType = propertyInfo.propertyType?.toLowerCase() || '';
   const imageAnalysisText = imageAnalysis?.analysis?.toLowerCase() || '';
   
-  // Check for apartment/condo indicators in address
+  console.log('🔍 Analyzing property type from:', { address, propertyType, imageAnalysisText });
+  
+  // Check for vacant land indicators first (highest priority)
+  const vacantLandIndicators = [
+    'vacant', 'empty', 'undeveloped', 'raw land', 'development site',
+    'commercial land', 'investment land', 'buildable lot', 'acres'
+  ];
+  
+  const hasVacantLandKeywords = vacantLandIndicators.some(indicator => 
+    address.includes(indicator) || propertyType.includes(indicator) || imageAnalysisText.includes(indicator)
+  );
+  
+  if (hasVacantLandKeywords) {
+    const isCommercial = address.includes('commercial') || propertyType.includes('commercial') || imageAnalysisText.includes('commercial');
+    return {
+      type: 'vacant_land',
+      subType: isCommercial ? 'commercial_land' : 'undeveloped_land',
+      hasRooftopAccess: false,
+      hasGardenAccess: false,
+      hasParkingControl: false,
+      hasLandControl: true,
+      restrictions: null // Vacant land has most opportunities available
+    };
+  }
+  
+  // Check for apartment/condo indicators
   const apartmentIndicators = ['apt', 'apartment', 'unit', 'suite', '#', 'condo', 'condominium'];
   const hasApartmentKeywords = apartmentIndicators.some(indicator => 
     address.includes(indicator) || propertyType.includes(indicator)
   );
   
-  // Check for multi-story building indicators in image analysis
   const multiStoryIndicators = ['multi-story', 'multiple floors', 'apartment building', 'high-rise', 'complex'];
   const hasMultiStoryIndicators = multiStoryIndicators.some(indicator => 
     imageAnalysisText.includes(indicator)
   );
   
-  // Determine building type
   if (hasApartmentKeywords || hasMultiStoryIndicators) {
     return {
       type: 'apartment',
       hasRooftopAccess: false,
       hasGardenAccess: false,
       hasParkingControl: false,
+      hasLandControl: false,
       restrictions: 'Multi-unit building - no individual access to roof, shared spaces, or building parking'
+    };
+  }
+  
+  // Check for commercial indicators
+  const commercialIndicators = ['office', 'retail', 'store', 'shop', 'commercial', 'business'];
+  const hasCommercialKeywords = commercialIndicators.some(indicator => 
+    address.includes(indicator) || propertyType.includes(indicator)
+  );
+  
+  if (hasCommercialKeywords) {
+    return {
+      type: 'commercial',
+      hasRooftopAccess: true,
+      hasGardenAccess: false,
+      hasParkingControl: true,
+      hasLandControl: false,
+      restrictions: 'Commercial property - subject to commercial zoning regulations'
     };
   }
   
@@ -39,9 +79,10 @@ const detectBuildingType = (propertyInfo: any, imageAnalysis: any) => {
   if (hasTownhouseKeywords) {
     return {
       type: 'townhouse',
-      hasRooftopAccess: false, // Usually HOA controlled
-      hasGardenAccess: false,  // Usually shared/restricted
-      hasParkingControl: true, // Usually have private driveways
+      hasRooftopAccess: false,
+      hasGardenAccess: false,
+      hasParkingControl: true,
+      hasLandControl: false,
       restrictions: 'Townhouse - limited roof/garden access due to HOA restrictions'
     };
   }
@@ -52,6 +93,7 @@ const detectBuildingType = (propertyInfo: any, imageAnalysis: any) => {
     hasRooftopAccess: true,
     hasGardenAccess: true,
     hasParkingControl: true,
+    hasLandControl: false,
     restrictions: null
   };
 };
@@ -105,6 +147,61 @@ const normalizeTopOpportunities = (opportunities: any[]): any[] => {
 const applyBuildingRestrictions = (analysis: any, buildingInfo: any) => {
   const restrictedAnalysis = { ...analysis };
   
+  // Handle vacant land differently - it has the most opportunities
+  if (buildingInfo.type === 'vacant_land') {
+    // Vacant land has no existing structures, so no traditional building monetization
+    restrictedAnalysis.rooftop = {
+      area: 0,
+      solarCapacity: 0,
+      solarPotential: false,
+      monthlyRevenue: 0,
+      setupCost: 0,
+      paybackYears: 0,
+      restrictionReason: 'No existing structures - consider ground-mount solar farm instead'
+    };
+    
+    restrictedAnalysis.parking = {
+      spaces: 0,
+      monthlyRevenuePerSpace: 0,
+      totalMonthlyRevenue: 0,
+      evChargerPotential: false,
+      restrictionReason: 'No existing parking - consider developing parking lot'
+    };
+    
+    restrictedAnalysis.pool = {
+      present: false,
+      monthlyRevenue: 0,
+      restrictionReason: 'No existing structures on vacant land'
+    };
+    
+    restrictedAnalysis.storage = {
+      available: false,
+      monthlyRevenue: 0,
+      restrictionReason: 'No existing structures - consider storage facility development'
+    };
+    
+    restrictedAnalysis.internet = {
+      monthlyRevenue: 0,
+      restrictionReason: 'No existing internet infrastructure on vacant land'
+    };
+    
+    restrictedAnalysis.garden = {
+      area: 0,
+      monthlyRevenue: 0,
+      opportunity: 'None',
+      restrictionReason: 'Vacant land - consider agricultural lease instead'
+    };
+    
+    // Calculate total revenue from vacant land opportunities
+    const vacantLandRevenue = (restrictedAnalysis.topOpportunities || [])
+      .reduce((sum: number, opp: any) => sum + (opp.monthlyRevenue || 0), 0);
+    
+    restrictedAnalysis.totalMonthlyRevenue = vacantLandRevenue;
+    
+    return restrictedAnalysis;
+  }
+  
+  // Apply standard building restrictions for other property types
   if (!buildingInfo.hasRooftopAccess) {
     restrictedAnalysis.rooftop = {
       ...restrictedAnalysis.rooftop,
@@ -124,7 +221,7 @@ const applyBuildingRestrictions = (analysis: any, buildingInfo: any) => {
       area: 0,
       monthlyRevenue: 0,
       opportunity: 'None',
-      restrictionReason: `No individual garden access in ${buildingInfo.type} buildings - shared spaces cannot be rented`
+      restrictionReason: `No individual garden access in ${buildingInfo.type} buildings`
     };
   }
   
@@ -135,11 +232,10 @@ const applyBuildingRestrictions = (analysis: any, buildingInfo: any) => {
       monthlyRevenuePerSpace: 0,
       totalMonthlyRevenue: 0,
       evChargerPotential: false,
-      restrictionReason: `Parking is building-managed in ${buildingInfo.type} buildings - no individual rental rights`
+      restrictionReason: `Parking is building-managed in ${buildingInfo.type} buildings`
     };
   }
   
-  // Always restrict pool for apartments/condos (shared amenity)
   if (buildingInfo.type === 'apartment') {
     restrictedAnalysis.pool = {
       ...restrictedAnalysis.pool,
@@ -149,7 +245,7 @@ const applyBuildingRestrictions = (analysis: any, buildingInfo: any) => {
     };
   }
   
-  // Recalculate total revenue after restrictions
+  // Recalculate total revenue
   restrictedAnalysis.totalMonthlyRevenue = 
     (restrictedAnalysis.rooftop?.monthlyRevenue || 0) +
     (restrictedAnalysis.parking?.totalMonthlyRevenue || 0) +
@@ -158,21 +254,19 @@ const applyBuildingRestrictions = (analysis: any, buildingInfo: any) => {
     (restrictedAnalysis.internet?.monthlyRevenue || 0) +
     (restrictedAnalysis.garden?.monthlyRevenue || 0);
   
-  // Normalize and filter top opportunities to ensure consistent structure
+  // Filter opportunities
   const normalizedOpportunities = normalizeTopOpportunities(restrictedAnalysis.topOpportunities || []);
   restrictedAnalysis.topOpportunities = normalizedOpportunities.filter(opp => {
-    // Ensure opp has a title property before calling toLowerCase
     const title = opp.title || '';
     const titleLower = title.toLowerCase();
     
-    if (titleLower.includes('solar') && !buildingInfo.hasRooftopAccess) return false;
-    if (titleLower.includes('parking') && !buildingInfo.hasParkingControl) return false;
+    if (titleLower.includes('solar') && !buildingInfo.hasRooftopAccess && buildingInfo.type !== 'vacant_land') return false;
+    if (titleLower.includes('parking') && !buildingInfo.hasParkingControl && buildingInfo.type !== 'vacant_land') return false;
     if (titleLower.includes('garden') && !buildingInfo.hasGardenAccess) return false;
     if (titleLower.includes('pool') && buildingInfo.type === 'apartment') return false;
     return true;
   });
   
-  // Add building type warnings
   restrictedAnalysis.buildingTypeWarnings = restrictedAnalysis.buildingTypeWarnings || [];
   if (buildingInfo.restrictions) {
     restrictedAnalysis.buildingTypeWarnings.push(buildingInfo.restrictions);
@@ -188,11 +282,194 @@ export const generatePropertyAnalysis = async (propertyInfo: any, imageAnalysis:
   }
 
   try {
-    console.log('Generating enhanced property analysis with building type restrictions...');
+    console.log('🏗️ Generating enhanced property analysis with improved classification...');
+    console.log('📍 Property info:', JSON.stringify(propertyInfo, null, 2));
     
-    // Detect building type BEFORE sending to GPT
     const buildingInfo = detectBuildingType(propertyInfo, imageAnalysis);
-    console.log('Detected building type:', buildingInfo);
+    console.log('🏢 Detected building type:', buildingInfo);
+    
+    // Special handling for vacant land
+    if (buildingInfo.type === 'vacant_land') {
+      console.log('🌍 Processing vacant land analysis...');
+      
+      const prompt = `
+VACANT LAND MONETIZATION ANALYSIS - EXPERT COMMERCIAL REAL ESTATE ASSESSMENT
+
+PROPERTY PROFILE:
+Address: ${propertyInfo.address}
+Property Type: VACANT LAND (${buildingInfo.subType})
+Location: ${propertyInfo.coordinates ? `${propertyInfo.coordinates.lat}, ${propertyInfo.coordinates.lng}` : 'Coordinates pending'}
+
+${imageAnalysis?.analysis ? `SATELLITE ANALYSIS: ${imageAnalysis.analysis}` : ''}
+
+You are analyzing VACANT LAND with significant development and income potential. This is NOT a residential building.
+
+VACANT LAND OPPORTUNITIES (Primary Focus):
+1. LAND LEASE AGREEMENTS ($800-2000/month potential)
+2. SOLAR FARM DEVELOPMENT ($600-1200/month potential)  
+3. PARKING LOT DEVELOPMENT ($400-800/month potential)
+4. SELF-STORAGE DEVELOPMENT ($800-1500/month potential)
+5. EV CHARGING HUB ($300-600/month potential)
+6. BILLBOARD/ADVERTISING SPACE ($300-700/month potential)
+7. AGRICULTURAL LEASE ($200-500/month potential)
+
+CRITICAL: Return opportunities as OBJECTS with all required properties:
+
+{
+  "propertyType": "vacant_land",
+  "buildingTypeRestrictions": {
+    "hasRooftopAccess": false,
+    "hasGardenAccess": false,
+    "hasParkingControl": false,
+    "restrictionExplanation": "Vacant land - focus on land development opportunities"
+  },
+  "marketAnalysis": {
+    "locationScore": 7-9,
+    "competitionLevel": "Low|Medium|High", 
+    "regulatoryRisk": "Low|Medium|High"
+  },
+  "rooftop": {
+    "area": 0,
+    "monthlyRevenue": 0,
+    "restrictionReason": "No existing structures - consider ground-mount solar farm"
+  },
+  "parking": {
+    "spaces": 0,
+    "totalMonthlyRevenue": 0,
+    "restrictionReason": "No existing parking - consider parking lot development"
+  },
+  "topOpportunities": [
+    {
+      "title": "Land Lease for Development",
+      "monthlyRevenue": 1200,
+      "setupCost": 1000,
+      "paybackMonths": 1,
+      "confidenceScore": 0.8,
+      "description": "Lease land to developers for long-term passive income",
+      "immediateSteps": ["Property survey", "Zoning verification", "Market developers"],
+      "riskFactors": ["Market conditions", "Zoning restrictions"],
+      "availableForPropertyType": true
+    },
+    {
+      "title": "Solar Farm Development", 
+      "monthlyRevenue": 800,
+      "setupCost": 50000,
+      "paybackMonths": 62,
+      "confidenceScore": 0.7,
+      "description": "Install ground-mounted solar panels for energy generation",
+      "immediateSteps": ["Solar assessment", "Utility coordination", "Permits"],
+      "riskFactors": ["Initial investment", "Weather dependency"],
+      "availableForPropertyType": true
+    },
+    {
+      "title": "Parking Lot Development",
+      "monthlyRevenue": 600,
+      "setupCost": 8000, 
+      "paybackMonths": 13,
+      "confidenceScore": 0.8,
+      "description": "Convert land to paid parking for nearby businesses",
+      "immediateSteps": ["Traffic analysis", "Paving/marking", "Payment systems"],
+      "riskFactors": ["Location dependency", "Competition"],
+      "availableForPropertyType": true
+    }
+  ],
+  "totalMonthlyRevenue": 2600,
+  "totalSetupInvestment": 59000,
+  "overallConfidenceScore": 0.8,
+  "keyRecommendations": [
+    "Focus on land lease as primary low-risk opportunity",
+    "Consider solar farm for long-term energy contracts", 
+    "Parking lot offers good ROI in high-traffic areas"
+  ],
+  "buildingTypeWarnings": ["Vacant land - no existing structures to monetize"]
+}
+
+ENSURE topOpportunities contains OBJECTS with ALL required properties, not strings.
+      `;
+
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${OPENAI_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'gpt-4o',
+          messages: [
+            {
+              role: 'system',
+              content: 'You are a commercial real estate expert specializing in vacant land monetization. Always return valid JSON with proper object structures for topOpportunities.'
+            },
+            {
+              role: 'user',
+              content: prompt
+            }
+          ],
+          max_tokens: 3000,
+          temperature: 0.1
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`OpenAI API error: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      const responseContent = data.choices[0].message.content;
+      
+      try {
+        const jsonMatch = responseContent.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          const analysis = JSON.parse(jsonMatch[0]);
+          analysis.topOpportunities = normalizeTopOpportunities(analysis.topOpportunities || []);
+          console.log('✅ Vacant land analysis completed successfully');
+          return analysis;
+        }
+      } catch (parseError) {
+        console.error('❌ Failed to parse vacant land analysis:', parseError);
+      }
+      
+      // Fallback for vacant land
+      return {
+        propertyType: 'vacant_land',
+        buildingTypeRestrictions: {
+          hasRooftopAccess: false,
+          hasGardenAccess: false,
+          hasParkingControl: false,
+          restrictionExplanation: 'Vacant land - focus on land development opportunities'
+        },
+        marketAnalysis: { locationScore: 8, competitionLevel: 'Medium', regulatoryRisk: 'Medium' },
+        topOpportunities: [
+          {
+            title: 'Land Lease for Development',
+            monthlyRevenue: 1200,
+            setupCost: 1000,
+            paybackMonths: 1,
+            confidenceScore: 0.8,
+            description: 'Lease land to developers for passive income',
+            immediateSteps: ['Property survey', 'Zoning check'],
+            riskFactors: ['Market conditions'],
+            availableForPropertyType: true
+          },
+          {
+            title: 'Solar Farm Development',
+            monthlyRevenue: 800,
+            setupCost: 50000,
+            paybackMonths: 62,
+            confidenceScore: 0.7,
+            description: 'Ground-mounted solar installation',
+            immediateSteps: ['Solar assessment', 'Permits'],
+            riskFactors: ['Initial investment'],
+            availableForPropertyType: true
+          }
+        ],
+        totalMonthlyRevenue: 2000,
+        totalSetupInvestment: 51000,
+        overallConfidenceScore: 0.75,
+        keyRecommendations: ['Focus on land lease opportunities', 'Consider solar development'],
+        buildingTypeWarnings: ['Vacant land - no existing structures']
+      };
+    }
     
     const prompt = `
 PROPERTY MONETIZATION ANALYSIS - EXPERT LEVEL WITH BUILDING TYPE RESTRICTIONS

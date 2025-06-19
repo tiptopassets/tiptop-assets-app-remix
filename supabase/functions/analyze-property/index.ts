@@ -6,13 +6,13 @@ import { generatePropertyAnalysis } from './propertyAnalysis.ts';
 import { extractStructuredData } from './dataExtraction.ts';
 import { validateAndCorrectRevenue } from './marketDataValidator.ts';
 import { AnalysisRequest, PropertyInfo, ImageAnalysis } from './types.ts';
+import { classifyPropertyFromAddress } from '../../src/utils/propertyClassification.ts';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') || '';
 const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY') || '';
 const GOOGLE_MAPS_API_KEY = Deno.env.get('GOOGLE_MAPS_API_KEY') || '';
 
 Deno.serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -33,38 +33,40 @@ Deno.serve(async (req) => {
       );
     }
 
+    console.log('🏗️ Starting enhanced property analysis for:', address);
+    console.log('📍 Coordinates provided:', !!coordinates);
+
     const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     
-    // Get property details from Google Maps API if coordinates aren't provided
     let propertyCoordinates = coordinates;
     let propertyDetails: any = {};
     let satelliteImageUrl = '';
     
+    // Enhanced property classification using address analysis
+    const initialClassification = classifyPropertyFromAddress(address);
+    console.log('🔍 Initial classification:', initialClassification);
+    
     if (!propertyCoordinates && GOOGLE_MAPS_API_KEY) {
       try {
-        // Geocode the address to get coordinates
         const geocodeResponse = await fetch(
           `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${GOOGLE_MAPS_API_KEY}`
         );
         
         const geocodeData = await geocodeResponse.json();
-        console.log('Google geocode response status:', geocodeData.status);
+        console.log('🌍 Google geocode response status:', geocodeData.status);
         
         if (geocodeData.results && geocodeData.results.length > 0) {
           const location = geocodeData.results[0].geometry.location;
           propertyCoordinates = { lat: location.lat, lng: location.lng };
           
-          // Get additional property details
           propertyDetails = {
             formattedAddress: geocodeData.results[0].formatted_address,
             placeId: geocodeData.results[0].place_id,
             addressComponents: geocodeData.results[0].address_components || []
           };
           
-          // Get satellite imagery with high zoom level (20)
           satelliteImageUrl = `https://maps.googleapis.com/maps/api/staticmap?center=${propertyCoordinates.lat},${propertyCoordinates.lng}&zoom=20&size=800x800&maptype=satellite&key=${GOOGLE_MAPS_API_KEY}`;
           
-          // Get more details using Places API
           if (propertyDetails.placeId) {
             try {
               const placeResponse = await fetch(
@@ -78,30 +80,27 @@ Deno.serve(async (req) => {
                 propertyDetails.buildingLevels = placeData.result.building_levels;
               }
             } catch (placeError) {
-              console.error('Places API error:', placeError);
-              // Continue without places data
+              console.error('❌ Places API error:', placeError);
             }
           }
         } else {
-          console.error('Geocoding failed:', geocodeData.status, geocodeData.error_message);
+          console.error('❌ Geocoding failed:', geocodeData.status, geocodeData.error_message);
           throw new Error(`Could not geocode the address: ${geocodeData.status}`);
         }
       } catch (error) {
-        console.error('Google Maps API error:', error);
+        console.error('❌ Google Maps API error:', error);
         throw new Error('Failed to geocode address. Please provide valid coordinates.');
       }
     }
     
-    console.log('Starting property analysis');
+    console.log('📊 Starting property analysis with enhanced classification');
     
-    // Get Solar API data instead of using image analysis
     let solarData = null;
     let imageAnalysis: ImageAnalysis = {};
     
     if (!forceLocalAnalysis) {
       try {
-        console.log('Fetching solar data from Solar API...');
-        // Call the Solar API edge function
+        console.log('☀️ Fetching solar data from Solar API...');
         const { data: solarResponse, error } = await supabase.functions.invoke('solar-api', {
           body: { 
             address: address,
@@ -110,17 +109,15 @@ Deno.serve(async (req) => {
         });
         
         if (error) {
-          console.error('Error calling Solar API:', error);
-          // Fall back to image analysis if Solar API fails
+          console.error('❌ Error calling Solar API:', error);
           if (satelliteImage && satelliteImage.startsWith('data:image')) {
-            console.log('Falling back to image analysis...');
+            console.log('📸 Falling back to image analysis...');
             imageAnalysis = await analyzeImage(satelliteImage, address);
           }
         } else if (solarResponse.success && solarResponse.solarData) {
-          console.log('Received solar data:', solarResponse.solarData);
+          console.log('✅ Received solar data:', solarResponse.solarData);
           solarData = solarResponse.solarData;
           
-          // Use solar data to enhance the image analysis
           imageAnalysis = {
             ...imageAnalysis,
             roofSize: solarData.roofTotalAreaSqFt,
@@ -128,36 +125,35 @@ Deno.serve(async (req) => {
           };
         }
       } catch (error) {
-        console.error('Error fetching solar data:', error);
+        console.error('❌ Error fetching solar data:', error);
         
-        // Fall back to image analysis if needed for non-solar data
         if (satelliteImage && satelliteImage.startsWith('data:image')) {
-          console.log('Falling back to image analysis for non-solar data...');
+          console.log('📸 Falling back to image analysis for non-solar data...');
           imageAnalysis = await analyzeImage(satelliteImage, address);
         }
       }
     }
 
-    // Create property info for analysis
     const propertyInfo: PropertyInfo = {
       address: address,
       coordinates: propertyCoordinates,
       details: propertyDetails,
       solarData: solarData,
-      propertyType: propertyDetails.type ? propertyDetails.type.join(', ') : undefined
+      propertyType: propertyDetails.type ? propertyDetails.type.join(', ') : initialClassification.primaryType,
+      classification: initialClassification
     };
     
-    // Generate property analysis using AI with enhanced validation
+    console.log('🔬 Generating property analysis with classification:', propertyInfo.classification);
     let analysis = await generatePropertyAnalysis(propertyInfo, imageAnalysis);
     
-    // Apply additional validation with market data
-    if (propertyCoordinates) {
+    // Apply market validation for non-vacant land properties
+    if (propertyCoordinates && analysis.propertyType !== 'vacant_land') {
       analysis = validateAndCorrectRevenue(analysis, propertyCoordinates, analysis.propertyType);
-      console.log('Applied market-based revenue validation');
+      console.log('✅ Applied market-based revenue validation');
     }
     
-    // If we have solar data, enhance the analysis with it (but validate the revenue)
-    if (solarData) {
+    // Enhanced solar data integration
+    if (solarData && analysis.propertyType !== 'vacant_land') {
       const maxSolarRevenue = analysis.propertyType?.toLowerCase().includes('commercial') ? 500 : 200;
       const validatedSolarRevenue = Math.min(solarData.monthlyRevenue || 0, maxSolarRevenue);
       
@@ -168,12 +164,11 @@ Deno.serve(async (req) => {
         solarPotential: solarData.solarPotential,
         yearlyEnergyKWh: solarData.yearlyEnergyKWh,
         panelsCount: solarData.panelsCount,
-        revenue: validatedSolarRevenue, // Use validated revenue
+        revenue: validatedSolarRevenue,
         setupCost: solarData.setupCost,
         usingRealSolarData: true
       };
       
-      // Update the top opportunity for solar if it exists
       const solarOpportunityIndex = analysis.topOpportunities.findIndex(
         opp => opp.title.toLowerCase().includes('solar')
       );
@@ -189,29 +184,39 @@ Deno.serve(async (req) => {
         };
       }
       
-      console.log(`Solar revenue validated: ${solarData.monthlyRevenue} → ${validatedSolarRevenue}`);
+      console.log(`☀️ Solar revenue validated: ${solarData.monthlyRevenue} → ${validatedSolarRevenue}`);
     }
     
+    // Ensure address is properly included in response
+    const responseData = {
+      success: true,
+      analysis: {
+        ...analysis,
+        propertyAddress: propertyDetails.formattedAddress || address
+      },
+      propertyInfo: {
+        address: propertyDetails.formattedAddress || address,
+        coordinates: propertyCoordinates,
+        classification: initialClassification
+      },
+      imageAnalysis: imageAnalysis,
+      solarData: solarData,
+      satelliteImageUrl: satelliteImageUrl,
+      validationApplied: true,
+      enhancedClassification: true
+    };
+    
+    console.log('✅ Enhanced property analysis completed successfully');
+    
     return new Response(
-      JSON.stringify({
-        success: true,
-        analysis: analysis,
-        propertyInfo: {
-          address: propertyDetails.formattedAddress || address,
-          coordinates: propertyCoordinates
-        },
-        imageAnalysis: imageAnalysis,
-        solarData: solarData,
-        satelliteImageUrl: satelliteImageUrl, // Include the satellite image URL in response
-        validationApplied: true
-      }),
+      JSON.stringify(responseData),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 200
       }
     );
   } catch (error) {
-    console.error('Error in analyze-property function:', error);
+    console.error('❌ Error in analyze-property function:', error);
     return new Response(
       JSON.stringify({ 
         success: false, 
