@@ -1,4 +1,3 @@
-
 export interface AnalysisResults {
   propertyType: string;
   amenities: string[];
@@ -8,7 +7,7 @@ export interface AnalysisResults {
     solarCapacity: number;
     solarPotential?: boolean;
     revenue: number;
-    providers?: ProviderInfo[];
+    providers?: any[];
     usingRealSolarData?: boolean;
     yearlyEnergyKWh?: number;
     panelsCount?: number;
@@ -18,42 +17,51 @@ export interface AnalysisResults {
     area: number;
     opportunity: string;
     revenue: number;
-    providers?: ProviderInfo[];
+    providers?: any[];
   };
   parking: {
     spaces: number;
     rate: number;
     revenue: number;
     evChargerPotential?: boolean;
-    parkingType?: string;
-    providers?: ProviderInfo[];
+    providers?: any[];
   };
   pool: {
     present: boolean;
     area: number;
     type: string;
     revenue: number;
-    providers?: ProviderInfo[];
+    providers?: any[];
   };
   storage: {
     volume: number;
     revenue: number;
-    providers?: ProviderInfo[];
+    providers?: any[];
   };
   bandwidth: {
     available: number;
     revenue: number;
-    providers?: ProviderInfo[];
+    providers?: any[];
   };
   shortTermRental: {
     nightlyRate: number;
     monthlyProjection: number;
-    providers?: ProviderInfo[];
+    providers?: any[];
   };
   permits: string[];
   restrictions: string | null;
-  topOpportunities: Opportunity[];
+  topOpportunities: any[];
   imageAnalysisSummary?: string;
+  totalMonthlyRevenue?: number;
+  satelliteImageUrl?: string;
+  streetViewImageUrl?: string;
+  propertyValuation?: {
+    totalMonthlyRevenue: number;
+    totalAnnualRevenue: number;
+    totalSetupCosts: number;
+    averageROI: number;
+    bestOpportunity: string;
+  };
 }
 
 export interface ProviderInfo {
@@ -129,4 +137,25 @@ export interface GoogleMapContextProps extends GoogleMapContextType {
   resetMapContext: () => void;
   isGeneratingAnalysis: boolean;
   setIsGeneratingAnalysis: React.Dispatch<React.SetStateAction<boolean>>;
+}
+
+export interface GoogleMapState {
+  map: google.maps.Map | null;
+  address: string;
+  coordinates: google.maps.LatLngLiteral | null;
+  selectedPlace: google.maps.places.PlaceResult | null;
+  isAnalyzing: boolean;
+  analysisComplete: boolean;
+  analysisResults: AnalysisResults | null;
+  error: string | null;
+}
+
+export interface GoogleMapContextType extends GoogleMapState {
+  setAddress: (address: string) => void;
+  setCoordinates: (coordinates: google.maps.LatLngLiteral) => void;
+  setSelectedPlace: (place: google.maps.places.PlaceResult) => void;
+  analyzeProperty: (forceLocalAnalysis?: boolean) => Promise<void>;
+  resetAnalysis: () => void;
+  setError: (error: string) => void;
+  clearError: () => void;
 }

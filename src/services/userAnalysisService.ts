@@ -8,10 +8,11 @@ export const savePropertyAnalysis = async (
   addressId: string,
   analysisResults: AnalysisResults,
   coordinates?: any,
-  satelliteImageUrl?: string
+  satelliteImageUrl?: string,
+  streetViewImageUrl?: string
 ): Promise<string | null> => {
   try {
-    console.log('💾 Saving property analysis:', { userId, addressId, satelliteImageUrl });
+    console.log('💾 Saving property analysis:', { userId, addressId, satelliteImageUrl, streetViewImageUrl });
     
     if (!userId) {
       throw new Error('User ID is required');
@@ -38,6 +39,7 @@ export const savePropertyAnalysis = async (
         property_type: analysisResults.propertyType,
         coordinates,
         satellite_image_url: satelliteImageUrl,
+        street_view_image_url: streetViewImageUrl,
         using_real_solar_data: analysisResults.rooftop?.usingRealSolarData || false
       })
       .select()
