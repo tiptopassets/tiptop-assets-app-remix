@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { motion } from "framer-motion";
 import { useAdditionalOpportunities } from '@/hooks/useAdditionalOpportunities';
@@ -35,7 +34,9 @@ const AssetResultList: React.FC<AssetResultListProps> = ({
     hasResults: !!analysisResults,
     selectedAssetsCount: selectedAssets.length,
     showAssetForm,
-    additionalOpportunitiesCount: additionalOpportunities.length
+    additionalOpportunitiesCount: additionalOpportunities.length,
+    propertyType: analysisResults?.propertyType,
+    topOpportunities: analysisResults?.topOpportunities?.length || 0
   });
 
   // Notify parent component when form section visibility changes
@@ -44,6 +45,67 @@ const AssetResultList: React.FC<AssetResultListProps> = ({
       onFormSectionToggle(showAssetForm);
     }
   }, [showAssetForm, onFormSectionToggle]);
+
+  // Filter opportunities based on property type
+  const displayOpportunities = useMemo(() => {
+    if (!analysisResults?.topOpportunities) return [];
+    
+    const isApartment = analysisResults.propertyType === 'apartment' || 
+                       analysisResults.propertyType?.toLowerCase().includes('apartment');
+    
+    console.log('🏢 Property type check:', {
+      propertyType: analysisResults.propertyType,
+      isApartment,
+      opportunities: analysisResults.topOpportunities
+    });
+
+    // For apartments, filter out restricted opportunities and ensure apartment-specific ones are shown
+    if (isApartment) {
+      const apartmentOpportunities = analysisResults.topOpportunities.filter(opp => {
+        const title = opp.title.toLowerCase();
+        // Include apartment-friendly opportunities
+        return title.includes('internet') || 
+               title.includes('bandwidth') || 
+               title.includes('storage') ||
+               title.includes('personal') ||
+               opp.monthlyRevenue > 0;
+      });
+
+      // If no apartment opportunities found, create them from analysis data
+      if (apartmentOpportunities.length === 0) {
+        const generatedOpportunities = [];
+        
+        if (analysisResults.bandwidth?.revenue > 0) {
+          generatedOpportunities.push({
+            title: 'Internet Bandwidth Sharing',
+            icon: 'wifi',
+            monthlyRevenue: analysisResults.bandwidth.revenue,
+            description: `Share ${analysisResults.bandwidth.available || 100} GB unused bandwidth for passive income`,
+            setupCost: 0,
+            roi: 0
+          });
+        }
+
+        if (analysisResults.storage?.revenue > 0) {
+          generatedOpportunities.push({
+            title: 'Personal Storage Rental',
+            icon: 'storage', 
+            monthlyRevenue: analysisResults.storage.revenue,
+            description: 'Rent out personal storage space within your unit',
+            setupCost: 0,
+            roi: 0
+          });
+        }
+
+        console.log('🏢 Generated apartment opportunities:', generatedOpportunities);
+        return generatedOpportunities;
+      }
+
+      return apartmentOpportunities;
+    }
+
+    return analysisResults.topOpportunities;
+  }, [analysisResults]);
 
   // Memoize the asset toggle handler to prevent unnecessary re-renders
   const handleAssetToggle = useCallback((assetTitle: string) => {
@@ -69,8 +131,8 @@ const AssetResultList: React.FC<AssetResultListProps> = ({
         // Add asset - check both main opportunities and additional opportunities
         console.log('➕ Adding asset:', assetTitle);
         
-        // First check in main analysis results opportunities
-        let assetData = analysisResults?.topOpportunities?.find(opp => opp.title === assetTitle);
+        // First check in display opportunities
+        let assetData = displayOpportunities.find(opp => opp.title === assetTitle);
         
         // If not found, check in additional opportunities
         if (!assetData) {
@@ -103,7 +165,7 @@ const AssetResultList: React.FC<AssetResultListProps> = ({
         return newSelectedAssets;
       }
     });
-  }, [additionalOpportunities, selectedAssets, analysisResults?.topOpportunities]);
+  }, [additionalOpportunities, selectedAssets, displayOpportunities]);
 
   const handleContinue = useCallback(() => {
     console.log('🚀 Continue clicked');
@@ -204,12 +266,12 @@ const AssetResultList: React.FC<AssetResultListProps> = ({
     console.log('📝 Rendering AssetFormSection with:', {
       selectedAssetsCount: selectedAssetsData.length,
       selectedAssets: selectedAssetsData,
-      opportunities: [...(analysisResults?.topOpportunities || []), ...additionalOpportunities]
+      opportunities: [...displayOpportunities, ...additionalOpportunities]
     });
     
     // Combine both main opportunities and additional opportunities for the form
     const allOpportunities = [
-      ...(analysisResults?.topOpportunities || []),
+      ...displayOpportunities,
       ...additionalOpportunities
     ];
     
@@ -228,6 +290,9 @@ const AssetResultList: React.FC<AssetResultListProps> = ({
     return null;
   }
 
+  const isApartment = analysisResults.propertyType === 'apartment' || 
+                     analysisResults.propertyType?.toLowerCase().includes('apartment');
+
   return (
     <div className="space-y-8">
       {/* Property Summary */}
@@ -238,6 +303,21 @@ const AssetResultList: React.FC<AssetResultListProps> = ({
         selectedAssetsCount={selectedAssets.length}
         isCollapsed={false}
       />
+      
+      {/* Apartment-specific notice */}
+      {isApartment && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-4"
+        >
+          <h3 className="text-blue-300 font-semibold mb-2">🏢 Apartment/Condo Property</h3>
+          <p className="text-white/80 text-sm">
+            As an apartment or condo resident, your monetization options are limited to unit-level opportunities. 
+            You typically don't have individual access to rooftops, building parking, or shared amenities for rental purposes.
+          </p>
+        </motion.div>
+      )}
       
       {/* Floating Selected Assets Widget */}
       {selectedAssets.length > 0 && (
@@ -289,7 +369,7 @@ const AssetResultList: React.FC<AssetResultListProps> = ({
       
       {/* Main Asset Opportunities */}
       <AssetOpportunitiesGrid 
-        opportunities={analysisResults.topOpportunities || []}
+        opportunities={displayOpportunities}
         selectedAssets={selectedAssets}
         onAssetToggle={handleAssetToggle}
       />

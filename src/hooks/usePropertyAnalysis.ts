@@ -71,7 +71,12 @@ function enhanceAnalysisWithPropertyLogic(analysis: AnalysisResults, propertyTyp
   const enhanced = { ...analysis };
 
   // Apply apartment-specific logic
-  if (propertyType.toLowerCase().includes('apartment') || propertyType.toLowerCase().includes('condo')) {
+  if (propertyType.toLowerCase().includes('apartment') || 
+      propertyType.toLowerCase().includes('condo') ||
+      analysis.propertyType === 'apartment') {
+    
+    console.log('🏢 Applying apartment-specific enhancements');
+    
     // Apartments typically have no roof access
     enhanced.rooftop = {
       ...enhanced.rooftop,
@@ -81,18 +86,26 @@ function enhanceAnalysisWithPropertyLogic(analysis: AnalysisResults, propertyTyp
       solarPotential: false
     };
 
-    // Apartments usually have limited parking
+    // Apartments usually have limited parking control
     enhanced.parking = {
       ...enhanced.parking,
-      spaces: Math.min(enhanced.parking.spaces, 1),
-      revenue: enhanced.parking.spaces > 0 ? enhanced.parking.revenue : 0
+      spaces: 0,
+      revenue: 0
     };
 
-    // Remove pool opportunities for apartments
+    // Remove pool opportunities for apartments (shared amenity)
     enhanced.pool = {
       ...enhanced.pool,
       present: false,
       revenue: 0
+    };
+
+    // Remove garden opportunities (no individual access)
+    enhanced.garden = {
+      ...enhanced.garden,
+      area: 0,
+      revenue: 0,
+      opportunity: 'None'
     };
 
     // Focus on bandwidth and small storage opportunities
@@ -100,10 +113,22 @@ function enhanceAnalysisWithPropertyLogic(analysis: AnalysisResults, propertyTyp
       ...enhanced.bandwidth,
       revenue: Math.max(enhanced.bandwidth.revenue, 25) // Minimum $25/month for bandwidth
     };
+
+    // Limit storage to personal unit storage
+    enhanced.storage = {
+      ...enhanced.storage,
+      revenue: Math.min(enhanced.storage.revenue, 15) // Max $15/month for unit storage
+    };
+
+    // Ensure apartment-specific opportunities are in topOpportunities
+    enhanced.topOpportunities = generateApartmentOpportunities(enhanced);
   }
 
   // Apply house-specific enhancements
-  if (propertyType.toLowerCase().includes('house') || propertyType.toLowerCase().includes('residential')) {
+  if (propertyType.toLowerCase().includes('house') || 
+      propertyType.toLowerCase().includes('residential') ||
+      analysis.propertyType === 'single_family') {
+    
     // Houses typically have better parking opportunities
     enhanced.parking = {
       ...enhanced.parking,
@@ -112,10 +137,47 @@ function enhanceAnalysisWithPropertyLogic(analysis: AnalysisResults, propertyTyp
     };
   }
 
-  // Recalculate top opportunities based on enhanced data
-  enhanced.topOpportunities = calculateTopOpportunities(enhanced);
-
   return enhanced;
+}
+
+function generateApartmentOpportunities(analysis: AnalysisResults) {
+  const opportunities = [];
+
+  // Internet bandwidth sharing - primary opportunity for apartments
+  if (analysis.bandwidth.revenue > 0) {
+    opportunities.push({
+      title: 'Internet Bandwidth Sharing',
+      icon: 'wifi',
+      monthlyRevenue: analysis.bandwidth.revenue,
+      description: `Share ${analysis.bandwidth.available} GB unused bandwidth for passive income`,
+      setupCost: 0,
+      roi: 0
+    });
+  }
+
+  // Personal storage rental - secondary opportunity
+  if (analysis.storage.revenue > 0) {
+    opportunities.push({
+      title: 'Personal Storage Rental',
+      icon: 'storage',
+      monthlyRevenue: analysis.storage.revenue,
+      description: `Rent out personal storage space within your unit`,
+      setupCost: 0,
+      roi: 0
+    });
+  }
+
+  // Add a note about building restrictions
+  opportunities.push({
+    title: 'Building Type Notice',
+    icon: 'info',
+    monthlyRevenue: 0,
+    description: 'As an apartment/condo resident, your monetization options are limited to unit-level opportunities due to building restrictions and shared amenities.',
+    setupCost: 0,
+    roi: 0
+  });
+
+  return opportunities;
 }
 
 function calculateTopOpportunities(analysis: AnalysisResults) {
@@ -176,9 +238,21 @@ function calculateTopOpportunities(analysis: AnalysisResults) {
       title: 'Internet Bandwidth Sharing',
       icon: 'wifi',
       monthlyRevenue: analysis.bandwidth.revenue,
-      description: `Share ${analysis.bandwidth.available} Mbps unused bandwidth`,
+      description: `Share ${analysis.bandwidth.available} GB unused bandwidth`,
       setupCost: 0,
       roi: 0
+    });
+  }
+
+  // Storage opportunity
+  if (analysis.storage.revenue > 0) {
+    opportunities.push({
+      title: 'Storage Space Rental',
+      icon: 'storage',
+      monthlyRevenue: analysis.storage.revenue,
+      description: `Rent out storage space for extra income`,
+      setupCost: 100,
+      roi: Math.ceil(100 / analysis.storage.revenue)
     });
   }
 
