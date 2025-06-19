@@ -212,8 +212,8 @@ export const classifyPropertyFromAddress = (address: string, propertyType?: stri
     primaryType = topEntry![0] as PropertyClassificationResult['primaryType'];
   }
   
-  // Handle apartment vs residential classification
-  if (primaryType === 'apartment' || (scores.apartment > scores.residential && scores.apartment > 0)) {
+  // Handle apartment vs residential classification - apartments are classified as residential
+  if (scores.apartment > scores.residential && scores.apartment > 0) {
     primaryType = 'residential'; // Apartments are a subtype of residential
   }
   
