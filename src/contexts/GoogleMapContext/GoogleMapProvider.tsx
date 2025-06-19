@@ -1,39 +1,65 @@
-import React, { createContext, useContext, useReducer, useCallback, useEffect } from 'react';
+
+import React, { createContext, useContext, useState, useCallback } from 'react';
 import { GoogleMapContextType, GoogleMapState, AnalysisResults } from './types';
-import { googleMapReducer, initialState } from './state';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { saveAddress } from '@/services/userAddressService';
 import { savePropertyAnalysis } from '@/services/userAnalysisService';
 
-const GoogleMapContext = createContext<GoogleMapContextType | undefined>(undefined);
+// Create the context
+export const GoogleMapContext = createContext<GoogleMapContextType | undefined>(undefined);
+
+const initialState: GoogleMapState = {
+  map: null,
+  address: '',
+  coordinates: null,
+  selectedPlace: null,
+  isAnalyzing: false,
+  analysisComplete: false,
+  analysisResults: null,
+  error: null
+};
 
 export const GoogleMapProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [state, dispatch] = useReducer(googleMapReducer, initialState);
+  const [state, setState] = useState<GoogleMapState>(initialState);
   const { user } = useAuth();
   const { toast } = useToast();
 
   const setAddress = useCallback((address: string) => {
-    dispatch({ type: 'SET_ADDRESS', payload: address });
+    setState(prev => ({ ...prev, address }));
   }, []);
 
   const setCoordinates = useCallback((coordinates: google.maps.LatLngLiteral) => {
-    dispatch({ type: 'SET_COORDINATES', payload: coordinates });
+    setState(prev => ({ ...prev, coordinates }));
   }, []);
 
   const setSelectedPlace = useCallback((place: google.maps.places.PlaceResult) => {
-    dispatch({ type: 'SET_SELECTED_PLACE', payload: place });
+    setState(prev => ({ ...prev, selectedPlace: place }));
+  }, []);
+
+  const setError = useCallback((error: string) => {
+    setState(prev => ({ ...prev, error }));
+  }, []);
+
+  const clearError = useCallback(() => {
+    setState(prev => ({ ...prev, error: null }));
   }, []);
 
   const resetAnalysis = useCallback(() => {
-    dispatch({ type: 'RESET_ANALYSIS' });
+    setState(prev => ({ 
+      ...prev, 
+      analysisResults: null, 
+      error: null, 
+      isAnalyzing: false, 
+      analysisComplete: false 
+    }));
   }, []);
 
   const analyzeProperty = useCallback(async (forceLocalAnalysis: boolean = false) => {
     if (!state.address || state.isAnalyzing) return;
 
-    dispatch({ type: 'START_ANALYSIS' });
+    setState(prev => ({ ...prev, isAnalyzing: true, error: null }));
     console.log('🔍 Starting property analysis for:', state.address);
 
     try {
@@ -69,14 +95,16 @@ export const GoogleMapProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       if (data?.success && data?.analysis) {
         const analysisResults: AnalysisResults = data.analysis;
         
-        dispatch({ 
-          type: 'SET_ANALYSIS_RESULTS', 
-          payload: {
+        setState(prev => ({ 
+          ...prev,
+          analysisResults: {
             ...analysisResults,
             satelliteImageUrl,
             streetViewImageUrl
-          }
-        });
+          },
+          isAnalyzing: false,
+          analysisComplete: true
+        }));
 
         // Save to database if user is logged in
         if (user && state.address && state.coordinates) {
@@ -120,9 +148,13 @@ export const GoogleMapProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       } else {
         throw new Error(data?.error || 'Analysis failed');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('❌ Property analysis failed:', error);
-      dispatch({ type: 'SET_ERROR', payload: error.message || 'Analysis failed' });
+      setState(prev => ({ 
+        ...prev, 
+        error: error.message || 'Analysis failed', 
+        isAnalyzing: false 
+      }));
       
       toast({
         title: "Analysis Failed",
@@ -139,8 +171,8 @@ export const GoogleMapProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     setSelectedPlace,
     analyzeProperty,
     resetAnalysis,
-    setError: (error: string) => dispatch({ type: 'SET_ERROR', payload: error }),
-    clearError: () => dispatch({ type: 'CLEAR_ERROR' })
+    setError,
+    clearError
   };
 
   return (
@@ -150,10 +182,4 @@ export const GoogleMapProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   );
 };
 
-export const useGoogleMap = () => {
-  const context = useContext(GoogleMapContext);
-  if (!context) {
-    throw new Error('useGoogleMap must be used within a GoogleMapProvider');
-  }
-  return context;
-};
+export default GoogleMapProvider;

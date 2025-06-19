@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { motion } from "framer-motion";
 import { useGoogleMap } from '@/contexts/GoogleMapContext';
@@ -45,6 +46,7 @@ const HomeModelViewer = () => {
       <PropertyAnalysisContent 
         analysisResults={analysisResults}
         address={address}
+        showFullAnalysis={true}
       />
       
       <PropertyImagesDisplay

@@ -1,5 +1,5 @@
 
-export { default as GoogleMapProvider } from './GoogleMapProvider';
+export { GoogleMapProvider as default } from './GoogleMapProvider';
 export { useGoogleMap } from './hooks';
-export type { GoogleMapContextType, GoogleMapContextProps, AnalysisResults } from './types';
+export type { GoogleMapContextType, AnalysisResults } from './types';
 export type { AssetOpportunity } from './assetTypes';
