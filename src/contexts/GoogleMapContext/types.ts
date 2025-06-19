@@ -105,6 +105,7 @@ export interface GoogleMapState {
 }
 
 export interface GoogleMapContextType extends GoogleMapState {
+  // Core methods
   setAddress: (address: string) => void;
   setCoordinates: (coordinates: google.maps.LatLngLiteral) => void;
   setSelectedPlace: (place: google.maps.places.PlaceResult) => void;
@@ -112,4 +113,25 @@ export interface GoogleMapContextType extends GoogleMapState {
   resetAnalysis: () => void;
   setError: (error: string) => void;
   clearError: () => void;
+  
+  // Additional properties needed by components
+  mapInstance: google.maps.Map | null;
+  setMapInstance: (map: google.maps.Map | null) => void;
+  mapLoaded: boolean;
+  setMapLoaded: (loaded: boolean) => void;
+  addressCoordinates: google.maps.LatLngLiteral | null;
+  setAddressCoordinates: (coordinates: google.maps.LatLngLiteral | null) => void;
+  analysisError: string | null;
+  setAnalysisError: (error: string | null) => void;
+  zoomLevel: number;
+  setZoomLevel: (zoom: number) => void;
+  useLocalAnalysis: boolean;
+  setUseLocalAnalysis: (use: boolean) => void;
+  isGeneratingAnalysis: boolean;
+  setIsAnalyzing: (analyzing: boolean) => void;
+  setAnalysisComplete: (complete: boolean) => void;
+  setAnalysisResults: (results: AnalysisResults | null) => void;
+  generatePropertyAnalysis: (address: string) => Promise<void>;
+  isLocating: boolean;
+  setIsLocating: (locating: boolean) => void;
 }

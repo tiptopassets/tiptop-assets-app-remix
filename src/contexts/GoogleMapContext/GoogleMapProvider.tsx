@@ -1,5 +1,5 @@
 
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import React, { createContext, useState, useCallback } from 'react';
 import { GoogleMapContextType, GoogleMapState, AnalysisResults } from './types';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -23,6 +23,16 @@ const initialState: GoogleMapState = {
 
 export const GoogleMapProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [state, setState] = useState<GoogleMapState>(initialState);
+  
+  // Additional state for extended functionality
+  const [mapInstance, setMapInstance] = useState<google.maps.Map | null>(null);
+  const [mapLoaded, setMapLoaded] = useState(false);
+  const [addressCoordinates, setAddressCoordinates] = useState<google.maps.LatLngLiteral | null>(null);
+  const [analysisError, setAnalysisError] = useState<string | null>(null);
+  const [zoomLevel, setZoomLevel] = useState(12);
+  const [useLocalAnalysis, setUseLocalAnalysis] = useState(false);
+  const [isLocating, setIsLocating] = useState(false);
+  
   const { user } = useAuth();
   const { toast } = useToast();
 
@@ -40,10 +50,24 @@ export const GoogleMapProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   const setError = useCallback((error: string) => {
     setState(prev => ({ ...prev, error }));
+    setAnalysisError(error);
   }, []);
 
   const clearError = useCallback(() => {
     setState(prev => ({ ...prev, error: null }));
+    setAnalysisError(null);
+  }, []);
+
+  const setIsAnalyzing = useCallback((analyzing: boolean) => {
+    setState(prev => ({ ...prev, isAnalyzing: analyzing }));
+  }, []);
+
+  const setAnalysisComplete = useCallback((complete: boolean) => {
+    setState(prev => ({ ...prev, analysisComplete: complete }));
+  }, []);
+
+  const setAnalysisResults = useCallback((results: AnalysisResults | null) => {
+    setState(prev => ({ ...prev, analysisResults: results }));
   }, []);
 
   const resetAnalysis = useCallback(() => {
@@ -54,12 +78,18 @@ export const GoogleMapProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       isAnalyzing: false, 
       analysisComplete: false 
     }));
+    setAnalysisError(null);
+  }, []);
+
+  const generatePropertyAnalysis = useCallback(async (address: string) => {
+    return analyzeProperty();
   }, []);
 
   const analyzeProperty = useCallback(async (forceLocalAnalysis: boolean = false) => {
     if (!state.address || state.isAnalyzing) return;
 
     setState(prev => ({ ...prev, isAnalyzing: true, error: null }));
+    setAnalysisError(null);
     console.log('🔍 Starting property analysis for:', state.address);
 
     try {
@@ -68,23 +98,26 @@ export const GoogleMapProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       let streetViewImageUrl: string | undefined;
 
       // Get satellite image if coordinates are available
-      if (state.coordinates) {
-        try {
-          const satelliteUrl = `https://maps.googleapis.com/maps/api/staticmap?center=${state.coordinates.lat},${state.coordinates.lng}&zoom=19&size=640x640&maptype=satellite&key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY || 'your-api-key'}`;
-          satelliteImageUrl = satelliteUrl;
-          
-          // Get street view image
-          const streetViewUrl = `https://maps.googleapis.com/maps/api/streetview?size=640x640&location=${state.coordinates.lat},${state.coordinates.lng}&heading=0&pitch=0&key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY || 'your-api-key'}`;
-          streetViewImageUrl = streetViewUrl;
-        } catch (imageError) {
-          console.warn('Failed to generate image URLs:', imageError);
+      if (state.coordinates || addressCoordinates) {
+        const coords = state.coordinates || addressCoordinates;
+        if (coords) {
+          try {
+            const satelliteUrl = `https://maps.googleapis.com/maps/api/staticmap?center=${coords.lat},${coords.lng}&zoom=19&size=640x640&maptype=satellite&key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY || 'your-api-key'}`;
+            satelliteImageUrl = satelliteUrl;
+            
+            // Get street view image
+            const streetViewUrl = `https://maps.googleapis.com/maps/api/streetview?size=640x640&location=${coords.lat},${coords.lng}&heading=0&pitch=0&key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY || 'your-api-key'}`;
+            streetViewImageUrl = streetViewUrl;
+          } catch (imageError) {
+            console.warn('Failed to generate image URLs:', imageError);
+          }
         }
       }
 
       const { data, error } = await supabase.functions.invoke('analyze-property', {
         body: {
           address: state.address,
-          coordinates: state.coordinates,
+          coordinates: state.coordinates || addressCoordinates,
           satelliteImage: satelliteImageUrl,
           forceLocalAnalysis
         }
@@ -107,14 +140,15 @@ export const GoogleMapProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         }));
 
         // Save to database if user is logged in
-        if (user && state.address && state.coordinates) {
+        if (user && state.address && (state.coordinates || addressCoordinates)) {
           try {
             console.log('💾 Saving analysis to database...');
             
+            const coords = state.coordinates || addressCoordinates;
             const addressId = await saveAddress(
               user.id,
               state.address,
-              state.coordinates,
+              coords!,
               state.address,
               false
             );
@@ -124,7 +158,7 @@ export const GoogleMapProvider: React.FC<{ children: React.ReactNode }> = ({ chi
                 user.id,
                 addressId,
                 analysisResults,
-                state.coordinates,
+                coords!,
                 satelliteImageUrl,
                 streetViewImageUrl
               );
@@ -155,6 +189,7 @@ export const GoogleMapProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         error: error.message || 'Analysis failed', 
         isAnalyzing: false 
       }));
+      setAnalysisError(error.message || 'Analysis failed');
       
       toast({
         title: "Analysis Failed",
@@ -162,17 +197,41 @@ export const GoogleMapProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         variant: "destructive"
       });
     }
-  }, [state.address, state.coordinates, state.isAnalyzing, user, toast]);
+  }, [state.address, state.coordinates, addressCoordinates, state.isAnalyzing, user, toast]);
 
   const value: GoogleMapContextType = {
+    // Core state
     ...state,
+    
+    // Core methods
     setAddress,
     setCoordinates,
     setSelectedPlace,
     analyzeProperty,
     resetAnalysis,
     setError,
-    clearError
+    clearError,
+    
+    // Extended state and methods
+    mapInstance,
+    setMapInstance,
+    mapLoaded,
+    setMapLoaded,
+    addressCoordinates,
+    setAddressCoordinates,
+    analysisError,
+    setAnalysisError,
+    zoomLevel,
+    setZoomLevel,
+    useLocalAnalysis,
+    setUseLocalAnalysis,
+    isGeneratingAnalysis: state.isAnalyzing,
+    setIsAnalyzing,
+    setAnalysisComplete,
+    setAnalysisResults,
+    generatePropertyAnalysis,
+    isLocating,
+    setIsLocating
   };
 
   return (
