@@ -1,4 +1,3 @@
-
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.43.1';
 import { corsHeaders } from '../_shared/cors.ts';
 import { analyzeImage } from './imageAnalysis.ts';
@@ -6,7 +5,7 @@ import { generatePropertyAnalysis } from './propertyAnalysis.ts';
 import { extractStructuredData } from './dataExtraction.ts';
 import { validateAndCorrectRevenue } from './marketDataValidator.ts';
 import { AnalysisRequest, PropertyInfo, ImageAnalysis } from './types.ts';
-import { classifyPropertyFromAddress } from '../../src/utils/propertyClassification.ts';
+import { classifyPropertyFromAddress } from './propertyClassification.ts';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') || '';
 const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY') || '';
