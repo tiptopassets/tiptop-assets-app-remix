@@ -56,6 +56,51 @@ const detectBuildingType = (propertyInfo: any, imageAnalysis: any) => {
   };
 };
 
+// Normalize topOpportunities to ensure consistent object structure
+const normalizeTopOpportunities = (opportunities: any[]): any[] => {
+  if (!Array.isArray(opportunities)) {
+    console.log('topOpportunities is not an array, returning empty array');
+    return [];
+  }
+
+  return opportunities.map((opp, index) => {
+    // If it's already an object with title, return as-is
+    if (typeof opp === 'object' && opp !== null && opp.title) {
+      return opp;
+    }
+    
+    // If it's a string, convert to object format
+    if (typeof opp === 'string') {
+      console.log(`Converting string opportunity "${opp}" to object format`);
+      return {
+        title: opp,
+        monthlyRevenue: 0,
+        setupCost: 0,
+        paybackMonths: 0,
+        confidenceScore: 0.5,
+        description: opp,
+        immediateSteps: [],
+        riskFactors: [],
+        availableForPropertyType: true
+      };
+    }
+    
+    // If it's something else, create a generic object
+    console.log(`Converting unknown opportunity type at index ${index} to object format`);
+    return {
+      title: `Opportunity ${index + 1}`,
+      monthlyRevenue: 0,
+      setupCost: 0,
+      paybackMonths: 0,
+      confidenceScore: 0.5,
+      description: 'Unknown opportunity type',
+      immediateSteps: [],
+      riskFactors: [],
+      availableForPropertyType: true
+    };
+  });
+};
+
 // Apply building restrictions to analysis
 const applyBuildingRestrictions = (analysis: any, buildingInfo: any) => {
   const restrictedAnalysis = { ...analysis };
@@ -113,14 +158,19 @@ const applyBuildingRestrictions = (analysis: any, buildingInfo: any) => {
     (restrictedAnalysis.internet?.monthlyRevenue || 0) +
     (restrictedAnalysis.garden?.monthlyRevenue || 0);
   
-  // Filter top opportunities to only include available ones
-  restrictedAnalysis.topOpportunities = restrictedAnalysis.topOpportunities?.filter(opp => {
-    if (opp.title.toLowerCase().includes('solar') && !buildingInfo.hasRooftopAccess) return false;
-    if (opp.title.toLowerCase().includes('parking') && !buildingInfo.hasParkingControl) return false;
-    if (opp.title.toLowerCase().includes('garden') && !buildingInfo.hasGardenAccess) return false;
-    if (opp.title.toLowerCase().includes('pool') && buildingInfo.type === 'apartment') return false;
+  // Normalize and filter top opportunities to ensure consistent structure
+  const normalizedOpportunities = normalizeTopOpportunities(restrictedAnalysis.topOpportunities || []);
+  restrictedAnalysis.topOpportunities = normalizedOpportunities.filter(opp => {
+    // Ensure opp has a title property before calling toLowerCase
+    const title = opp.title || '';
+    const titleLower = title.toLowerCase();
+    
+    if (titleLower.includes('solar') && !buildingInfo.hasRooftopAccess) return false;
+    if (titleLower.includes('parking') && !buildingInfo.hasParkingControl) return false;
+    if (titleLower.includes('garden') && !buildingInfo.hasGardenAccess) return false;
+    if (titleLower.includes('pool') && buildingInfo.type === 'apartment') return false;
     return true;
-  }) || [];
+  });
   
   // Add building type warnings
   restrictedAnalysis.buildingTypeWarnings = restrictedAnalysis.buildingTypeWarnings || [];
@@ -180,6 +230,23 @@ ${!buildingInfo.hasParkingControl ? '   ❌ NO PARKING CONTROL - Set all parking
 - Remove any solar/rooftop opportunities if rooftop restricted
 - Remove parking opportunities if parking restricted
 - Focus on available opportunities like internet bandwidth and personal storage
+
+CRITICAL: topOpportunities MUST be an array of objects with this exact structure:
+[
+  {
+    "title": "String description of opportunity",
+    "monthlyRevenue": number,
+    "setupCost": number,
+    "paybackMonths": number,
+    "confidenceScore": 0.1-1.0,
+    "description": "Detailed description",
+    "immediateSteps": ["Step 1", "Step 2"],
+    "riskFactors": ["Risk 1", "Risk 2"],
+    "availableForPropertyType": boolean
+  }
+]
+
+DO NOT return topOpportunities as an array of strings. Each item MUST be an object with the above properties.
 
 ANALYSIS REQUIREMENTS:
 
@@ -274,6 +341,8 @@ OUTPUT FORMAT (STRICT JSON WITH ENFORCED RESTRICTIONS):
     "restrictionReason": ${buildingInfo.hasGardenAccess ? 'null' : '"No access to shared garden/outdoor spaces in ' + buildingInfo.type + ' buildings"'}
   },
   "topOpportunities": [
+    // CRITICAL: Each item MUST be an object with title, monthlyRevenue, setupCost, paybackMonths, confidenceScore, description, immediateSteps, riskFactors, availableForPropertyType
+    // DO NOT use strings - only objects with the required properties
     // ONLY include opportunities available for this building type
     // NO solar opportunities if rooftop restricted
     // NO parking opportunities if parking restricted  
@@ -291,10 +360,11 @@ OUTPUT FORMAT (STRICT JSON WITH ENFORCED RESTRICTIONS):
 CRITICAL SUCCESS FACTORS:
 1. ENFORCE building type restrictions detected in pre-analysis
 2. SET revenue to $0 for all restricted opportunities  
-3. ONLY include available opportunities in topOpportunities array
+3. ONLY include available opportunities in topOpportunities array as OBJECTS (not strings)
 4. EXPLAIN restrictions clearly in restrictionReason fields
 5. FOCUS recommendations on realistic opportunities for this building type
 6. CALCULATE total revenue only from available opportunities
+7. topOpportunities MUST be objects with required properties, NOT strings
 
 This analysis will guide real investment decisions. Building type accuracy is CRITICAL.
     `;
@@ -310,7 +380,7 @@ This analysis will guide real investment decisions. Building type accuracy is CR
         messages: [
           {
             role: 'system',
-            content: 'You are an expert property monetization analyst. You MUST enforce building type restrictions. NEVER assign revenue to restricted opportunities. Always return valid JSON with building type restrictions properly applied.'
+            content: 'You are an expert property monetization analyst. You MUST enforce building type restrictions. NEVER assign revenue to restricted opportunities. Always return valid JSON with building type restrictions properly applied. topOpportunities MUST be an array of objects with title, monthlyRevenue, setupCost, paybackMonths, confidenceScore, description, immediateSteps, riskFactors, and availableForPropertyType properties - NEVER return strings.'
           },
           {
             role: 'user',
@@ -340,13 +410,16 @@ This analysis will guide real investment decisions. Building type accuracy is CR
       const jsonMatch = responseContent.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
         analysis = JSON.parse(jsonMatch[0]);
+        
+        // Ensure topOpportunities is properly structured
+        analysis.topOpportunities = normalizeTopOpportunities(analysis.topOpportunities || []);
       } else {
         throw new Error('No valid JSON found in response');
       }
     } catch (parseError) {
       console.error('Failed to parse enhanced analysis JSON:', parseError);
       
-      // Enhanced fallback analysis with building type restrictions
+      // Enhanced fallback analysis with building type restrictions and proper object structure
       analysis = {
         propertyType: buildingInfo.type,
         buildingTypeRestrictions: {
@@ -419,7 +492,7 @@ This analysis will guide real investment decisions. Building type accuracy is CR
         buildingTypeWarnings: [buildingInfo.restrictions || 'Building type restrictions detected']
       };
       
-      // Calculate available opportunities based on building type
+      // Calculate available opportunities based on building type with proper object structure
       const availableOpportunities = [];
       
       if (buildingInfo.hasParkingControl) {
