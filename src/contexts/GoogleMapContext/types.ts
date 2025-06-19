@@ -8,7 +8,7 @@ export interface AnalysisResults {
     solarCapacity: number;
     solarPotential?: boolean;
     revenue: number;
-    providers?: any[];
+    providers?: ProviderInfo[];
     usingRealSolarData?: boolean;
     yearlyEnergyKWh?: number;
     panelsCount?: number;
@@ -18,51 +18,42 @@ export interface AnalysisResults {
     area: number;
     opportunity: string;
     revenue: number;
-    providers?: any[];
+    providers?: ProviderInfo[];
   };
   parking: {
     spaces: number;
     rate: number;
     revenue: number;
     evChargerPotential?: boolean;
-    providers?: any[];
+    parkingType?: string;
+    providers?: ProviderInfo[];
   };
   pool: {
     present: boolean;
     area: number;
     type: string;
     revenue: number;
-    providers?: any[];
+    providers?: ProviderInfo[];
   };
   storage: {
     volume: number;
     revenue: number;
-    providers?: any[];
+    providers?: ProviderInfo[];
   };
   bandwidth: {
     available: number;
     revenue: number;
-    providers?: any[];
+    providers?: ProviderInfo[];
   };
   shortTermRental: {
     nightlyRate: number;
     monthlyProjection: number;
-    providers?: any[];
+    providers?: ProviderInfo[];
   };
   permits: string[];
   restrictions: string | null;
-  topOpportunities: any[];
+  topOpportunities: Opportunity[];
   imageAnalysisSummary?: string;
-  totalMonthlyRevenue?: number;
-  satelliteImageUrl?: string;
-  streetViewImageUrl?: string;
-  propertyValuation?: {
-    totalMonthlyRevenue: number;
-    totalAnnualRevenue: number;
-    totalSetupCosts: number;
-    averageROI: number;
-    bestOpportunity: string;
-  };
 }
 
 export interface ProviderInfo {
@@ -93,45 +84,49 @@ export interface FormField {
   options?: string[];
 }
 
-export interface GoogleMapState {
-  map: google.maps.Map | null;
+export interface GoogleMapContextType {
+  mapInstance: google.maps.Map | null;
+  setMapInstance: React.Dispatch<React.SetStateAction<google.maps.Map | null>>;
   address: string;
-  coordinates: google.maps.LatLngLiteral | null;
-  selectedPlace: google.maps.places.PlaceResult | null;
+  setAddress: React.Dispatch<React.SetStateAction<string>>;
   isAnalyzing: boolean;
+  setIsAnalyzing: React.Dispatch<React.SetStateAction<boolean>>;
   analysisComplete: boolean;
+  setAnalysisComplete: React.Dispatch<React.SetStateAction<boolean>>;
   analysisResults: AnalysisResults | null;
-  error: string | null;
+  setAnalysisResults: React.Dispatch<React.SetStateAction<AnalysisResults | null>>;
+  mapLoaded: boolean;
+  setMapLoaded: React.Dispatch<React.SetStateAction<boolean>>;
+  addressCoordinates: google.maps.LatLngLiteral | null;
+  setAddressCoordinates: React.Dispatch<React.SetStateAction<google.maps.LatLngLiteral | null>>;
+  generatePropertyAnalysis: (propertyAddress: string) => Promise<void>;
+  isGeneratingAnalysis: boolean;
+  analysisError: string | null;
+  setAnalysisError: React.Dispatch<React.SetStateAction<string | null>>;
+  useLocalAnalysis: boolean;
+  setUseLocalAnalysis: React.Dispatch<React.SetStateAction<boolean>>;
+  zoomLevel: number;
+  setZoomLevel: React.Dispatch<React.SetStateAction<number>>;
 }
 
-export interface GoogleMapContextType extends GoogleMapState {
-  // Core methods
-  setAddress: (address: string) => void;
-  setCoordinates: (coordinates: google.maps.LatLngLiteral) => void;
-  setSelectedPlace: (place: google.maps.places.PlaceResult) => void;
-  analyzeProperty: (forceLocalAnalysis?: boolean) => Promise<void>;
-  resetAnalysis: () => void;
-  setError: (error: string) => void;
-  clearError: () => void;
-  
-  // Additional properties needed by components
-  mapInstance: google.maps.Map | null;
-  setMapInstance: (map: google.maps.Map | null) => void;
-  mapLoaded: boolean;
-  setMapLoaded: (loaded: boolean) => void;
+// Update the interface used by the provider
+export interface GoogleMapContextProps extends GoogleMapContextType {
+  // Additional properties that were in the original provider
   addressCoordinates: google.maps.LatLngLiteral | null;
-  setAddressCoordinates: (coordinates: google.maps.LatLngLiteral | null) => void;
-  analysisError: string | null;
-  setAnalysisError: (error: string | null) => void;
-  zoomLevel: number;
-  setZoomLevel: (zoom: number) => void;
-  useLocalAnalysis: boolean;
-  setUseLocalAnalysis: (use: boolean) => void;
-  isGeneratingAnalysis: boolean;
-  setIsAnalyzing: (analyzing: boolean) => void;
-  setAnalysisComplete: (complete: boolean) => void;
-  setAnalysisResults: (results: AnalysisResults | null) => void;
-  generatePropertyAnalysis: (address: string) => Promise<void>;
+  setAddressCoordinates: (coords: google.maps.LatLngLiteral | null) => void;
   isLocating: boolean;
-  setIsLocating: (locating: boolean) => void;
+  setIsLocating: (isLocating: boolean) => void;
+  isAddressValid: boolean;
+  setAddressValid: (isValid: boolean) => void;
+  generateAnalysis: (address: string, coords?: google.maps.LatLngLiteral, satelliteImageBase64?: string) => Promise<void>;
+  syncAnalysisToDatabase: (address: string, analysis: any, coordinates?: any, satelliteImageUrl?: string) => Promise<void>;
+  dataSyncEnabled: boolean;
+  setDataSyncEnabled: (enabled: boolean) => void;
+  propertyType: string | null;
+  setPropertyType: (type: string | null) => void;
+  satelliteImageBase64: string | null;
+  setSatelliteImageBase64: (base64: string | null) => void;
+  resetMapContext: () => void;
+  isGeneratingAnalysis: boolean;
+  setIsGeneratingAnalysis: React.Dispatch<React.SetStateAction<boolean>>;
 }
