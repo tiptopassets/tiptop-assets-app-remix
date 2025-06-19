@@ -36,7 +36,8 @@ const AssetResultList: React.FC<AssetResultListProps> = ({
     showAssetForm,
     additionalOpportunitiesCount: additionalOpportunities.length,
     propertyType: analysisResults?.propertyType,
-    topOpportunities: analysisResults?.topOpportunities?.length || 0
+    topOpportunities: analysisResults?.topOpportunities?.length || 0,
+    totalMonthlyRevenue: analysisResults?.totalMonthlyRevenue
   });
 
   // Notify parent component when form section visibility changes
@@ -46,7 +47,7 @@ const AssetResultList: React.FC<AssetResultListProps> = ({
     }
   }, [showAssetForm, onFormSectionToggle]);
 
-  // Filter opportunities based on property type
+  // Filter opportunities based on property type - IMPROVED LOGIC
   const displayOpportunities = useMemo(() => {
     if (!analysisResults?.topOpportunities) return [];
     
@@ -56,27 +57,32 @@ const AssetResultList: React.FC<AssetResultListProps> = ({
     console.log('🏢 Property type check:', {
       propertyType: analysisResults.propertyType,
       isApartment,
-      opportunities: analysisResults.topOpportunities
+      rawOpportunities: analysisResults.topOpportunities,
+      totalMonthlyRevenue: analysisResults.totalMonthlyRevenue
     });
 
-    // For apartments, filter out restricted opportunities and ensure apartment-specific ones are shown
+    // For apartments, use existing opportunities but ensure apartment-friendly ones are included
     if (isApartment) {
-      const apartmentOpportunities = analysisResults.topOpportunities.filter(opp => {
+      let apartmentOpportunities = [];
+
+      // First, try to use existing opportunities from the analysis
+      const existingOpportunities = analysisResults.topOpportunities.filter(opp => {
         const title = opp.title.toLowerCase();
-        // Include apartment-friendly opportunities
         return title.includes('internet') || 
                title.includes('bandwidth') || 
                title.includes('storage') ||
-               title.includes('personal') ||
+               title.includes('unit') ||
                opp.monthlyRevenue > 0;
       });
 
-      // If no apartment opportunities found, create them from analysis data
-      if (apartmentOpportunities.length === 0) {
-        const generatedOpportunities = [];
-        
+      console.log('🏢 Found existing apartment opportunities:', existingOpportunities);
+
+      if (existingOpportunities.length > 0) {
+        apartmentOpportunities = existingOpportunities;
+      } else {
+        // Generate apartment opportunities from analysis data if none exist
         if (analysisResults.bandwidth?.revenue > 0) {
-          generatedOpportunities.push({
+          apartmentOpportunities.push({
             title: 'Internet Bandwidth Sharing',
             icon: 'wifi',
             monthlyRevenue: analysisResults.bandwidth.revenue,
@@ -87,7 +93,7 @@ const AssetResultList: React.FC<AssetResultListProps> = ({
         }
 
         if (analysisResults.storage?.revenue > 0) {
-          generatedOpportunities.push({
+          apartmentOpportunities.push({
             title: 'Personal Storage Rental',
             icon: 'storage', 
             monthlyRevenue: analysisResults.storage.revenue,
@@ -96,14 +102,13 @@ const AssetResultList: React.FC<AssetResultListProps> = ({
             roi: 0
           });
         }
-
-        console.log('🏢 Generated apartment opportunities:', generatedOpportunities);
-        return generatedOpportunities;
       }
 
+      console.log('🏢 Final apartment opportunities:', apartmentOpportunities);
       return apartmentOpportunities;
     }
 
+    // For non-apartments, return all opportunities
     return analysisResults.topOpportunities;
   }, [analysisResults]);
 
@@ -247,15 +252,15 @@ const AssetResultList: React.FC<AssetResultListProps> = ({
     const totalSelectedRevenue = selectedAssetsData.reduce((sum, asset) => sum + asset.monthlyRevenue, 0);
     const totalSetupCost = selectedAssetsData.reduce((sum, asset) => sum + (asset.setupCost || 0), 0);
 
-    // Calculate total monthly income from analysis results
-    const analysisRevenue = analysisResults ? (
+    // Use the totalMonthlyRevenue from analysis results if available, otherwise calculate
+    const analysisRevenue = analysisResults?.totalMonthlyRevenue || (analysisResults ? (
       (analysisResults.rooftop?.revenue || 0) +
       (analysisResults.parking?.revenue || 0) +
       (analysisResults.garden?.revenue || 0) +
       (analysisResults.pool?.revenue || 0) +
       (analysisResults.storage?.revenue || 0) +
       (analysisResults.bandwidth?.revenue || 0)
-    ) : 0;
+    ) : 0);
 
     const totalMonthlyIncome = analysisRevenue + totalSelectedRevenue;
 

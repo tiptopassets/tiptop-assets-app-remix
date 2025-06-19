@@ -129,7 +129,7 @@ export const generatePropertyAnalysis = async (
     totalMonthlyRevenue: analysisData.totalMonthlyRevenue || 0
   };
 
-  // Generate top opportunities based on building type and actual revenue potential
+  // Generate top opportunities based on building type and actual revenue potential - IMPROVED LOGIC
   results.topOpportunities = generateBuildingTypeAwareOpportunities(results, buildingTypeInfo, analysisData);
 
   console.log('Enhanced property analysis completed successfully');
@@ -346,8 +346,10 @@ function generateBuildingTypeAwareOpportunities(
 ) {
   const opportunities = [];
 
-  // For apartments, focus only on available opportunities
+  // For apartments, focus only on available opportunities and ensure both are included
   if (buildingTypeInfo.type === 'apartment') {
+    console.log('🏢 Generating apartment-specific opportunities');
+    
     // Internet bandwidth sharing - always available for apartments
     if (results.bandwidth.revenue > 0) {
       opportunities.push({
@@ -360,7 +362,7 @@ function generateBuildingTypeAwareOpportunities(
       });
     }
 
-    // Personal storage rental - limited to unit storage
+    // Personal storage rental - available for apartments
     if (results.storage.revenue > 0) {
       opportunities.push({
         title: 'Personal Storage Rental',
@@ -371,6 +373,34 @@ function generateBuildingTypeAwareOpportunities(
         roi: 0
       });
     }
+
+    // Ensure we have both opportunities even if one wasn't generated properly
+    const hasInternet = opportunities.some(opp => opp.title.includes('Internet'));
+    const hasStorage = opportunities.some(opp => opp.title.includes('Storage'));
+    
+    if (!hasInternet && analysisData.internet?.monthlyRevenue > 0) {
+      opportunities.push({
+        title: 'Internet Bandwidth Sharing',
+        icon: 'wifi',
+        monthlyRevenue: analysisData.internet.monthlyRevenue,
+        description: 'Share unused internet bandwidth for passive income',
+        setupCost: 0,
+        roi: 0
+      });
+    }
+    
+    if (!hasStorage && analysisData.storage?.monthlyRevenue > 0) {
+      opportunities.push({
+        title: 'Unit Storage Rental',
+        icon: 'storage',
+        monthlyRevenue: analysisData.storage.monthlyRevenue,
+        description: 'Rent out available storage space within the unit',
+        setupCost: 0,
+        roi: 0
+      });
+    }
+
+    console.log('🏢 Generated apartment opportunities:', opportunities);
   } else {
     // For single family homes, include all applicable opportunities
     if (results.rooftop.revenue > 0 && buildingTypeInfo.hasRooftopAccess) {
