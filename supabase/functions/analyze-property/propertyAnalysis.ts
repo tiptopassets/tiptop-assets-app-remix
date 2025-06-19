@@ -1,4 +1,3 @@
-
 import { PropertyInfo, ImageAnalysis, AnalysisResults } from './types.ts';
 
 export const generatePropertyAnalysis = async (
@@ -125,7 +124,9 @@ export const generatePropertyAnalysis = async (
     permits: analysisData.permits || [],
     restrictions: buildingTypeInfo.restrictions,
     topOpportunities: [],
-    imageAnalysisSummary: imageAnalysis.summary || ''
+    imageAnalysisSummary: imageAnalysis.summary || '',
+    // Extract totalMonthlyRevenue from GPT response
+    totalMonthlyRevenue: analysisData.totalMonthlyRevenue || 0
   };
 
   // Generate top opportunities based on building type and actual revenue potential

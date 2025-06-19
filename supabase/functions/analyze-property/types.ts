@@ -1,3 +1,4 @@
+
 export interface PropertyInfo {
   address: string;
   coordinates?: google.maps.LatLngLiteral;
@@ -20,6 +21,7 @@ export interface ImageAnalysis {
   hasPool?: boolean;
   poolSize?: number;
   solarPotential?: string;
+  summary?: string;
 }
 
 export interface PropertyAnalysis {
@@ -76,6 +78,7 @@ export interface PropertyAnalysis {
   restrictions: string | null;
   topOpportunities: any[];
   imageAnalysisSummary?: string;
+  totalMonthlyRevenue?: number; // Add totalMonthlyRevenue field
   propertyValuation?: {
     totalMonthlyRevenue: number;
     totalAnnualRevenue: number;
@@ -84,3 +87,6 @@ export interface PropertyAnalysis {
     bestOpportunity: string;
   };
 }
+
+// Create alias for backward compatibility
+export type AnalysisResults = PropertyAnalysis;
