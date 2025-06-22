@@ -15,3 +15,6 @@ export interface PropertyAnalysisRow {
   satellite_image_url?: string;
   street_view_image_url?: string;
 }
+
+// Create alias for consistency - they should be the same
+export type PropertyAnalysis = PropertyAnalysisRow;
