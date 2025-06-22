@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -28,20 +29,6 @@ import { motion } from 'framer-motion';
 import PropertyDetailsDialog from './PropertyDetailsDialog';
 import PropertyStatsCards from './PropertyStatsCards';
 import { PropertyAnalysisRow } from '@/types/propertyAnalysis';
-
-// Use the correct database schema type from supabase
-type PropertyAnalysisRow = {
-  id: string;
-  user_id: string;
-  address_id: string;
-  total_monthly_revenue: number;
-  total_opportunities: number;
-  property_type: string;
-  created_at: string;
-  updated_at: string;
-  coordinates: any;
-  analysis_results: any;
-};
 
 const PropertyManagement = () => {
   const [properties, setProperties] = useState<PropertyAnalysisRow[]>([]);

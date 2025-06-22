@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { 
@@ -75,8 +74,8 @@ export const ServiceProviderProvider: React.FC<{ children: React.ReactNode }> = 
         return;
       }
       
-      // Transform available providers
-      const newAvailableProviders = providerData.availableProviders.map(p => ({
+      // Transform available providers - add missing timestamp fields
+      const newAvailableProviders: ServiceProvider[] = providerData.availableProviders.map(p => ({
         id: p.id,
         name: p.name,
         category: p.assetTypes[0] || 'general',
@@ -91,11 +90,13 @@ export const ServiceProviderProvider: React.FC<{ children: React.ReactNode }> = 
         avg_monthly_earnings_high: 150,
         conversion_rate: 2.5,
         priority: 1,
-        is_active: true
+        is_active: true,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
       }));
       
-      // Transform connected providers
-      const newConnectedProviders = providerData.connectedProviders.map(p => ({
+      // Transform connected providers - add missing timestamp fields
+      const newConnectedProviders: AffiliateRegistration[] = providerData.connectedProviders.map(p => ({
         id: p.id,
         user_id: user?.id || '',
         bundle_selection_id: '',
@@ -106,7 +107,9 @@ export const ServiceProviderProvider: React.FC<{ children: React.ReactNode }> = 
         registration_date: new Date().toISOString(),
         first_commission_date: undefined,
         total_earnings: 0,
-        last_sync_at: new Date().toISOString()
+        last_sync_at: new Date().toISOString(),
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
       }));
 
       // Transform earnings
