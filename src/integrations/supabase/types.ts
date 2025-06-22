@@ -9,16 +9,468 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      enhanced_service_providers: {
+        Row: {
+          affiliate_base_url: string | null
+          api_type: string | null
+          avg_earnings_high: number | null
+          avg_earnings_low: number | null
+          category: string
+          commission_rate: number | null
+          created_at: string | null
+          id: string
+          name: string
+          priority_score: number | null
+          setup_requirements: Json | null
+          supported_assets: Json | null
+          updated_at: string | null
+        }
+        Insert: {
+          affiliate_base_url?: string | null
+          api_type?: string | null
+          avg_earnings_high?: number | null
+          avg_earnings_low?: number | null
+          category: string
+          commission_rate?: number | null
+          created_at?: string | null
+          id?: string
+          name: string
+          priority_score?: number | null
+          setup_requirements?: Json | null
+          supported_assets?: Json | null
+          updated_at?: string | null
+        }
+        Update: {
+          affiliate_base_url?: string | null
+          api_type?: string | null
+          avg_earnings_high?: number | null
+          avg_earnings_low?: number | null
+          category?: string
+          commission_rate?: number | null
+          created_at?: string | null
+          id?: string
+          name?: string
+          priority_score?: number | null
+          setup_requirements?: Json | null
+          supported_assets?: Json | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      onboarding_messages: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          metadata: Json | null
+          onboarding_id: string
+          role: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          onboarding_id: string
+          role: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          onboarding_id?: string
+          role?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "onboarding_messages_onboarding_id_fkey"
+            columns: ["onboarding_id"]
+            isOneToOne: false
+            referencedRelation: "user_onboarding"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      partner_integration_progress: {
+        Row: {
+          created_at: string | null
+          earnings_data: Json | null
+          id: string
+          integration_status: string
+          next_steps: Json | null
+          onboarding_id: string | null
+          partner_name: string
+          referral_link: string | null
+          registration_data: Json | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          earnings_data?: Json | null
+          id?: string
+          integration_status?: string
+          next_steps?: Json | null
+          onboarding_id?: string | null
+          partner_name: string
+          referral_link?: string | null
+          registration_data?: Json | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          earnings_data?: Json | null
+          id?: string
+          integration_status?: string
+          next_steps?: Json | null
+          onboarding_id?: string | null
+          partner_name?: string
+          referral_link?: string | null
+          registration_data?: Json | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_integration_progress_onboarding_id_fkey"
+            columns: ["onboarding_id"]
+            isOneToOne: false
+            referencedRelation: "user_onboarding"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      partner_recommendations: {
+        Row: {
+          asset_type: string
+          created_at: string | null
+          estimated_monthly_earnings: number | null
+          id: string
+          onboarding_id: string | null
+          partner_name: string
+          priority_score: number | null
+          recommendation_reason: string | null
+          setup_complexity: string | null
+        }
+        Insert: {
+          asset_type: string
+          created_at?: string | null
+          estimated_monthly_earnings?: number | null
+          id?: string
+          onboarding_id?: string | null
+          partner_name: string
+          priority_score?: number | null
+          recommendation_reason?: string | null
+          setup_complexity?: string | null
+        }
+        Update: {
+          asset_type?: string
+          created_at?: string | null
+          estimated_monthly_earnings?: number | null
+          id?: string
+          onboarding_id?: string | null
+          partner_name?: string
+          priority_score?: number | null
+          recommendation_reason?: string | null
+          setup_complexity?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_recommendations_onboarding_id_fkey"
+            columns: ["onboarding_id"]
+            isOneToOne: false
+            referencedRelation: "user_onboarding"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_addresses: {
+        Row: {
+          address: string
+          coordinates: Json | null
+          created_at: string | null
+          formatted_address: string | null
+          id: string
+          is_primary: boolean | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          address: string
+          coordinates?: Json | null
+          created_at?: string | null
+          formatted_address?: string | null
+          id?: string
+          is_primary?: boolean | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          address?: string
+          coordinates?: Json | null
+          created_at?: string | null
+          formatted_address?: string | null
+          id?: string
+          is_primary?: boolean | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_asset_selections: {
+        Row: {
+          analysis_id: string
+          asset_data: Json
+          asset_type: string
+          id: string
+          monthly_revenue: number | null
+          roi_months: number | null
+          selected_at: string | null
+          setup_cost: number | null
+          status: string | null
+          user_id: string
+        }
+        Insert: {
+          analysis_id: string
+          asset_data: Json
+          asset_type: string
+          id?: string
+          monthly_revenue?: number | null
+          roi_months?: number | null
+          selected_at?: string | null
+          setup_cost?: number | null
+          status?: string | null
+          user_id: string
+        }
+        Update: {
+          analysis_id?: string
+          asset_data?: Json
+          asset_type?: string
+          id?: string
+          monthly_revenue?: number | null
+          roi_months?: number | null
+          selected_at?: string | null
+          setup_cost?: number | null
+          status?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_asset_selections_analysis_id_fkey"
+            columns: ["analysis_id"]
+            isOneToOne: false
+            referencedRelation: "user_property_analyses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_dashboard_preferences: {
+        Row: {
+          created_at: string | null
+          dashboard_layout: Json | null
+          id: string
+          notification_settings: Json | null
+          primary_address_id: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          dashboard_layout?: Json | null
+          id?: string
+          notification_settings?: Json | null
+          primary_address_id?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          dashboard_layout?: Json | null
+          id?: string
+          notification_settings?: Json | null
+          primary_address_id?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_dashboard_preferences_primary_address_id_fkey"
+            columns: ["primary_address_id"]
+            isOneToOne: false
+            referencedRelation: "user_addresses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_login_stats: {
+        Row: {
+          first_login_at: string | null
+          id: string
+          last_ip: string | null
+          last_login_at: string | null
+          last_user_agent: string | null
+          login_count: number | null
+          user_id: string
+        }
+        Insert: {
+          first_login_at?: string | null
+          id?: string
+          last_ip?: string | null
+          last_login_at?: string | null
+          last_user_agent?: string | null
+          login_count?: number | null
+          user_id: string
+        }
+        Update: {
+          first_login_at?: string | null
+          id?: string
+          last_ip?: string | null
+          last_login_at?: string | null
+          last_user_agent?: string | null
+          login_count?: number | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_onboarding: {
+        Row: {
+          chat_history: Json | null
+          completed_assets: string[] | null
+          created_at: string
+          current_step: number | null
+          id: string
+          progress_data: Json | null
+          selected_option: Database["public"]["Enums"]["onboarding_option"]
+          status: Database["public"]["Enums"]["onboarding_status"]
+          total_steps: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          chat_history?: Json | null
+          completed_assets?: string[] | null
+          created_at?: string
+          current_step?: number | null
+          id?: string
+          progress_data?: Json | null
+          selected_option: Database["public"]["Enums"]["onboarding_option"]
+          status?: Database["public"]["Enums"]["onboarding_status"]
+          total_steps?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          chat_history?: Json | null
+          completed_assets?: string[] | null
+          created_at?: string
+          current_step?: number | null
+          id?: string
+          progress_data?: Json | null
+          selected_option?: Database["public"]["Enums"]["onboarding_option"]
+          status?: Database["public"]["Enums"]["onboarding_status"]
+          total_steps?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_property_analyses: {
+        Row: {
+          address_id: string
+          analysis_results: Json
+          analysis_version: string | null
+          coordinates: Json | null
+          created_at: string | null
+          id: string
+          property_type: string | null
+          satellite_image_url: string | null
+          street_view_image_url: string | null
+          total_monthly_revenue: number | null
+          total_opportunities: number | null
+          updated_at: string | null
+          user_id: string
+          using_real_solar_data: boolean | null
+        }
+        Insert: {
+          address_id: string
+          analysis_results: Json
+          analysis_version?: string | null
+          coordinates?: Json | null
+          created_at?: string | null
+          id?: string
+          property_type?: string | null
+          satellite_image_url?: string | null
+          street_view_image_url?: string | null
+          total_monthly_revenue?: number | null
+          total_opportunities?: number | null
+          updated_at?: string | null
+          user_id: string
+          using_real_solar_data?: boolean | null
+        }
+        Update: {
+          address_id?: string
+          analysis_results?: Json
+          analysis_version?: string | null
+          coordinates?: Json | null
+          created_at?: string | null
+          id?: string
+          property_type?: string | null
+          satellite_image_url?: string | null
+          street_view_image_url?: string | null
+          total_monthly_revenue?: number | null
+          total_opportunities?: number | null
+          updated_at?: string | null
+          user_id?: string
+          using_real_solar_data?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_property_analyses_address_id_fkey"
+            columns: ["address_id"]
+            isOneToOne: false
+            referencedRelation: "user_addresses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_roles: {
+        Row: {
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_user_role: {
+        Args: Record<PropertyKey, never> | { user_uuid: string }
+        Returns: string
+      }
+      sum_login_count: {
+        Args: Record<PropertyKey, never>
+        Returns: number
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "moderator" | "user"
+      onboarding_option: "manual" | "concierge"
+      onboarding_status: "not_started" | "in_progress" | "completed" | "paused"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -133,6 +585,10 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "moderator", "user"],
+      onboarding_option: ["manual", "concierge"],
+      onboarding_status: ["not_started", "in_progress", "completed", "paused"],
+    },
   },
 } as const

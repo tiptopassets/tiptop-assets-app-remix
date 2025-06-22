@@ -34,8 +34,7 @@ export const LoginStatsSummary = () => {
           
         if (usersError) throw usersError;
         
-        // Get sum of all logins
-        // Fix: Properly handle the RPC response type with explicit typing
+        // Get sum of all logins using the RPC function
         const { data: loginCountData, error: loginError } = await supabase
           .rpc('sum_login_count');
           

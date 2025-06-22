@@ -34,7 +34,7 @@ export const LoginStatsTable = () => {
   useEffect(() => {
     const fetchLoginStats = async () => {
       try {
-        // Fetch user login statistics with user emails
+        // Fetch user login statistics
         const { data, error } = await supabase
           .from('user_login_stats')
           .select('*')
@@ -43,17 +43,23 @@ export const LoginStatsTable = () => {
 
         if (error) throw error;
 
-        // For each login stat, fetch the user email
+        // For each login stat, try to get user email
+        // Note: In production, you'd want to create a view or function that joins this data
         const statsWithUserDetails = await Promise.all(
-          data.map(async (stat) => {
-            // Get user details from auth.users (using admin API or retrieve from profiles table)
-            // Note: In a real app, you might need to create a profiles table or use a function
-            const { data: userData, error: userError } = await supabase.auth.admin.getUserById(stat.user_id);
-            
-            return {
-              ...stat,
-              user_email: userData?.user?.email || 'Unknown Email'
-            };
+          (data || []).map(async (stat) => {
+            try {
+              // Try to get user details from auth API
+              // This requires service role key, so we'll fallback to showing user ID
+              return {
+                ...stat,
+                user_email: `User ${stat.user_id.slice(0, 8)}...`
+              };
+            } catch {
+              return {
+                ...stat,
+                user_email: `User ${stat.user_id.slice(0, 8)}...`
+              };
+            }
           })
         );
 
@@ -125,7 +131,7 @@ export const LoginStatsTable = () => {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>User Email</TableHead>
+              <TableHead>User</TableHead>
               <TableHead>Logins</TableHead>
               <TableHead>First Login</TableHead>
               <TableHead>Last Login</TableHead>

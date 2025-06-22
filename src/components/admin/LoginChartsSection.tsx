@@ -18,6 +18,11 @@ type BrowserData = {
   value: number;
 };
 
+type LoginStatsRow = {
+  last_login_at: string;
+  last_user_agent: string | null;
+};
+
 export const LoginChartsSection = () => {
   const [dailyLogins, setDailyLogins] = useState<DailyLoginData[]>([]);
   const [browserDistribution, setBrowserDistribution] = useState<BrowserData[]>([]);
@@ -34,10 +39,11 @@ export const LoginChartsSection = () => {
           return format(date, 'yyyy-MM-dd');
         }).reverse();
 
-        // Get all login stats
+        // Get all login stats with proper typing
         const { data: loginStats, error: loginError } = await supabase
           .from('user_login_stats')
-          .select('last_login_at, last_user_agent');
+          .select('last_login_at, last_user_agent')
+          .returns<LoginStatsRow[]>();
 
         if (loginError) throw loginError;
 

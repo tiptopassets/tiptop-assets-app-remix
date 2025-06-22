@@ -31,14 +31,13 @@ import PropertyStatsCards from './PropertyStatsCards';
 
 interface PropertyAnalysis {
   id: string;
-  property_address: string;
   user_id: string;
+  address_id: string;
   total_monthly_revenue: number;
   total_opportunities: number;
   property_type: string;
   created_at: string;
   updated_at: string;
-  is_active: boolean;
   coordinates: any;
   analysis_results: any;
 }
@@ -60,7 +59,7 @@ const PropertyManagement = () => {
     try {
       setLoading(true);
       const { data, error } = await supabase
-        .from('property_analyses')
+        .from('user_property_analyses')
         .select('*')
         .order('created_at', { ascending: false });
 
@@ -81,7 +80,7 @@ const PropertyManagement = () => {
   const deleteProperty = async (propertyId: string) => {
     try {
       const { error } = await supabase
-        .from('property_analyses')
+        .from('user_property_analyses')
         .delete()
         .eq('id', propertyId);
 
@@ -105,23 +104,23 @@ const PropertyManagement = () => {
   const exportPropertyData = async () => {
     try {
       const dataToExport = properties.map(property => ({
-        address: property.property_address,
+        user_id: property.user_id,
+        address_id: property.address_id,
         type: property.property_type,
         monthly_revenue: property.total_monthly_revenue,
         opportunities: property.total_opportunities,
-        created_at: property.created_at,
-        is_active: property.is_active
+        created_at: property.created_at
       }));
 
       const csvContent = [
-        ['Address', 'Type', 'Monthly Revenue', 'Opportunities', 'Created At', 'Active'],
+        ['User ID', 'Address ID', 'Type', 'Monthly Revenue', 'Opportunities', 'Created At'],
         ...dataToExport.map(row => [
-          row.address,
+          row.user_id,
+          row.address_id,
           row.type,
           row.monthly_revenue,
           row.opportunities,
-          row.created_at,
-          row.is_active
+          row.created_at
         ])
       ].map(row => row.join(',')).join('\n');
 
@@ -147,13 +146,11 @@ const PropertyManagement = () => {
   };
 
   const filteredProperties = properties.filter(property => {
-    const matchesSearch = property.property_address
+    const matchesSearch = property.user_id
       .toLowerCase()
       .includes(searchTerm.toLowerCase());
     
     const matchesFilter = filterType === 'all' || 
-      (filterType === 'active' && property.is_active) ||
-      (filterType === 'inactive' && !property.is_active) ||
       (filterType === property.property_type);
 
     return matchesSearch && matchesFilter;
@@ -201,7 +198,7 @@ const PropertyManagement = () => {
             <div className="relative flex-1">
               <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Search by address..."
+                placeholder="Search by user ID..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10"
@@ -216,18 +213,18 @@ const PropertyManagement = () => {
                 All
               </Button>
               <Button
-                variant={filterType === 'active' ? 'default' : 'outline'}
+                variant={filterType === 'residential' ? 'default' : 'outline'}
                 size="sm"
-                onClick={() => setFilterType('active')}
+                onClick={() => setFilterType('residential')}
               >
-                Active
+                Residential
               </Button>
               <Button
-                variant={filterType === 'inactive' ? 'default' : 'outline'}
+                variant={filterType === 'commercial' ? 'default' : 'outline'}
                 size="sm"
-                onClick={() => setFilterType('inactive')}
+                onClick={() => setFilterType('commercial')}
               >
-                Inactive
+                Commercial
               </Button>
             </div>
           </div>
@@ -237,11 +234,11 @@ const PropertyManagement = () => {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Property Address</TableHead>
+                  <TableHead>User ID</TableHead>
+                  <TableHead>Address ID</TableHead>
                   <TableHead>Type</TableHead>
                   <TableHead>Monthly Revenue</TableHead>
                   <TableHead>Opportunities</TableHead>
-                  <TableHead>Status</TableHead>
                   <TableHead>Created</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
@@ -257,7 +254,10 @@ const PropertyManagement = () => {
                   filteredProperties.map((property) => (
                     <TableRow key={property.id}>
                       <TableCell className="font-medium max-w-xs truncate">
-                        {property.property_address}
+                        {property.user_id.slice(0, 8)}...
+                      </TableCell>
+                      <TableCell className="max-w-xs truncate">
+                        {property.address_id.slice(0, 8)}...
                       </TableCell>
                       <TableCell>
                         <Badge variant="outline">
@@ -275,11 +275,6 @@ const PropertyManagement = () => {
                           <TrendingUp className="h-4 w-4 text-blue-600" />
                           {property.total_opportunities || 0}
                         </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={property.is_active ? 'default' : 'secondary'}>
-                          {property.is_active ? 'Active' : 'Inactive'}
-                        </Badge>
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1 text-sm text-muted-foreground">
