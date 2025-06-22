@@ -11,7 +11,6 @@ export const connectToFlexOffers = async (
     const subAffiliateId = `tiptop_${userId.substring(0, 8)}`;
     
     // Use partner_integration_progress to track FlexOffers connection
-    // This table exists in the database and can be used for tracking
     console.log(`FlexOffers connection initiated for user ${userId} with sub-affiliate ID: ${subAffiliateId}`);
     
     // Find the FlexOffers provider and update UI
