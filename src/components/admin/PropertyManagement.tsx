@@ -29,7 +29,7 @@ import { motion } from 'framer-motion';
 import PropertyDetailsDialog from './PropertyDetailsDialog';
 import PropertyStatsCards from './PropertyStatsCards';
 
-// Use the database type directly
+// Use the actual database schema type
 type PropertyAnalysisRow = {
   id: string;
   user_id: string;

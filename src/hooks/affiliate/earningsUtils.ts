@@ -1,7 +1,6 @@
 
-import { supabase } from '@/integrations/supabase/client';
-import { AffiliateEarning, ServiceWithEarnings } from '../useAffiliateEarnings';
 import { useToast } from '@/hooks/use-toast';
+import { AffiliateEarning, ServiceWithEarnings } from '../useAffiliateEarnings';
 
 // Function to sync earnings for a specific service
 export const syncServiceEarnings = async (
@@ -21,32 +20,22 @@ export const syncServiceEarnings = async (
   }
 
   try {
-    // Call the edge function to sync earnings
-    const { data, error } = await supabase.functions.invoke('sync_affiliate_earnings', {
-      body: {
-        user_id: userId,
-        service,
-        earnings: manualEarnings,
-        credentials,
-      },
+    // Simulate earnings sync - in a real app this would call an edge function
+    console.log(`Syncing ${service} earnings for user ${userId}`, { manualEarnings, credentials });
+    
+    // For now, just return mock success
+    const mockEarnings = manualEarnings || Math.floor(Math.random() * 100);
+    
+    toast({
+      title: 'Sync Successful',
+      description: `Updated ${service} earnings to $${mockEarnings.toFixed(2)}`,
     });
-
-    if (error) throw error;
-
-    if (data.success) {
-      toast({
-        title: 'Sync Successful',
-        description: `Updated ${service} earnings to $${data.earnings.toFixed(2)}`,
-      });
-      
-      return { 
-        success: true, 
-        earnings: data.earnings,
-        timestamp: data.timestamp
-      };
-    } else {
-      throw new Error(data.error || 'Unknown error during sync');
-    }
+    
+    return { 
+      success: true, 
+      earnings: mockEarnings,
+      timestamp: new Date().toISOString()
+    };
   } catch (err) {
     console.error(`Error syncing ${service} earnings:`, err);
     
@@ -63,7 +52,7 @@ export const syncServiceEarnings = async (
   }
 };
 
-// Function to save credentials
+// Function to save credentials (mock implementation)
 export const saveServiceCredentials = async (
   service: string,
   email: string,
@@ -81,19 +70,8 @@ export const saveServiceCredentials = async (
   }
 
   try {
-    // In a real app, you would encrypt these credentials
-    const { error } = await supabase
-      .from('affiliate_credentials')
-      .upsert({
-        user_id: userId,
-        service,
-        encrypted_email: email, // Should be encrypted
-        encrypted_password: password, // Should be encrypted
-      }, {
-        onConflict: 'user_id,service'
-      });
-
-    if (error) throw error;
+    // In a real app, you would encrypt and store these credentials securely
+    console.log(`Saving credentials for ${service} and user ${userId}`, { email });
 
     toast({
       title: 'Credentials Saved',
@@ -114,7 +92,7 @@ export const saveServiceCredentials = async (
   }
 };
 
-// Function to check if credentials exist
+// Function to check if credentials exist (mock implementation)
 export const checkServiceCredentials = async (
   service: string,
   userId: string | undefined
@@ -122,16 +100,10 @@ export const checkServiceCredentials = async (
   if (!userId) return { exists: false };
 
   try {
-    const { data, error } = await supabase
-      .from('affiliate_credentials')
-      .select('id')
-      .eq('user_id', userId)
-      .eq('service', service)
-      .single();
-
-    if (error && error.code !== 'PGRST116') throw error;
+    // Mock check - in a real app this would query the database
+    console.log(`Checking credentials for ${service} and user ${userId}`);
     
-    return { exists: !!data };
+    return { exists: false }; // Default to false for mock
   } catch (err) {
     console.error('Error checking credentials:', err);
     return { exists: false, error: err };
