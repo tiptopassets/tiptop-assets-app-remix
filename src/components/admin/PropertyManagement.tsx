@@ -29,7 +29,8 @@ import { motion } from 'framer-motion';
 import PropertyDetailsDialog from './PropertyDetailsDialog';
 import PropertyStatsCards from './PropertyStatsCards';
 
-interface PropertyAnalysis {
+// Use the database type directly
+type PropertyAnalysisRow = {
   id: string;
   user_id: string;
   address_id: string;
@@ -40,13 +41,13 @@ interface PropertyAnalysis {
   updated_at: string;
   coordinates: any;
   analysis_results: any;
-}
+};
 
 const PropertyManagement = () => {
-  const [properties, setProperties] = useState<PropertyAnalysis[]>([]);
+  const [properties, setProperties] = useState<PropertyAnalysisRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedProperty, setSelectedProperty] = useState<PropertyAnalysis | null>(null);
+  const [selectedProperty, setSelectedProperty] = useState<PropertyAnalysisRow | null>(null);
   const [showDetailsDialog, setShowDetailsDialog] = useState(false);
   const [filterType, setFilterType] = useState<string>('all');
   const { toast } = useToast();
