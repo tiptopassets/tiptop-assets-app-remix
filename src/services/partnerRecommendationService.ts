@@ -5,305 +5,139 @@ export interface PartnerRecommendation {
   id: string;
   partner_name: string;
   asset_type: string;
-  priority_score: number;
   estimated_monthly_earnings: number;
-  setup_complexity: 'easy' | 'medium' | 'hard';
-  recommendation_reason: string;
-  referral_link?: string;
-}
-
-export interface PartnerIntegrationProgress {
-  id: string;
-  partner_name: string;
-  integration_status: 'pending' | 'in_progress' | 'completed' | 'failed';
-  referral_link?: string;
-  registration_data: any;
-  earnings_data: any;
-  next_steps: string[];
-}
-
-// Database type from Supabase (what we get from the database)
-interface DatabaseServiceProvider {
-  id: string;
-  name: string;
-  category: string;
-  api_type: string;
-  affiliate_base_url: string | null;
-  supported_assets: any; // JSON field from database
-  priority_score: number | null;
-  avg_earnings_low: number | null;
-  avg_earnings_high: number | null;
-  commission_rate: number | null;
-  setup_requirements: any; // JSON field from database
-  integration_status: string;
-  created_at: string;
-  updated_at: string;
-}
-
-// Our application interface (what we use in the code)
-export interface ServiceProvider {
-  name: string;
-  category: string;
-  affiliate_base_url: string;
-  supported_assets: string[];
   priority_score: number;
-  avg_earnings_low: number;
-  avg_earnings_high: number;
-  commission_rate: number;
-  setup_requirements: any;
+  recommendation_reason: string;
+  setup_complexity: 'low' | 'medium' | 'high';
 }
 
-// Helper function to safely convert Json array to string array
-const jsonArrayToStringArray = (jsonArray: any): string[] => {
-  if (!Array.isArray(jsonArray)) return [];
-  return jsonArray.filter((item): item is string => typeof item === 'string');
-};
-
-export const generatePartnerRecommendations = async (
+export const getPartnerRecommendations = async (
   onboardingId: string,
   detectedAssets: string[]
 ): Promise<PartnerRecommendation[]> => {
   try {
-    console.log('🎯 Generating partner recommendations for assets:', detectedAssets);
-    
-    // Get enhanced service providers that match detected assets
-    const { data: providers, error: providersError } = await supabase
-      .from('enhanced_service_providers')
+    // First, try to get existing recommendations for this onboarding session
+    const { data: existingRecommendations, error: existingError } = await supabase
+      .from('partner_recommendations')
       .select('*')
-      .eq('integration_status', 'active');
+      .eq('onboarding_id', onboardingId);
 
-    if (providersError) throw providersError;
+    if (existingError) {
+      console.warn('Error fetching existing recommendations:', existingError);
+    }
 
+    if (existingRecommendations && existingRecommendations.length > 0) {
+      return existingRecommendations.map(rec => ({
+        id: rec.id,
+        partner_name: rec.partner_name,
+        asset_type: rec.asset_type,
+        estimated_monthly_earnings: Number(rec.estimated_monthly_earnings || 0),
+        priority_score: rec.priority_score || 0,
+        recommendation_reason: rec.recommendation_reason || '',
+        setup_complexity: (rec.setup_complexity as 'low' | 'medium' | 'high') || 'medium'
+      }));
+    }
+
+    // If no existing recommendations, generate new ones based on detected assets
     const recommendations: PartnerRecommendation[] = [];
-    
-    providers?.forEach((dbProvider: DatabaseServiceProvider) => {
-      // Convert database provider to our application interface
-      const provider: ServiceProvider = {
-        name: dbProvider.name,
-        category: dbProvider.category,
-        affiliate_base_url: dbProvider.affiliate_base_url || '',
-        supported_assets: Array.isArray(dbProvider.supported_assets) 
-          ? dbProvider.supported_assets 
-          : [],
-        priority_score: dbProvider.priority_score || 5,
-        avg_earnings_low: dbProvider.avg_earnings_low || 0,
-        avg_earnings_high: dbProvider.avg_earnings_high || 0,
-        commission_rate: dbProvider.commission_rate || 0,
-        setup_requirements: dbProvider.setup_requirements || {}
-      };
 
-      // Check if provider supports any of the detected assets
-      const supportedAssets = provider.supported_assets || [];
-      const matchingAssets = detectedAssets.filter(asset => 
-        supportedAssets.some(supported => 
-          supported.toLowerCase().includes(asset.toLowerCase()) || 
-          asset.toLowerCase().includes(supported.toLowerCase())
-        )
-      );
+    for (const asset of detectedAssets) {
+      const assetRecommendations = generateRecommendationsForAsset(asset);
+      recommendations.push(...assetRecommendations);
+    }
 
-      if (matchingAssets.length > 0) {
-        const recommendation: PartnerRecommendation = {
-          id: `${onboardingId}_${provider.name}`,
-          partner_name: provider.name,
-          asset_type: matchingAssets[0],
-          priority_score: provider.priority_score,
-          estimated_monthly_earnings: (provider.avg_earnings_low + provider.avg_earnings_high) / 2,
-          setup_complexity: getSetupComplexity(provider.setup_requirements),
-          recommendation_reason: `Perfect match for your ${matchingAssets.join(', ')} asset${matchingAssets.length > 1 ? 's' : ''}`,
-          referral_link: provider.affiliate_base_url
-        };
-        recommendations.push(recommendation);
-      }
-    });
-
-    // Sort by priority score and estimated earnings
-    recommendations.sort((a, b) => 
-      (b.priority_score * b.estimated_monthly_earnings) - (a.priority_score * a.estimated_monthly_earnings)
-    );
-
-    // Save recommendations to database
+    // Store the generated recommendations in the database
     if (recommendations.length > 0) {
+      const recommendationsToInsert = recommendations.map(rec => ({
+        onboarding_id: onboardingId,
+        partner_name: rec.partner_name,
+        asset_type: rec.asset_type,
+        estimated_monthly_earnings: rec.estimated_monthly_earnings,
+        priority_score: rec.priority_score,
+        recommendation_reason: rec.recommendation_reason,
+        setup_complexity: rec.setup_complexity
+      }));
+
       const { error: insertError } = await supabase
         .from('partner_recommendations')
-        .insert(
-          recommendations.map(rec => ({
-            onboarding_id: onboardingId,
-            partner_name: rec.partner_name,
-            asset_type: rec.asset_type,
-            priority_score: rec.priority_score,
-            estimated_monthly_earnings: rec.estimated_monthly_earnings,
-            setup_complexity: rec.setup_complexity,
-            recommendation_reason: rec.recommendation_reason
-          }))
-        );
+        .insert(recommendationsToInsert);
 
       if (insertError) {
-        console.error('Error saving recommendations:', insertError);
+        console.error('Error storing recommendations:', insertError);
       }
     }
 
-    console.log('✅ Generated recommendations:', recommendations.length);
     return recommendations;
-
   } catch (error) {
-    console.error('❌ Error generating recommendations:', error);
+    console.error('Error in getPartnerRecommendations:', error);
     return [];
   }
 };
 
-export const initializePartnerIntegration = async (
-  userId: string,
-  onboardingId: string,
-  partnerName: string,
-  referralLink: string
-): Promise<PartnerIntegrationProgress | null> => {
-  try {
-    console.log('🔗 Initializing partner integration:', { partnerName, userId });
-
-    const { data, error } = await supabase
-      .from('partner_integration_progress')
-      .insert({
-        user_id: userId,
-        onboarding_id: onboardingId,
-        partner_name: partnerName,
-        integration_status: 'in_progress' as const,
-        referral_link: referralLink,
-        next_steps: getNextSteps(partnerName)
-      })
-      .select()
-      .single();
-
-    if (error) throw error;
-
-    return {
-      id: data.id,
-      partner_name: data.partner_name,
-      integration_status: data.integration_status as 'pending' | 'in_progress' | 'completed' | 'failed',
-      referral_link: data.referral_link,
-      registration_data: data.registration_data || {},
-      earnings_data: data.earnings_data || {},
-      next_steps: jsonArrayToStringArray(data.next_steps)
-    };
-
-  } catch (error) {
-    console.error('❌ Error initializing partner integration:', error);
-    return null;
-  }
-};
-
-export const updateIntegrationStatus = async (
-  integrationId: string,
-  status: 'pending' | 'in_progress' | 'completed' | 'failed',
-  additionalData?: any
-): Promise<boolean> => {
-  try {
-    const updateData: any = {
-      integration_status: status,
-      updated_at: new Date().toISOString()
-    };
-
-    if (additionalData) {
-      if (additionalData.registrationData) {
-        updateData.registration_data = additionalData.registrationData;
+const generateRecommendationsForAsset = (asset: string): PartnerRecommendation[] => {
+  const assetRecommendations: Record<string, PartnerRecommendation[]> = {
+    solar: [
+      {
+        id: 'solar-tesla',
+        partner_name: 'Tesla Energy',
+        asset_type: 'solar',
+        estimated_monthly_earnings: 300,
+        priority_score: 9,
+        recommendation_reason: 'High-quality solar installation with excellent ROI',
+        setup_complexity: 'medium'
       }
-      if (additionalData.earningsData) {
-        updateData.earnings_data = additionalData.earningsData;
+    ],
+    wifi: [
+      {
+        id: 'wifi-honeygain',
+        partner_name: 'Honeygain',
+        asset_type: 'wifi',
+        estimated_monthly_earnings: 25,
+        priority_score: 7,
+        recommendation_reason: 'Passive income through internet bandwidth sharing',
+        setup_complexity: 'low'
       }
-    }
-
-    const { error } = await supabase
-      .from('partner_integration_progress')
-      .update(updateData)
-      .eq('id', integrationId);
-
-    if (error) throw error;
-    return true;
-
-  } catch (error) {
-    console.error('❌ Error updating integration status:', error);
-    return false;
-  }
-};
-
-export const getUserIntegrationProgress = async (
-  userId: string
-): Promise<PartnerIntegrationProgress[]> => {
-  try {
-    const { data, error } = await supabase
-      .from('partner_integration_progress')
-      .select('*')
-      .eq('user_id', userId)
-      .order('created_at', { ascending: false });
-
-    if (error) throw error;
-
-    return data?.map(item => ({
-      id: item.id,
-      partner_name: item.partner_name,
-      integration_status: item.integration_status as 'pending' | 'in_progress' | 'completed' | 'failed',
-      referral_link: item.referral_link || '',
-      registration_data: item.registration_data || {},
-      earnings_data: item.earnings_data || {},
-      next_steps: jsonArrayToStringArray(item.next_steps)
-    })) || [];
-
-  } catch (error) {
-    console.error('❌ Error getting integration progress:', error);
-    return [];
-  }
-};
-
-const getSetupComplexity = (requirements: any): 'easy' | 'medium' | 'hard' => {
-  if (!requirements || !requirements.requirements) return 'medium';
-  
-  const reqCount = requirements.requirements.length;
-  if (reqCount <= 2) return 'easy';
-  if (reqCount <= 4) return 'medium';
-  return 'hard';
-};
-
-const getNextSteps = (partnerName: string): string[] => {
-  const steps: Record<string, string[]> = {
-    'Honeygain': [
-      'Click the referral link to sign up',
-      'Download the Honeygain app',
-      'Keep the app running to earn passively'
     ],
-    'Packet Stream': [
-      'Register using the referral link',
-      'Download the PacketStream app',
-      'Configure bandwidth sharing settings'
+    pool: [
+      {
+        id: 'pool-swimply',
+        partner_name: 'Swimply',
+        asset_type: 'pool',
+        estimated_monthly_earnings: 200,
+        priority_score: 8,
+        recommendation_reason: 'Rent your pool to neighbors for hourly rates',
+        setup_complexity: 'low'
+      }
     ],
-    'Grass.io': [
-      'Sign up with the referral code',
-      'Install the browser extension',
-      'Enable passive earning mode'
-    ],
-    'Neighbor.com': [
-      'Create host account with referral link',
-      'List your storage space',
-      'Set competitive pricing'
-    ],
-    'Peerspace': [
-      'Register as a host using referral',
-      'Upload high-quality space photos',
-      'Set availability and pricing'
-    ],
-    'SpotHero': [
-      'Sign up as a parking partner',
-      'Verify your parking space',
-      'Set pricing and availability'
-    ],
-    'Swimply': [
-      'Create host account with referral',
-      'Upload pool photos and details',
-      'Set hourly rental rates'
+    parking: [
+      {
+        id: 'parking-flexoffers',
+        partner_name: 'FlexOffers',
+        asset_type: 'parking',
+        estimated_monthly_earnings: 150,
+        priority_score: 6,
+        recommendation_reason: 'Monetize parking spaces through affiliate partnerships',
+        setup_complexity: 'medium'
+      }
     ]
   };
 
-  return steps[partnerName] || [
-    'Complete registration using referral link',
-    'Set up your account and profile',
-    'Start earning from your assets'
-  ];
+  return assetRecommendations[asset] || [];
+};
+
+export const updatePartnerRecommendation = async (
+  recommendationId: string,
+  updates: Partial<PartnerRecommendation>
+): Promise<boolean> => {
+  try {
+    const { error } = await supabase
+      .from('partner_recommendations')
+      .update(updates)
+      .eq('id', recommendationId);
+
+    return !error;
+  } catch (error) {
+    console.error('Error updating recommendation:', error);
+    return false;
+  }
 };

@@ -3,6 +3,7 @@ import { useState, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { AffiliateEarning, ServiceWithEarnings } from '../useAffiliateEarnings';
 import { combineServicesWithEarnings } from './earningsUtils';
+import { supabase } from '@/integrations/supabase/client';
 
 export const useAffiliateData = (userId: string | undefined) => {
   const [earnings, setEarnings] = useState<AffiliateEarning[]>([]);
@@ -22,47 +23,45 @@ export const useAffiliateData = (userId: string | undefined) => {
     setError(null);
 
     try {
-      // Mock services data since the 'services' table doesn't exist
-      const mockServicesData = [
-        {
-          name: 'FlexOffers',
-          integration_type: 'affiliate',
-          api_url: 'https://api.flexoffers.com',
-          login_url: 'https://www.flexoffers.com/login',
-          status: 'active'
-        },
-        {
-          name: 'Honeygain',
-          integration_type: 'passive',
-          api_url: null,
-          login_url: 'https://dashboard.honeygain.com',
-          status: 'active'
-        }
-      ];
+      // Fetch actual services data from service_providers table
+      const { data: servicesData, error: servicesError } = await supabase
+        .from('service_providers')
+        .select('*')
+        .eq('is_active', true);
 
-      // Mock earnings data since the 'affiliate_earnings' table doesn't exist
-      const mockEarningsData: AffiliateEarning[] = [
-        {
-          id: '1',
-          service: 'FlexOffers',
-          earnings: 25.50,
-          updated_at: new Date().toISOString(),
-          last_sync_status: 'completed'
-        },
-        {
-          id: '2',
-          service: 'Honeygain',
-          earnings: 12.75,
-          updated_at: new Date().toISOString(),
-          last_sync_status: 'completed'
-        }
-      ];
+      if (servicesError) throw servicesError;
+
+      // Fetch actual earnings data from affiliate_earnings table
+      const { data: earningsData, error: earningsError } = await supabase
+        .from('affiliate_earnings')
+        .select('*')
+        .eq('user_id', userId);
+
+      if (earningsError) throw earningsError;
+
+      // Transform earnings data to match expected format
+      const formattedEarnings: AffiliateEarning[] = (earningsData || []).map(item => ({
+        id: item.id,
+        service: item.service,
+        earnings: Number(item.earnings),
+        updated_at: item.updated_at,
+        last_sync_status: item.last_sync_status
+      }));
 
       // Set earnings data
-      setEarnings(mockEarningsData);
+      setEarnings(formattedEarnings);
+
+      // Transform services data to match expected format
+      const formattedServices = (servicesData || []).map(service => ({
+        name: service.name,
+        integration_type: service.category,
+        api_url: service.website_url,
+        login_url: service.website_url,
+        status: service.is_active ? 'active' : 'inactive'
+      }));
 
       // Combine services with earnings data
-      const servicesWithEarnings = combineServicesWithEarnings(mockServicesData, mockEarningsData);
+      const servicesWithEarnings = combineServicesWithEarnings(formattedServices, formattedEarnings);
       setServices(servicesWithEarnings);
 
     } catch (err) {

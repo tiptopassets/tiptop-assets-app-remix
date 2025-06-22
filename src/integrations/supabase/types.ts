@@ -9,6 +9,173 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      affiliate_credentials: {
+        Row: {
+          created_at: string
+          encrypted_email: string | null
+          encrypted_password: string | null
+          encryption_key_id: string | null
+          id: string
+          service: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          encrypted_email?: string | null
+          encrypted_password?: string | null
+          encryption_key_id?: string | null
+          id?: string
+          service: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          encrypted_email?: string | null
+          encrypted_password?: string | null
+          encryption_key_id?: string | null
+          id?: string
+          service?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      affiliate_earnings: {
+        Row: {
+          created_at: string
+          earnings: number
+          id: string
+          last_sync_at: string | null
+          last_sync_status: string
+          service: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          earnings?: number
+          id?: string
+          last_sync_at?: string | null
+          last_sync_status?: string
+          service: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          earnings?: number
+          id?: string
+          last_sync_at?: string | null
+          last_sync_status?: string
+          service?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      affiliate_registrations: {
+        Row: {
+          affiliate_link: string | null
+          bundle_selection_id: string | null
+          created_at: string
+          first_commission_date: string | null
+          id: string
+          last_sync_at: string
+          provider_id: string
+          registration_date: string | null
+          registration_status: string
+          total_earnings: number
+          tracking_code: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          affiliate_link?: string | null
+          bundle_selection_id?: string | null
+          created_at?: string
+          first_commission_date?: string | null
+          id?: string
+          last_sync_at?: string
+          provider_id: string
+          registration_date?: string | null
+          registration_status?: string
+          total_earnings?: number
+          tracking_code?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          affiliate_link?: string | null
+          bundle_selection_id?: string | null
+          created_at?: string
+          first_commission_date?: string | null
+          id?: string
+          last_sync_at?: string
+          provider_id?: string
+          registration_date?: string | null
+          registration_status?: string
+          total_earnings?: number
+          tracking_code?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "affiliate_registrations_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "service_providers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bundle_configurations: {
+        Row: {
+          asset_requirements: Json
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          max_providers_per_asset: number
+          min_assets: number
+          name: string
+          total_monthly_earnings_high: number
+          total_monthly_earnings_low: number
+          total_setup_cost: number
+          updated_at: string
+        }
+        Insert: {
+          asset_requirements?: Json
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          max_providers_per_asset?: number
+          min_assets?: number
+          name: string
+          total_monthly_earnings_high?: number
+          total_monthly_earnings_low?: number
+          total_setup_cost?: number
+          updated_at?: string
+        }
+        Update: {
+          asset_requirements?: Json
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          max_providers_per_asset?: number
+          min_assets?: number
+          name?: string
+          total_monthly_earnings_high?: number
+          total_monthly_earnings_low?: number
+          total_setup_cost?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       enhanced_service_providers: {
         Row: {
           affiliate_base_url: string | null
@@ -185,6 +352,66 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      service_providers: {
+        Row: {
+          affiliate_program_url: string | null
+          avg_monthly_earnings_high: number
+          avg_monthly_earnings_low: number
+          category: string
+          commission_rate: number
+          conversion_rate: number
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          logo_url: string | null
+          name: string
+          priority: number
+          referral_link_template: string | null
+          setup_cost: number
+          updated_at: string
+          website_url: string | null
+        }
+        Insert: {
+          affiliate_program_url?: string | null
+          avg_monthly_earnings_high?: number
+          avg_monthly_earnings_low?: number
+          category: string
+          commission_rate?: number
+          conversion_rate?: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          logo_url?: string | null
+          name: string
+          priority?: number
+          referral_link_template?: string | null
+          setup_cost?: number
+          updated_at?: string
+          website_url?: string | null
+        }
+        Update: {
+          affiliate_program_url?: string | null
+          avg_monthly_earnings_high?: number
+          avg_monthly_earnings_low?: number
+          category?: string
+          commission_rate?: number
+          conversion_rate?: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          logo_url?: string | null
+          name?: string
+          priority?: number
+          referral_link_template?: string | null
+          setup_cost?: number
+          updated_at?: string
+          website_url?: string | null
+        }
+        Relationships: []
       }
       user_addresses: {
         Row: {
