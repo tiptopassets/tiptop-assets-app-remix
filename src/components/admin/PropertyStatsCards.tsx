@@ -1,25 +1,15 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { MapPin, DollarSign, TrendingUp, Users } from 'lucide-react';
-
-interface PropertyAnalysis {
-  id: string;
-  property_address: string;
-  user_id: string;
-  total_monthly_revenue: number;
-  total_opportunities: number;
-  property_type: string;
-  created_at: string;
-  is_active: boolean;
-}
+import { PropertyAnalysisRow } from '@/types/propertyAnalysis';
 
 interface PropertyStatsCardsProps {
-  properties: PropertyAnalysis[];
+  properties: PropertyAnalysisRow[];
 }
 
 const PropertyStatsCards = ({ properties }: PropertyStatsCardsProps) => {
   const totalProperties = properties.length;
-  const activeProperties = properties.filter(p => p.is_active).length;
+  const activeProperties = properties.length; // All properties are considered active since we don't have is_active field
   const totalRevenue = properties.reduce((sum, p) => sum + (p.total_monthly_revenue || 0), 0);
   const totalOpportunities = properties.reduce((sum, p) => sum + (p.total_opportunities || 0), 0);
   const uniqueUsers = new Set(properties.map(p => p.user_id)).size;
