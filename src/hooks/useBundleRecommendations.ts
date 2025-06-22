@@ -30,14 +30,21 @@ export const useBundleRecommendations = (detectedAssets: string[]) => {
 
         if (providersError) throw providersError;
 
-        const bundles: BundleConfiguration[] = bundlesData || [];
+        // Transform database data to match expected types
+        const bundles: BundleConfiguration[] = (bundlesData || []).map(bundle => ({
+          ...bundle,
+          asset_requirements: Array.isArray(bundle.asset_requirements) 
+            ? bundle.asset_requirements 
+            : typeof bundle.asset_requirements === 'string'
+            ? JSON.parse(bundle.asset_requirements)
+            : []
+        }));
+
         const providers: ServiceProvider[] = providersData || [];
 
         // Filter bundles based on detected assets
         const filteredBundles = bundles.filter(bundle => {
-          const assetRequirements = Array.isArray(bundle.asset_requirements) 
-            ? bundle.asset_requirements 
-            : JSON.parse(bundle.asset_requirements as string || '[]');
+          const assetRequirements = bundle.asset_requirements;
           
           const matchingAssets = assetRequirements.filter((asset: string) => 
             detectedAssets.includes(asset)
@@ -47,9 +54,7 @@ export const useBundleRecommendations = (detectedAssets: string[]) => {
 
         // Create recommendations
         const bundleRecommendations: BundleRecommendation[] = filteredBundles.map(bundle => {
-          const assetRequirements = Array.isArray(bundle.asset_requirements) 
-            ? bundle.asset_requirements 
-            : JSON.parse(bundle.asset_requirements as string || '[]');
+          const assetRequirements = bundle.asset_requirements;
 
           const relevantProviders = providers.filter(provider => 
             assetRequirements.includes(provider.category)

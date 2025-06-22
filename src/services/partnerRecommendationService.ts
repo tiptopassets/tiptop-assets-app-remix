@@ -9,6 +9,7 @@ export interface PartnerRecommendation {
   priority_score: number;
   recommendation_reason: string;
   setup_complexity: 'low' | 'medium' | 'high';
+  referral_link?: string;
 }
 
 export const getPartnerRecommendations = async (
@@ -34,7 +35,8 @@ export const getPartnerRecommendations = async (
         estimated_monthly_earnings: Number(rec.estimated_monthly_earnings || 0),
         priority_score: rec.priority_score || 0,
         recommendation_reason: rec.recommendation_reason || '',
-        setup_complexity: (rec.setup_complexity as 'low' | 'medium' | 'high') || 'medium'
+        setup_complexity: (rec.setup_complexity as 'low' | 'medium' | 'high') || 'medium',
+        referral_link: generateReferralLink(rec.partner_name)
       }));
     }
 
@@ -74,6 +76,20 @@ export const getPartnerRecommendations = async (
   }
 };
 
+// Export alias for backward compatibility
+export const generatePartnerRecommendations = getPartnerRecommendations;
+
+const generateReferralLink = (partnerName: string): string => {
+  const referralLinks: Record<string, string> = {
+    'Tesla Energy': 'https://www.tesla.com/energy?referral=tiptop',
+    'Honeygain': 'https://r.honeygain.me/TIPTOP123',
+    'Swimply': 'https://swimply.com/?ref=tiptop',
+    'FlexOffers': 'https://www.flexoffers.com/affiliate-programs/?ref=tiptop'
+  };
+  
+  return referralLinks[partnerName] || '#';
+};
+
 const generateRecommendationsForAsset = (asset: string): PartnerRecommendation[] => {
   const assetRecommendations: Record<string, PartnerRecommendation[]> = {
     solar: [
@@ -84,7 +100,8 @@ const generateRecommendationsForAsset = (asset: string): PartnerRecommendation[]
         estimated_monthly_earnings: 300,
         priority_score: 9,
         recommendation_reason: 'High-quality solar installation with excellent ROI',
-        setup_complexity: 'medium'
+        setup_complexity: 'medium',
+        referral_link: generateReferralLink('Tesla Energy')
       }
     ],
     wifi: [
@@ -95,7 +112,8 @@ const generateRecommendationsForAsset = (asset: string): PartnerRecommendation[]
         estimated_monthly_earnings: 25,
         priority_score: 7,
         recommendation_reason: 'Passive income through internet bandwidth sharing',
-        setup_complexity: 'low'
+        setup_complexity: 'low',
+        referral_link: generateReferralLink('Honeygain')
       }
     ],
     pool: [
@@ -106,7 +124,8 @@ const generateRecommendationsForAsset = (asset: string): PartnerRecommendation[]
         estimated_monthly_earnings: 200,
         priority_score: 8,
         recommendation_reason: 'Rent your pool to neighbors for hourly rates',
-        setup_complexity: 'low'
+        setup_complexity: 'low',
+        referral_link: generateReferralLink('Swimply')
       }
     ],
     parking: [
@@ -117,12 +136,40 @@ const generateRecommendationsForAsset = (asset: string): PartnerRecommendation[]
         estimated_monthly_earnings: 150,
         priority_score: 6,
         recommendation_reason: 'Monetize parking spaces through affiliate partnerships',
-        setup_complexity: 'medium'
+        setup_complexity: 'medium',
+        referral_link: generateReferralLink('FlexOffers')
       }
     ]
   };
 
   return assetRecommendations[asset] || [];
+};
+
+export const initializePartnerIntegration = async (
+  userId: string,
+  onboardingId: string,
+  partnerName: string,
+  referralLink: string
+) => {
+  try {
+    const { data, error } = await supabase
+      .from('partner_integration_progress')
+      .insert({
+        user_id: userId,
+        onboarding_id: onboardingId,
+        partner_name: partnerName,
+        referral_link: referralLink,
+        integration_status: 'started'
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error('Error initializing partner integration:', error);
+    throw error;
+  }
 };
 
 export const updatePartnerRecommendation = async (

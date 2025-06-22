@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -28,6 +27,7 @@ import {
 import { motion } from 'framer-motion';
 import PropertyDetailsDialog from './PropertyDetailsDialog';
 import PropertyStatsCards from './PropertyStatsCards';
+import { PropertyAnalysisRow } from '@/types/propertyAnalysis';
 
 // Use the correct database schema type from supabase
 type PropertyAnalysisRow = {
