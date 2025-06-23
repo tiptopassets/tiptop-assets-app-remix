@@ -11,125 +11,117 @@ export type Database = {
     Tables: {
       affiliate_credentials: {
         Row: {
-          created_at: string | null
+          created_at: string
           encrypted_email: string | null
           encrypted_password: string | null
+          encryption_key_id: string | null
           id: string
-          service: string | null
-          user_id: string | null
+          service: string
+          updated_at: string
+          user_id: string
         }
         Insert: {
-          created_at?: string | null
+          created_at?: string
           encrypted_email?: string | null
           encrypted_password?: string | null
+          encryption_key_id?: string | null
           id?: string
-          service?: string | null
-          user_id?: string | null
+          service: string
+          updated_at?: string
+          user_id: string
         }
         Update: {
-          created_at?: string | null
+          created_at?: string
           encrypted_email?: string | null
           encrypted_password?: string | null
+          encryption_key_id?: string | null
           id?: string
-          service?: string | null
-          user_id?: string | null
+          service?: string
+          updated_at?: string
+          user_id?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "affiliate_credentials_service_fkey"
-            columns: ["service"]
-            isOneToOne: false
-            referencedRelation: "services"
-            referencedColumns: ["name"]
-          },
-        ]
+        Relationships: []
       }
       affiliate_earnings: {
         Row: {
-          earnings: number | null
+          created_at: string
+          earnings: number
           id: string
-          last_sync_status: string | null
-          service: string | null
-          updated_at: string | null
-          user_id: string | null
+          last_sync_at: string | null
+          last_sync_status: string
+          service: string
+          updated_at: string
+          user_id: string
         }
         Insert: {
-          earnings?: number | null
+          created_at?: string
+          earnings?: number
           id?: string
-          last_sync_status?: string | null
-          service?: string | null
-          updated_at?: string | null
-          user_id?: string | null
+          last_sync_at?: string | null
+          last_sync_status?: string
+          service: string
+          updated_at?: string
+          user_id: string
         }
         Update: {
-          earnings?: number | null
+          created_at?: string
+          earnings?: number
           id?: string
-          last_sync_status?: string | null
-          service?: string | null
-          updated_at?: string | null
-          user_id?: string | null
+          last_sync_at?: string | null
+          last_sync_status?: string
+          service?: string
+          updated_at?: string
+          user_id?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "affiliate_earnings_service_fkey"
-            columns: ["service"]
-            isOneToOne: false
-            referencedRelation: "services"
-            referencedColumns: ["name"]
-          },
-        ]
+        Relationships: []
       }
       affiliate_registrations: {
         Row: {
           affiliate_link: string | null
           bundle_selection_id: string | null
-          created_at: string | null
+          created_at: string
           first_commission_date: string | null
           id: string
-          last_sync_at: string | null
-          provider_id: string | null
+          last_sync_at: string
+          provider_id: string
           registration_date: string | null
-          registration_status: string | null
-          total_earnings: number | null
+          registration_status: string
+          total_earnings: number
           tracking_code: string | null
-          user_id: string | null
+          updated_at: string
+          user_id: string
         }
         Insert: {
           affiliate_link?: string | null
           bundle_selection_id?: string | null
-          created_at?: string | null
+          created_at?: string
           first_commission_date?: string | null
           id?: string
-          last_sync_at?: string | null
-          provider_id?: string | null
+          last_sync_at?: string
+          provider_id: string
           registration_date?: string | null
-          registration_status?: string | null
-          total_earnings?: number | null
+          registration_status?: string
+          total_earnings?: number
           tracking_code?: string | null
-          user_id?: string | null
+          updated_at?: string
+          user_id: string
         }
         Update: {
           affiliate_link?: string | null
           bundle_selection_id?: string | null
-          created_at?: string | null
+          created_at?: string
           first_commission_date?: string | null
           id?: string
-          last_sync_at?: string | null
-          provider_id?: string | null
+          last_sync_at?: string
+          provider_id?: string
           registration_date?: string | null
-          registration_status?: string | null
-          total_earnings?: number | null
+          registration_status?: string
+          total_earnings?: number
           tracking_code?: string | null
-          user_id?: string | null
+          updated_at?: string
+          user_id?: string
         }
         Relationships: [
-          {
-            foreignKeyName: "affiliate_registrations_bundle_selection_id_fkey"
-            columns: ["bundle_selection_id"]
-            isOneToOne: false
-            referencedRelation: "user_bundle_selections"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "affiliate_registrations_provider_id_fkey"
             columns: ["provider_id"]
@@ -141,91 +133,79 @@ export type Database = {
       }
       bundle_analytics: {
         Row: {
-          avg_time_to_first_commission: unknown | null
-          bundle_id: string | null
+          analytics_data: Json
+          bundle_id: string
+          created_at: string | null
           id: string
-          last_updated: string | null
-          provider_id: string | null
-          successful_registrations: number | null
-          total_earnings: number | null
-          total_registrations: number | null
+          period_end: string | null
+          period_start: string | null
+          updated_at: string | null
+          user_id: string | null
         }
         Insert: {
-          avg_time_to_first_commission?: unknown | null
-          bundle_id?: string | null
+          analytics_data: Json
+          bundle_id: string
+          created_at?: string | null
           id?: string
-          last_updated?: string | null
-          provider_id?: string | null
-          successful_registrations?: number | null
-          total_earnings?: number | null
-          total_registrations?: number | null
+          period_end?: string | null
+          period_start?: string | null
+          updated_at?: string | null
+          user_id?: string | null
         }
         Update: {
-          avg_time_to_first_commission?: unknown | null
-          bundle_id?: string | null
+          analytics_data?: Json
+          bundle_id?: string
+          created_at?: string | null
           id?: string
-          last_updated?: string | null
-          provider_id?: string | null
-          successful_registrations?: number | null
-          total_earnings?: number | null
-          total_registrations?: number | null
+          period_end?: string | null
+          period_start?: string | null
+          updated_at?: string | null
+          user_id?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "bundle_analytics_bundle_id_fkey"
-            columns: ["bundle_id"]
-            isOneToOne: false
-            referencedRelation: "bundle_configurations"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "bundle_analytics_provider_id_fkey"
-            columns: ["provider_id"]
-            isOneToOne: false
-            referencedRelation: "service_providers"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       bundle_configurations: {
         Row: {
-          asset_requirements: Json | null
-          created_at: string | null
+          asset_requirements: Json
+          created_at: string
           description: string | null
           id: string
-          is_active: boolean | null
-          max_providers_per_asset: number | null
-          min_assets: number | null
+          is_active: boolean
+          max_providers_per_asset: number
+          min_assets: number
           name: string
-          total_monthly_earnings_high: number | null
-          total_monthly_earnings_low: number | null
-          total_setup_cost: number | null
+          total_monthly_earnings_high: number
+          total_monthly_earnings_low: number
+          total_setup_cost: number
+          updated_at: string
         }
         Insert: {
-          asset_requirements?: Json | null
-          created_at?: string | null
+          asset_requirements?: Json
+          created_at?: string
           description?: string | null
           id?: string
-          is_active?: boolean | null
-          max_providers_per_asset?: number | null
-          min_assets?: number | null
+          is_active?: boolean
+          max_providers_per_asset?: number
+          min_assets?: number
           name: string
-          total_monthly_earnings_high?: number | null
-          total_monthly_earnings_low?: number | null
-          total_setup_cost?: number | null
+          total_monthly_earnings_high?: number
+          total_monthly_earnings_low?: number
+          total_setup_cost?: number
+          updated_at?: string
         }
         Update: {
-          asset_requirements?: Json | null
-          created_at?: string | null
+          asset_requirements?: Json
+          created_at?: string
           description?: string | null
           id?: string
-          is_active?: boolean | null
-          max_providers_per_asset?: number | null
-          min_assets?: number | null
+          is_active?: boolean
+          max_providers_per_asset?: number
+          min_assets?: number
           name?: string
-          total_monthly_earnings_high?: number | null
-          total_monthly_earnings_low?: number | null
-          total_setup_cost?: number | null
+          total_monthly_earnings_high?: number
+          total_monthly_earnings_low?: number
+          total_setup_cost?: number
+          updated_at?: string
         }
         Relationships: []
       }
@@ -283,17 +263,13 @@ export type Database = {
       enhanced_service_providers: {
         Row: {
           affiliate_base_url: string | null
-          api_endpoint: string | null
-          api_type: string
-          auth_method: string | null
+          api_type: string | null
           avg_earnings_high: number | null
           avg_earnings_low: number | null
-          base_url: string | null
           category: string
           commission_rate: number | null
           created_at: string | null
           id: string
-          integration_status: string | null
           name: string
           priority_score: number | null
           setup_requirements: Json | null
@@ -302,17 +278,13 @@ export type Database = {
         }
         Insert: {
           affiliate_base_url?: string | null
-          api_endpoint?: string | null
-          api_type: string
-          auth_method?: string | null
+          api_type?: string | null
           avg_earnings_high?: number | null
           avg_earnings_low?: number | null
-          base_url?: string | null
           category: string
           commission_rate?: number | null
           created_at?: string | null
           id?: string
-          integration_status?: string | null
           name: string
           priority_score?: number | null
           setup_requirements?: Json | null
@@ -321,17 +293,13 @@ export type Database = {
         }
         Update: {
           affiliate_base_url?: string | null
-          api_endpoint?: string | null
-          api_type?: string
-          auth_method?: string | null
+          api_type?: string | null
           avg_earnings_high?: number | null
           avg_earnings_low?: number | null
-          base_url?: string | null
           category?: string
           commission_rate?: number | null
           created_at?: string | null
           id?: string
-          integration_status?: string | null
           name?: string
           priority_score?: number | null
           setup_requirements?: Json | null
@@ -367,13 +335,6 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "fk_onboarding_messages_onboarding_id"
-            columns: ["onboarding_id"]
-            isOneToOne: false
-            referencedRelation: "user_onboarding"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "onboarding_messages_onboarding_id_fkey"
             columns: ["onboarding_id"]
             isOneToOne: false
@@ -386,48 +347,34 @@ export type Database = {
         Row: {
           created_at: string | null
           earnings_data: Json | null
-          error_details: string | null
           id: string
           last_sync_at: string | null
-          provider_id: string | null
-          provider_name: string
-          sync_method: string
+          partner_name: string
           sync_status: string | null
+          updated_at: string | null
           user_id: string
         }
         Insert: {
           created_at?: string | null
           earnings_data?: Json | null
-          error_details?: string | null
           id?: string
           last_sync_at?: string | null
-          provider_id?: string | null
-          provider_name: string
-          sync_method: string
+          partner_name: string
           sync_status?: string | null
+          updated_at?: string | null
           user_id: string
         }
         Update: {
           created_at?: string | null
           earnings_data?: Json | null
-          error_details?: string | null
           id?: string
           last_sync_at?: string | null
-          provider_id?: string | null
-          provider_name?: string
-          sync_method?: string
+          partner_name?: string
           sync_status?: string | null
+          updated_at?: string | null
           user_id?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "partner_earnings_sync_provider_id_fkey"
-            columns: ["provider_id"]
-            isOneToOne: false
-            referencedRelation: "enhanced_service_providers"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       partner_integration_progress: {
         Row: {
@@ -525,7 +472,7 @@ export type Database = {
       }
       property_analyses: {
         Row: {
-          analysis_results: Json
+          analysis_results: Json | null
           coordinates: Json | null
           created_at: string | null
           id: string
@@ -538,7 +485,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
-          analysis_results: Json
+          analysis_results?: Json | null
           coordinates?: Json | null
           created_at?: string | null
           id?: string
@@ -551,7 +498,7 @@ export type Database = {
           user_id: string
         }
         Update: {
-          analysis_results?: Json
+          analysis_results?: Json | null
           coordinates?: Json | null
           created_at?: string | null
           id?: string
@@ -567,93 +514,60 @@ export type Database = {
       }
       property_submissions: {
         Row: {
-          additional_info: string | null
-          email: string
-          estimated_earnings: number | null
-          full_name: string
-          has_driveway: boolean
-          has_garage: boolean
-          has_internet: boolean
-          has_pool: boolean
+          created_at: string | null
           id: string
           property_address: string
-          sent_to_honeygain: boolean | null
-          sent_to_neighbor: boolean | null
-          sent_to_swimply: boolean | null
-          submission_time: string | null
+          status: string | null
+          submission_data: Json
+          updated_at: string | null
+          user_id: string
         }
         Insert: {
-          additional_info?: string | null
-          email: string
-          estimated_earnings?: number | null
-          full_name: string
-          has_driveway?: boolean
-          has_garage?: boolean
-          has_internet?: boolean
-          has_pool?: boolean
+          created_at?: string | null
           id?: string
           property_address: string
-          sent_to_honeygain?: boolean | null
-          sent_to_neighbor?: boolean | null
-          sent_to_swimply?: boolean | null
-          submission_time?: string | null
+          status?: string | null
+          submission_data: Json
+          updated_at?: string | null
+          user_id: string
         }
         Update: {
-          additional_info?: string | null
-          email?: string
-          estimated_earnings?: number | null
-          full_name?: string
-          has_driveway?: boolean
-          has_garage?: boolean
-          has_internet?: boolean
-          has_pool?: boolean
+          created_at?: string | null
           id?: string
           property_address?: string
-          sent_to_honeygain?: boolean | null
-          sent_to_neighbor?: boolean | null
-          sent_to_swimply?: boolean | null
-          submission_time?: string | null
+          status?: string | null
+          submission_data?: Json
+          updated_at?: string | null
+          user_id?: string
         }
         Relationships: []
       }
       service_integrations: {
         Row: {
-          asset_type: string
+          configuration: Json | null
           created_at: string | null
-          expected_monthly_revenue: number | null
           id: string
-          integration_details: Json | null
           integration_status: string | null
-          last_updated: string | null
-          property_address: string
-          service_name: string
-          setup_cost: number | null
+          service_id: string
+          updated_at: string | null
           user_id: string
         }
         Insert: {
-          asset_type: string
+          configuration?: Json | null
           created_at?: string | null
-          expected_monthly_revenue?: number | null
           id?: string
-          integration_details?: Json | null
           integration_status?: string | null
-          last_updated?: string | null
-          property_address: string
-          service_name: string
-          setup_cost?: number | null
+          service_id: string
+          updated_at?: string | null
           user_id: string
         }
         Update: {
-          asset_type?: string
+          configuration?: Json | null
           created_at?: string | null
-          expected_monthly_revenue?: number | null
           id?: string
-          integration_details?: Json | null
           integration_status?: string | null
-          last_updated?: string | null
-          property_address?: string
-          service_name?: string
-          setup_cost?: number | null
+          service_id?: string
+          updated_at?: string | null
           user_id?: string
         }
         Relationships: []
@@ -661,117 +575,120 @@ export type Database = {
       service_providers: {
         Row: {
           affiliate_program_url: string | null
-          avg_monthly_earnings_high: number | null
-          avg_monthly_earnings_low: number | null
+          avg_monthly_earnings_high: number
+          avg_monthly_earnings_low: number
           category: string
-          commission_rate: number | null
-          conversion_rate: number | null
-          created_at: string | null
+          commission_rate: number
+          conversion_rate: number
+          created_at: string
           description: string | null
           id: string
-          is_active: boolean | null
+          is_active: boolean
           logo_url: string | null
           name: string
-          priority: number | null
+          priority: number
           referral_link_template: string | null
-          setup_cost: number | null
+          setup_cost: number
+          updated_at: string
           website_url: string | null
         }
         Insert: {
           affiliate_program_url?: string | null
-          avg_monthly_earnings_high?: number | null
-          avg_monthly_earnings_low?: number | null
+          avg_monthly_earnings_high?: number
+          avg_monthly_earnings_low?: number
           category: string
-          commission_rate?: number | null
-          conversion_rate?: number | null
-          created_at?: string | null
+          commission_rate?: number
+          conversion_rate?: number
+          created_at?: string
           description?: string | null
           id?: string
-          is_active?: boolean | null
+          is_active?: boolean
           logo_url?: string | null
           name: string
-          priority?: number | null
+          priority?: number
           referral_link_template?: string | null
-          setup_cost?: number | null
+          setup_cost?: number
+          updated_at?: string
           website_url?: string | null
         }
         Update: {
           affiliate_program_url?: string | null
-          avg_monthly_earnings_high?: number | null
-          avg_monthly_earnings_low?: number | null
+          avg_monthly_earnings_high?: number
+          avg_monthly_earnings_low?: number
           category?: string
-          commission_rate?: number | null
-          conversion_rate?: number | null
-          created_at?: string | null
+          commission_rate?: number
+          conversion_rate?: number
+          created_at?: string
           description?: string | null
           id?: string
-          is_active?: boolean | null
+          is_active?: boolean
           logo_url?: string | null
           name?: string
-          priority?: number | null
+          priority?: number
           referral_link_template?: string | null
-          setup_cost?: number | null
+          setup_cost?: number
+          updated_at?: string
           website_url?: string | null
         }
         Relationships: []
       }
       services: {
         Row: {
-          api_url: string | null
+          category: string
           created_at: string | null
-          integration_type: string | null
-          login_url: string | null
+          description: string | null
+          id: string
           name: string
           status: string | null
+          updated_at: string | null
         }
         Insert: {
-          api_url?: string | null
+          category: string
           created_at?: string | null
-          integration_type?: string | null
-          login_url?: string | null
+          description?: string | null
+          id?: string
           name: string
           status?: string | null
+          updated_at?: string | null
         }
         Update: {
-          api_url?: string | null
+          category?: string
           created_at?: string | null
-          integration_type?: string | null
-          login_url?: string | null
+          description?: string | null
+          id?: string
           name?: string
           status?: string | null
+          updated_at?: string | null
         }
         Relationships: []
       }
       solar_api_cache: {
         Row: {
-          api_success: boolean | null
-          error_message: string | null
-          formatted_data: Json | null
+          cached_at: string | null
+          coordinates: Json | null
+          created_at: string | null
+          expires_at: string | null
           id: string
-          latitude: number
-          longitude: number
-          raw_response: Json | null
-          requested_at: string
+          property_address: string
+          solar_data: Json
         }
         Insert: {
-          api_success?: boolean | null
-          error_message?: string | null
-          formatted_data?: Json | null
+          cached_at?: string | null
+          coordinates?: Json | null
+          created_at?: string | null
+          expires_at?: string | null
           id?: string
-          latitude: number
-          longitude: number
-          raw_response?: Json | null
-          requested_at?: string
+          property_address: string
+          solar_data: Json
         }
         Update: {
-          api_success?: boolean | null
-          error_message?: string | null
-          formatted_data?: Json | null
+          cached_at?: string | null
+          coordinates?: Json | null
+          created_at?: string | null
+          expires_at?: string | null
           id?: string
-          latitude?: number
-          longitude?: number
-          raw_response?: Json | null
-          requested_at?: string
+          property_address?: string
+          solar_data?: Json
         }
         Relationships: []
       }
@@ -810,56 +727,39 @@ export type Database = {
       }
       user_affiliate_journeys: {
         Row: {
-          affiliate_clicks: Json | null
+          completed_at: string | null
           created_at: string | null
-          earnings_tracked: Json | null
+          current_step: string | null
           id: string
-          journey_status: string | null
-          property_analysis_id: string | null
-          registrations_completed: Json | null
-          selected_providers: Json | null
-          total_actual_monthly: number | null
-          total_estimated_monthly: number | null
+          journey_data: Json
+          started_at: string | null
+          status: string | null
           updated_at: string | null
           user_id: string
         }
         Insert: {
-          affiliate_clicks?: Json | null
+          completed_at?: string | null
           created_at?: string | null
-          earnings_tracked?: Json | null
+          current_step?: string | null
           id?: string
-          journey_status?: string | null
-          property_analysis_id?: string | null
-          registrations_completed?: Json | null
-          selected_providers?: Json | null
-          total_actual_monthly?: number | null
-          total_estimated_monthly?: number | null
+          journey_data: Json
+          started_at?: string | null
+          status?: string | null
           updated_at?: string | null
           user_id: string
         }
         Update: {
-          affiliate_clicks?: Json | null
+          completed_at?: string | null
           created_at?: string | null
-          earnings_tracked?: Json | null
+          current_step?: string | null
           id?: string
-          journey_status?: string | null
-          property_analysis_id?: string | null
-          registrations_completed?: Json | null
-          selected_providers?: Json | null
-          total_actual_monthly?: number | null
-          total_estimated_monthly?: number | null
+          journey_data?: Json
+          started_at?: string | null
+          status?: string | null
           updated_at?: string | null
           user_id?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "user_affiliate_journeys_property_analysis_id_fkey"
-            columns: ["property_analysis_id"]
-            isOneToOne: false
-            referencedRelation: "enhanced_property_analyses"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       user_asset_selections: {
         Row: {
@@ -910,44 +810,33 @@ export type Database = {
       }
       user_bundle_selections: {
         Row: {
-          bundle_id: string | null
+          bundle_id: string
           created_at: string | null
           id: string
-          property_address: string
-          selected_assets: Json | null
-          selected_providers: Json | null
-          status: string | null
-          user_id: string | null
+          selected_at: string | null
+          selection_status: string | null
+          updated_at: string | null
+          user_id: string
         }
         Insert: {
-          bundle_id?: string | null
+          bundle_id: string
           created_at?: string | null
           id?: string
-          property_address: string
-          selected_assets?: Json | null
-          selected_providers?: Json | null
-          status?: string | null
-          user_id?: string | null
+          selected_at?: string | null
+          selection_status?: string | null
+          updated_at?: string | null
+          user_id: string
         }
         Update: {
-          bundle_id?: string | null
+          bundle_id?: string
           created_at?: string | null
           id?: string
-          property_address?: string
-          selected_assets?: Json | null
-          selected_providers?: Json | null
-          status?: string | null
-          user_id?: string | null
+          selected_at?: string | null
+          selection_status?: string | null
+          updated_at?: string | null
+          user_id?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "user_bundle_selections_bundle_id_fkey"
-            columns: ["bundle_id"]
-            isOneToOne: false
-            referencedRelation: "bundle_configurations"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       user_dashboard_preferences: {
         Row: {
@@ -989,30 +878,30 @@ export type Database = {
       }
       user_login_stats: {
         Row: {
-          first_login_at: string
+          first_login_at: string | null
           id: string
           last_ip: string | null
-          last_login_at: string
+          last_login_at: string | null
           last_user_agent: string | null
-          login_count: number
+          login_count: number | null
           user_id: string
         }
         Insert: {
-          first_login_at?: string
+          first_login_at?: string | null
           id?: string
           last_ip?: string | null
-          last_login_at?: string
+          last_login_at?: string | null
           last_user_agent?: string | null
-          login_count?: number
+          login_count?: number | null
           user_id: string
         }
         Update: {
-          first_login_at?: string
+          first_login_at?: string | null
           id?: string
           last_ip?: string | null
-          last_login_at?: string
+          last_login_at?: string | null
           last_user_agent?: string | null
-          login_count?: number
+          login_count?: number | null
           user_id?: string
         }
         Relationships: []
@@ -1120,21 +1009,18 @@ export type Database = {
       }
       user_roles: {
         Row: {
-          created_at: string
           id: string
-          role: string
+          role: Database["public"]["Enums"]["app_role"]
           user_id: string
         }
         Insert: {
-          created_at?: string
           id?: string
-          role: string
+          role: Database["public"]["Enums"]["app_role"]
           user_id: string
         }
         Update: {
-          created_at?: string
           id?: string
-          role?: string
+          role?: Database["public"]["Enums"]["app_role"]
           user_id?: string
         }
         Relationships: []
@@ -1145,19 +1031,16 @@ export type Database = {
     }
     Functions: {
       get_user_role: {
-        Args: { user_uuid: string }
+        Args: Record<PropertyKey, never> | { user_uuid: string }
         Returns: string
       }
       sum_login_count: {
         Args: Record<PropertyKey, never>
         Returns: number
       }
-      update_user_login_stats: {
-        Args: { user_uuid: string; ip_address: string; user_agent: string }
-        Returns: undefined
-      }
     }
     Enums: {
+      app_role: "admin" | "moderator" | "user"
       onboarding_option: "manual" | "concierge"
       onboarding_status: "not_started" | "in_progress" | "completed" | "paused"
     }
@@ -1275,6 +1158,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      app_role: ["admin", "moderator", "user"],
       onboarding_option: ["manual", "concierge"],
       onboarding_status: ["not_started", "in_progress", "completed", "paused"],
     },

@@ -1,7 +1,7 @@
 
 # A string used to distinguish different Supabase projects on the same host. Defaults to the
 # working directory name when running `supabase init`.
-project_id = "cxvdcdatxewrvwbcnksg"
+project_id = "gfqxruvldojyuzfpzodg"
 
 [api]
 # Port to use for the API URL.
@@ -102,6 +102,10 @@ verify_jwt = false
 
 # enable and configure the analyze-property edge function
 [functions.analyze-property]
+verify_jwt = false
+
+# enable and configure the get-google-maps-key edge function
+[functions.get-google-maps-key]
 verify_jwt = false
 
 [realtime]
