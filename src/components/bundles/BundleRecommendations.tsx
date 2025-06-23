@@ -76,7 +76,23 @@ const BundleRecommendations: React.FC<BundleRecommendationsProps> = ({
               total_monthly_earnings_high: recommendation.monthlyEarningsHigh,
               is_active: true
             },
-            providers: recommendation.providers,
+            providers: recommendation.providers.map(provider => ({
+              id: provider.id,
+              name: provider.name,
+              category: provider.category,
+              description: `${provider.name} - ${provider.category} service provider`,
+              logo_url: '',
+              website_url: '',
+              affiliate_program_url: '',
+              referral_link_template: '',
+              commission_rate: 5,
+              setup_cost: provider.setupCost,
+              avg_monthly_earnings_low: provider.monthlyEarningsLow,
+              avg_monthly_earnings_high: provider.monthlyEarningsHigh,
+              conversion_rate: 2.5,
+              priority: 1,
+              is_active: true
+            })),
             totalEarnings: {
               low: recommendation.monthlyEarningsLow,
               high: recommendation.monthlyEarningsHigh
