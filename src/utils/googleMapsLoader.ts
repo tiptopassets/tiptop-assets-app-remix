@@ -2,16 +2,8 @@
 import { Loader } from '@googlemaps/js-api-loader';
 import { supabase } from '@/integrations/supabase/client';
 
-// Securely fetch Google Maps API key
+// Securely fetch Google Maps API key from Supabase only
 const fetchGoogleMapsApiKey = async (): Promise<string> => {
-  // 1. Try environment variable first
-  const envApiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
-  if (envApiKey) {
-    console.log('Using Google Maps API key from environment variable');
-    return envApiKey;
-  }
-  
-  // 2. Fallback to Supabase edge function using the client
   try {
     console.log('Fetching Google Maps API key from Supabase edge function');
     const { data, error } = await supabase.functions.invoke('get-google-maps-key', {
@@ -41,7 +33,7 @@ let apiKey: string = '';
 export const loadGoogleMaps = async (): Promise<typeof google.maps> => {
   if (!googleMapsPromise) {
     try {
-      // Get the API key first
+      // Get the API key from Supabase only
       apiKey = await fetchGoogleMapsApiKey();
       
       if (!apiKey) {

@@ -17,8 +17,8 @@ export interface PartnerIntegrationProgress {
   partner_name: string;
   integration_status: 'pending' | 'in_progress' | 'completed' | 'failed';
   referral_link?: string;
-  registration_data: any;
-  earnings_data: any;
+  registration_data: Record<string, unknown>;
+  earnings_data: Record<string, unknown>;
   next_steps: string[];
 }
 
@@ -32,9 +32,9 @@ const safeJsonToStringArray = (json: unknown): string[] => {
 };
 
 // Helper function to safely convert Json to object
-const safeJsonToObject = (json: unknown): Record<string, any> => {
+const safeJsonToObject = (json: unknown): Record<string, unknown> => {
   if (json && typeof json === 'object' && !Array.isArray(json) && json !== null) {
-    return json as Record<string, any>;
+    return json as Record<string, unknown>;
   }
   return {};
 };
@@ -159,10 +159,10 @@ export const initializePartnerIntegration = async (
 export const updateIntegrationStatus = async (
   integrationId: string,
   status: 'pending' | 'in_progress' | 'completed' | 'failed',
-  additionalData?: Record<string, any>
+  additionalData?: Record<string, unknown>
 ): Promise<boolean> => {
   try {
-    const updateData: Record<string, any> = {
+    const updateData: Record<string, unknown> = {
       integration_status: status,
       updated_at: new Date().toISOString()
     };
@@ -218,7 +218,7 @@ export const getUserIntegrationProgress = async (
   }
 };
 
-const getSetupComplexity = (requirements: Record<string, any>): 'easy' | 'medium' | 'hard' => {
+const getSetupComplexity = (requirements: Record<string, unknown>): 'easy' | 'medium' | 'hard' => {
   if (!requirements || !requirements.requirements) return 'medium';
   
   const reqCount = Array.isArray(requirements.requirements) ? requirements.requirements.length : 0;
