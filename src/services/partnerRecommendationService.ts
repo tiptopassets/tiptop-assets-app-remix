@@ -17,30 +17,30 @@ export interface PartnerIntegrationProgress {
   partner_name: string;
   integration_status: 'pending' | 'in_progress' | 'completed' | 'failed';
   referral_link?: string;
-  registration_data: any;
-  earnings_data: any;
+  registration_data: Record<string, any>;
+  earnings_data: Record<string, any>;
   next_steps: string[];
 }
 
-// Database type from Supabase (what we get from the database)
+// Simplified database interface
 interface DatabaseServiceProvider {
   id: string;
   name: string;
   category: string;
   api_type: string;
   affiliate_base_url: string | null;
-  supported_assets: any; // JSON field from database
+  supported_assets: string[] | null;
   priority_score: number | null;
   avg_earnings_low: number | null;
   avg_earnings_high: number | null;
   commission_rate: number | null;
-  setup_requirements: any; // JSON field from database
+  setup_requirements: Record<string, any> | null;
   integration_status: string;
   created_at: string;
   updated_at: string;
 }
 
-// Our application interface (what we use in the code)
+// Simplified application interface
 export interface ServiceProvider {
   name: string;
   category: string;
@@ -50,14 +50,8 @@ export interface ServiceProvider {
   avg_earnings_low: number;
   avg_earnings_high: number;
   commission_rate: number;
-  setup_requirements: any;
+  setup_requirements: Record<string, any>;
 }
-
-// Helper function to safely convert Json array to string array
-const jsonArrayToStringArray = (jsonArray: any): string[] => {
-  if (!Array.isArray(jsonArray)) return [];
-  return jsonArray.filter((item): item is string => typeof item === 'string');
-};
 
 export const generatePartnerRecommendations = async (
   onboardingId: string,
@@ -66,7 +60,6 @@ export const generatePartnerRecommendations = async (
   try {
     console.log('🎯 Generating partner recommendations for assets:', detectedAssets);
     
-    // Get enhanced service providers that match detected assets
     const { data: providers, error: providersError } = await supabase
       .from('enhanced_service_providers')
       .select('*')
@@ -76,52 +69,50 @@ export const generatePartnerRecommendations = async (
 
     const recommendations: PartnerRecommendation[] = [];
     
-    providers?.forEach((dbProvider: DatabaseServiceProvider) => {
-      // Convert database provider to our application interface
-      const provider: ServiceProvider = {
-        name: dbProvider.name,
-        category: dbProvider.category,
-        affiliate_base_url: dbProvider.affiliate_base_url || '',
-        supported_assets: Array.isArray(dbProvider.supported_assets) 
-          ? dbProvider.supported_assets 
-          : [],
-        priority_score: dbProvider.priority_score || 5,
-        avg_earnings_low: dbProvider.avg_earnings_low || 0,
-        avg_earnings_high: dbProvider.avg_earnings_high || 0,
-        commission_rate: dbProvider.commission_rate || 0,
-        setup_requirements: dbProvider.setup_requirements || {}
-      };
-
-      // Check if provider supports any of the detected assets
-      const supportedAssets = provider.supported_assets || [];
-      const matchingAssets = detectedAssets.filter(asset => 
-        supportedAssets.some(supported => 
-          supported.toLowerCase().includes(asset.toLowerCase()) || 
-          asset.toLowerCase().includes(supported.toLowerCase())
-        )
-      );
-
-      if (matchingAssets.length > 0) {
-        const recommendation: PartnerRecommendation = {
-          id: `${onboardingId}_${provider.name}`,
-          partner_name: provider.name,
-          asset_type: matchingAssets[0],
-          priority_score: provider.priority_score,
-          estimated_monthly_earnings: (provider.avg_earnings_low + provider.avg_earnings_high) / 2,
-          setup_complexity: getSetupComplexity(provider.setup_requirements),
-          recommendation_reason: `Perfect match for your ${matchingAssets.join(', ')} asset${matchingAssets.length > 1 ? 's' : ''}`,
-          referral_link: provider.affiliate_base_url
+    if (providers) {
+      providers.forEach((dbProvider: DatabaseServiceProvider) => {
+        const provider: ServiceProvider = {
+          name: dbProvider.name,
+          category: dbProvider.category,
+          affiliate_base_url: dbProvider.affiliate_base_url || '',
+          supported_assets: Array.isArray(dbProvider.supported_assets) 
+            ? dbProvider.supported_assets 
+            : [],
+          priority_score: dbProvider.priority_score || 5,
+          avg_earnings_low: dbProvider.avg_earnings_low || 0,
+          avg_earnings_high: dbProvider.avg_earnings_high || 0,
+          commission_rate: dbProvider.commission_rate || 0,
+          setup_requirements: dbProvider.setup_requirements || {}
         };
-        recommendations.push(recommendation);
-      }
-    });
 
-    // Sort by priority score and estimated earnings
+        const supportedAssets = provider.supported_assets;
+        const matchingAssets = detectedAssets.filter(asset => 
+          supportedAssets.some(supported => 
+            supported.toLowerCase().includes(asset.toLowerCase()) || 
+            asset.toLowerCase().includes(supported.toLowerCase())
+          )
+        );
+
+        if (matchingAssets.length > 0) {
+          const recommendation: PartnerRecommendation = {
+            id: `${onboardingId}_${provider.name}`,
+            partner_name: provider.name,
+            asset_type: matchingAssets[0],
+            priority_score: provider.priority_score,
+            estimated_monthly_earnings: (provider.avg_earnings_low + provider.avg_earnings_high) / 2,
+            setup_complexity: getSetupComplexity(provider.setup_requirements),
+            recommendation_reason: `Perfect match for your ${matchingAssets.join(', ')} asset${matchingAssets.length > 1 ? 's' : ''}`,
+            referral_link: provider.affiliate_base_url
+          };
+          recommendations.push(recommendation);
+        }
+      });
+    }
+
     recommendations.sort((a, b) => 
       (b.priority_score * b.estimated_monthly_earnings) - (a.priority_score * a.estimated_monthly_earnings)
     );
 
-    // Save recommendations to database
     if (recommendations.length > 0) {
       const { error: insertError } = await supabase
         .from('partner_recommendations')
@@ -179,10 +170,10 @@ export const initializePartnerIntegration = async (
       id: data.id,
       partner_name: data.partner_name,
       integration_status: data.integration_status as 'pending' | 'in_progress' | 'completed' | 'failed',
-      referral_link: data.referral_link,
+      referral_link: data.referral_link || '',
       registration_data: data.registration_data || {},
       earnings_data: data.earnings_data || {},
-      next_steps: jsonArrayToStringArray(data.next_steps)
+      next_steps: Array.isArray(data.next_steps) ? data.next_steps : []
     };
 
   } catch (error) {
@@ -194,10 +185,10 @@ export const initializePartnerIntegration = async (
 export const updateIntegrationStatus = async (
   integrationId: string,
   status: 'pending' | 'in_progress' | 'completed' | 'failed',
-  additionalData?: any
+  additionalData?: Record<string, any>
 ): Promise<boolean> => {
   try {
-    const updateData: any = {
+    const updateData: Record<string, any> = {
       integration_status: status,
       updated_at: new Date().toISOString()
     };
@@ -244,7 +235,7 @@ export const getUserIntegrationProgress = async (
       referral_link: item.referral_link || '',
       registration_data: item.registration_data || {},
       earnings_data: item.earnings_data || {},
-      next_steps: jsonArrayToStringArray(item.next_steps)
+      next_steps: Array.isArray(item.next_steps) ? item.next_steps : []
     })) || [];
 
   } catch (error) {
@@ -253,10 +244,10 @@ export const getUserIntegrationProgress = async (
   }
 };
 
-const getSetupComplexity = (requirements: any): 'easy' | 'medium' | 'hard' => {
+const getSetupComplexity = (requirements: Record<string, any> | null): 'easy' | 'medium' | 'hard' => {
   if (!requirements || !requirements.requirements) return 'medium';
   
-  const reqCount = requirements.requirements.length;
+  const reqCount = Array.isArray(requirements.requirements) ? requirements.requirements.length : 0;
   if (reqCount <= 2) return 'easy';
   if (reqCount <= 4) return 'medium';
   return 'hard';
