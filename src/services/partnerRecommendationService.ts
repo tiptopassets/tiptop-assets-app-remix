@@ -21,19 +21,19 @@ export interface PartnerIntegrationProgress {
   next_steps: string[];
 }
 
-// Simplified database type to avoid complex type inference
-interface DatabaseServiceProvider {
+// Simplified database row type
+interface ServiceProvider {
   id: string;
   name: string;
   category: string;
   api_type: string;
   affiliate_base_url: string | null;
-  supported_assets: string[] | null;
+  supported_assets: any;
   priority_score: number | null;
   avg_earnings_low: number | null;
   avg_earnings_high: number | null;
   commission_rate: number | null;
-  setup_requirements: Record<string, any> | null;
+  setup_requirements: any;
   integration_status: string;
   created_at: string;
   updated_at: string;
@@ -55,7 +55,7 @@ export const generatePartnerRecommendations = async (
     console.log('🎯 Generating partner recommendations for assets:', detectedAssets);
     
     // Get enhanced service providers that match detected assets
-    const { data: providers, error: providersError } = await supabase
+    const { data: rawProviders, error: providersError } = await supabase
       .from('enhanced_service_providers')
       .select('*')
       .eq('integration_status', 'active');
@@ -64,17 +64,20 @@ export const generatePartnerRecommendations = async (
 
     const recommendations: PartnerRecommendation[] = [];
     
-    if (providers) {
-      providers.forEach((dbProvider: any) => {
-        // Safely extract and convert database fields
-        const providerName = dbProvider.name || '';
-        const category = dbProvider.category || '';
-        const affiliateUrl = dbProvider.affiliate_base_url || '';
-        const supportedAssets = ensureStringArray(dbProvider.supported_assets);
-        const priorityScore = dbProvider.priority_score || 5;
-        const avgEarningsLow = dbProvider.avg_earnings_low || 0;
-        const avgEarningsHigh = dbProvider.avg_earnings_high || 0;
-        const setupRequirements = dbProvider.setup_requirements || {};
+    if (rawProviders) {
+      // Cast to our simplified type to avoid type inference issues
+      const providers = rawProviders as ServiceProvider[];
+      
+      providers.forEach((provider) => {
+        // Safely extract fields with fallbacks
+        const providerName = provider.name || '';
+        const category = provider.category || '';
+        const affiliateUrl = provider.affiliate_base_url || '';
+        const supportedAssets = ensureStringArray(provider.supported_assets);
+        const priorityScore = provider.priority_score || 5;
+        const avgEarningsLow = provider.avg_earnings_low || 0;
+        const avgEarningsHigh = provider.avg_earnings_high || 0;
+        const setupRequirements = provider.setup_requirements || {};
 
         // Check if provider supports any of the detected assets
         const matchingAssets = detectedAssets.filter(asset => 
