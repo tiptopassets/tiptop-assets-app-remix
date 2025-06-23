@@ -218,7 +218,7 @@ export const getUserIntegrationProgress = async (
   }
 };
 
-const getSetupComplexity = (requirements: Record<string, any>): 'easy' | 'medium' | 'hard' => {
+const getSetupComplexity = (requirements: any): 'easy' | 'medium' | 'hard' => {
   if (!requirements || !requirements.requirements) return 'medium';
   
   const reqCount = Array.isArray(requirements.requirements) ? requirements.requirements.length : 0;
