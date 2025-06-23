@@ -15,7 +15,7 @@ export const getGoogleMapsApiKey = async (): Promise<string> => {
     if (error || !data?.apiKey) {
       console.warn('Could not get secure Google Maps API key, using fallback:', error);
       // Fallback to the restricted development key with domain authorization
-      return 'AIzaSyDWLvyJBwGHS_U2KeeLzZJ1tiMvzNnnH40';
+      return 'AIzaSyBbclc8qxh5NVR9skf6XCz_xRJCZsnmUGA';
     }
     
     console.log(`Got API key for domain: ${data.domain || origin}`);

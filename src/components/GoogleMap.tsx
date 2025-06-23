@@ -1,3 +1,4 @@
+
 import React, { useEffect } from 'react';
 import { useGoogleMap } from '@/contexts/GoogleMapContext';
 import MapMarker from './map/MapMarker';
@@ -5,8 +6,7 @@ import MapErrorOverlay from './map/MapErrorOverlay';
 import MapVisualEffects from './map/MapVisualEffects';
 import { useGoogleMapInstance } from '@/hooks/useGoogleMapInstance';
 import { Button } from '@/components/ui/button';
-import { AlertCircle, MapPin, RefreshCw, Settings } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { AlertCircle, MapPin, RefreshCw } from 'lucide-react';
 import { loadGoogleMaps } from '@/utils/googleMapsLoader';
 
 const GoogleMap = () => {
@@ -70,7 +70,7 @@ const GoogleMap = () => {
     }
   }, [mapInstance, addressCoordinates]);
 
-  // Handle map loading error with improved messaging and diagnostics link
+  // Handle map loading error with improved messaging
   if (mapLoadError && !useLocalAnalysis) {
     return (
       <div className="absolute inset-0 z-0 flex flex-col items-center justify-center bg-gradient-to-b from-gray-900 to-purple-900">
@@ -92,12 +92,6 @@ const GoogleMap = () => {
             >
               <RefreshCw className="h-4 w-4 mr-2" />
               Retry Loading
-            </Button>
-            <Button asChild className="w-full bg-orange-600 hover:bg-orange-700">
-              <Link to="/diagnostics/google-maps">
-                <Settings className="h-4 w-4 mr-2" />
-                Diagnose & Fix
-              </Link>
             </Button>
             <Button 
               onClick={() => setUseLocalAnalysis(true)} 

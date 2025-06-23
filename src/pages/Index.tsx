@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import SearchBar from '@/components/SearchBar';
@@ -56,13 +57,6 @@ const Index = () => {
             tiptop
           </Link>
           <div className="flex gap-2 sm:gap-3 md:gap-4">
-            <Link
-              to="/diagnostics/google-maps"
-              className="glass-effect px-2 py-1 sm:px-3 sm:py-2 md:px-4 md:py-2 rounded-full flex items-center gap-1 sm:gap-2 text-white hover:scale-105 transition-transform text-xs sm:text-sm md:text-base relative"
-            >
-              <span className="text-gray-100">🔧 Debug Maps</span>
-              <div className="absolute -inset-0.5 bg-gradient-to-r from-red-500/20 to-orange-500/20 rounded-full blur-sm -z-10"></div>
-            </Link>
             <Link
               to="/submit-property"
               className="glass-effect px-2 py-1 sm:px-3 sm:py-2 md:px-4 md:py-2 rounded-full flex items-center gap-1 sm:gap-2 text-white hover:scale-105 transition-transform text-xs sm:text-sm md:text-base relative"
