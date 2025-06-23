@@ -131,6 +131,39 @@ export type Database = {
           },
         ]
       }
+      bundle_analytics: {
+        Row: {
+          analytics_data: Json
+          bundle_id: string
+          created_at: string | null
+          id: string
+          period_end: string | null
+          period_start: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          analytics_data: Json
+          bundle_id: string
+          created_at?: string | null
+          id?: string
+          period_end?: string | null
+          period_start?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          analytics_data?: Json
+          bundle_id?: string
+          created_at?: string | null
+          id?: string
+          period_end?: string | null
+          period_start?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       bundle_configurations: {
         Row: {
           asset_requirements: Json
@@ -173,6 +206,57 @@ export type Database = {
           total_monthly_earnings_low?: number
           total_setup_cost?: number
           updated_at?: string
+        }
+        Relationships: []
+      }
+      enhanced_property_analyses: {
+        Row: {
+          accuracy_score: number | null
+          analysis_version: string | null
+          coordinates: Json | null
+          created_at: string | null
+          data_sources_used: Json | null
+          final_analysis_results: Json | null
+          google_solar_data: Json | null
+          gpt_analysis_raw: Json | null
+          id: string
+          property_address: string
+          satellite_image_url: string | null
+          street_view_image_url: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          accuracy_score?: number | null
+          analysis_version?: string | null
+          coordinates?: Json | null
+          created_at?: string | null
+          data_sources_used?: Json | null
+          final_analysis_results?: Json | null
+          google_solar_data?: Json | null
+          gpt_analysis_raw?: Json | null
+          id?: string
+          property_address: string
+          satellite_image_url?: string | null
+          street_view_image_url?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          accuracy_score?: number | null
+          analysis_version?: string | null
+          coordinates?: Json | null
+          created_at?: string | null
+          data_sources_used?: Json | null
+          final_analysis_results?: Json | null
+          google_solar_data?: Json | null
+          gpt_analysis_raw?: Json | null
+          id?: string
+          property_address?: string
+          satellite_image_url?: string | null
+          street_view_image_url?: string | null
+          updated_at?: string | null
+          user_id?: string
         }
         Relationships: []
       }
@@ -258,6 +342,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      partner_earnings_sync: {
+        Row: {
+          created_at: string | null
+          earnings_data: Json | null
+          id: string
+          last_sync_at: string | null
+          partner_name: string
+          sync_status: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          earnings_data?: Json | null
+          id?: string
+          last_sync_at?: string | null
+          partner_name: string
+          sync_status?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          earnings_data?: Json | null
+          id?: string
+          last_sync_at?: string | null
+          partner_name?: string
+          sync_status?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
       }
       partner_integration_progress: {
         Row: {
@@ -395,6 +512,66 @@ export type Database = {
         }
         Relationships: []
       }
+      property_submissions: {
+        Row: {
+          created_at: string | null
+          id: string
+          property_address: string
+          status: string | null
+          submission_data: Json
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          property_address: string
+          status?: string | null
+          submission_data: Json
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          property_address?: string
+          status?: string | null
+          submission_data?: Json
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      service_integrations: {
+        Row: {
+          configuration: Json | null
+          created_at: string | null
+          id: string
+          integration_status: string | null
+          service_id: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          configuration?: Json | null
+          created_at?: string | null
+          id?: string
+          integration_status?: string | null
+          service_id: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          configuration?: Json | null
+          created_at?: string | null
+          id?: string
+          integration_status?: string | null
+          service_id?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       service_providers: {
         Row: {
           affiliate_program_url: string | null
@@ -455,6 +632,66 @@ export type Database = {
         }
         Relationships: []
       }
+      services: {
+        Row: {
+          category: string
+          created_at: string | null
+          description: string | null
+          id: string
+          name: string
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          category: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          category?: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      solar_api_cache: {
+        Row: {
+          cached_at: string | null
+          coordinates: Json | null
+          created_at: string | null
+          expires_at: string | null
+          id: string
+          property_address: string
+          solar_data: Json
+        }
+        Insert: {
+          cached_at?: string | null
+          coordinates?: Json | null
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          property_address: string
+          solar_data: Json
+        }
+        Update: {
+          cached_at?: string | null
+          coordinates?: Json | null
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          property_address?: string
+          solar_data?: Json
+        }
+        Relationships: []
+      }
       user_addresses: {
         Row: {
           address: string
@@ -483,6 +720,42 @@ export type Database = {
           formatted_address?: string | null
           id?: string
           is_primary?: boolean | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_affiliate_journeys: {
+        Row: {
+          completed_at: string | null
+          created_at: string | null
+          current_step: string | null
+          id: string
+          journey_data: Json
+          started_at: string | null
+          status: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string | null
+          current_step?: string | null
+          id?: string
+          journey_data: Json
+          started_at?: string | null
+          status?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string | null
+          current_step?: string | null
+          id?: string
+          journey_data?: Json
+          started_at?: string | null
+          status?: string | null
           updated_at?: string | null
           user_id?: string
         }
@@ -534,6 +807,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      user_bundle_selections: {
+        Row: {
+          bundle_id: string
+          created_at: string | null
+          id: string
+          selected_at: string | null
+          selection_status: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          bundle_id: string
+          created_at?: string | null
+          id?: string
+          selected_at?: string | null
+          selection_status?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          bundle_id?: string
+          created_at?: string | null
+          id?: string
+          selected_at?: string | null
+          selection_status?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
       }
       user_dashboard_preferences: {
         Row: {

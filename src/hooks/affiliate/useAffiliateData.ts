@@ -23,11 +23,11 @@ export const useAffiliateData = (userId: string | undefined) => {
     setError(null);
 
     try {
-      // Load all services
+      // Load all services from service_providers table
       const { data: servicesData, error: servicesError } = await supabase
-        .from('services')
+        .from('service_providers')
         .select('*')
-        .eq('status', 'active');
+        .eq('is_active', true);
 
       if (servicesError) throw servicesError;
 

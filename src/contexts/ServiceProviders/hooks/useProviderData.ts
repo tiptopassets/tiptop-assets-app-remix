@@ -32,22 +32,22 @@ export const useProviderData = () => {
         setIsLoading(true);
         setError(null);
 
-        // Fetch all available service providers with error handling
+        // Fetch service providers from service_providers table instead of services
         let servicesData;
         try {
           const { data, error: servicesError } = await supabase
-            .from('services')
-            .select('*');
+            .from('service_providers')
+            .select('*')
+            .eq('is_active', true);
 
           if (servicesError) {
-            console.warn('⚠️ Services table error:', servicesError);
-            // If services table doesn't exist or has issues, use empty array
+            console.warn('⚠️ Service providers table error:', servicesError);
             servicesData = [];
           } else {
             servicesData = data || [];
           }
         } catch (servicesErr) {
-          console.warn('⚠️ Failed to fetch services, using empty array:', servicesErr);
+          console.warn('⚠️ Failed to fetch service providers, using empty array:', servicesErr);
           servicesData = [];
         }
 
