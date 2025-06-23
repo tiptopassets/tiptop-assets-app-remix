@@ -22,36 +22,21 @@ export interface PartnerIntegrationProgress {
   next_steps: string[];
 }
 
-// Simplified database interface
-interface DatabaseServiceProvider {
-  id: string;
-  name: string;
-  category: string;
-  api_type: string;
-  affiliate_base_url: string | null;
-  supported_assets: string[] | null;
-  priority_score: number | null;
-  avg_earnings_low: number | null;
-  avg_earnings_high: number | null;
-  commission_rate: number | null;
-  setup_requirements: Record<string, any> | null;
-  integration_status: string;
-  created_at: string;
-  updated_at: string;
-}
+// Helper function to safely convert Json to Record<string, any>
+const safeJsonToRecord = (json: any): Record<string, any> => {
+  if (json && typeof json === 'object' && !Array.isArray(json)) {
+    return json as Record<string, any>;
+  }
+  return {};
+};
 
-// Simplified application interface
-export interface ServiceProvider {
-  name: string;
-  category: string;
-  affiliate_base_url: string;
-  supported_assets: string[];
-  priority_score: number;
-  avg_earnings_low: number;
-  avg_earnings_high: number;
-  commission_rate: number;
-  setup_requirements: Record<string, any>;
-}
+// Helper function to safely convert Json to string array
+const safeJsonToStringArray = (json: any): string[] => {
+  if (Array.isArray(json)) {
+    return json.filter(item => typeof item === 'string');
+  }
+  return [];
+};
 
 export const generatePartnerRecommendations = async (
   onboardingId: string,
@@ -70,22 +55,10 @@ export const generatePartnerRecommendations = async (
     const recommendations: PartnerRecommendation[] = [];
     
     if (providers) {
-      providers.forEach((dbProvider: DatabaseServiceProvider) => {
-        const provider: ServiceProvider = {
-          name: dbProvider.name,
-          category: dbProvider.category,
-          affiliate_base_url: dbProvider.affiliate_base_url || '',
-          supported_assets: Array.isArray(dbProvider.supported_assets) 
-            ? dbProvider.supported_assets 
-            : [],
-          priority_score: dbProvider.priority_score || 5,
-          avg_earnings_low: dbProvider.avg_earnings_low || 0,
-          avg_earnings_high: dbProvider.avg_earnings_high || 0,
-          commission_rate: dbProvider.commission_rate || 0,
-          setup_requirements: dbProvider.setup_requirements || {}
-        };
+      providers.forEach((dbProvider) => {
+        const supportedAssets = safeJsonToStringArray(dbProvider.supported_assets);
+        const setupRequirements = safeJsonToRecord(dbProvider.setup_requirements);
 
-        const supportedAssets = provider.supported_assets;
         const matchingAssets = detectedAssets.filter(asset => 
           supportedAssets.some(supported => 
             supported.toLowerCase().includes(asset.toLowerCase()) || 
@@ -95,14 +68,14 @@ export const generatePartnerRecommendations = async (
 
         if (matchingAssets.length > 0) {
           const recommendation: PartnerRecommendation = {
-            id: `${onboardingId}_${provider.name}`,
-            partner_name: provider.name,
+            id: `${onboardingId}_${dbProvider.name}`,
+            partner_name: dbProvider.name,
             asset_type: matchingAssets[0],
-            priority_score: provider.priority_score,
-            estimated_monthly_earnings: (provider.avg_earnings_low + provider.avg_earnings_high) / 2,
-            setup_complexity: getSetupComplexity(provider.setup_requirements),
+            priority_score: dbProvider.priority_score || 5,
+            estimated_monthly_earnings: ((dbProvider.avg_earnings_low || 0) + (dbProvider.avg_earnings_high || 0)) / 2,
+            setup_complexity: getSetupComplexity(setupRequirements),
             recommendation_reason: `Perfect match for your ${matchingAssets.join(', ')} asset${matchingAssets.length > 1 ? 's' : ''}`,
-            referral_link: provider.affiliate_base_url
+            referral_link: dbProvider.affiliate_base_url || undefined
           };
           recommendations.push(recommendation);
         }
@@ -171,9 +144,9 @@ export const initializePartnerIntegration = async (
       partner_name: data.partner_name,
       integration_status: data.integration_status as 'pending' | 'in_progress' | 'completed' | 'failed',
       referral_link: data.referral_link || '',
-      registration_data: data.registration_data || {},
-      earnings_data: data.earnings_data || {},
-      next_steps: Array.isArray(data.next_steps) ? data.next_steps : []
+      registration_data: safeJsonToRecord(data.registration_data),
+      earnings_data: safeJsonToRecord(data.earnings_data),
+      next_steps: safeJsonToStringArray(data.next_steps)
     };
 
   } catch (error) {
@@ -233,9 +206,9 @@ export const getUserIntegrationProgress = async (
       partner_name: item.partner_name,
       integration_status: item.integration_status as 'pending' | 'in_progress' | 'completed' | 'failed',
       referral_link: item.referral_link || '',
-      registration_data: item.registration_data || {},
-      earnings_data: item.earnings_data || {},
-      next_steps: Array.isArray(item.next_steps) ? item.next_steps : []
+      registration_data: safeJsonToRecord(item.registration_data),
+      earnings_data: safeJsonToRecord(item.earnings_data),
+      next_steps: safeJsonToStringArray(item.next_steps)
     })) || [];
 
   } catch (error) {
@@ -244,7 +217,7 @@ export const getUserIntegrationProgress = async (
   }
 };
 
-const getSetupComplexity = (requirements: Record<string, any> | null): 'easy' | 'medium' | 'hard' => {
+const getSetupComplexity = (requirements: Record<string, any>): 'easy' | 'medium' | 'hard' => {
   if (!requirements || !requirements.requirements) return 'medium';
   
   const reqCount = Array.isArray(requirements.requirements) ? requirements.requirements.length : 0;
@@ -278,7 +251,7 @@ const getNextSteps = (partnerName: string): string[] => {
     'Peerspace': [
       'Register as a host using referral',
       'Upload high-quality space photos',
-      'Set availability and pricing'
+      'Set pricing and availability'
     ],
     'SpotHero': [
       'Sign up as a parking partner',
