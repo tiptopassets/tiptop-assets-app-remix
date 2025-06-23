@@ -9,6 +9,7 @@ export interface PartnerRecommendation {
   setupComplexity: 'low' | 'medium' | 'high';
   recommendationReason: string;
   priorityScore: number;
+  referralLink?: string; // Add the missing referral_link property (camelCase)
 }
 
 export interface OnboardingAsset {
@@ -20,10 +21,22 @@ export interface OnboardingAsset {
 
 export const generatePartnerRecommendations = async (
   onboardingId: string,
-  detectedAssets: OnboardingAsset[]
+  detectedAssets: OnboardingAsset[] | string[]
 ): Promise<PartnerRecommendation[]> => {
   try {
     console.log('🔄 Generating partner recommendations for:', { onboardingId, detectedAssets });
+
+    // Convert string array to OnboardingAsset array if needed
+    const assetsToProcess: OnboardingAsset[] = detectedAssets.map(asset => {
+      if (typeof asset === 'string') {
+        return {
+          type: asset,
+          detected: true,
+          potential: 100
+        };
+      }
+      return asset;
+    });
 
     // Get enhanced service providers that match the detected assets
     const { data: providers, error: providersError } = await supabase
@@ -44,7 +57,7 @@ export const generatePartnerRecommendations = async (
     // Generate recommendations based on detected assets
     const recommendations: PartnerRecommendation[] = [];
 
-    for (const asset of detectedAssets) {
+    for (const asset of assetsToProcess) {
       if (!asset.detected || asset.potential <= 0) continue;
 
       // Find providers that support this asset type
@@ -71,7 +84,8 @@ export const generatePartnerRecommendations = async (
           estimatedMonthlyEarnings: estimatedEarnings,
           setupComplexity: determineSetupComplexity(provider.setup_requirements),
           recommendationReason: generateRecommendationReason(provider, asset),
-          priorityScore: provider.priority_score || 0
+          priorityScore: provider.priority_score || 0,
+          referralLink: provider.affiliate_base_url || `https://example.com/signup?ref=${provider.id}` // Generate referral link
         });
       }
     }
@@ -92,6 +106,42 @@ export const generatePartnerRecommendations = async (
   } catch (error) {
     console.error('❌ Error generating partner recommendations:', error);
     return [];
+  }
+};
+
+export const initializePartnerIntegration = async (
+  userId: string,
+  onboardingId: string,
+  partnerName: string,
+  referralLink: string
+) => {
+  try {
+    console.log('🔄 Initializing partner integration:', { userId, onboardingId, partnerName });
+
+    const { data, error } = await supabase
+      .from('partner_integration_progress')
+      .insert({
+        user_id: userId,
+        onboarding_id: onboardingId,
+        partner_name: partnerName,
+        referral_link: referralLink,
+        integration_status: 'initiated',
+        registration_data: {},
+        earnings_data: {}
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error('❌ Error initializing partner integration:', error);
+      return null;
+    }
+
+    console.log('✅ Partner integration initialized:', data);
+    return data;
+  } catch (error) {
+    console.error('❌ Error in initializePartnerIntegration:', error);
+    return null;
   }
 };
 

@@ -2,22 +2,21 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { useBundleRecommendations } from '@/hooks/useBundleRecommendations';
-import { BundleRecommendation } from '@/contexts/ServiceProviders/types';
 import BundleRecommendationCard from './BundleRecommendationCard';
 import { Loader2, Package } from 'lucide-react';
 
 interface BundleRecommendationsProps {
   detectedAssets: string[];
-  onSelectBundle: (recommendation: BundleRecommendation) => void;
+  onSelectBundle: (recommendation: any) => void;
 }
 
 const BundleRecommendations: React.FC<BundleRecommendationsProps> = ({
   detectedAssets,
   onSelectBundle
 }) => {
-  const { recommendations, isLoading, error } = useBundleRecommendations(detectedAssets);
+  const { recommendations, loading, error } = useBundleRecommendations();
 
-  if (isLoading) {
+  if (loading) {
     return (
       <div className="flex items-center justify-center py-8">
         <Loader2 className="h-8 w-8 animate-spin text-tiptop-purple" />
@@ -62,14 +61,32 @@ const BundleRecommendations: React.FC<BundleRecommendationsProps> = ({
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {recommendations.map((recommendation, index) => (
-          <BundleRecommendationCard
-            key={recommendation.bundle.id}
-            recommendation={recommendation}
-            onSelectBundle={onSelectBundle}
-            index={index}
-          />
-        ))}
+        {recommendations.map((recommendation, index) => {
+          // Transform the recommendation to match the expected format
+          const transformedRecommendation = {
+            bundle: {
+              id: recommendation.id,
+              name: recommendation.name,
+              description: recommendation.description
+            },
+            providers: recommendation.providers,
+            totalEarnings: {
+              low: recommendation.monthlyEarningsLow,
+              high: recommendation.monthlyEarningsHigh
+            },
+            matchingAssets: recommendation.assets,
+            setupCost: recommendation.totalSetupCost
+          };
+
+          return (
+            <BundleRecommendationCard
+              key={recommendation.id}
+              recommendation={transformedRecommendation}
+              onSelectBundle={onSelectBundle}
+              index={index}
+            />
+          );
+        })}
       </div>
     </motion.div>
   );
