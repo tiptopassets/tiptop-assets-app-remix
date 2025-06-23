@@ -14,23 +14,40 @@ export const useGoogleMapInstance = (zoomLevel: number | undefined, setZoomLevel
   useEffect(() => {
     let mounted = true;
     let retryTimeout: NodeJS.Timeout;
+    let loadingTimeout: NodeJS.Timeout;
     
     const loadMap = async () => {
       if (!mounted || !mapRef.current) return;
       
       try {
-        console.log('🗺️ Loading Google Maps API...');
+        console.log('🗺️ Starting Google Maps loading process...');
         setIsLoading(true);
         setMapLoadError(null);
         
-        // Load Google Maps API
+        // Set a timeout to catch if loading takes too long
+        loadingTimeout = setTimeout(() => {
+          if (mounted && isLoading) {
+            console.error('⏰ Google Maps loading timed out after 15 seconds');
+            setMapLoadError('Google Maps loading timed out. This could be due to API key issues or network problems.');
+            setIsLoading(false);
+          }
+        }, 15000);
+        
+        // Load Google Maps API with enhanced error handling
+        console.log('🔄 Loading Google Maps API...');
         await loadGoogleMapsWithRetry();
         
+        // Clear timeout since we successfully loaded
+        if (loadingTimeout) {
+          clearTimeout(loadingTimeout);
+        }
+        
         if (!mounted || !mapRef.current || !window.google) {
+          console.log('🚫 Component unmounted or Google Maps not available');
           return;
         }
         
-        console.log('🗺️ Creating map instance...');
+        console.log('✅ Google Maps API loaded, creating map instance...');
         
         // Initial San Francisco coordinates
         const sanFrancisco = { lat: 37.7749, lng: -122.4194 };
@@ -56,20 +73,33 @@ export const useGoogleMapInstance = (zoomLevel: number | undefined, setZoomLevel
         }
         
         if (mounted) {
-          console.log('✅ Map instance created successfully');
+          console.log('🎉 Map instance created successfully!');
           setMapInstance(newMap);
           setMapLoadError(null);
           setIsLoading(false);
         }
       } catch (error) {
-        console.error("❌ Error loading Google Maps:", error);
+        console.error("❌ Error in loadMap:", error);
+        
+        // Clear loading timeout
+        if (loadingTimeout) {
+          clearTimeout(loadingTimeout);
+        }
         
         if (mounted) {
           const errorMessage = error instanceof Error ? error.message : 'Failed to load Google Maps';
+          console.error('🔍 Detailed error analysis:', {
+            errorMessage,
+            errorType: typeof error,
+            errorStack: error instanceof Error ? error.stack : 'No stack trace',
+            windowGoogle: !!window.google,
+            mapRefCurrent: !!mapRef.current
+          });
+          
           setMapLoadError(errorMessage);
           setIsLoading(false);
           
-          // Enhanced error handling for domain restrictions
+          // Enhanced error handling and user feedback
           if (errorMessage.includes('RefererNotAllowedMapError') || 
               errorMessage.includes('Domain restriction error')) {
             const currentDomain = window.location.hostname;
@@ -81,12 +111,10 @@ export const useGoogleMapInstance = (zoomLevel: number | undefined, setZoomLevel
               variant: "destructive"
             });
             
-            console.error(`🔒 Domain restriction error. Add these domains to Google Cloud Console:
-• ${currentOrigin}/*
-• https://*.lovable.app/*
-• https://*.lovableproject.com/*
-
-Current failing domain: ${currentDomain}`);
+            console.error(`🔒 Domain restriction details:
+• Current domain: ${currentDomain}
+• Current origin: ${currentOrigin}
+• Add to Google Cloud Console: ${currentOrigin}/*`);
           } else if (errorMessage.includes('InvalidKeyMapError')) {
             toast({
               title: "Invalid API Key",
@@ -99,41 +127,58 @@ Current failing domain: ${currentDomain}`);
               description: "Please enable the Maps JavaScript API in Google Cloud Console.",
               variant: "destructive"
             });
+          } else if (errorMessage.includes('timed out')) {
+            toast({
+              title: "Loading Timeout",
+              description: "Google Maps took too long to load. Please check your connection and API key.",
+              variant: "destructive"
+            });
           } else {
             toast({
               title: "Error Loading Maps",
-              description: "Couldn't initialize Google Maps. Try switching to Demo Mode.",
+              description: "Couldn't initialize Google Maps. You can switch to Demo Mode to continue.",
               variant: "destructive"
             });
           }
           
-          // Retry after a delay for transient errors
+          // Only retry for transient errors, not configuration errors
           if (!errorMessage.includes('RefererNotAllowedMapError') && 
-              !errorMessage.includes('InvalidKeyMapError')) {
+              !errorMessage.includes('InvalidKeyMapError') &&
+              !errorMessage.includes('ApiNotActivatedMapError')) {
+            console.log('🔄 Scheduling retry for transient error...');
             retryTimeout = setTimeout(() => {
               if (mounted) {
                 console.log('🔄 Retrying map loading...');
                 loadMap();
               }
             }, 3000);
+          } else {
+            console.log('🚫 Not retrying due to configuration error');
           }
         }
       }
     };
 
+    // Start loading immediately
     loadMap();
 
     return () => {
+      console.log('🧹 Cleaning up Google Maps instance...');
       mounted = false;
+      
       if (retryTimeout) {
         clearTimeout(retryTimeout);
       }
+      if (loadingTimeout) {
+        clearTimeout(loadingTimeout);
+      }
+      
       if (mapInstance) {
         google.maps.event.clearInstanceListeners(mapInstance);
         setMapInstance(null);
       }
     };
-  }, []); // Remove dependencies to prevent re-loading
+  }, []); // Empty dependencies to prevent re-loading
 
   return { mapRef, mapInstance, mapLoadError, isLoading };
 };

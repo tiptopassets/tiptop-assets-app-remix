@@ -1,3 +1,4 @@
+
 import React, { useEffect } from 'react';
 import { useGoogleMap } from '@/contexts/GoogleMapContext';
 import MapMarker from './map/MapMarker';
@@ -5,7 +6,7 @@ import MapErrorOverlay from './map/MapErrorOverlay';
 import MapVisualEffects from './map/MapVisualEffects';
 import { useGoogleMapInstance } from '@/hooks/useGoogleMapInstance';
 import { Button } from '@/components/ui/button';
-import { AlertCircle, MapPin, RefreshCw, Settings, ExternalLink } from 'lucide-react';
+import { AlertCircle, MapPin, RefreshCw, Settings, ExternalLink, Clock } from 'lucide-react';
 
 const GoogleMap = () => {
   const { 
@@ -28,6 +29,7 @@ const GoogleMap = () => {
   // Effect for updating the map instance in the context
   useEffect(() => {
     if (mapInstance) {
+      console.log('🗺️ GoogleMap: Setting map instance in context');
       setMapInstance(mapInstance);
       setMapLoaded(true);
     }
@@ -36,6 +38,8 @@ const GoogleMap = () => {
   // Effect for adding marker when analysis is complete
   useEffect(() => {
     if (!mapInstance || !address || !analysisComplete || isAnalyzing) return;
+
+    console.log('🗺️ GoogleMap: Setting up marker for completed analysis');
 
     // Create the geocoder to convert address to coordinates if not already available
     if (!addressCoordinates && address) {
@@ -63,6 +67,7 @@ const GoogleMap = () => {
   // When we have coordinates, center and zoom the map
   useEffect(() => {
     if (mapInstance && addressCoordinates) {
+      console.log('🗺️ GoogleMap: Centering map on address coordinates');
       mapInstance.setCenter(addressCoordinates);
       mapInstance.setZoom(18);
     }
@@ -72,10 +77,30 @@ const GoogleMap = () => {
   if (isLoading && !useLocalAnalysis) {
     return (
       <div className="absolute inset-0 z-0 flex flex-col items-center justify-center bg-gradient-to-b from-gray-900 to-purple-900">
-        <div className="bg-black/40 backdrop-blur-md p-8 rounded-lg text-center border border-white/10">
-          <div className="w-16 h-16 border-4 border-tiptop-purple border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <h2 className="text-xl font-bold text-white mb-2">Loading Google Maps</h2>
-          <p className="text-white/80">Initializing map instance...</p>
+        <div className="bg-black/40 backdrop-blur-md p-8 rounded-lg text-center border border-white/10 max-w-md">
+          <div className="flex items-center justify-center mb-4">
+            <div className="w-16 h-16 border-4 border-tiptop-purple border-t-transparent rounded-full animate-spin"></div>
+          </div>
+          <h2 className="text-xl font-bold text-white mb-2 flex items-center justify-center gap-2">
+            <Clock className="h-5 w-5" />
+            Loading Google Maps
+          </h2>
+          <p className="text-white/80 mb-4">Initializing map instance...</p>
+          <div className="text-sm text-white/60">
+            <p>This may take a few moments if it's your first visit.</p>
+          </div>
+          
+          {/* Option to switch to demo mode while waiting */}
+          <div className="mt-6">
+            <Button 
+              onClick={() => setUseLocalAnalysis(true)} 
+              variant="outline"
+              className="border-white/20 text-white hover:bg-white/10"
+            >
+              <Settings className="h-4 w-4 mr-2" />
+              Switch to Demo Mode
+            </Button>
+          </div>
         </div>
       </div>
     );
@@ -89,6 +114,7 @@ const GoogleMap = () => {
                          mapLoadError.includes('domain');
     const isInvalidKeyError = mapLoadError.includes('InvalidKeyMapError');
     const isApiNotActivatedError = mapLoadError.includes('ApiNotActivatedMapError');
+    const isTimeoutError = mapLoadError.includes('timed out');
     
     const currentDomain = window.location.hostname;
     const currentOrigin = window.location.origin;
@@ -99,6 +125,23 @@ const GoogleMap = () => {
         <div className="bg-black/40 backdrop-blur-md p-8 rounded-lg max-w-2xl text-center border border-white/10">
           <AlertCircle className="h-12 w-12 text-red-400 mx-auto mb-4" />
           <h2 className="text-xl font-bold text-white mb-2">Google Maps Configuration Issue</h2>
+          
+          {isTimeoutError && (
+            <>
+              <p className="text-white/80 mb-4">
+                Google Maps is taking longer than expected to load. This could be due to network issues or API configuration problems.
+              </p>
+              <div className="text-left text-sm text-white/70 mb-6 bg-gray-800/50 p-4 rounded">
+                <p className="font-semibold mb-2">Possible causes:</p>
+                <ul className="list-disc list-inside space-y-1">
+                  <li>Slow network connection</li>
+                  <li>Google Maps API key not configured</li>
+                  <li>Domain restrictions on the API key</li>
+                  <li>API quotas exceeded</li>
+                </ul>
+              </div>
+            </>
+          )}
           
           {isDomainError && (
             <>
