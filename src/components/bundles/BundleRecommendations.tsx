@@ -62,12 +62,19 @@ const BundleRecommendations: React.FC<BundleRecommendationsProps> = ({
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {recommendations.map((recommendation, index) => {
-          // Transform the recommendation to match the expected format
+          // Transform the recommendation to match the BundleRecommendationCard expected format
           const transformedRecommendation = {
             bundle: {
               id: recommendation.id,
               name: recommendation.name,
-              description: recommendation.description
+              description: recommendation.description,
+              asset_requirements: recommendation.assets,
+              min_assets: 1,
+              max_providers_per_asset: 3,
+              total_setup_cost: recommendation.totalSetupCost,
+              total_monthly_earnings_low: recommendation.monthlyEarningsLow,
+              total_monthly_earnings_high: recommendation.monthlyEarningsHigh,
+              is_active: true
             },
             providers: recommendation.providers,
             totalEarnings: {

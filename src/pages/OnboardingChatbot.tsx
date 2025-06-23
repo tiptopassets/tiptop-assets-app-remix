@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -405,8 +404,8 @@ const OnboardingChatbot = () => {
                             key={recommendation.id}
                             recommendation={recommendation}
                             onIntegrate={handlePartnerIntegration}
-                            isIntegrating={integratingPartners.has(recommendation.partner_name)}
-                            isCompleted={completedIntegrations.has(recommendation.partner_name)}
+                            isIntegrating={integratingPartners.has(recommendation.partnerName)}
+                            isCompleted={completedIntegrations.has(recommendation.partnerName)}
                           />
                         ))}
                       </div>
