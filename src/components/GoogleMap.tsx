@@ -6,7 +6,6 @@ import MapVisualEffects from './map/MapVisualEffects';
 import { useGoogleMapInstance } from '@/hooks/useGoogleMapInstance';
 import { Button } from '@/components/ui/button';
 import { AlertCircle, MapPin, RefreshCw, Settings, ExternalLink } from 'lucide-react';
-import { loadGoogleMapsWithRetry } from '@/utils/googleMapsLoader';
 
 const GoogleMap = () => {
   const { 
@@ -24,7 +23,7 @@ const GoogleMap = () => {
     useLocalAnalysis
   } = useGoogleMap();
   
-  const { mapRef, mapInstance, mapLoadError } = useGoogleMapInstance(zoomLevel, setZoomLevel);
+  const { mapRef, mapInstance, mapLoadError, isLoading } = useGoogleMapInstance(zoomLevel, setZoomLevel);
 
   // Effect for updating the map instance in the context
   useEffect(() => {
@@ -65,9 +64,22 @@ const GoogleMap = () => {
   useEffect(() => {
     if (mapInstance && addressCoordinates) {
       mapInstance.setCenter(addressCoordinates);
-      mapInstance.setZoom(18); // Zoom in when we have an address
+      mapInstance.setZoom(18);
     }
   }, [mapInstance, addressCoordinates]);
+
+  // Show loading state while Google Maps is loading
+  if (isLoading && !useLocalAnalysis) {
+    return (
+      <div className="absolute inset-0 z-0 flex flex-col items-center justify-center bg-gradient-to-b from-gray-900 to-purple-900">
+        <div className="bg-black/40 backdrop-blur-md p-8 rounded-lg text-center border border-white/10">
+          <div className="w-16 h-16 border-4 border-tiptop-purple border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <h2 className="text-xl font-bold text-white mb-2">Loading Google Maps</h2>
+          <p className="text-white/80">Initializing map instance...</p>
+        </div>
+      </div>
+    );
+  }
 
   // Enhanced error handling with detailed domain information
   if (mapLoadError && !useLocalAnalysis) {
@@ -87,24 +99,6 @@ const GoogleMap = () => {
         <div className="bg-black/40 backdrop-blur-md p-8 rounded-lg max-w-2xl text-center border border-white/10">
           <AlertCircle className="h-12 w-12 text-red-400 mx-auto mb-4" />
           <h2 className="text-xl font-bold text-white mb-2">Google Maps Configuration Issue</h2>
-          
-          {isConfigError && (
-            <>
-              <p className="text-white/80 mb-4">
-                The Google Maps API key is not configured in Supabase Edge Function Secrets.
-              </p>
-              <div className="text-left text-sm text-white/70 mb-6 bg-gray-800/50 p-4 rounded">
-                <p className="font-semibold mb-2">To fix this:</p>
-                <ol className="list-decimal list-inside space-y-1">
-                  <li>Go to Supabase Dashboard</li>
-                  <li>Navigate to Edge Functions → Secrets</li>
-                  <li>Add <code className="bg-gray-700 px-1 rounded">GOOGLE_MAPS_API_KEY</code></li>
-                  <li>Set it to your Google Maps API key</li>
-                  <li>Refresh this page</li>
-                </ol>
-              </div>
-            </>
-          )}
           
           {isDomainError && (
             <>
@@ -127,10 +121,28 @@ const GoogleMap = () => {
                   <li className="ml-4"><code className="bg-gray-700 px-1 rounded">https://*.lovableproject.com/*</code></li>
                   {isPreviewDomain && (
                     <li className="text-yellow-300 mt-2">
-                      <strong>Note:</strong> Preview domains use double dashes (--) and may need explicit allowlisting
+                      <strong>Note:</strong> Preview domains with double dashes (--) need explicit allowlisting
                     </li>
                   )}
                   <li>Save and refresh this page</li>
+                </ol>
+              </div>
+            </>
+          )}
+          
+          {isConfigError && (
+            <>
+              <p className="text-white/80 mb-4">
+                The Google Maps API key is not configured in Supabase Edge Function Secrets.
+              </p>
+              <div className="text-left text-sm text-white/70 mb-6 bg-gray-800/50 p-4 rounded">
+                <p className="font-semibold mb-2">To fix this:</p>
+                <ol className="list-decimal list-inside space-y-1">
+                  <li>Go to Supabase Dashboard</li>
+                  <li>Navigate to Edge Functions → Secrets</li>
+                  <li>Add <code className="bg-gray-700 px-1 rounded">GOOGLE_MAPS_API_KEY</code></li>
+                  <li>Set it to your Google Maps API key</li>
+                  <li>Refresh this page</li>
                 </ol>
               </div>
             </>

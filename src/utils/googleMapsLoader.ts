@@ -87,6 +87,14 @@ let apiKey: string = '';
 let retryCount = 0;
 const MAX_RETRIES = 3;
 
+// Reset function to clear singleton state on errors
+const resetGoogleMapsState = () => {
+  logWithContext('info', 'Resetting Google Maps singleton state');
+  googleMapsPromise = null;
+  apiKey = '';
+  retryCount = 0;
+};
+
 export const loadGoogleMaps = async (): Promise<typeof google.maps> => {
   if (!googleMapsPromise) {
     try {
@@ -155,7 +163,7 @@ export const loadGoogleMaps = async (): Promise<typeof google.maps> => {
         }
         
         // Reset promise so it can be retried
-        googleMapsPromise = null;
+        resetGoogleMapsState();
         throw enhancedError;
       });
     } catch (error) {
@@ -166,14 +174,14 @@ export const loadGoogleMaps = async (): Promise<typeof google.maps> => {
       });
       
       // Reset promise so it can be retried
-      googleMapsPromise = null;
+      resetGoogleMapsState();
       throw error;
     }
   }
   return googleMapsPromise;
 };
 
-// Enhanced retry mechanism
+// Enhanced retry mechanism with exponential backoff
 export const loadGoogleMapsWithRetry = async (): Promise<typeof google.maps> => {
   for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
     try {
@@ -198,6 +206,9 @@ export const loadGoogleMapsWithRetry = async (): Promise<typeof google.maps> => 
       const waitTime = Math.pow(2, attempt) * 1000;
       logWithContext('info', `Waiting ${waitTime}ms before retry`, { waitTime });
       await new Promise(resolve => setTimeout(resolve, waitTime));
+      
+      // Reset state before retry
+      resetGoogleMapsState();
     }
   }
   

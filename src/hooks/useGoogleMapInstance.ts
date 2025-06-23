@@ -8,63 +8,85 @@ export const useGoogleMapInstance = (zoomLevel: number | undefined, setZoomLevel
   const mapRef = useRef<HTMLDivElement>(null);
   const [mapInstance, setMapInstance] = useState<google.maps.Map | null>(null);
   const [mapLoadError, setMapLoadError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
   useEffect(() => {
     let mounted = true;
+    let retryTimeout: NodeJS.Timeout;
     
     const loadMap = async () => {
+      if (!mounted || !mapRef.current) return;
+      
       try {
-        console.log('🗺️ Loading map instance with enhanced error handling...');
+        console.log('🗺️ Loading Google Maps API...');
+        setIsLoading(true);
+        setMapLoadError(null);
         
-        // Use the enhanced Google Maps loader with retry mechanism
+        // Load Google Maps API
         await loadGoogleMapsWithRetry();
         
         if (!mounted || !mapRef.current || !window.google) {
-          return null;
+          return;
         }
+        
+        console.log('🗺️ Creating map instance...');
         
         // Initial San Francisco coordinates
         const sanFrancisco = { lat: 37.7749, lng: -122.4194 };
         
         const newMap = new google.maps.Map(mapRef.current, {
           center: sanFrancisco,
-          zoom: 12, // Initial zoom level of 12 for city overview
+          zoom: 12,
           mapTypeId: 'satellite',
           disableDefaultUI: true,
-          zoomControl: false, // Explicitly disable zoom controls
+          zoomControl: false,
           styles: mapStyles,
-          tilt: 45 // Add a 45-degree tilt for better building visualization
+          tilt: 45
         });
 
         // Update zoom level when map changes zoom
         if (setZoomLevel) {
           newMap.addListener('zoom_changed', () => {
-            setZoomLevel(newMap.getZoom());
+            const currentZoom = newMap.getZoom();
+            if (currentZoom !== undefined) {
+              setZoomLevel(currentZoom);
+            }
           });
         }
         
-        // Successfully loaded the map
         if (mounted) {
           console.log('✅ Map instance created successfully');
-          setMapLoadError(null);
           setMapInstance(newMap);
+          setMapLoadError(null);
+          setIsLoading(false);
         }
-        return newMap;
       } catch (error) {
         console.error("❌ Error loading Google Maps:", error);
+        
         if (mounted) {
           const errorMessage = error instanceof Error ? error.message : 'Failed to load Google Maps';
           setMapLoadError(errorMessage);
+          setIsLoading(false);
           
-          // Enhanced error toast with more specific messaging
+          // Enhanced error handling for domain restrictions
           if (errorMessage.includes('RefererNotAllowedMapError') || 
               errorMessage.includes('Domain restriction error')) {
+            const currentDomain = window.location.hostname;
+            const currentOrigin = window.location.origin;
+            
             toast({
-              title: "Domain Restriction Error",
-              description: "Please add the current domain to your Google Maps API key restrictions. Check console for details.",
+              title: "Google Maps Domain Restriction",
+              description: `Please add ${currentOrigin}/* to your Google Cloud Console API key restrictions.`,
               variant: "destructive"
             });
+            
+            console.error(`🔒 Domain restriction error. Add these domains to Google Cloud Console:
+• ${currentOrigin}/*
+• https://*.lovable.app/*
+• https://*.lovableproject.com/*
+
+Current failing domain: ${currentDomain}`);
           } else if (errorMessage.includes('InvalidKeyMapError')) {
             toast({
               title: "Invalid API Key",
@@ -84,22 +106,34 @@ export const useGoogleMapInstance = (zoomLevel: number | undefined, setZoomLevel
               variant: "destructive"
             });
           }
+          
+          // Retry after a delay for transient errors
+          if (!errorMessage.includes('RefererNotAllowedMapError') && 
+              !errorMessage.includes('InvalidKeyMapError')) {
+            retryTimeout = setTimeout(() => {
+              if (mounted) {
+                console.log('🔄 Retrying map loading...');
+                loadMap();
+              }
+            }, 3000);
+          }
         }
       }
-      return null;
     };
 
     loadMap();
 
     return () => {
       mounted = false;
+      if (retryTimeout) {
+        clearTimeout(retryTimeout);
+      }
       if (mapInstance) {
-        // Clean up the map instance
         google.maps.event.clearInstanceListeners(mapInstance);
         setMapInstance(null);
       }
     };
-  }, [zoomLevel, setZoomLevel, toast]);
+  }, []); // Remove dependencies to prevent re-loading
 
-  return { mapRef, mapInstance, mapLoadError };
+  return { mapRef, mapInstance, mapLoadError, isLoading };
 };
