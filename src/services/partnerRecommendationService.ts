@@ -17,9 +17,20 @@ export interface PartnerIntegrationProgress {
   partner_name: string;
   integration_status: 'pending' | 'in_progress' | 'completed' | 'failed';
   referral_link?: string;
-  registration_data: Record<string, unknown>;
-  earnings_data: Record<string, unknown>;
+  registration_data: Record<string, any>;
+  earnings_data: Record<string, any>;
   next_steps: string[];
+}
+
+interface RawProvider {
+  name: string;
+  category: string;
+  affiliate_base_url: string;
+  supported_assets: string[];
+  priority_score: number;
+  avg_earnings_low: number;
+  avg_earnings_high: number;
+  setup_requirements: any;
 }
 
 export const generatePartnerRecommendations = async (
@@ -29,8 +40,7 @@ export const generatePartnerRecommendations = async (
   try {
     console.log('🎯 Generating partner recommendations for assets:', detectedAssets);
     
-    // Get enhanced service providers that match detected assets
-    const { data: providers, error: providersError } = await supabase
+    const { data: rawProviders, error: providersError } = await supabase
       .from('enhanced_service_providers')
       .select('*')
       .eq('integration_status', 'active');
@@ -39,26 +49,21 @@ export const generatePartnerRecommendations = async (
 
     const recommendations: PartnerRecommendation[] = [];
     
-    if (providers && Array.isArray(providers)) {
-      for (const provider of providers) {
-        // Basic type checking and safe extraction
-        const providerName = typeof provider.name === 'string' ? provider.name : '';
-        const category = typeof provider.category === 'string' ? provider.category : '';
-        const affiliateUrl = typeof provider.affiliate_base_url === 'string' ? provider.affiliate_base_url : '';
-        
-        // Handle supported_assets safely
-        let supportedAssets: string[] = [];
-        if (Array.isArray(provider.supported_assets)) {
-          supportedAssets = provider.supported_assets.filter((item: unknown) => typeof item === 'string');
-        }
-        
-        const priorityScore = typeof provider.priority_score === 'number' ? provider.priority_score : 5;
-        const avgEarningsLow = typeof provider.avg_earnings_low === 'number' ? provider.avg_earnings_low : 0;
-        const avgEarningsHigh = typeof provider.avg_earnings_high === 'number' ? provider.avg_earnings_high : 0;
+    if (rawProviders) {
+      for (const rawProvider of rawProviders) {
+        const provider: RawProvider = {
+          name: rawProvider.name || '',
+          category: rawProvider.category || '',
+          affiliate_base_url: rawProvider.affiliate_base_url || '',
+          supported_assets: Array.isArray(rawProvider.supported_assets) ? rawProvider.supported_assets : [],
+          priority_score: rawProvider.priority_score || 5,
+          avg_earnings_low: rawProvider.avg_earnings_low || 0,
+          avg_earnings_high: rawProvider.avg_earnings_high || 0,
+          setup_requirements: rawProvider.setup_requirements || {}
+        };
 
-        // Check if provider supports any of the detected assets
         const matchingAssets = detectedAssets.filter(asset => 
-          supportedAssets.some(supported => 
+          provider.supported_assets.some(supported => 
             supported.toLowerCase().includes(asset.toLowerCase()) || 
             asset.toLowerCase().includes(supported.toLowerCase())
           )
@@ -66,26 +71,24 @@ export const generatePartnerRecommendations = async (
 
         if (matchingAssets.length > 0) {
           const recommendation: PartnerRecommendation = {
-            id: `${onboardingId}_${providerName}`,
-            partner_name: providerName,
+            id: `${onboardingId}_${provider.name}`,
+            partner_name: provider.name,
             asset_type: matchingAssets[0],
-            priority_score: priorityScore,
-            estimated_monthly_earnings: (avgEarningsLow + avgEarningsHigh) / 2,
+            priority_score: provider.priority_score,
+            estimated_monthly_earnings: (provider.avg_earnings_low + provider.avg_earnings_high) / 2,
             setup_complexity: getSetupComplexity(provider.setup_requirements),
             recommendation_reason: `Perfect match for your ${matchingAssets.join(', ')} asset${matchingAssets.length > 1 ? 's' : ''}`,
-            referral_link: affiliateUrl || undefined
+            referral_link: provider.affiliate_base_url || undefined
           };
           recommendations.push(recommendation);
         }
       }
     }
 
-    // Sort by priority score and estimated earnings
     recommendations.sort((a, b) => 
       (b.priority_score * b.estimated_monthly_earnings) - (a.priority_score * a.estimated_monthly_earnings)
     );
 
-    // Save recommendations to database
     if (recommendations.length > 0) {
       const { error: insertError } = await supabase
         .from('partner_recommendations')
@@ -130,7 +133,7 @@ export const initializePartnerIntegration = async (
         user_id: userId,
         onboarding_id: onboardingId,
         partner_name: partnerName,
-        integration_status: 'in_progress' as const,
+        integration_status: 'in_progress',
         referral_link: referralLink,
         next_steps: getNextSteps(partnerName)
       })
@@ -143,10 +146,10 @@ export const initializePartnerIntegration = async (
       id: data.id,
       partner_name: data.partner_name,
       integration_status: data.integration_status as 'pending' | 'in_progress' | 'completed' | 'failed',
-      referral_link: data.referral_link || undefined,
-      registration_data: (data.registration_data as Record<string, unknown>) || {},
-      earnings_data: (data.earnings_data as Record<string, unknown>) || {},
-      next_steps: Array.isArray(data.next_steps) ? data.next_steps.filter((step: unknown) => typeof step === 'string') : []
+      referral_link: data.referral_link || '',
+      registration_data: data.registration_data || {},
+      earnings_data: data.earnings_data || {},
+      next_steps: Array.isArray(data.next_steps) ? data.next_steps : []
     };
 
   } catch (error) {
@@ -158,10 +161,10 @@ export const initializePartnerIntegration = async (
 export const updateIntegrationStatus = async (
   integrationId: string,
   status: 'pending' | 'in_progress' | 'completed' | 'failed',
-  additionalData?: Record<string, unknown>
+  additionalData?: Record<string, any>
 ): Promise<boolean> => {
   try {
-    const updateData: Record<string, unknown> = {
+    const updateData: Record<string, any> = {
       integration_status: status,
       updated_at: new Date().toISOString()
     };
@@ -201,15 +204,15 @@ export const getUserIntegrationProgress = async (
 
     if (error) throw error;
 
-    return data?.map(item => ({
+    return (data || []).map(item => ({
       id: item.id,
       partner_name: item.partner_name,
       integration_status: item.integration_status as 'pending' | 'in_progress' | 'completed' | 'failed',
       referral_link: item.referral_link || '',
-      registration_data: (item.registration_data as Record<string, unknown>) || {},
-      earnings_data: (item.earnings_data as Record<string, unknown>) || {},
-      next_steps: Array.isArray(item.next_steps) ? item.next_steps.filter((step: unknown) => typeof step === 'string') : []
-    })) || [];
+      registration_data: item.registration_data || {},
+      earnings_data: item.earnings_data || {},
+      next_steps: Array.isArray(item.next_steps) ? item.next_steps : []
+    }));
 
   } catch (error) {
     console.error('❌ Error getting integration progress:', error);
@@ -217,16 +220,17 @@ export const getUserIntegrationProgress = async (
   }
 };
 
-const getSetupComplexity = (requirements: unknown): 'easy' | 'medium' | 'hard' => {
+const getSetupComplexity = (requirements: any): 'easy' | 'medium' | 'hard' => {
   if (!requirements || typeof requirements !== 'object') return 'medium';
   
-  const req = requirements as Record<string, unknown>;
-  if (!Array.isArray(req.requirements)) return 'medium';
+  if (Array.isArray(requirements.requirements)) {
+    const reqCount = requirements.requirements.length;
+    if (reqCount <= 2) return 'easy';
+    if (reqCount <= 4) return 'medium';
+    return 'hard';
+  }
   
-  const reqCount = req.requirements.length;
-  if (reqCount <= 2) return 'easy';
-  if (reqCount <= 4) return 'medium';
-  return 'hard';
+  return 'medium';
 };
 
 const getNextSteps = (partnerName: string): string[] => {
