@@ -23,7 +23,7 @@ export interface PartnerIntegrationProgress {
 }
 
 // Helper function to safely convert Json to array of strings
-const safeJsonToStringArray = (json: any): string[] => {
+const safeJsonToStringArray = (json: unknown): string[] => {
   if (!json) return [];
   if (Array.isArray(json)) {
     return json.filter((item): item is string => typeof item === 'string');
@@ -32,9 +32,9 @@ const safeJsonToStringArray = (json: any): string[] => {
 };
 
 // Helper function to safely convert Json to object
-const safeJsonToObject = (json: any): any => {
+const safeJsonToObject = (json: unknown): Record<string, any> => {
   if (json && typeof json === 'object' && !Array.isArray(json) && json !== null) {
-    return json;
+    return json as Record<string, any>;
   }
   return {};
 };
@@ -218,10 +218,13 @@ export const getUserIntegrationProgress = async (
   }
 };
 
-const getSetupComplexity = (requirements: any): 'easy' | 'medium' | 'hard' => {
-  if (!requirements || !requirements.requirements) return 'medium';
+const getSetupComplexity = (requirements: Record<string, any>): 'easy' | 'medium' | 'hard' => {
+  if (!requirements || typeof requirements !== 'object') return 'medium';
   
-  const reqCount = Array.isArray(requirements.requirements) ? requirements.requirements.length : 0;
+  const reqs = requirements.requirements;
+  if (!Array.isArray(reqs)) return 'medium';
+  
+  const reqCount = reqs.length;
   if (reqCount <= 2) return 'easy';
   if (reqCount <= 4) return 'medium';
   return 'hard';
