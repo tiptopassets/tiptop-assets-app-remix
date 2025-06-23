@@ -22,7 +22,6 @@ import {
   Eye, 
   Trash2, 
   Download,
-  Filter,
   TrendingUp
 } from 'lucide-react';
 import { motion } from 'framer-motion';
