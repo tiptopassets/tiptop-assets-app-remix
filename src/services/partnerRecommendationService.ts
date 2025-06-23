@@ -17,24 +17,24 @@ export interface PartnerIntegrationProgress {
   partner_name: string;
   integration_status: 'pending' | 'in_progress' | 'completed' | 'failed';
   referral_link?: string;
-  registration_data: any;
-  earnings_data: any;
+  registration_data: Record<string, any>;
+  earnings_data: Record<string, any>;
   next_steps: string[];
 }
 
 // Helper function to safely convert Json to array of strings
-const safeJsonToStringArray = (json: unknown): string[] => {
+const safeJsonToStringArray = (json: any): string[] => {
   if (!json) return [];
   if (Array.isArray(json)) {
-    return json.filter((item): item is string => typeof item === 'string');
+    return json.filter((item) => typeof item === 'string');
   }
   return [];
 };
 
 // Helper function to safely convert Json to object
-const safeJsonToObject = (json: unknown): Record<string, any> => {
+const safeJsonToObject = (json: any): Record<string, any> => {
   if (json && typeof json === 'object' && !Array.isArray(json) && json !== null) {
-    return json as Record<string, any>;
+    return json;
   }
   return {};
 };
@@ -159,10 +159,10 @@ export const initializePartnerIntegration = async (
 export const updateIntegrationStatus = async (
   integrationId: string,
   status: 'pending' | 'in_progress' | 'completed' | 'failed',
-  additionalData?: any
+  additionalData?: Record<string, any>
 ): Promise<boolean> => {
   try {
-    const updateData: any = {
+    const updateData: Record<string, any> = {
       integration_status: status,
       updated_at: new Date().toISOString()
     };
