@@ -1,6 +1,6 @@
 
 import { useEffect, useState, useRef } from 'react';
-import { loadGoogleMaps } from '@/utils/googleMapsLoader';
+import { loadGoogleMapsWithRetry } from '@/utils/googleMapsLoader';
 import { mapStyles } from '@/utils/mapStyles';
 import { useToast } from '@/hooks/use-toast';
 
@@ -15,8 +15,10 @@ export const useGoogleMapInstance = (zoomLevel: number | undefined, setZoomLevel
     
     const loadMap = async () => {
       try {
-        // Use the centralized Google Maps loader
-        await loadGoogleMaps();
+        console.log('🗺️ Loading map instance with enhanced error handling...');
+        
+        // Use the enhanced Google Maps loader with retry mechanism
+        await loadGoogleMapsWithRetry();
         
         if (!mounted || !mapRef.current || !window.google) {
           return null;
@@ -44,19 +46,44 @@ export const useGoogleMapInstance = (zoomLevel: number | undefined, setZoomLevel
         
         // Successfully loaded the map
         if (mounted) {
+          console.log('✅ Map instance created successfully');
           setMapLoadError(null);
           setMapInstance(newMap);
         }
         return newMap;
       } catch (error) {
-        console.error("Error loading Google Maps:", error);
+        console.error("❌ Error loading Google Maps:", error);
         if (mounted) {
-          setMapLoadError("Failed to load Google Maps. Please try switching to Demo Mode.");
-          toast({
-            title: "Error Loading Maps",
-            description: "Couldn't initialize Google Maps. Try switching to Demo Mode.",
-            variant: "destructive"
-          });
+          const errorMessage = error instanceof Error ? error.message : 'Failed to load Google Maps';
+          setMapLoadError(errorMessage);
+          
+          // Enhanced error toast with more specific messaging
+          if (errorMessage.includes('RefererNotAllowedMapError') || 
+              errorMessage.includes('Domain restriction error')) {
+            toast({
+              title: "Domain Restriction Error",
+              description: "Please add the current domain to your Google Maps API key restrictions. Check console for details.",
+              variant: "destructive"
+            });
+          } else if (errorMessage.includes('InvalidKeyMapError')) {
+            toast({
+              title: "Invalid API Key",
+              description: "The Google Maps API key is invalid. Please check your configuration.",
+              variant: "destructive"
+            });
+          } else if (errorMessage.includes('ApiNotActivatedMapError')) {
+            toast({
+              title: "API Not Activated",
+              description: "Please enable the Maps JavaScript API in Google Cloud Console.",
+              variant: "destructive"
+            });
+          } else {
+            toast({
+              title: "Error Loading Maps",
+              description: "Couldn't initialize Google Maps. Try switching to Demo Mode.",
+              variant: "destructive"
+            });
+          }
         }
       }
       return null;

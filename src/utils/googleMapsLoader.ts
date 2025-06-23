@@ -2,47 +2,98 @@
 import { Loader } from '@googlemaps/js-api-loader';
 import { supabase } from '@/integrations/supabase/client';
 
-// Securely fetch Google Maps API key
+// Enhanced logging for debugging
+const logWithContext = (level: 'info' | 'error' | 'warn', message: string, data?: any) => {
+  const timestamp = new Date().toISOString();
+  const context = {
+    timestamp,
+    environment: window.location.hostname,
+    userAgent: navigator.userAgent.substring(0, 50),
+    ...data
+  };
+  
+  if (level === 'error') {
+    console.error(`🗺️ [${timestamp}] ${message}`, context);
+  } else if (level === 'warn') {
+    console.warn(`🗺️ [${timestamp}] ${message}`, context);
+  } else {
+    console.log(`🗺️ [${timestamp}] ${message}`, context);
+  }
+};
+
+// Securely fetch Google Maps API key with enhanced error handling
 const fetchGoogleMapsApiKey = async (): Promise<string> => {
+  const currentDomain = window.location.hostname;
+  const currentOrigin = window.location.origin;
+  
+  logWithContext('info', 'Starting API key fetch process', {
+    domain: currentDomain,
+    origin: currentOrigin
+  });
+
   // 1. Try environment variable first
   const envApiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
   if (envApiKey) {
-    console.log('✅ Using Google Maps API key from environment variable');
+    logWithContext('info', 'Using Google Maps API key from environment variable', {
+      keyLength: envApiKey.length,
+      keyPrefix: envApiKey.substring(0, 8) + '...'
+    });
     return envApiKey;
   }
   
-  // 2. Fallback to Supabase edge function using the client
+  // 2. Fallback to Supabase edge function
   try {
-    console.log('🔄 Attempting to fetch Google Maps API key from Supabase edge function...');
+    logWithContext('info', 'Attempting to fetch API key from Supabase edge function');
+    
     const { data, error } = await supabase.functions.invoke('get-google-maps-key', {
-      body: { origin: window.location.origin }
+      body: { origin: currentOrigin }
     });
     
     if (error) {
-      console.error('❌ Supabase function error:', error);
+      logWithContext('error', 'Supabase function error', {
+        error: error.message,
+        details: error
+      });
       throw new Error(`Supabase function error: ${error.message}`);
     }
     
     if (!data?.apiKey) {
-      console.error('❌ No API key returned from server. Response:', data);
+      logWithContext('error', 'No API key returned from server', {
+        responseData: data,
+        configured: data?.configured
+      });
       throw new Error('No API key returned from server');
     }
     
-    console.log('✅ Successfully retrieved API key from Supabase');
+    logWithContext('info', 'Successfully retrieved API key from Supabase', {
+      keyLength: data.apiKey.length,
+      keyPrefix: data.apiKey.substring(0, 8) + '...',
+      domain: data.domain,
+      configured: data.configured
+    });
+    
     return data.apiKey;
   } catch (error) {
-    console.error('❌ Failed to get Google Maps API key:', error);
+    logWithContext('error', 'Failed to get Google Maps API key', {
+      error: error.message,
+      stack: error.stack
+    });
     throw new Error(`Google Maps API key not available: ${error.message}`);
   }
 };
 
 let googleMapsPromise: Promise<typeof google.maps> | null = null;
 let apiKey: string = '';
+let retryCount = 0;
+const MAX_RETRIES = 3;
 
 export const loadGoogleMaps = async (): Promise<typeof google.maps> => {
   if (!googleMapsPromise) {
     try {
-      console.log('🗺️ Initializing Google Maps API...');
+      logWithContext('info', 'Initializing Google Maps API', {
+        retryAttempt: retryCount + 1,
+        maxRetries: MAX_RETRIES
+      });
       
       // Get the API key first
       apiKey = await fetchGoogleMapsApiKey();
@@ -51,7 +102,10 @@ export const loadGoogleMaps = async (): Promise<typeof google.maps> => {
         throw new Error('Google Maps API key not available');
       }
       
-      console.log('🔑 API key obtained, creating loader...');
+      logWithContext('info', 'API key obtained, creating loader', {
+        keyLength: apiKey.length,
+        keyPrefix: apiKey.substring(0, 8) + '...'
+      });
       
       const loader = new Loader({
         apiKey: apiKey,
@@ -60,22 +114,94 @@ export const loadGoogleMaps = async (): Promise<typeof google.maps> => {
       });
 
       googleMapsPromise = loader.load().then((google) => {
-        console.log('✅ Google Maps API loaded successfully');
+        logWithContext('info', 'Google Maps API loaded successfully', {
+          version: google.maps.version,
+          retryCount
+        });
+        retryCount = 0; // Reset retry count on success
         return google.maps;
       }).catch((error) => {
-        console.error('❌ Google Maps loader failed:', error);
+        logWithContext('error', 'Google Maps loader failed', {
+          error: error.message,
+          stack: error.stack,
+          retryCount,
+          apiKeyPrefix: apiKey ? apiKey.substring(0, 8) + '...' : 'none'
+        });
+        
+        // Enhanced error handling for specific error types
+        let enhancedError = error;
+        
+        if (error.message.includes('RefererNotAllowedMapError') || 
+            error.message.includes('ApiNotActivatedMapError') ||
+            error.message.includes('InvalidKeyMapError')) {
+          
+          const currentDomain = window.location.hostname;
+          const isPreviewDomain = currentDomain.includes('preview--') || currentDomain.includes('.lovable.app');
+          
+          enhancedError = new Error(
+            `Google Maps API Error: ${error.message}\n\n` +
+            `Current domain: ${currentDomain}\n` +
+            `Origin: ${window.location.origin}\n` +
+            `Is preview domain: ${isPreviewDomain}\n\n` +
+            (error.message.includes('RefererNotAllowedMapError') ? 
+              `Domain restriction error. Please add the following domains to your Google Cloud Console API key restrictions:\n` +
+              `• ${window.location.origin}/*\n` +
+              `• https://*.lovable.app/*\n` +
+              `• https://*.lovableproject.com/*\n\n` +
+              `The exact failing domain is: ${currentDomain}` :
+              `Please check your Google Maps API key configuration.`
+            )
+          );
+        }
+        
         // Reset promise so it can be retried
         googleMapsPromise = null;
-        throw error;
+        throw enhancedError;
       });
     } catch (error) {
-      console.error('❌ Error initializing Google Maps:', error);
+      logWithContext('error', 'Error initializing Google Maps', {
+        error: error.message,
+        stack: error.stack,
+        retryCount
+      });
+      
       // Reset promise so it can be retried
       googleMapsPromise = null;
       throw error;
     }
   }
   return googleMapsPromise;
+};
+
+// Enhanced retry mechanism
+export const loadGoogleMapsWithRetry = async (): Promise<typeof google.maps> => {
+  for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+    try {
+      retryCount = attempt;
+      return await loadGoogleMaps();
+    } catch (error) {
+      logWithContext('warn', `Google Maps load attempt ${attempt + 1} failed`, {
+        error: error.message,
+        attempt: attempt + 1,
+        maxRetries: MAX_RETRIES
+      });
+      
+      if (attempt === MAX_RETRIES - 1) {
+        logWithContext('error', 'All Google Maps load attempts exhausted', {
+          totalAttempts: MAX_RETRIES,
+          finalError: error.message
+        });
+        throw error;
+      }
+      
+      // Wait before retrying (exponential backoff)
+      const waitTime = Math.pow(2, attempt) * 1000;
+      logWithContext('info', `Waiting ${waitTime}ms before retry`, { waitTime });
+      await new Promise(resolve => setTimeout(resolve, waitTime));
+    }
+  }
+  
+  throw new Error('Failed to load Google Maps after all retry attempts');
 };
 
 // Alias for backward compatibility
@@ -89,22 +215,71 @@ export const getGoogleMapsApiKey = async (): Promise<string> => {
   return apiKey;
 };
 
-// Verify API key configuration
-export const verifyApiKeyConfiguration = async (): Promise<{ valid: boolean; message: string }> => {
+// Enhanced API key verification with detailed domain checking
+export const verifyApiKeyConfiguration = async (): Promise<{ valid: boolean; message: string; details?: any }> => {
   try {
-    console.log('🔍 Verifying API key configuration...');
+    logWithContext('info', 'Starting API key configuration verification');
+    
+    const currentDomain = window.location.hostname;
+    const currentOrigin = window.location.origin;
+    const isPreviewDomain = currentDomain.includes('preview--') || currentDomain.includes('.lovable.app');
+    
     const key = await getGoogleMapsApiKey();
     if (!key) {
-      return { valid: false, message: 'Google Maps API key not configured' };
+      return { 
+        valid: false, 
+        message: 'Google Maps API key not configured',
+        details: { currentDomain, currentOrigin, isPreviewDomain }
+      };
     }
     
-    console.log('🧪 Testing Google Maps API loading...');
-    await loadGoogleMaps();
-    return { valid: true, message: 'API key is valid and Maps loaded successfully' };
+    logWithContext('info', 'Testing Google Maps API loading with current configuration');
+    
+    try {
+      await loadGoogleMaps();
+      logWithContext('info', 'API key verification successful');
+      return { 
+        valid: true, 
+        message: 'API key is valid and Maps loaded successfully',
+        details: { currentDomain, currentOrigin, isPreviewDomain, keyLength: key.length }
+      };
+    } catch (loadError) {
+      logWithContext('error', 'API key verification failed during Maps loading', {
+        error: loadError.message,
+        currentDomain,
+        currentOrigin,
+        isPreviewDomain
+      });
+      
+      return {
+        valid: false,
+        message: `API key validation failed: ${loadError.message}`,
+        details: { 
+          currentDomain, 
+          currentOrigin, 
+          isPreviewDomain,
+          keyLength: key.length,
+          errorType: loadError.message.includes('RefererNotAllowedMapError') ? 'domain_restriction' : 'other'
+        }
+      };
+    }
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error occurred';
-    console.error('❌ API key validation failed:', message);
-    return { valid: false, message: `API key validation failed: ${message}` };
+    logWithContext('error', 'API key validation failed', {
+      error: message,
+      currentDomain: window.location.hostname,
+      currentOrigin: window.location.origin
+    });
+    
+    return { 
+      valid: false, 
+      message: `API key validation failed: ${message}`,
+      details: { 
+        currentDomain: window.location.hostname,
+        currentOrigin: window.location.origin,
+        error: message
+      }
+    };
   }
 };
 
@@ -119,13 +294,13 @@ export const geocodeAddress = async (address: string): Promise<google.maps.LatLn
           const location = results[0].geometry.location;
           resolve({ lat: location.lat(), lng: location.lng() });
         } else {
-          console.error('Geocoding failed:', status);
+          logWithContext('error', 'Geocoding failed', { address, status });
           reject(null);
         }
       });
     });
   } catch (error) {
-    console.error('Error geocoding address:', error);
+    logWithContext('error', 'Error geocoding address', { address, error: error.message });
     return null;
   }
 };
