@@ -1,9 +1,9 @@
 
 import { useState, useCallback } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { AffiliateEarning, ServiceWithEarnings } from '../useAffiliateEarnings';
 import { combineServicesWithEarnings } from './earningsUtils';
-import { supabase } from '@/integrations/supabase/client';
 
 export const useAffiliateData = (userId: string | undefined) => {
   const [earnings, setEarnings] = useState<AffiliateEarning[]>([]);
@@ -23,15 +23,15 @@ export const useAffiliateData = (userId: string | undefined) => {
     setError(null);
 
     try {
-      // Fetch actual services data from service_providers table
+      // Load all services
       const { data: servicesData, error: servicesError } = await supabase
-        .from('service_providers')
+        .from('services')
         .select('*')
-        .eq('is_active', true);
+        .eq('status', 'active');
 
       if (servicesError) throw servicesError;
 
-      // Fetch actual earnings data from affiliate_earnings table
+      // Load user's earnings
       const { data: earningsData, error: earningsError } = await supabase
         .from('affiliate_earnings')
         .select('*')
@@ -39,29 +39,11 @@ export const useAffiliateData = (userId: string | undefined) => {
 
       if (earningsError) throw earningsError;
 
-      // Transform earnings data to match expected format
-      const formattedEarnings: AffiliateEarning[] = (earningsData || []).map(item => ({
-        id: item.id,
-        service: item.service,
-        earnings: Number(item.earnings),
-        updated_at: item.updated_at,
-        last_sync_status: item.last_sync_status
-      }));
-
       // Set earnings data
-      setEarnings(formattedEarnings);
-
-      // Transform services data to match expected format
-      const formattedServices = (servicesData || []).map(service => ({
-        name: service.name,
-        integration_type: service.category,
-        api_url: service.website_url,
-        login_url: service.website_url,
-        status: service.is_active ? 'active' : 'inactive'
-      }));
+      setEarnings(earningsData || []);
 
       // Combine services with earnings data
-      const servicesWithEarnings = combineServicesWithEarnings(formattedServices, formattedEarnings);
+      const servicesWithEarnings = combineServicesWithEarnings(servicesData, earningsData);
       setServices(servicesWithEarnings);
 
     } catch (err) {

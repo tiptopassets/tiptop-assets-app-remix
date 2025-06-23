@@ -26,9 +26,9 @@ export const useFlexOffersSubId = () => {
           .select('service')
           .eq('user_id', user.id)
           .eq('service', 'FlexOffers')
-          .maybeSingle();
+          .single();
           
-        if (queryError) {
+        if (queryError && queryError.code !== 'PGRST116') {
           throw queryError;
         }
         

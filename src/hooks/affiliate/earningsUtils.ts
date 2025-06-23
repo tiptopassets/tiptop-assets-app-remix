@@ -1,7 +1,7 @@
 
-import { useToast } from '@/hooks/use-toast';
-import { AffiliateEarning, ServiceWithEarnings } from '../useAffiliateEarnings';
 import { supabase } from '@/integrations/supabase/client';
+import { AffiliateEarning, ServiceWithEarnings } from '../useAffiliateEarnings';
+import { useToast } from '@/hooks/use-toast';
 
 // Function to sync earnings for a specific service
 export const syncServiceEarnings = async (
@@ -21,31 +21,32 @@ export const syncServiceEarnings = async (
   }
 
   try {
-    // Update or insert earnings record
-    const earnings = manualEarnings || Math.floor(Math.random() * 100);
-    
-    const { error } = await supabase
-      .from('affiliate_earnings')
-      .upsert({
+    // Call the edge function to sync earnings
+    const { data, error } = await supabase.functions.invoke('sync_affiliate_earnings', {
+      body: {
         user_id: userId,
-        service: service,
-        earnings: earnings,
-        last_sync_status: 'completed',
-        last_sync_at: new Date().toISOString()
-      });
+        service,
+        earnings: manualEarnings,
+        credentials,
+      },
+    });
 
     if (error) throw error;
-    
-    toast({
-      title: 'Sync Successful',
-      description: `Updated ${service} earnings to $${earnings.toFixed(2)}`,
-    });
-    
-    return { 
-      success: true, 
-      earnings: earnings,
-      timestamp: new Date().toISOString()
-    };
+
+    if (data.success) {
+      toast({
+        title: 'Sync Successful',
+        description: `Updated ${service} earnings to $${data.earnings.toFixed(2)}`,
+      });
+      
+      return { 
+        success: true, 
+        earnings: data.earnings,
+        timestamp: data.timestamp
+      };
+    } else {
+      throw new Error(data.error || 'Unknown error during sync');
+    }
   } catch (err) {
     console.error(`Error syncing ${service} earnings:`, err);
     
@@ -80,14 +81,16 @@ export const saveServiceCredentials = async (
   }
 
   try {
-    // In a real app, you would encrypt these credentials before storing
+    // In a real app, you would encrypt these credentials
     const { error } = await supabase
       .from('affiliate_credentials')
       .upsert({
         user_id: userId,
-        service: service,
-        encrypted_email: email, // Should be encrypted in production
-        encrypted_password: password, // Should be encrypted in production
+        service,
+        encrypted_email: email, // Should be encrypted
+        encrypted_password: password, // Should be encrypted
+      }, {
+        onConflict: 'user_id,service'
       });
 
     if (error) throw error;
@@ -124,9 +127,9 @@ export const checkServiceCredentials = async (
       .select('id')
       .eq('user_id', userId)
       .eq('service', service)
-      .maybeSingle();
+      .single();
 
-    if (error) throw error;
+    if (error && error.code !== 'PGRST116') throw error;
     
     return { exists: !!data };
   } catch (err) {

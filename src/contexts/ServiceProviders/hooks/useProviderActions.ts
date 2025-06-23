@@ -1,5 +1,6 @@
 
 import { useState } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import {
   ServiceProviderInfo,
@@ -28,27 +29,49 @@ export const useProviderActions = (
     
     setActionInProgress(true);
     try {
-      // For now, we'll use the partner_integration_progress table to track connections
-      // This is a placeholder until proper affiliate tables are created
-      
-      // Find the provider and update UI
-      const provider = availableProviders.find(p => p.id.toLowerCase() === providerId.toLowerCase());
-      if (provider) {
-        const updatedProvider = {...provider, connected: true};
-        setConnectedProviders([...connectedProviders, updatedProvider]);
-        setAvailableProviders(
-          availableProviders.map(p => 
-            p.id.toLowerCase() === providerId.toLowerCase() 
-              ? {...p, connected: true} 
-              : p
-          )
-        );
+      // For FlexOffers, we'll generate a unique sub-affiliate ID for the user
+      if (providerId.toLowerCase() === 'flexoffers') {
+        const subAffiliateId = `tiptop_${userId.substring(0, 8)}`;
+        
+        // Create a placeholder in affiliate_earnings
+        const { error: earningsError } = await supabase
+          .from('affiliate_earnings')
+          .insert({
+            user_id: userId,
+            service: 'FlexOffers',
+            earnings: 0,
+            last_sync_status: 'pending'
+          });
+        
+        if (earningsError) throw earningsError;
+        
+        // Find the FlexOffers provider and update UI
+        const flexoffersProvider = availableProviders.find(p => p.id.toLowerCase() === providerId.toLowerCase());
+        if (flexoffersProvider) {
+          const updatedProvider = {...flexoffersProvider, connected: true};
+          setConnectedProviders([...connectedProviders, updatedProvider]);
+          setAvailableProviders(
+            availableProviders.map(p => 
+              p.id.toLowerCase() === providerId.toLowerCase() 
+                ? {...p, connected: true} 
+                : p
+            )
+          );
+        }
         
         toast({
-          title: 'Provider Connected',
-          description: `Successfully connected to ${provider.name}`,
+          title: 'FlexOffers Connected',
+          description: 'Successfully connected to FlexOffers',
         });
+        
+        return;
       }
+      
+      // For other providers, we'll use the existing flow
+      toast({
+        title: 'Coming Soon',
+        description: 'Provider connection functionality will be available soon',
+      });
     } catch (err) {
       console.error('Error connecting to provider:', err);
       toast({
@@ -74,23 +97,44 @@ export const useProviderActions = (
     
     setActionInProgress(true);
     try {
+      // For FlexOffers, we'll register the sub-affiliate ID
+      if (formData.service?.toLowerCase() === 'flexoffers' && formData.subAffiliateId) {
+        // Create a placeholder in affiliate_earnings
+        await supabase
+          .from('affiliate_earnings')
+          .insert({
+            user_id: userId,
+            service: 'FlexOffers',
+            earnings: 0,
+            last_sync_status: 'pending'
+          });
+        
+        toast({
+          title: 'FlexOffers Registered',
+          description: 'Your FlexOffers sub-affiliate ID has been registered.',
+        });
+        
+        // Refresh the providers list
+        const provider = availableProviders.find(p => p.id.toLowerCase() === formData.service?.toLowerCase());
+        if (provider) {
+          setConnectedProviders([...connectedProviders, {...provider, connected: true}]);
+          setAvailableProviders(
+            availableProviders.map(p => 
+              p.id.toLowerCase() === formData.service?.toLowerCase() 
+                ? {...p, connected: true} 
+                : p
+            )
+          );
+        }
+        
+        return;
+      }
+      
+      // For other providers, use the default flow
       toast({
-        title: 'Registration Started',
+        title: 'Coming Soon',
         description: 'Provider registration functionality will be available soon',
       });
-      
-      // Refresh the providers list
-      const provider = availableProviders.find(p => p.id.toLowerCase() === formData.service?.toLowerCase());
-      if (provider) {
-        setConnectedProviders([...connectedProviders, {...provider, connected: true}]);
-        setAvailableProviders(
-          availableProviders.map(p => 
-            p.id.toLowerCase() === formData.service?.toLowerCase() 
-              ? {...p, connected: true} 
-              : p
-          )
-        );
-      }
     } catch (err) {
       console.error('Error registering with provider:', err);
       toast({
@@ -116,19 +160,36 @@ export const useProviderActions = (
     
     setActionInProgress(true);
     try {
-      // Update the UI
-      setConnectedProviders(connectedProviders.filter(p => p.id.toLowerCase() !== providerId.toLowerCase()));
-      setAvailableProviders(
-        availableProviders.map(p => 
-          p.id.toLowerCase() === providerId.toLowerCase() 
-            ? {...p, connected: false} 
-            : p
-        )
-      );
+      // For FlexOffers, remove the earnings record
+      if (providerId.toLowerCase() === 'flexoffers') {
+        await supabase
+          .from('affiliate_earnings')
+          .delete()
+          .eq('user_id', userId)
+          .eq('service', 'FlexOffers');
+        
+        // Update the UI
+        setConnectedProviders(connectedProviders.filter(p => p.id.toLowerCase() !== providerId.toLowerCase()));
+        setAvailableProviders(
+          availableProviders.map(p => 
+            p.id.toLowerCase() === providerId.toLowerCase() 
+              ? {...p, connected: false} 
+              : p
+          )
+        );
+        
+        toast({
+          title: 'FlexOffers Disconnected',
+          description: 'Successfully disconnected from FlexOffers',
+        });
+        
+        return;
+      }
       
+      // For other providers, use the default flow
       toast({
-        title: 'Provider Disconnected',
-        description: 'Successfully disconnected from provider',
+        title: 'Coming Soon',
+        description: 'Provider disconnection functionality will be available soon',
       });
     } catch (err) {
       console.error('Error disconnecting provider:', err);
