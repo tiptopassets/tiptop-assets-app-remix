@@ -2,21 +2,22 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { useBundleRecommendations } from '@/hooks/useBundleRecommendations';
+import { BundleRecommendation } from '@/contexts/ServiceProviders/types';
 import BundleRecommendationCard from './BundleRecommendationCard';
 import { Loader2, Package } from 'lucide-react';
 
 interface BundleRecommendationsProps {
   detectedAssets: string[];
-  onSelectBundle: (recommendation: any) => void;
+  onSelectBundle: (recommendation: BundleRecommendation) => void;
 }
 
 const BundleRecommendations: React.FC<BundleRecommendationsProps> = ({
   detectedAssets,
   onSelectBundle
 }) => {
-  const { recommendations, loading, error } = useBundleRecommendations();
+  const { recommendations, isLoading, error } = useBundleRecommendations(detectedAssets);
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center py-8">
         <Loader2 className="h-8 w-8 animate-spin text-tiptop-purple" />
@@ -61,55 +62,14 @@ const BundleRecommendations: React.FC<BundleRecommendationsProps> = ({
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {recommendations.map((recommendation, index) => {
-          // Transform the recommendation to match the BundleRecommendationCard expected format
-          const transformedRecommendation = {
-            bundle: {
-              id: recommendation.id,
-              name: recommendation.name,
-              description: recommendation.description,
-              asset_requirements: recommendation.assets,
-              min_assets: 1,
-              max_providers_per_asset: 3,
-              total_setup_cost: recommendation.totalSetupCost,
-              total_monthly_earnings_low: recommendation.monthlyEarningsLow,
-              total_monthly_earnings_high: recommendation.monthlyEarningsHigh,
-              is_active: true
-            },
-            providers: recommendation.providers.map(provider => ({
-              id: provider.id,
-              name: provider.name,
-              category: provider.category,
-              description: `${provider.name} - ${provider.category} service provider`,
-              logo_url: '',
-              website_url: '',
-              affiliate_program_url: '',
-              referral_link_template: '',
-              commission_rate: 5,
-              setup_cost: provider.setupCost,
-              avg_monthly_earnings_low: provider.monthlyEarningsLow,
-              avg_monthly_earnings_high: provider.monthlyEarningsHigh,
-              conversion_rate: 2.5,
-              priority: 1,
-              is_active: true
-            })),
-            totalEarnings: {
-              low: recommendation.monthlyEarningsLow,
-              high: recommendation.monthlyEarningsHigh
-            },
-            matchingAssets: recommendation.assets,
-            setupCost: recommendation.totalSetupCost
-          };
-
-          return (
-            <BundleRecommendationCard
-              key={recommendation.id}
-              recommendation={transformedRecommendation}
-              onSelectBundle={onSelectBundle}
-              index={index}
-            />
-          );
-        })}
+        {recommendations.map((recommendation, index) => (
+          <BundleRecommendationCard
+            key={recommendation.bundle.id}
+            recommendation={recommendation}
+            onSelectBundle={onSelectBundle}
+            index={index}
+          />
+        ))}
       </div>
     </motion.div>
   );

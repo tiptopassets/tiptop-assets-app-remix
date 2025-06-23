@@ -6,7 +6,8 @@ import MapErrorOverlay from './map/MapErrorOverlay';
 import MapVisualEffects from './map/MapVisualEffects';
 import { useGoogleMapInstance } from '@/hooks/useGoogleMapInstance';
 import { Button } from '@/components/ui/button';
-import { AlertCircle, MapPin, RefreshCw, Settings, ExternalLink, Clock } from 'lucide-react';
+import { AlertCircle, MapPin, RefreshCw } from 'lucide-react';
+import { loadGoogleMaps } from '@/utils/googleMapsLoader';
 
 const GoogleMap = () => {
   const { 
@@ -24,12 +25,11 @@ const GoogleMap = () => {
     useLocalAnalysis
   } = useGoogleMap();
   
-  const { mapRef, mapInstance, mapLoadError, isLoading } = useGoogleMapInstance(zoomLevel, setZoomLevel);
+  const { mapRef, mapInstance, mapLoadError } = useGoogleMapInstance(zoomLevel, setZoomLevel);
 
   // Effect for updating the map instance in the context
   useEffect(() => {
     if (mapInstance) {
-      console.log('🗺️ GoogleMap: Setting map instance in context');
       setMapInstance(mapInstance);
       setMapLoaded(true);
     }
@@ -38,8 +38,6 @@ const GoogleMap = () => {
   // Effect for adding marker when analysis is complete
   useEffect(() => {
     if (!mapInstance || !address || !analysisComplete || isAnalyzing) return;
-
-    console.log('🗺️ GoogleMap: Setting up marker for completed analysis');
 
     // Create the geocoder to convert address to coordinates if not already available
     if (!addressCoordinates && address) {
@@ -67,183 +65,26 @@ const GoogleMap = () => {
   // When we have coordinates, center and zoom the map
   useEffect(() => {
     if (mapInstance && addressCoordinates) {
-      console.log('🗺️ GoogleMap: Centering map on address coordinates');
       mapInstance.setCenter(addressCoordinates);
-      mapInstance.setZoom(18);
+      mapInstance.setZoom(18); // Zoom in when we have an address
     }
   }, [mapInstance, addressCoordinates]);
 
-  // Show loading state while Google Maps is loading
-  if (isLoading && !useLocalAnalysis) {
-    return (
-      <div className="absolute inset-0 z-0 flex flex-col items-center justify-center bg-gradient-to-b from-gray-900 to-purple-900">
-        <div className="bg-black/40 backdrop-blur-md p-8 rounded-lg text-center border border-white/10 max-w-md">
-          <div className="flex items-center justify-center mb-4">
-            <div className="w-16 h-16 border-4 border-tiptop-purple border-t-transparent rounded-full animate-spin"></div>
-          </div>
-          <h2 className="text-xl font-bold text-white mb-2 flex items-center justify-center gap-2">
-            <Clock className="h-5 w-5" />
-            Loading Google Maps
-          </h2>
-          <p className="text-white/80 mb-4">Initializing map instance...</p>
-          <div className="text-sm text-white/60">
-            <p>This may take a few moments if it's your first visit.</p>
-          </div>
-          
-          {/* Option to switch to demo mode while waiting */}
-          <div className="mt-6">
-            <Button 
-              onClick={() => setUseLocalAnalysis(true)} 
-              variant="outline"
-              className="border-white/20 text-white hover:bg-white/10"
-            >
-              <Settings className="h-4 w-4 mr-2" />
-              Switch to Demo Mode
-            </Button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Enhanced error handling with detailed domain information
+  // Handle map loading error with improved messaging
   if (mapLoadError && !useLocalAnalysis) {
-    const isConfigError = mapLoadError.includes('API key not configured');
-    const isDomainError = mapLoadError.includes('RefererNotAllowedMapError') || 
-                         mapLoadError.includes('Domain restriction error') ||
-                         mapLoadError.includes('domain');
-    const isInvalidKeyError = mapLoadError.includes('InvalidKeyMapError');
-    const isApiNotActivatedError = mapLoadError.includes('ApiNotActivatedMapError');
-    const isTimeoutError = mapLoadError.includes('timed out');
-    
-    const currentDomain = window.location.hostname;
-    const currentOrigin = window.location.origin;
-    const isPreviewDomain = currentDomain.includes('preview--') || currentDomain.includes('.lovable.app');
-    
     return (
       <div className="absolute inset-0 z-0 flex flex-col items-center justify-center bg-gradient-to-b from-gray-900 to-purple-900">
-        <div className="bg-black/40 backdrop-blur-md p-8 rounded-lg max-w-2xl text-center border border-white/10">
+        <div className="bg-black/40 backdrop-blur-md p-8 rounded-lg max-w-md text-center border border-white/10">
           <AlertCircle className="h-12 w-12 text-red-400 mx-auto mb-4" />
-          <h2 className="text-xl font-bold text-white mb-2">Google Maps Configuration Issue</h2>
-          
-          {isTimeoutError && (
-            <>
-              <p className="text-white/80 mb-4">
-                Google Maps is taking longer than expected to load. This could be due to network issues or API configuration problems.
-              </p>
-              <div className="text-left text-sm text-white/70 mb-6 bg-gray-800/50 p-4 rounded">
-                <p className="font-semibold mb-2">Possible causes:</p>
-                <ul className="list-disc list-inside space-y-1">
-                  <li>Slow network connection</li>
-                  <li>Google Maps API key not configured</li>
-                  <li>Domain restrictions on the API key</li>
-                  <li>API quotas exceeded</li>
-                </ul>
-              </div>
-            </>
-          )}
-          
-          {isDomainError && (
-            <>
-              <p className="text-white/80 mb-4">
-                The API key domain restrictions need to be updated for this domain.
-              </p>
-              <div className="text-left text-sm text-white/70 mb-6 bg-gray-800/50 p-4 rounded">
-                <p className="font-semibold mb-2">Current Environment:</p>
-                <p className="mb-2">Domain: <code className="bg-gray-700 px-1 rounded">{currentDomain}</code></p>
-                <p className="mb-4">Origin: <code className="bg-gray-700 px-1 rounded">{currentOrigin}</code></p>
-                
-                <p className="font-semibold mb-2">To fix this:</p>
-                <ol className="list-decimal list-inside space-y-1">
-                  <li>Go to Google Cloud Console</li>
-                  <li>Navigate to APIs & Services → Credentials</li>
-                  <li>Edit your Google Maps API key</li>
-                  <li>Add these domains to restrictions:</li>
-                  <li className="ml-4"><code className="bg-gray-700 px-1 rounded">{currentOrigin}/*</code></li>
-                  <li className="ml-4"><code className="bg-gray-700 px-1 rounded">https://*.lovable.app/*</code></li>
-                  <li className="ml-4"><code className="bg-gray-700 px-1 rounded">https://*.lovableproject.com/*</code></li>
-                  {isPreviewDomain && (
-                    <li className="text-yellow-300 mt-2">
-                      <strong>Note:</strong> Preview domains with double dashes (--) need explicit allowlisting
-                    </li>
-                  )}
-                  <li>Save and refresh this page</li>
-                </ol>
-              </div>
-            </>
-          )}
-          
-          {isConfigError && (
-            <>
-              <p className="text-white/80 mb-4">
-                The Google Maps API key is not configured in Supabase Edge Function Secrets.
-              </p>
-              <div className="text-left text-sm text-white/70 mb-6 bg-gray-800/50 p-4 rounded">
-                <p className="font-semibold mb-2">To fix this:</p>
-                <ol className="list-decimal list-inside space-y-1">
-                  <li>Go to Supabase Dashboard</li>
-                  <li>Navigate to Edge Functions → Secrets</li>
-                  <li>Add <code className="bg-gray-700 px-1 rounded">GOOGLE_MAPS_API_KEY</code></li>
-                  <li>Set it to your Google Maps API key</li>
-                  <li>Refresh this page</li>
-                </ol>
-              </div>
-            </>
-          )}
-          
-          {isInvalidKeyError && (
-            <>
-              <p className="text-white/80 mb-4">
-                The provided Google Maps API key is invalid.
-              </p>
-              <div className="text-left text-sm text-white/70 mb-6 bg-gray-800/50 p-4 rounded">
-                <p className="font-semibold mb-2">To fix this:</p>
-                <ol className="list-decimal list-inside space-y-1">
-                  <li>Check your Google Cloud Console for the correct API key</li>
-                  <li>Verify the key is properly copied</li>
-                  <li>Update the GOOGLE_MAPS_API_KEY in Supabase secrets</li>
-                  <li>Refresh this page</li>
-                </ol>
-              </div>
-            </>
-          )}
-          
-          {isApiNotActivatedError && (
-            <>
-              <p className="text-white/80 mb-4">
-                The Maps JavaScript API is not activated in your Google Cloud project.
-              </p>
-              <div className="text-left text-sm text-white/70 mb-6 bg-gray-800/50 p-4 rounded">
-                <p className="font-semibold mb-2">To fix this:</p>
-                <ol className="list-decimal list-inside space-y-1">
-                  <li>Go to Google Cloud Console</li>
-                  <li>Navigate to APIs & Services → Library</li>
-                  <li>Search for "Maps JavaScript API"</li>
-                  <li>Click "Enable"</li>
-                  <li>Refresh this page</li>
-                </ol>
-              </div>
-            </>
-          )}
-          
-          {!isConfigError && !isDomainError && !isInvalidKeyError && !isApiNotActivatedError && (
-            <>
-              <p className="text-white/80 mb-4">
-                Unable to load Google Maps. Error details:
-              </p>
-              <div className="text-left text-sm text-white/70 mb-6 bg-gray-800/50 p-4 rounded">
-                <p className="mb-2 text-red-300">{mapLoadError}</p>
-                <p className="font-semibold mb-2">This could be due to:</p>
-                <ul className="list-disc list-inside space-y-1">
-                  <li>API key configuration issues</li>
-                  <li>Domain restrictions</li>
-                  <li>Network connectivity</li>
-                  <li>API quotas or billing</li>
-                </ul>
-              </div>
-            </>
-          )}
-          
+          <h2 className="text-xl font-bold text-white mb-2">Google Maps Unavailable</h2>
+          <p className="text-white/80 mb-6">
+            Unable to load Google Maps. This could be due to:
+          </p>
+          <ul className="text-left text-white/70 mb-6 text-sm">
+            <li>• API key configuration issues</li>
+            <li>• Domain restrictions</li>
+            <li>• Network connectivity</li>
+          </ul>
           <div className="space-y-3">
             <Button 
               onClick={() => window.location.reload()} 
@@ -253,17 +94,9 @@ const GoogleMap = () => {
               Retry Loading
             </Button>
             <Button 
-              onClick={() => window.open('https://console.cloud.google.com/apis/credentials', '_blank')}
-              className="w-full bg-gray-600 hover:bg-gray-700"
-            >
-              <ExternalLink className="h-4 w-4 mr-2" />
-              Open Google Cloud Console
-            </Button>
-            <Button 
               onClick={() => setUseLocalAnalysis(true)} 
               className="w-full bg-tiptop-purple hover:bg-tiptop-purple/90"
             >
-              <Settings className="h-4 w-4 mr-2" />
               Switch to Demo Mode
             </Button>
           </div>
