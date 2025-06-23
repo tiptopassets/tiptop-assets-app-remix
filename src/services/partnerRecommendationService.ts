@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 export interface PartnerRecommendation {
@@ -22,41 +21,30 @@ export interface PartnerIntegrationProgress {
   next_steps: string[];
 }
 
-// Database type from Supabase (what we get from the database)
+// Simplified database type to avoid complex type inference
 interface DatabaseServiceProvider {
   id: string;
   name: string;
   category: string;
   api_type: string;
   affiliate_base_url: string | null;
-  supported_assets: any; // JSON field from database
+  supported_assets: string[] | null;
   priority_score: number | null;
   avg_earnings_low: number | null;
   avg_earnings_high: number | null;
   commission_rate: number | null;
-  setup_requirements: any; // JSON field from database
+  setup_requirements: Record<string, any> | null;
   integration_status: string;
   created_at: string;
   updated_at: string;
 }
 
-// Our application interface (what we use in the code)
-export interface ServiceProvider {
-  name: string;
-  category: string;
-  affiliate_base_url: string;
-  supported_assets: string[];
-  priority_score: number;
-  avg_earnings_low: number;
-  avg_earnings_high: number;
-  commission_rate: number;
-  setup_requirements: any;
-}
-
-// Helper function to safely convert Json array to string array
-const jsonArrayToStringArray = (jsonArray: any): string[] => {
-  if (!Array.isArray(jsonArray)) return [];
-  return jsonArray.filter((item): item is string => typeof item === 'string');
+// Helper function to safely convert array data
+const ensureStringArray = (data: any): string[] => {
+  if (Array.isArray(data)) {
+    return data.filter(item => typeof item === 'string');
+  }
+  return [];
 };
 
 export const generatePartnerRecommendations = async (
@@ -76,45 +64,41 @@ export const generatePartnerRecommendations = async (
 
     const recommendations: PartnerRecommendation[] = [];
     
-    providers?.forEach((dbProvider: DatabaseServiceProvider) => {
-      // Convert database provider to our application interface
-      const provider: ServiceProvider = {
-        name: dbProvider.name,
-        category: dbProvider.category,
-        affiliate_base_url: dbProvider.affiliate_base_url || '',
-        supported_assets: Array.isArray(dbProvider.supported_assets) 
-          ? dbProvider.supported_assets 
-          : [],
-        priority_score: dbProvider.priority_score || 5,
-        avg_earnings_low: dbProvider.avg_earnings_low || 0,
-        avg_earnings_high: dbProvider.avg_earnings_high || 0,
-        commission_rate: dbProvider.commission_rate || 0,
-        setup_requirements: dbProvider.setup_requirements || {}
-      };
+    if (providers) {
+      providers.forEach((dbProvider: any) => {
+        // Safely extract and convert database fields
+        const providerName = dbProvider.name || '';
+        const category = dbProvider.category || '';
+        const affiliateUrl = dbProvider.affiliate_base_url || '';
+        const supportedAssets = ensureStringArray(dbProvider.supported_assets);
+        const priorityScore = dbProvider.priority_score || 5;
+        const avgEarningsLow = dbProvider.avg_earnings_low || 0;
+        const avgEarningsHigh = dbProvider.avg_earnings_high || 0;
+        const setupRequirements = dbProvider.setup_requirements || {};
 
-      // Check if provider supports any of the detected assets
-      const supportedAssets = provider.supported_assets || [];
-      const matchingAssets = detectedAssets.filter(asset => 
-        supportedAssets.some(supported => 
-          supported.toLowerCase().includes(asset.toLowerCase()) || 
-          asset.toLowerCase().includes(supported.toLowerCase())
-        )
-      );
+        // Check if provider supports any of the detected assets
+        const matchingAssets = detectedAssets.filter(asset => 
+          supportedAssets.some(supported => 
+            supported.toLowerCase().includes(asset.toLowerCase()) || 
+            asset.toLowerCase().includes(supported.toLowerCase())
+          )
+        );
 
-      if (matchingAssets.length > 0) {
-        const recommendation: PartnerRecommendation = {
-          id: `${onboardingId}_${provider.name}`,
-          partner_name: provider.name,
-          asset_type: matchingAssets[0],
-          priority_score: provider.priority_score,
-          estimated_monthly_earnings: (provider.avg_earnings_low + provider.avg_earnings_high) / 2,
-          setup_complexity: getSetupComplexity(provider.setup_requirements),
-          recommendation_reason: `Perfect match for your ${matchingAssets.join(', ')} asset${matchingAssets.length > 1 ? 's' : ''}`,
-          referral_link: provider.affiliate_base_url
-        };
-        recommendations.push(recommendation);
-      }
-    });
+        if (matchingAssets.length > 0) {
+          const recommendation: PartnerRecommendation = {
+            id: `${onboardingId}_${providerName}`,
+            partner_name: providerName,
+            asset_type: matchingAssets[0],
+            priority_score: priorityScore,
+            estimated_monthly_earnings: (avgEarningsLow + avgEarningsHigh) / 2,
+            setup_complexity: getSetupComplexity(setupRequirements),
+            recommendation_reason: `Perfect match for your ${matchingAssets.join(', ')} asset${matchingAssets.length > 1 ? 's' : ''}`,
+            referral_link: affiliateUrl
+          };
+          recommendations.push(recommendation);
+        }
+      });
+    }
 
     // Sort by priority score and estimated earnings
     recommendations.sort((a, b) => 
@@ -182,7 +166,7 @@ export const initializePartnerIntegration = async (
       referral_link: data.referral_link,
       registration_data: data.registration_data || {},
       earnings_data: data.earnings_data || {},
-      next_steps: jsonArrayToStringArray(data.next_steps)
+      next_steps: ensureStringArray(data.next_steps)
     };
 
   } catch (error) {
@@ -244,7 +228,7 @@ export const getUserIntegrationProgress = async (
       referral_link: item.referral_link || '',
       registration_data: item.registration_data || {},
       earnings_data: item.earnings_data || {},
-      next_steps: jsonArrayToStringArray(item.next_steps)
+      next_steps: ensureStringArray(item.next_steps)
     })) || [];
 
   } catch (error) {
