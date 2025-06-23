@@ -1031,7 +1031,7 @@ export type Database = {
     }
     Functions: {
       get_user_role: {
-        Args: { user_uuid: string }
+        Args: Record<PropertyKey, never> | { user_uuid: string }
         Returns: string
       }
       sum_login_count: {
