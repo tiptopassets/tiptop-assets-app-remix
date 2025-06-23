@@ -5,7 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
-import GoogleMapProvider from "@/contexts/GoogleMapContext";
+import { GoogleMapProvider } from "@/contexts/GoogleMapContext";
 import { ModelGenerationProvider } from "@/contexts/ModelGeneration";
 import { ServiceProviderProvider } from "@/contexts/ServiceProviders";
 import ErrorBoundary from "@/components/ErrorBoundary";

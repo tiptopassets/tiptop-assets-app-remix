@@ -3,7 +3,9 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import GoogleMapsDiagnostic from '@/components/diagnostics/GoogleMapsDiagnostic';
+import ApiKeyConfiguration from '@/components/diagnostics/ApiKeyConfiguration';
 
 const GoogleMapsDiagnosticPage = () => {
   return (
@@ -20,14 +22,27 @@ const GoogleMapsDiagnosticPage = () => {
         
         <div className="mb-8 text-center">
           <h1 className="text-3xl font-bold text-white mb-2">
-            Google Maps Diagnostic Tool
+            Google Maps Configuration & Diagnostics
           </h1>
           <p className="text-gray-400">
-            Comprehensive testing of all Google Maps API connections and configurations
+            Configure your API key and test all Google Maps connections
           </p>
         </div>
         
-        <GoogleMapsDiagnostic />
+        <Tabs defaultValue="configure" className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="configure">Configure API Key</TabsTrigger>
+            <TabsTrigger value="diagnostic">Run Diagnostics</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="configure" className="mt-6">
+            <ApiKeyConfiguration />
+          </TabsContent>
+          
+          <TabsContent value="diagnostic" className="mt-6">
+            <GoogleMapsDiagnostic />
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );
