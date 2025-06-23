@@ -17,25 +17,26 @@ export interface PartnerIntegrationProgress {
   partner_name: string;
   integration_status: 'pending' | 'in_progress' | 'completed' | 'failed';
   referral_link?: string;
-  registration_data: Record<string, any>;
-  earnings_data: Record<string, any>;
+  registration_data: any;
+  earnings_data: any;
   next_steps: string[];
 }
 
-// Helper function to safely convert Json to Record<string, any>
-const safeJsonToRecord = (json: any): Record<string, any> => {
-  if (json && typeof json === 'object' && !Array.isArray(json)) {
-    return json as Record<string, any>;
-  }
-  return {};
-};
-
-// Helper function to safely convert Json to string array
+// Helper function to safely convert Json to array of strings
 const safeJsonToStringArray = (json: any): string[] => {
+  if (!json) return [];
   if (Array.isArray(json)) {
     return json.filter(item => typeof item === 'string');
   }
   return [];
+};
+
+// Helper function to safely convert Json to object
+const safeJsonToObject = (json: any): any => {
+  if (json && typeof json === 'object' && !Array.isArray(json)) {
+    return json;
+  }
+  return {};
 };
 
 export const generatePartnerRecommendations = async (
@@ -57,7 +58,7 @@ export const generatePartnerRecommendations = async (
     if (providers) {
       providers.forEach((dbProvider) => {
         const supportedAssets = safeJsonToStringArray(dbProvider.supported_assets);
-        const setupRequirements = safeJsonToRecord(dbProvider.setup_requirements);
+        const setupRequirements = safeJsonToObject(dbProvider.setup_requirements);
 
         const matchingAssets = detectedAssets.filter(asset => 
           supportedAssets.some(supported => 
@@ -144,8 +145,8 @@ export const initializePartnerIntegration = async (
       partner_name: data.partner_name,
       integration_status: data.integration_status as 'pending' | 'in_progress' | 'completed' | 'failed',
       referral_link: data.referral_link || '',
-      registration_data: safeJsonToRecord(data.registration_data),
-      earnings_data: safeJsonToRecord(data.earnings_data),
+      registration_data: safeJsonToObject(data.registration_data),
+      earnings_data: safeJsonToObject(data.earnings_data),
       next_steps: safeJsonToStringArray(data.next_steps)
     };
 
@@ -158,10 +159,10 @@ export const initializePartnerIntegration = async (
 export const updateIntegrationStatus = async (
   integrationId: string,
   status: 'pending' | 'in_progress' | 'completed' | 'failed',
-  additionalData?: Record<string, any>
+  additionalData?: any
 ): Promise<boolean> => {
   try {
-    const updateData: Record<string, any> = {
+    const updateData: any = {
       integration_status: status,
       updated_at: new Date().toISOString()
     };
@@ -206,8 +207,8 @@ export const getUserIntegrationProgress = async (
       partner_name: item.partner_name,
       integration_status: item.integration_status as 'pending' | 'in_progress' | 'completed' | 'failed',
       referral_link: item.referral_link || '',
-      registration_data: safeJsonToRecord(item.registration_data),
-      earnings_data: safeJsonToRecord(item.earnings_data),
+      registration_data: safeJsonToObject(item.registration_data),
+      earnings_data: safeJsonToObject(item.earnings_data),
       next_steps: safeJsonToStringArray(item.next_steps)
     })) || [];
 
@@ -217,7 +218,7 @@ export const getUserIntegrationProgress = async (
   }
 };
 
-const getSetupComplexity = (requirements: Record<string, any>): 'easy' | 'medium' | 'hard' => {
+const getSetupComplexity = (requirements: any): 'easy' | 'medium' | 'hard' => {
   if (!requirements || !requirements.requirements) return 'medium';
   
   const reqCount = Array.isArray(requirements.requirements) ? requirements.requirements.length : 0;
@@ -227,7 +228,7 @@ const getSetupComplexity = (requirements: Record<string, any>): 'easy' | 'medium
 };
 
 const getNextSteps = (partnerName: string): string[] => {
-  const steps: Record<string, string[]> = {
+  const steps: { [key: string]: string[] } = {
     'Honeygain': [
       'Click the referral link to sign up',
       'Download the Honeygain app',
