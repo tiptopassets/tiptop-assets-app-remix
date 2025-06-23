@@ -1,4 +1,3 @@
-
 import React, { createContext, useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useUserData } from '@/hooks/useUserData';
@@ -7,7 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import { generatePropertyAnalysis } from './propertyAnalysis';
 import { createInitialState } from './state';
 import { syncAnalysisToDatabase, generateAnalysis } from './utils';
-import { loadGoogleMaps } from '@/utils/googleMapsLoader';
+import { loadGoogleMaps, verifyApiKeyConfiguration } from '@/utils/googleMapsLoader';
 
 export const GoogleMapContext = createContext<GoogleMapContextProps | undefined>(
   undefined
@@ -45,26 +44,50 @@ const GoogleMapProvider = ({ children }: { children: React.ReactNode }) => {
     
     const initializeGoogleMaps = async () => {
       try {
-        console.log('🗺️ Loading Google Maps API...');
+        console.log('🗺️ Starting Google Maps initialization...');
+        
+        // First verify the API key configuration
+        const verification = await verifyApiKeyConfiguration();
+        if (!verification.valid) {
+          throw new Error(verification.message);
+        }
+        
+        console.log('✅ API key verification passed, loading Google Maps...');
         await loadGoogleMaps();
         
         if (mounted) {
-          console.log('✅ Google Maps API loaded successfully');
+          console.log('✅ Google Maps loaded successfully in provider');
           setIsGoogleMapsLoaded(true);
           setGoogleMapsLoadError(null);
         }
       } catch (error) {
-        console.error('❌ Failed to load Google Maps API:', error);
+        console.error('❌ Failed to initialize Google Maps:', error);
         if (mounted) {
           const errorMessage = error instanceof Error ? error.message : 'Failed to load Google Maps';
           setGoogleMapsLoadError(errorMessage);
-          setUseLocalAnalysis(true);
           
-          toast({
-            title: "Google Maps Unavailable",
-            description: "Switching to demo mode. Some features may be limited.",
-            variant: "destructive"
-          });
+          // Show user-friendly error message
+          if (errorMessage.includes('API key not configured')) {
+            toast({
+              title: "Google Maps Configuration Required",
+              description: "The Google Maps API key needs to be configured in Supabase Edge Function Secrets. Switching to demo mode.",
+              variant: "destructive"
+            });
+          } else if (errorMessage.includes('RefererNotAllowedMapError')) {
+            toast({
+              title: "Google Maps Domain Restriction",
+              description: "The API key domain restrictions need to be updated. Switching to demo mode.",
+              variant: "destructive"
+            });
+          } else {
+            toast({
+              title: "Google Maps Unavailable",
+              description: "Unable to load Google Maps. Switching to demo mode.",
+              variant: "destructive"
+            });
+          }
+          
+          setUseLocalAnalysis(true);
         }
       }
     };
@@ -196,16 +219,44 @@ const GoogleMapProvider = ({ children }: { children: React.ReactNode }) => {
     setZoomLevel,
   };
 
-  // Only render children when Google Maps is loaded or when using local analysis
+  // Enhanced loading screen with better error handling
   if (!isGoogleMapsLoaded && !useLocalAnalysis) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black flex items-center justify-center">
-        <div className="text-white text-center">
+      <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black flex items-center justify-center p-4">
+        <div className="text-white text-center max-w-md">
           <div className="w-16 h-16 border-4 border-tiptop-purple border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
           <p className="text-lg mb-2">Loading Google Maps...</p>
+          <p className="text-sm text-gray-400 mb-4">Verifying API configuration...</p>
+          
           {googleMapsLoadError && (
-            <div className="mt-4 p-4 bg-red-500/20 rounded-lg border border-red-500/30">
-              <p className="text-red-300 text-sm mb-2">Error: {googleMapsLoadError}</p>
+            <div className="mt-6 p-4 bg-red-500/20 rounded-lg border border-red-500/30">
+              <p className="text-red-300 text-sm mb-3">
+                <strong>Error:</strong> {googleMapsLoadError}
+              </p>
+              
+              {googleMapsLoadError.includes('API key not configured') && (
+                <div className="text-left text-xs text-gray-300 mb-3">
+                  <p className="mb-1">To fix this:</p>
+                  <ol className="list-decimal list-inside space-y-1">
+                    <li>Go to Supabase Dashboard → Edge Functions → Secrets</li>
+                    <li>Add GOOGLE_MAPS_API_KEY with your Google Maps API key</li>
+                    <li>Refresh this page</li>
+                  </ol>
+                </div>
+              )}
+              
+              {googleMapsLoadError.includes('RefererNotAllowedMapError') && (
+                <div className="text-left text-xs text-gray-300 mb-3">
+                  <p className="mb-1">To fix this:</p>
+                  <ol className="list-decimal list-inside space-y-1">
+                    <li>Go to Google Cloud Console → APIs & Services → Credentials</li>
+                    <li>Edit your API key restrictions</li>
+                    <li>Add: https://*.lovable.app/* and https://*.lovableproject.com/*</li>
+                    <li>Refresh this page</li>
+                  </ol>
+                </div>
+              )}
+              
               <button 
                 onClick={() => setUseLocalAnalysis(true)}
                 className="px-4 py-2 bg-tiptop-purple hover:bg-tiptop-purple/90 rounded-md text-sm transition-colors"

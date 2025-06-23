@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { useGoogleMap } from '@/contexts/GoogleMapContext';
 import MapMarker from './map/MapMarker';
@@ -6,7 +5,7 @@ import MapErrorOverlay from './map/MapErrorOverlay';
 import MapVisualEffects from './map/MapVisualEffects';
 import { useGoogleMapInstance } from '@/hooks/useGoogleMapInstance';
 import { Button } from '@/components/ui/button';
-import { AlertCircle, MapPin, RefreshCw } from 'lucide-react';
+import { AlertCircle, MapPin, RefreshCw, Settings } from 'lucide-react';
 import { loadGoogleMaps } from '@/utils/googleMapsLoader';
 
 const GoogleMap = () => {
@@ -70,21 +69,69 @@ const GoogleMap = () => {
     }
   }, [mapInstance, addressCoordinates]);
 
-  // Handle map loading error with improved messaging
+  // Enhanced error handling with specific error types
   if (mapLoadError && !useLocalAnalysis) {
+    const isConfigError = mapLoadError.includes('API key not configured');
+    const isDomainError = mapLoadError.includes('RefererNotAllowedMapError') || mapLoadError.includes('domain');
+    
     return (
       <div className="absolute inset-0 z-0 flex flex-col items-center justify-center bg-gradient-to-b from-gray-900 to-purple-900">
-        <div className="bg-black/40 backdrop-blur-md p-8 rounded-lg max-w-md text-center border border-white/10">
+        <div className="bg-black/40 backdrop-blur-md p-8 rounded-lg max-w-lg text-center border border-white/10">
           <AlertCircle className="h-12 w-12 text-red-400 mx-auto mb-4" />
-          <h2 className="text-xl font-bold text-white mb-2">Google Maps Unavailable</h2>
-          <p className="text-white/80 mb-6">
-            Unable to load Google Maps. This could be due to:
-          </p>
-          <ul className="text-left text-white/70 mb-6 text-sm">
-            <li>• API key configuration issues</li>
-            <li>• Domain restrictions</li>
-            <li>• Network connectivity</li>
-          </ul>
+          <h2 className="text-xl font-bold text-white mb-2">Google Maps Configuration Issue</h2>
+          
+          {isConfigError && (
+            <>
+              <p className="text-white/80 mb-4">
+                The Google Maps API key is not configured in Supabase Edge Function Secrets.
+              </p>
+              <div className="text-left text-sm text-white/70 mb-6 bg-gray-800/50 p-4 rounded">
+                <p className="font-semibold mb-2">To fix this:</p>
+                <ol className="list-decimal list-inside space-y-1">
+                  <li>Go to Supabase Dashboard</li>
+                  <li>Navigate to Edge Functions → Secrets</li>
+                  <li>Add <code className="bg-gray-700 px-1 rounded">GOOGLE_MAPS_API_KEY</code></li>
+                  <li>Set it to your Google Maps API key</li>
+                  <li>Refresh this page</li>
+                </ol>
+              </div>
+            </>
+          )}
+          
+          {isDomainError && (
+            <>
+              <p className="text-white/80 mb-4">
+                The API key domain restrictions need to be updated for this site.
+              </p>
+              <div className="text-left text-sm text-white/70 mb-6 bg-gray-800/50 p-4 rounded">
+                <p className="font-semibold mb-2">To fix this:</p>
+                <ol className="list-decimal list-inside space-y-1">
+                  <li>Go to Google Cloud Console</li>
+                  <li>Navigate to APIs & Services → Credentials</li>
+                  <li>Edit your Google Maps API key</li>
+                  <li>Add these domains to restrictions:</li>
+                  <li className="ml-4"><code className="bg-gray-700 px-1 rounded">https://*.lovable.app/*</code></li>
+                  <li className="ml-4"><code className="bg-gray-700 px-1 rounded">https://*.lovableproject.com/*</code></li>
+                  <li>Save and refresh this page</li>
+                </ol>
+              </div>
+            </>
+          )}
+          
+          {!isConfigError && !isDomainError && (
+            <>
+              <p className="text-white/80 mb-4">
+                Unable to load Google Maps. This could be due to:
+              </p>
+              <ul className="text-left text-white/70 mb-6 text-sm">
+                <li>• API key configuration issues</li>
+                <li>• Domain restrictions</li>
+                <li>• Network connectivity</li>
+                <li>• API quotas or billing</li>
+              </ul>
+            </>
+          )}
+          
           <div className="space-y-3">
             <Button 
               onClick={() => window.location.reload()} 
@@ -97,6 +144,7 @@ const GoogleMap = () => {
               onClick={() => setUseLocalAnalysis(true)} 
               className="w-full bg-tiptop-purple hover:bg-tiptop-purple/90"
             >
+              <Settings className="h-4 w-4 mr-2" />
               Switch to Demo Mode
             </Button>
           </div>
