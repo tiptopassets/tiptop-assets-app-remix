@@ -4,7 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useGoogleMap } from '@/contexts/GoogleMapContext';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
-import { Database, AlertCircle, CheckCircle2, Upload } from 'lucide-react';
+import { Database, AlertCircle, Upload } from 'lucide-react';
 import { hasUnauthenticatedAnalyses } from '@/services/unauthenticatedAnalysisService';
 
 const DataSyncNotification = () => {
@@ -13,6 +13,7 @@ const DataSyncNotification = () => {
   const { toast } = useToast();
   const [hasShownSyncNotification, setHasShownSyncNotification] = useState(false);
   const [hasShownRecoveryPrompt, setHasShownRecoveryPrompt] = useState(false);
+  const [userDismissedSignInPrompt, setUserDismissedSignInPrompt] = useState(false);
 
   // Show recovery prompt for users who sign in with pending analyses
   useEffect(() => {
@@ -58,8 +59,8 @@ const DataSyncNotification = () => {
       }, 2000);
     }
     
-    // Show reminder for non-authenticated users
-    if (analysisComplete && analysisResults && address && !user && !hasShownSyncNotification) {
+    // Only show sign-in reminder if user hasn't dismissed it and analysis is complete
+    if (analysisComplete && analysisResults && address && !user && !hasShownSyncNotification && !userDismissedSignInPrompt) {
       setHasShownSyncNotification(true);
       
       setTimeout(() => {
@@ -67,12 +68,21 @@ const DataSyncNotification = () => {
           title: "Analysis Complete",
           description: "Sign in to save your analysis results to your dashboard and access them later",
           action: (
-            <Button asChild variant="outline" size="sm">
-              <a href="/dashboard">
-                <AlertCircle className="w-4 h-4 mr-2" />
-                Sign In
-              </a>
-            </Button>
+            <div className="flex gap-2">
+              <Button asChild variant="outline" size="sm">
+                <a href="/dashboard">
+                  <AlertCircle className="w-4 h-4 mr-2" />
+                  Sign In
+                </a>
+              </Button>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => setUserDismissedSignInPrompt(true)}
+              >
+                Dismiss
+              </Button>
+            </div>
           )
         });
       }, 1000);
@@ -96,7 +106,7 @@ const DataSyncNotification = () => {
         )
       });
     }
-  }, [analysisComplete, analysisResults, address, user, analysisError, hasShownSyncNotification, toast]);
+  }, [analysisComplete, analysisResults, address, user, analysisError, hasShownSyncNotification, userDismissedSignInPrompt, toast]);
 
   // Reset notification state when starting new analysis
   useEffect(() => {
@@ -109,6 +119,7 @@ const DataSyncNotification = () => {
   useEffect(() => {
     if (!user) {
       setHasShownRecoveryPrompt(false);
+      setUserDismissedSignInPrompt(false);
     }
   }, [user]);
 

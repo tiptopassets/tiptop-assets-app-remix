@@ -87,8 +87,8 @@ export const useAnalysisHandlers = (
         setUseLocalAnalysis: () => {}, // This will be handled by the main provider
         setAnalysisError,
         toast,
-        // Pass database save functions with error handling
-        saveAddress: user ? async (address, coordinates, formattedAddress) => {
+        // Pass database save functions with error handling - only if user is authenticated
+        saveAddress: user && saveAddress ? async (address, coordinates, formattedAddress) => {
           try {
             console.log('💾 Saving address to database:', { address, userId: user.id });
             const result = await saveAddress(address, coordinates, formattedAddress);
@@ -96,10 +96,11 @@ export const useAnalysisHandlers = (
             return result;
           } catch (error) {
             console.error('❌ Failed to save address:', error);
-            throw error;
+            // Don't throw error - let analysis continue without saving
+            return null;
           }
         } : null,
-        savePropertyAnalysis: user ? async (addressId, analysisResults, coordinates) => {
+        savePropertyAnalysis: user && savePropertyAnalysis ? async (addressId, analysisResults, coordinates) => {
           try {
             console.log('💾 Saving property analysis to database:', { addressId, userId: user.id });
             const result = await savePropertyAnalysis(addressId, analysisResults, coordinates);
@@ -107,17 +108,18 @@ export const useAnalysisHandlers = (
             return result;
           } catch (error) {
             console.error('❌ Failed to save property analysis:', error);
-            throw error;
+            // Don't throw error - let analysis continue without saving
+            return null;
           }
         } : null,
-        refreshUserData: user ? async () => {
+        refreshUserData: user && refreshUserData ? async () => {
           try {
             console.log('🔄 Refreshing user data after analysis save');
             await refreshUserData();
             console.log('✅ User data refreshed successfully');
           } catch (error) {
             console.error('❌ Failed to refresh user data:', error);
-            throw error;
+            // Don't throw error - this is not critical
           }
         } : null,
         userId: user?.id

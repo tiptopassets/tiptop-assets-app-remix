@@ -3,7 +3,6 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useGoogleMap } from '@/contexts/GoogleMapContext';
 import { useToast } from '@/hooks/use-toast';
 import { useModelGeneration } from '@/contexts/ModelGeneration';
-import { useUserData } from '@/hooks/useUserData';
 
 export const useAddressSearch = () => {
   const { 
@@ -22,7 +21,6 @@ export const useAddressSearch = () => {
   const { toast } = useToast();
   const [hasSelectedAddress, setHasSelectedAddress] = useState(false);
   const { capturePropertyImages } = useModelGeneration();
-  const userData = useUserData();
 
   // Start analysis function
   const startAnalysis = useCallback((addressToAnalyze: string) => {
@@ -35,8 +33,8 @@ export const useAddressSearch = () => {
     generatePropertyAnalysis(addressToAnalyze);
   }, [generatePropertyAnalysis, analysisError, setAnalysisError]);
 
-  // Place change handler with database sync
-  const handlePlaceChanged = useCallback(async () => {
+  // Place change handler - simplified without direct database dependency
+  const handlePlaceChanged = useCallback(() => {
     if (!autocompleteRef.current || !mapInstance) return;
     
     try {
@@ -71,15 +69,6 @@ export const useAddressSearch = () => {
       mapInstance.setCenter(place.geometry.location);
       mapInstance.setZoom(18);
       
-      // Save address to database in background
-      try {
-        await userData.saveAddress(formattedAddress, coordinates, formattedAddress);
-        console.log('Address saved to database');
-      } catch (error) {
-        console.error('Failed to save address to database:', error);
-        // Don't show error as this is a background operation
-      }
-      
       // Capture property images
       capturePropertyImages(formattedAddress, coordinates);
       
@@ -100,7 +89,7 @@ export const useAddressSearch = () => {
         variant: "destructive"
       });
     }
-  }, [mapInstance, setAddress, setAddressCoordinates, capturePropertyImages, startAnalysis, toast, setHasSelectedAddress, userData]);
+  }, [mapInstance, setAddress, setAddressCoordinates, capturePropertyImages, startAnalysis, toast, setHasSelectedAddress]);
 
   // Initialize Google Places Autocomplete
   useEffect(() => {
