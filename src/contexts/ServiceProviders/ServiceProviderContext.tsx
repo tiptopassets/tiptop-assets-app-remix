@@ -75,8 +75,8 @@ export const ServiceProviderProvider: React.FC<{ children: React.ReactNode }> = 
         return;
       }
       
-      // Transform available providers
-      const newAvailableProviders = providerData.availableProviders.map(p => ({
+      // Transform available providers to ServiceProvider format
+      const newAvailableProviders: ServiceProvider[] = providerData.availableProviders.map(p => ({
         id: p.id,
         name: p.name,
         category: p.assetTypes[0] || 'general',
@@ -94,8 +94,8 @@ export const ServiceProviderProvider: React.FC<{ children: React.ReactNode }> = 
         is_active: true
       }));
       
-      // Transform connected providers
-      const newConnectedProviders = providerData.connectedProviders.map(p => ({
+      // Transform connected providers to AffiliateRegistration format
+      const newConnectedProviders: AffiliateRegistration[] = providerData.connectedProviders.map(p => ({
         id: p.id,
         user_id: user?.id || '',
         bundle_selection_id: '',
@@ -209,7 +209,7 @@ export const ServiceProviderProvider: React.FC<{ children: React.ReactNode }> = 
 
   const generateReferralLink = (providerId: string, destinationUrl: string): string => {
     try {
-      return providerActions.generateReferralLink(providerId, destinationUrl, user?.id) as any;
+      return providerActions.generateReferralLink(providerId, destinationUrl, user?.id || '');
     } catch (err) {
       console.error('Error generating referral link:', err);
       return destinationUrl; // Fallback to original URL

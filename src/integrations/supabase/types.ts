@@ -87,6 +87,69 @@ export type Database = {
         }
         Relationships: []
       }
+      affiliate_registrations: {
+        Row: {
+          affiliate_link: string | null
+          bundle_selection_id: string | null
+          created_at: string | null
+          first_commission_date: string | null
+          id: string
+          last_sync_at: string | null
+          provider_id: string | null
+          registration_date: string | null
+          registration_status: string | null
+          total_earnings: number | null
+          tracking_code: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          affiliate_link?: string | null
+          bundle_selection_id?: string | null
+          created_at?: string | null
+          first_commission_date?: string | null
+          id?: string
+          last_sync_at?: string | null
+          provider_id?: string | null
+          registration_date?: string | null
+          registration_status?: string | null
+          total_earnings?: number | null
+          tracking_code?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          affiliate_link?: string | null
+          bundle_selection_id?: string | null
+          created_at?: string | null
+          first_commission_date?: string | null
+          id?: string
+          last_sync_at?: string | null
+          provider_id?: string | null
+          registration_date?: string | null
+          registration_status?: string | null
+          total_earnings?: number | null
+          tracking_code?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "affiliate_registrations_bundle_selection_id_fkey"
+            columns: ["bundle_selection_id"]
+            isOneToOne: false
+            referencedRelation: "user_bundle_selections"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "affiliate_registrations_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "enhanced_service_providers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       available_services: {
         Row: {
           analysis_id: string | null
@@ -142,6 +205,72 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      enhanced_service_providers: {
+        Row: {
+          asset_types: string[] | null
+          avg_monthly_earnings_high: number | null
+          avg_monthly_earnings_low: number | null
+          commission_rate: number | null
+          connected: boolean | null
+          created_at: string | null
+          description: string | null
+          id: string
+          is_active: boolean | null
+          login_url: string | null
+          logo: string | null
+          name: string
+          priority: number | null
+          referral_link_template: string | null
+          setup_instructions: string | null
+          setup_requirements: Json | null
+          supported_assets: Json | null
+          updated_at: string | null
+          url: string | null
+        }
+        Insert: {
+          asset_types?: string[] | null
+          avg_monthly_earnings_high?: number | null
+          avg_monthly_earnings_low?: number | null
+          commission_rate?: number | null
+          connected?: boolean | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          login_url?: string | null
+          logo?: string | null
+          name: string
+          priority?: number | null
+          referral_link_template?: string | null
+          setup_instructions?: string | null
+          setup_requirements?: Json | null
+          supported_assets?: Json | null
+          updated_at?: string | null
+          url?: string | null
+        }
+        Update: {
+          asset_types?: string[] | null
+          avg_monthly_earnings_high?: number | null
+          avg_monthly_earnings_low?: number | null
+          commission_rate?: number | null
+          connected?: boolean | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          login_url?: string | null
+          logo?: string | null
+          name?: string
+          priority?: number | null
+          referral_link_template?: string | null
+          setup_instructions?: string | null
+          setup_requirements?: Json | null
+          supported_assets?: Json | null
+          updated_at?: string | null
+          url?: string | null
+        }
+        Relationships: []
       }
       journey_analytics: {
         Row: {
@@ -211,6 +340,70 @@ export type Database = {
           unique_visitors?: number | null
         }
         Relationships: []
+      }
+      provider_setup_requirements: {
+        Row: {
+          created_at: string
+          id: string
+          provider_id: string
+          requirement_key: string
+          requirement_type: string | null
+          requirement_value: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          provider_id: string
+          requirement_key: string
+          requirement_type?: string | null
+          requirement_value: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          provider_id?: string
+          requirement_key?: string
+          requirement_type?: string | null
+          requirement_value?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "provider_setup_requirements_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "enhanced_service_providers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      provider_supported_assets: {
+        Row: {
+          asset_type: string
+          created_at: string
+          id: string
+          provider_id: string
+        }
+        Insert: {
+          asset_type: string
+          created_at?: string
+          id?: string
+          provider_id: string
+        }
+        Update: {
+          asset_type?: string
+          created_at?: string
+          id?: string
+          provider_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "provider_supported_assets_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "enhanced_service_providers"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       service_providers: {
         Row: {
@@ -417,6 +610,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      user_bundle_selections: {
+        Row: {
+          bundle_id: string | null
+          created_at: string | null
+          id: string
+          property_address: string | null
+          selected_assets: string[] | null
+          selected_providers: string[] | null
+          status: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          bundle_id?: string | null
+          created_at?: string | null
+          id?: string
+          property_address?: string | null
+          selected_assets?: string[] | null
+          selected_providers?: string[] | null
+          status?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          bundle_id?: string | null
+          created_at?: string | null
+          id?: string
+          property_address?: string | null
+          selected_assets?: string[] | null
+          selected_providers?: string[] | null
+          status?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
       }
       user_dashboard_preferences: {
         Row: {
