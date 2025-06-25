@@ -2,6 +2,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { saveAddress } from '@/services/userAddressService';
 import { savePropertyAnalysis } from '@/services/userAnalysisService';
+import { saveUnauthenticatedAnalysis } from '@/services/unauthenticatedAnalysisService';
 
 export const syncAnalysisToDatabase = async (
   userId: string | undefined,
@@ -12,12 +13,14 @@ export const syncAnalysisToDatabase = async (
   refreshUserData?: () => Promise<void>
 ) => {
   if (!userId) {
-    console.warn('⚠️ No user authenticated, skipping database sync');
+    console.log('🔄 User not authenticated, saving to localStorage instead of database');
+    // Save to localStorage for unauthenticated users
+    saveUnauthenticatedAnalysis(address, analysis, coordinates, address);
     return;
   }
 
   try {
-    console.log('🔄 Syncing analysis to database...', { address, userId });
+    console.log('🔄 Syncing analysis to database for authenticated user...', { address, userId });
     
     // First, save or get the address
     const addressId = await saveAddress(userId, address, coordinates);
@@ -36,7 +39,7 @@ export const syncAnalysisToDatabase = async (
     );
     
     if (analysisId) {
-      console.log('✅ Analysis synced successfully:', analysisId);
+      console.log('✅ Analysis synced successfully to database:', analysisId);
       // Refresh user data to reflect the new analysis
       if (refreshUserData) {
         await refreshUserData();
@@ -61,7 +64,7 @@ export const generateAnalysis = async (
   }
 
   try {
-    console.log('🔍 Generating analysis for:', address);
+    console.log('🔍 Generating analysis for:', address, { isAuthenticated: !!userId });
     
     const { data, error } = await supabase.functions.invoke('analyze-property', {
       body: {
@@ -83,8 +86,10 @@ export const generateAnalysis = async (
 
     console.log('✅ Analysis completed successfully');
     
-    // Sync to database with satellite image URL if user is authenticated
+    // Handle saving based on authentication status
     if (userId && refreshUserData) {
+      console.log('👤 User authenticated - saving directly to database');
+      // Sync to database for authenticated users
       await syncAnalysisToDatabase(
         userId,
         address, 
@@ -92,6 +97,15 @@ export const generateAnalysis = async (
         coords || data.propertyInfo?.coordinates,
         data.satelliteImageUrl,
         refreshUserData
+      );
+    } else {
+      console.log('🔄 User not authenticated - saving to localStorage');
+      // Save to localStorage for unauthenticated users
+      saveUnauthenticatedAnalysis(
+        address, 
+        data.analysis, 
+        coords || data.propertyInfo?.coordinates, 
+        address
       );
     }
     

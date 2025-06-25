@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 export interface PartnerRecommendation {
@@ -30,15 +29,15 @@ interface RawProvider {
   priority_score: number;
   avg_earnings_low: number;
   avg_earnings_high: number;
-  setup_requirements: any;
+  setup_requirements: Record<string, any>;
 }
 
-const convertJsonToStringArray = (jsonArray: any): string[] => {
+const convertJsonToStringArray = (jsonArray: unknown): string[] => {
   if (!Array.isArray(jsonArray)) return [];
-  return jsonArray.filter(item => typeof item === 'string');
+  return jsonArray.filter((item): item is string => typeof item === 'string');
 };
 
-const convertJsonToRecord = (jsonData: any): Record<string, any> => {
+const convertJsonToRecord = (jsonData: unknown): Record<string, any> => {
   if (jsonData && typeof jsonData === 'object' && !Array.isArray(jsonData)) {
     return jsonData as Record<string, any>;
   }
@@ -232,7 +231,7 @@ export const getUserIntegrationProgress = async (
   }
 };
 
-const getSetupComplexity = (requirements: any): 'easy' | 'medium' | 'hard' => {
+const getSetupComplexity = (requirements: Record<string, any>): 'easy' | 'medium' | 'hard' => {
   if (!requirements || typeof requirements !== 'object') return 'medium';
   
   if (Array.isArray(requirements.requirements)) {
