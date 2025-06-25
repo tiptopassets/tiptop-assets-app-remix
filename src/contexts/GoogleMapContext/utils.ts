@@ -1,6 +1,7 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { saveUnauthenticatedAnalysis } from '@/services/unauthenticatedAnalysisService';
+import { journeyTracker } from '@/services/journeyTrackingService';
+import { createAvailableServices } from '@/services/availableServicesService';
 
 export const syncAnalysisToDatabase = async (
   userId: string | undefined,
@@ -10,15 +11,49 @@ export const syncAnalysisToDatabase = async (
   satelliteImageUrl?: string,
   refreshUserData?: () => Promise<void>
 ) => {
-  if (!userId) {
-    console.log('🔄 User not authenticated, saving to localStorage instead of database');
-    // Save to localStorage for unauthenticated users
-    saveUnauthenticatedAnalysis(address, analysis, coordinates, address);
-    return;
-  }
+  console.log('🔄 Starting analysis sync to database:', { userId, address });
+  
+  try {
+    if (!userId) {
+      console.log('ℹ️ No user ID - skipping database sync');
+      return null;
+    }
 
-  console.log('🔄 Syncing analysis to database deprecated - use UserData service functions directly');
-  console.warn('⚠️ syncAnalysisToDatabase is deprecated. Use saveAddress and savePropertyAnalysis from UserData service instead.');
+    // Save address first
+    const { saveAddress, savePropertyAnalysis } = await import('@/hooks/useUserData');
+    
+    // Save address
+    const addressId = await saveAddress(address, coordinates, address, true);
+    if (!addressId) {
+      throw new Error('Failed to save address');
+    }
+
+    // Save analysis
+    const analysisId = await savePropertyAnalysis(addressId, analysis, coordinates, satelliteImageUrl);
+    if (!analysisId) {
+      throw new Error('Failed to save analysis');
+    }
+
+    // Create available services from analysis
+    await createAvailableServices(analysisId, analysis);
+
+    // Update journey tracking
+    await journeyTracker.updateStep('analysis_completed', {
+      analysis_id: analysisId
+    });
+
+    console.log('✅ Analysis synced successfully');
+
+    // Refresh user data
+    if (refreshUserData) {
+      await refreshUserData();
+    }
+
+    return analysisId;
+  } catch (error) {
+    console.error('❌ Failed to sync analysis:', error);
+    throw error;
+  }
 };
 
 export const generateAnalysis = async (

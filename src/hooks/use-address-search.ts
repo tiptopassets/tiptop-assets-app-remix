@@ -1,9 +1,9 @@
-
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useGoogleMap } from '@/contexts/GoogleMapContext';
 import { useToast } from '@/hooks/use-toast';
 import { useModelGeneration } from '@/contexts/ModelGeneration';
 import { useUserData } from '@/hooks/useUserData';
+import { journeyTracker } from '@/services/journeyTrackingService';
 
 export const useAddressSearch = () => {
   const { 
@@ -35,7 +35,7 @@ export const useAddressSearch = () => {
     generatePropertyAnalysis(addressToAnalyze);
   }, [generatePropertyAnalysis, analysisError, setAnalysisError]);
 
-  // Place change handler with database sync
+  // Place change handler with database sync and journey tracking
   const handlePlaceChanged = useCallback(async () => {
     if (!autocompleteRef.current || !mapInstance) return;
     
@@ -61,6 +61,14 @@ export const useAddressSearch = () => {
       console.log('handlePlaceChanged: Processing complete place data');
       console.log('- Address:', formattedAddress);
       console.log('- Coordinates:', coordinates);
+      
+      // Update journey tracking
+      await journeyTracker.updateStep('address_entered', {
+        address_data: {
+          address: formattedAddress,
+          coordinates: coordinates
+        }
+      });
       
       // Update state synchronously
       setAddress(formattedAddress);

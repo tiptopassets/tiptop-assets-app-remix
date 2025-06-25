@@ -7,6 +7,7 @@ import {
   recoverAnalysesToDatabase, 
   hasUnauthenticatedAnalyses 
 } from '@/services/unauthenticatedAnalysisService';
+import { journeyTracker } from '@/services/journeyTrackingService';
 
 type AuthContextType = {
   session: Session | null;
@@ -18,7 +19,7 @@ type AuthContextType = {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export const AuthProvider = ({ children }: { children: ReactNode }) => {
+export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
@@ -111,102 +112,31 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   useEffect(() => {
-    let mounted = true;
-    let authSubscription: any = null;
-
-    const initializeAuth = async () => {
-      try {
-        console.log('🔐 [AUTH] Initializing auth state');
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        console.log('🔐 Auth state changed:', { event, userId: session?.user?.id });
         
-        // Set up auth state listener first
-        authSubscription = supabase.auth.onAuthStateChange(
-          async (event, currentSession) => {
-            console.log('🔐 [AUTH] Auth state changed:', event, currentSession?.user?.email);
-            
-            if (!mounted) return;
-
-            // Update state immediately
-            setSession(currentSession);
-            setUser(currentSession?.user ?? null);
-            
-            // Handle specific auth events
-            if (event === 'SIGNED_IN' && currentSession?.user) {
-              console.log('👤 [AUTH] User signed in, processing post-signin tasks...');
-              // Use setTimeout to prevent deadlocking in the auth state change handler
-              setTimeout(() => {
-                if (mounted) {
-                  updateLoginStats(currentSession.user.id);
-                  
-                  // Trigger analysis recovery
-                  handleAnalysisRecovery(currentSession.user.id);
-                  
-                  // Always redirect to dashboard when user signs in
-                  console.log('🔄 [AUTH] Redirecting to dashboard...');
-                  navigate('/dashboard');
-                }
-              }, 100); // Small delay to ensure state is updated
-            }
-            
-            // Redirect to homepage if user logs out
-            if (event === 'SIGNED_OUT') {
-              console.log('🚪 [AUTH] User signed out, redirecting to home...');
-              setTimeout(() => {
-                if (mounted) {
-                  navigate('/');
-                }
-              }, 0);
-            }
-            
-            // Mark loading as complete after processing
-            if (mounted) {
-              setLoading(false);
-            }
-          }
-        );
-
-        // Then check for existing session
-        const { data: { session: currentSession }, error } = await supabase.auth.getSession();
-        
-        if (error) {
-          console.error('❌ [AUTH] Error getting session:', error);
-        }
-        
-        if (mounted) {
-          console.log('🔐 [AUTH] Initial session check:', currentSession?.user?.email || 'No session');
-          setSession(currentSession);
-          setUser(currentSession?.user ?? null);
-          
-          // If user was already signed in on page load, update login stats and recover analyses
-          if (currentSession?.user) {
-            console.log('👤 [AUTH] User already signed in on page load, processing tasks...');
-            setTimeout(() => {
-              if (mounted) {
-                updateLoginStats(currentSession.user.id);
-                handleAnalysisRecovery(currentSession.user.id);
-              }
-            }, 100);
-          }
-          
+        if (event === 'SIGNED_IN' && session?.user) {
+          setUser(session.user);
           setLoading(false);
-        }
-      } catch (error) {
-        console.error('❌ [AUTH] Error initializing auth:', error);
-        if (mounted) {
+          
+          // Link journey to user
+          await journeyTracker.linkToUser(session.user.id);
+          
+          // Update login stats
+          await updateLoginStats(session.user.id);
+          
+          console.log('✅ User signed in successfully');
+        } else if (event === 'SIGNED_OUT') {
+          setUser(null);
           setLoading(false);
+          console.log('👋 User signed out');
         }
       }
-    };
+    );
 
-    initializeAuth();
-
-    return () => {
-      console.log('🧹 [AUTH] Cleaning up auth context');
-      mounted = false;
-      if (authSubscription?.data?.subscription) {
-        authSubscription.data.subscription.unsubscribe();
-      }
-    };
-  }, [navigate, toast]);
+    return () => subscription.unsubscribe();
+  }, []);
 
   const signInWithGoogle = async () => {
     try {
