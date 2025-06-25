@@ -4,52 +4,15 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useGoogleMap } from '@/contexts/GoogleMapContext';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
-import { Database, AlertCircle, Upload, X } from 'lucide-react';
+import { Database, AlertCircle, CheckCircle2, Upload } from 'lucide-react';
 import { hasUnauthenticatedAnalyses } from '@/services/unauthenticatedAnalysisService';
 
-// Local storage keys for user preferences
-const STORAGE_KEYS = {
-  DISMISSED_SIGNIN_PROMPT: 'dismissed_signin_prompt',
-  SHOW_SIGNIN_NOTIFICATIONS: 'show_signin_notifications'
-};
-
 const DataSyncNotification = () => {
-  const [authContext, setAuthContext] = useState<{ user: any } | null>(null);
-  const [authError, setAuthError] = useState(false);
+  const { user } = useAuth();
   const { analysisComplete, analysisResults, address, analysisError } = useGoogleMap();
   const { toast } = useToast();
   const [hasShownSyncNotification, setHasShownSyncNotification] = useState(false);
   const [hasShownRecoveryPrompt, setHasShownRecoveryPrompt] = useState(false);
-  const [showSigninNotifications, setShowSigninNotifications] = useState(true);
-
-  // Safely get auth context
-  useEffect(() => {
-    try {
-      const authResult = useAuth();
-      setAuthContext(authResult);
-      setAuthError(false);
-    } catch (error) {
-      console.warn('Auth context not available in DataSyncNotification');
-      setAuthContext({ user: null });
-      setAuthError(true);
-    }
-  }, []);
-
-  // Load user preferences
-  useEffect(() => {
-    const dismissed = localStorage.getItem(STORAGE_KEYS.DISMISSED_SIGNIN_PROMPT) === 'true';
-    const showNotifications = localStorage.getItem(STORAGE_KEYS.SHOW_SIGNIN_NOTIFICATIONS) !== 'false';
-    setShowSigninNotifications(showNotifications && !dismissed);
-  }, []);
-
-  const user = authContext?.user;
-
-  // Permanently dismiss sign-in notifications
-  const dismissSigninNotifications = () => {
-    localStorage.setItem(STORAGE_KEYS.DISMISSED_SIGNIN_PROMPT, 'true');
-    localStorage.setItem(STORAGE_KEYS.SHOW_SIGNIN_NOTIFICATIONS, 'false');
-    setShowSigninNotifications(false);
-  };
 
   // Show recovery prompt for users who sign in with pending analyses
   useEffect(() => {
@@ -95,14 +58,8 @@ const DataSyncNotification = () => {
       }, 2000);
     }
     
-    // Only show sign-in reminder if notifications are enabled and analysis is complete
-    if (analysisComplete && 
-        analysisResults && 
-        address && 
-        !user && 
-        !hasShownSyncNotification && 
-        showSigninNotifications &&
-        !authError) {
+    // Show reminder for non-authenticated users
+    if (analysisComplete && analysisResults && address && !user && !hasShownSyncNotification) {
       setHasShownSyncNotification(true);
       
       setTimeout(() => {
@@ -110,22 +67,12 @@ const DataSyncNotification = () => {
           title: "Analysis Complete",
           description: "Sign in to save your analysis results to your dashboard and access them later",
           action: (
-            <div className="flex gap-2">
-              <Button asChild variant="outline" size="sm">
-                <a href="/dashboard">
-                  <AlertCircle className="w-4 h-4 mr-2" />
-                  Sign In
-                </a>
-              </Button>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={dismissSigninNotifications}
-              >
-                <X className="w-4 h-4 mr-1" />
-                Don't show again
-              </Button>
-            </div>
+            <Button asChild variant="outline" size="sm">
+              <a href="/dashboard">
+                <AlertCircle className="w-4 h-4 mr-2" />
+                Sign In
+              </a>
+            </Button>
           )
         });
       }, 1000);
@@ -149,7 +96,7 @@ const DataSyncNotification = () => {
         )
       });
     }
-  }, [analysisComplete, analysisResults, address, user, analysisError, hasShownSyncNotification, showSigninNotifications, authError, toast]);
+  }, [analysisComplete, analysisResults, address, user, analysisError, hasShownSyncNotification, toast]);
 
   // Reset notification state when starting new analysis
   useEffect(() => {

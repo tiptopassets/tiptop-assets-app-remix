@@ -34,7 +34,7 @@ export const ModelGenerationProvider = ({ children }: { children: ReactNode }) =
     setProgress(prev => newProgress(prev));
   };
 
-  // Use the image capture hook with error handling
+  // Use the image capture hook
   const { capturePropertyImages } = useImageCapture(
     setStatus,
     setProgress,
@@ -42,7 +42,7 @@ export const ModelGenerationProvider = ({ children }: { children: ReactNode }) =
     setErrorMessage
   );
 
-  // Use the property analysis hook with error handling
+  // Use the property analysis hook
   const { generateModel } = usePropertyAnalysis(
     setStatus,
     setProgress,
@@ -86,29 +86,7 @@ export const ModelGenerationProvider = ({ children }: { children: ReactNode }) =
 export const useModelGeneration = () => {
   const context = useContext(ModelGenerationContext);
   if (context === undefined) {
-    console.warn('⚠️ useModelGeneration must be used within a ModelGenerationProvider');
-    // Return a mock context to prevent crashes
-    return {
-      status: 'idle' as ModelGenerationStatus,
-      setStatus: () => {},
-      progress: 0,
-      setProgress: () => {},
-      propertyImages: { satellite: null, streetView: null },
-      setPropertyImages: () => {},
-      errorMessage: null,
-      setErrorMessage: () => {},
-      capturePropertyImages: async () => {},
-      generateModel: async () => {},
-      resetGeneration: () => {},
-      isHomeModelVisible: false,
-      setHomeModelVisible: () => {},
-      updateProgress: () => {},
-      currentTaskId: null,
-      contentFromGPT: null,
-      setContentFromGPT: () => {},
-      googleImages: [],
-      setGoogleImages: () => {}
-    };
+    throw new Error('useModelGeneration must be used within a ModelGenerationProvider');
   }
   return context;
 };

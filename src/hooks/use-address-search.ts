@@ -3,6 +3,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useGoogleMap } from '@/contexts/GoogleMapContext';
 import { useToast } from '@/hooks/use-toast';
 import { useModelGeneration } from '@/contexts/ModelGeneration';
+import { useUserData } from '@/hooks/useUserData';
 
 export const useAddressSearch = () => {
   const { 
@@ -21,8 +22,9 @@ export const useAddressSearch = () => {
   const { toast } = useToast();
   const [hasSelectedAddress, setHasSelectedAddress] = useState(false);
   const { capturePropertyImages } = useModelGeneration();
+  const userData = useUserData();
 
-  // Start analysis function - simplified without dependencies
+  // Start analysis function
   const startAnalysis = useCallback((addressToAnalyze: string) => {
     console.log('startAnalysis: Starting analysis for address:', addressToAnalyze);
 
@@ -33,8 +35,8 @@ export const useAddressSearch = () => {
     generatePropertyAnalysis(addressToAnalyze);
   }, [generatePropertyAnalysis, analysisError, setAnalysisError]);
 
-  // Place change handler - simplified and more robust
-  const handlePlaceChanged = useCallback(() => {
+  // Place change handler with database sync
+  const handlePlaceChanged = useCallback(async () => {
     if (!autocompleteRef.current || !mapInstance) return;
     
     try {
@@ -69,6 +71,15 @@ export const useAddressSearch = () => {
       mapInstance.setCenter(place.geometry.location);
       mapInstance.setZoom(18);
       
+      // Save address to database in background
+      try {
+        await userData.saveAddress(formattedAddress, coordinates, formattedAddress);
+        console.log('Address saved to database');
+      } catch (error) {
+        console.error('Failed to save address to database:', error);
+        // Don't show error as this is a background operation
+      }
+      
       // Capture property images
       capturePropertyImages(formattedAddress, coordinates);
       
@@ -89,55 +100,38 @@ export const useAddressSearch = () => {
         variant: "destructive"
       });
     }
-  }, [mapInstance, setAddress, setAddressCoordinates, capturePropertyImages, startAnalysis, toast, setHasSelectedAddress]);
+  }, [mapInstance, setAddress, setAddressCoordinates, capturePropertyImages, startAnalysis, toast, setHasSelectedAddress, userData]);
 
-  // Initialize Google Places Autocomplete with improved error handling
+  // Initialize Google Places Autocomplete
   useEffect(() => {
-    if (!mapLoaded || !searchInputRef.current) return;
+    if (!mapLoaded || !searchInputRef.current || !window.google) return;
 
-    const initializeAutocomplete = async () => {
-      // Clean up existing autocomplete
-      if (autocompleteRef.current) {
-        google.maps.event.clearInstanceListeners(autocompleteRef.current);
-        autocompleteRef.current = null;
-      }
+    // Clean up existing autocomplete
+    if (autocompleteRef.current) {
+      google.maps.event.clearInstanceListeners(autocompleteRef.current);
+      autocompleteRef.current = null;
+    }
 
-      try {
-        // Wait for Google Maps to be available
-        let attempts = 0;
-        while (!window.google?.maps?.places && attempts < 10) {
-          console.log('Waiting for Google Places API...');
-          await new Promise(resolve => setTimeout(resolve, 500));
-          attempts++;
-        }
+    try {
+      // Initialize the Places Autocomplete
+      autocompleteRef.current = new google.maps.places.Autocomplete(searchInputRef.current, {
+        types: ['address'],
+        fields: ['formatted_address', 'geometry', 'place_id']
+      });
 
-        if (!window.google?.maps?.places) {
-          throw new Error('Google Places API not available after waiting');
-        }
+      // Add event listener
+      autocompleteRef.current.addListener('place_changed', handlePlaceChanged);
 
-        // Initialize the Places Autocomplete with better configuration
-        autocompleteRef.current = new google.maps.places.Autocomplete(searchInputRef.current, {
-          types: ['address'],
-          fields: ['formatted_address', 'geometry', 'place_id', 'address_components'],
-          componentRestrictions: { country: ['us', 'ca'] } // Restrict to US and Canada for better results
-        });
+      console.log('useAddressSearch: Autocomplete initialized successfully');
 
-        // Add event listener
-        autocompleteRef.current.addListener('place_changed', handlePlaceChanged);
-
-        console.log('useAddressSearch: Autocomplete initialized successfully');
-
-      } catch (error) {
-        console.error("useAddressSearch: Error initializing autocomplete:", error);
-        toast({
-          title: "Address Search Unavailable",
-          description: "Address autocomplete is temporarily unavailable. You can still enter addresses manually.",
-          variant: "destructive"
-        });
-      }
-    };
-
-    initializeAutocomplete();
+    } catch (error) {
+      console.error("useAddressSearch: Error initializing autocomplete:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load address search. Please try again later.",
+        variant: "destructive"
+      });
+    }
 
     return () => {
       if (autocompleteRef.current) {

@@ -55,34 +55,10 @@ export const useEnhancedAnalysis = () => {
         console.log('✅ Enhanced analysis completed:', data);
         setAnalysisResult(data);
         
-        // Verify the analysis was saved to database
-        try {
-          console.log('🔍 Verifying enhanced analysis was saved...');
-          const { data: verificationData, error: verificationError } = await supabase
-            .from('enhanced_property_analyses')
-            .select('id, property_address, accuracy_score')
-            .eq('user_id', user.id)
-            .eq('property_address', address)
-            .order('created_at', { ascending: false })
-            .limit(1)
-            .maybeSingle();
-          
-          if (verificationError) {
-            console.error('❌ Enhanced analysis verification failed:', verificationError);
-          } else if (verificationData) {
-            console.log('✅ Enhanced analysis verified in database:', verificationData);
-          } else {
-            console.warn('⚠️ Enhanced analysis not found in database - may not have been saved');
-          }
-        } catch (verifyError) {
-          console.error('❌ Enhanced analysis verification error:', verifyError);
-        }
-        
         // Refresh user data to update dashboard with new analysis
         try {
-          console.log('🔄 Refreshing user data after enhanced analysis...');
           await refreshUserData();
-          console.log('✅ Dashboard data refreshed after enhanced analysis');
+          console.log('🔄 Dashboard data refreshed after enhanced analysis');
         } catch (refreshError) {
           console.error('⚠️ Failed to refresh dashboard data:', refreshError);
         }
