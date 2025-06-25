@@ -57,26 +57,18 @@ export const useBundleRecommendations = (selectedAssets: string[] = []) => {
     setError(null);
 
     try {
-      // Fetch bundle configurations using raw query to avoid type issues
+      // Fetch bundle configurations using direct table access
       const { data: bundlesData, error: bundlesError } = await supabase
-        .rpc('get_bundle_configurations');
+        .from('bundle_configurations')
+        .select('*')
+        .eq('is_active', true);
 
       if (bundlesError) {
-        console.error('Bundle configurations error:', bundlesError);
-        // Fallback to direct table query
-        const { data: fallbackBundles, error: fallbackError } = await supabase
-          .from('bundle_configurations' as any)
-          .select('*')
-          .eq('is_active', true);
-        
-        if (fallbackError) throw fallbackError;
-        
-        const bundles = fallbackBundles as BundleConfigurationRow[];
-        await processBundles(bundles);
-      } else {
-        const bundles = bundlesData as BundleConfigurationRow[];
-        await processBundles(bundles);
+        throw bundlesError;
       }
+
+      const bundles = bundlesData as BundleConfigurationRow[];
+      await processBundles(bundles);
     } catch (err) {
       console.error('Error fetching bundle recommendations:', err);
       setError(err instanceof Error ? err.message : 'Failed to fetch recommendations');
@@ -114,9 +106,7 @@ export const useBundleRecommendations = (selectedAssets: string[] = []) => {
           total_setup_cost: bundle.total_setup_cost || 0,
           total_monthly_earnings_low: bundle.total_monthly_earnings_low || 0,
           total_monthly_earnings_high: bundle.total_monthly_earnings_high || 0,
-          is_active: bundle.is_active || true,
-          created_at: bundle.created_at,
-          updated_at: bundle.updated_at
+          is_active: bundle.is_active || true
         };
 
         const matchingAssets = bundleConfig.asset_requirements.filter(asset => 
