@@ -56,6 +56,7 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
           totalOpportunities={totalOpportunities}
           totalMonthlyRevenue={totalMonthlyRevenue}
           satelliteImageUrl={latestAnalysis.satellite_image_url}
+          coordinates={latestAnalysis.coordinates}
         />
       )}
 

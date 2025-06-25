@@ -87,7 +87,6 @@ export const saveServiceCredentials = async (
       .upsert({
         user_id: userId,
         provider_name: service,
-        service: service,
         encrypted_email: email, // Should be encrypted
         encrypted_password: password, // Should be encrypted
       }, {
@@ -127,7 +126,7 @@ export const checkServiceCredentials = async (
       .from('affiliate_credentials')
       .select('id')
       .eq('user_id', userId)
-      .eq('service', service)
+      .eq('provider_name', service) // Use current column name
       .single();
 
     if (error && error.code !== 'PGRST116') throw error;

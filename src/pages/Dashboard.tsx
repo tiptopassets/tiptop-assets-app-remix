@@ -66,6 +66,10 @@ const Dashboard = () => {
     );
   }
 
+  // Extract coordinates from analysis results
+  const coordinates = journeyData.analysisResults?.coordinates || 
+                    journeyData.analysisResults?.propertyCoordinates;
+
   // Convert journey data to the format expected by DashboardContent
   const mockLatestAnalysis = {
     id: journeyData.journeyId,
@@ -73,7 +77,8 @@ const Dashboard = () => {
     total_monthly_revenue: journeyData.totalMonthlyRevenue,
     total_opportunities: journeyData.totalOpportunities,
     created_at: journeyData.journeyProgress?.journeyStart || new Date().toISOString(),
-    satellite_image_url: journeyData.analysisResults?.rooftop?.satelliteImageUrl
+    satellite_image_url: journeyData.analysisResults?.rooftop?.satelliteImageUrl,
+    coordinates: coordinates
   };
 
   return (

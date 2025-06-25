@@ -11,15 +11,15 @@ export const connectToFlexOffers = async (
     // Generate a pseudo-random sub-affiliate ID based on user ID
     const subAffiliateId = `tiptop_${userId.substring(0, 8)}`;
     
-    // Create a placeholder in affiliate_earnings with correct column names
+    // Create a placeholder in affiliate_earnings with current column names
     const { error: earningsError } = await supabase
       .from('affiliate_earnings')
       .insert({
         user_id: userId,
-        service: 'FlexOffers',
+        provider_name: 'FlexOffers', // Use current column name
         service_type: 'affiliate',
-        earnings: 0,
-        last_sync_status: 'pending'
+        earnings_amount: 0, // Use current column name
+        status: 'pending' // Use current column name
       });
     
     if (earningsError) throw earningsError;
@@ -42,12 +42,12 @@ export const disconnectFlexOffers = async (
   onSuccess: () => void
 ): Promise<boolean> => {
   try {
-    // Delete the earnings record
+    // Delete the earnings record using current column name
     await supabase
       .from('affiliate_earnings')
       .delete()
       .eq('user_id', userId)
-      .eq('service', 'FlexOffers');
+      .eq('provider_name', 'FlexOffers'); // Use current column name
     
     // Update UI
     onSuccess();

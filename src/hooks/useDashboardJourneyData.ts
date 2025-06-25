@@ -2,12 +2,11 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useJourneyTracking } from '@/hooks/useJourneyTracking';
-import { AnalysisResults } from '@/contexts/GoogleMapContext/types';
 
 interface DashboardJourneyData {
   journeyId: string;
   propertyAddress: string;
-  analysisResults: AnalysisResults;
+  analysisResults: any; // Using any to handle the JSON type from database
   totalMonthlyRevenue: number;
   totalOpportunities: number;
   selectedServices: any[];
@@ -51,9 +50,20 @@ export const useDashboardJourneyData = () => {
           // Ensure we have proper revenue calculation
           let totalRevenue = data.total_monthly_revenue || 0;
           
-          // If we have analysis results, calculate revenue from opportunities
-          if (data.analysis_results && data.analysis_results.topOpportunities) {
-            const calculatedRevenue = data.analysis_results.topOpportunities.reduce(
+          // Parse analysis results if it's a string
+          let analysisResults = data.analysis_results;
+          if (typeof analysisResults === 'string') {
+            try {
+              analysisResults = JSON.parse(analysisResults);
+            } catch (e) {
+              console.warn('Failed to parse analysis results:', e);
+              analysisResults = {};
+            }
+          }
+          
+          // If we have analysis results with opportunities, calculate revenue
+          if (analysisResults && typeof analysisResults === 'object' && analysisResults.topOpportunities && Array.isArray(analysisResults.topOpportunities)) {
+            const calculatedRevenue = analysisResults.topOpportunities.reduce(
               (sum: number, opp: any) => sum + (opp.monthlyRevenue || 0), 0
             );
             
@@ -63,17 +73,47 @@ export const useDashboardJourneyData = () => {
           
           // Ensure we have proper opportunities count
           const totalOpportunities = data.total_opportunities || 
-            (data.analysis_results?.topOpportunities?.length || 0);
+            (analysisResults?.topOpportunities?.length || 0);
+
+          // Parse selected services if it's a string
+          let selectedServices = data.selected_services || [];
+          if (typeof selectedServices === 'string') {
+            try {
+              selectedServices = JSON.parse(selectedServices);
+            } catch (e) {
+              selectedServices = [];
+            }
+          }
+
+          // Parse journey progress if it's a string
+          let journeyProgress = data.journey_progress;
+          if (typeof journeyProgress === 'string') {
+            try {
+              journeyProgress = JSON.parse(journeyProgress);
+            } catch (e) {
+              journeyProgress = {
+                stepsCompleted: [],
+                currentStep: 'site_entry',
+                journeyStart: new Date().toISOString(),
+                lastActivity: new Date().toISOString()
+              };
+            }
+          }
 
           const transformedData: DashboardJourneyData = {
             journeyId: data.journey_id,
             propertyAddress,
-            analysisResults: data.analysis_results,
+            analysisResults,
             totalMonthlyRevenue: totalRevenue,
             totalOpportunities,
-            selectedServices: data.selected_services || [],
-            selectedOption: data.selected_option,
-            journeyProgress: data.journey_progress
+            selectedServices: Array.isArray(selectedServices) ? selectedServices : [],
+            selectedOption: data.selected_option || 'manual',
+            journeyProgress: journeyProgress || {
+              stepsCompleted: [],
+              currentStep: 'site_entry',
+              journeyStart: new Date().toISOString(),
+              lastActivity: new Date().toISOString()
+            }
           };
           
           console.log('✅ Transformed dashboard data:', transformedData);
@@ -105,25 +145,62 @@ export const useDashboardJourneyData = () => {
         
         let totalRevenue = data.total_monthly_revenue || 0;
         
-        if (data.analysis_results && data.analysis_results.topOpportunities) {
-          const calculatedRevenue = data.analysis_results.topOpportunities.reduce(
+        let analysisResults = data.analysis_results;
+        if (typeof analysisResults === 'string') {
+          try {
+            analysisResults = JSON.parse(analysisResults);
+          } catch (e) {
+            analysisResults = {};
+          }
+        }
+        
+        if (analysisResults && typeof analysisResults === 'object' && analysisResults.topOpportunities && Array.isArray(analysisResults.topOpportunities)) {
+          const calculatedRevenue = analysisResults.topOpportunities.reduce(
             (sum: number, opp: any) => sum + (opp.monthlyRevenue || 0), 0
           );
           totalRevenue = Math.max(totalRevenue, calculatedRevenue);
         }
         
         const totalOpportunities = data.total_opportunities || 
-          (data.analysis_results?.topOpportunities?.length || 0);
+          (analysisResults?.topOpportunities?.length || 0);
+
+        let selectedServices = data.selected_services || [];
+        if (typeof selectedServices === 'string') {
+          try {
+            selectedServices = JSON.parse(selectedServices);
+          } catch (e) {
+            selectedServices = [];
+          }
+        }
+
+        let journeyProgress = data.journey_progress;
+        if (typeof journeyProgress === 'string') {
+          try {
+            journeyProgress = JSON.parse(journeyProgress);
+          } catch (e) {
+            journeyProgress = {
+              stepsCompleted: [],
+              currentStep: 'site_entry',
+              journeyStart: new Date().toISOString(),
+              lastActivity: new Date().toISOString()
+            };
+          }
+        }
 
         setJourneyData({
           journeyId: data.journey_id,
           propertyAddress,
-          analysisResults: data.analysis_results,
+          analysisResults,
           totalMonthlyRevenue: totalRevenue,
           totalOpportunities,
-          selectedServices: data.selected_services || [],
-          selectedOption: data.selected_option,
-          journeyProgress: data.journey_progress
+          selectedServices: Array.isArray(selectedServices) ? selectedServices : [],
+          selectedOption: data.selected_option || 'manual',
+          journeyProgress: journeyProgress || {
+            stepsCompleted: [],
+            currentStep: 'site_entry',
+            journeyStart: new Date().toISOString(),
+            lastActivity: new Date().toISOString()
+          }
         });
         
         console.log('✅ Dashboard data refreshed successfully');

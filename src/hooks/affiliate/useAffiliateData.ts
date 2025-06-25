@@ -31,7 +31,7 @@ export const useAffiliateData = (userId: string | undefined) => {
 
       if (servicesError) throw servicesError;
 
-      // Load user's earnings with correct column names
+      // Load user's earnings - handle both old and new column names
       const { data: earningsData, error: earningsError } = await supabase
         .from('affiliate_earnings')
         .select('*')
@@ -43,9 +43,9 @@ export const useAffiliateData = (userId: string | undefined) => {
       const transformedEarnings: AffiliateEarning[] = (earningsData || []).map(earning => ({
         id: earning.id,
         user_id: earning.user_id || '',
-        service: earning.service || earning.provider_name, // Handle both old and new column names
-        earnings: earning.earnings || earning.earnings_amount || 0,
-        last_sync_status: earning.last_sync_status || earning.status || 'pending',
+        service: earning.provider_name || '', // Use provider_name as the service field
+        earnings: earning.earnings_amount || 0, // Use earnings_amount as earnings
+        last_sync_status: earning.status || 'pending', // Use status as last_sync_status
         updated_at: earning.updated_at,
       }));
 
