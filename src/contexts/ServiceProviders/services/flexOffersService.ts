@@ -11,12 +11,13 @@ export const connectToFlexOffers = async (
     // Generate a pseudo-random sub-affiliate ID based on user ID
     const subAffiliateId = `tiptop_${userId.substring(0, 8)}`;
     
-    // Create a placeholder in affiliate_earnings
+    // Create a placeholder in affiliate_earnings with correct column names
     const { error: earningsError } = await supabase
       .from('affiliate_earnings')
       .insert({
         user_id: userId,
         service: 'FlexOffers',
+        service_type: 'affiliate',
         earnings: 0,
         last_sync_status: 'pending'
       });

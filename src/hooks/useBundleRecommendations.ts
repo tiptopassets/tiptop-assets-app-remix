@@ -42,7 +42,7 @@ export const useBundleRecommendations = (selectedAssets: string[] = []) => {
       // Filter bundles that match selected assets and convert types
       const matchingBundles: BundleRecommendation[] = (bundles || [])
         .map(bundle => {
-          // Convert Json type to string array
+          // Convert asset_requirements to string array
           const assetRequirements = Array.isArray(bundle.asset_requirements) 
             ? bundle.asset_requirements as string[]
             : typeof bundle.asset_requirements === 'string'
@@ -60,12 +60,26 @@ export const useBundleRecommendations = (selectedAssets: string[] = []) => {
 
           // Only include if bundle requirements are met
           if (matchingAssets.length >= bundleConfig.min_assets) {
-            // Get relevant providers for this bundle
-            const bundleProviders = (providers || []).filter(provider =>
-              bundleConfig.asset_requirements.some(asset => 
-                provider.category === asset
-              )
-            );
+            // Get relevant providers for this bundle and transform them to ServiceProvider type
+            const bundleProviders: ServiceProvider[] = (providers || [])
+              .filter(provider => bundleConfig.asset_requirements.some(asset => provider.category === asset))
+              .map(provider => ({
+                id: provider.id,
+                name: provider.name,
+                category: provider.category,
+                description: provider.description || '',
+                logo_url: provider.logo_url,
+                website_url: provider.website_url,
+                affiliate_program_url: provider.affiliate_program_url,
+                referral_link_template: provider.referral_link_template,
+                commission_rate: provider.commission_rate,
+                setup_cost: provider.setup_cost,
+                avg_monthly_earnings_low: provider.avg_monthly_earnings_low,
+                avg_monthly_earnings_high: provider.avg_monthly_earnings_high,
+                conversion_rate: provider.conversion_rate || 2.5,
+                priority: provider.priority,
+                is_active: provider.is_active
+              }));
 
             return {
               bundle: bundleConfig,

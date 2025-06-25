@@ -86,11 +86,12 @@ export const saveServiceCredentials = async (
       .from('affiliate_credentials')
       .upsert({
         user_id: userId,
-        service,
+        provider_name: service,
+        service: service,
         encrypted_email: email, // Should be encrypted
         encrypted_password: password, // Should be encrypted
       }, {
-        onConflict: 'user_id,service'
+        onConflict: 'user_id,provider_name'
       });
 
     if (error) throw error;
