@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -31,16 +30,18 @@ import PropertyStatsCards from './PropertyStatsCards';
 
 interface PropertyAnalysis {
   id: string;
-  property_address: string;
+  address_id: string;
   user_id: string;
   total_monthly_revenue: number;
   total_opportunities: number;
   property_type: string;
   created_at: string;
   updated_at: string;
-  is_active: boolean;
-  coordinates: any;
   analysis_results: any;
+  coordinates: any;
+  satellite_image_url?: string;
+  // We'll join with address data
+  property_address?: string;
 }
 
 const PropertyManagement = () => {
@@ -60,12 +61,25 @@ const PropertyManagement = () => {
     try {
       setLoading(true);
       const { data, error } = await supabase
-        .from('property_analyses')
-        .select('*')
+        .from('user_property_analyses')
+        .select(`
+          *,
+          user_addresses (
+            address,
+            formatted_address
+          )
+        `)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setProperties(data || []);
+      
+      // Transform the data to include property_address
+      const transformedData = (data || []).map(analysis => ({
+        ...analysis,
+        property_address: analysis.user_addresses?.formatted_address || analysis.user_addresses?.address || 'Unknown Address'
+      }));
+      
+      setProperties(transformedData);
     } catch (error) {
       console.error('Error fetching properties:', error);
       toast({
@@ -81,7 +95,7 @@ const PropertyManagement = () => {
   const deleteProperty = async (propertyId: string) => {
     try {
       const { error } = await supabase
-        .from('property_analyses')
+        .from('user_property_analyses')
         .delete()
         .eq('id', propertyId);
 
@@ -109,19 +123,17 @@ const PropertyManagement = () => {
         type: property.property_type,
         monthly_revenue: property.total_monthly_revenue,
         opportunities: property.total_opportunities,
-        created_at: property.created_at,
-        is_active: property.is_active
+        created_at: property.created_at
       }));
 
       const csvContent = [
-        ['Address', 'Type', 'Monthly Revenue', 'Opportunities', 'Created At', 'Active'],
+        ['Address', 'Type', 'Monthly Revenue', 'Opportunities', 'Created At'],
         ...dataToExport.map(row => [
           row.address,
           row.type,
           row.monthly_revenue,
           row.opportunities,
-          row.created_at,
-          row.is_active
+          row.created_at
         ])
       ].map(row => row.join(',')).join('\n');
 
@@ -147,13 +159,11 @@ const PropertyManagement = () => {
   };
 
   const filteredProperties = properties.filter(property => {
-    const matchesSearch = property.property_address
+    const matchesSearch = (property.property_address || '')
       .toLowerCase()
       .includes(searchTerm.toLowerCase());
     
     const matchesFilter = filterType === 'all' || 
-      (filterType === 'active' && property.is_active) ||
-      (filterType === 'inactive' && !property.is_active) ||
       (filterType === property.property_type);
 
     return matchesSearch && matchesFilter;
@@ -215,20 +225,6 @@ const PropertyManagement = () => {
               >
                 All
               </Button>
-              <Button
-                variant={filterType === 'active' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setFilterType('active')}
-              >
-                Active
-              </Button>
-              <Button
-                variant={filterType === 'inactive' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setFilterType('inactive')}
-              >
-                Inactive
-              </Button>
             </div>
           </div>
 
@@ -241,7 +237,6 @@ const PropertyManagement = () => {
                   <TableHead>Type</TableHead>
                   <TableHead>Monthly Revenue</TableHead>
                   <TableHead>Opportunities</TableHead>
-                  <TableHead>Status</TableHead>
                   <TableHead>Created</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
@@ -249,7 +244,7 @@ const PropertyManagement = () => {
               <TableBody>
                 {filteredProperties.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
                       No properties found
                     </TableCell>
                   </TableRow>
@@ -275,11 +270,6 @@ const PropertyManagement = () => {
                           <TrendingUp className="h-4 w-4 text-blue-600" />
                           {property.total_opportunities || 0}
                         </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={property.is_active ? 'default' : 'secondary'}>
-                          {property.is_active ? 'Active' : 'Inactive'}
-                        </Badge>
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1 text-sm text-muted-foreground">

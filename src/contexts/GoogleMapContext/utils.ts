@@ -1,7 +1,10 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { saveUnauthenticatedAnalysis } from '@/services/unauthenticatedAnalysisService';
 import { journeyTracker } from '@/services/journeyTrackingService';
 import { createAvailableServices } from '@/services/availableServicesService';
+import { saveAddress } from '@/services/userAddressService';
+import { savePropertyAnalysis } from '@/services/userAnalysisService';
 
 export const syncAnalysisToDatabase = async (
   userId: string | undefined,
@@ -20,16 +23,13 @@ export const syncAnalysisToDatabase = async (
     }
 
     // Save address first
-    const { saveAddress, savePropertyAnalysis } = await import('@/hooks/useUserData');
-    
-    // Save address
-    const addressId = await saveAddress(address, coordinates, address, true);
+    const addressId = await saveAddress(userId, address, coordinates, address, true);
     if (!addressId) {
       throw new Error('Failed to save address');
     }
 
     // Save analysis
-    const analysisId = await savePropertyAnalysis(addressId, analysis, coordinates, satelliteImageUrl);
+    const analysisId = await savePropertyAnalysis(userId, addressId, analysis, coordinates, satelliteImageUrl);
     if (!analysisId) {
       throw new Error('Failed to save analysis');
     }
