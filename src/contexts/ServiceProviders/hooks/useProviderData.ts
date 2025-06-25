@@ -7,6 +7,7 @@ import {
   ServiceProviderInfo, 
   ServiceProviderEarnings
 } from '../types';
+import { formatProviderInfo } from '../utils/providerUtils';
 
 export const useProviderData = () => {
   const [availableProviders, setAvailableProviders] = useState<ServiceProviderInfo[]>([]);
@@ -20,29 +21,9 @@ export const useProviderData = () => {
   useEffect(() => {
     const fetchServiceProviders = async () => {
       if (!user) {
-        console.log('🔄 No user found, using mock data');
+        console.log('🔄 No user found, skipping provider data fetch');
         setIsLoading(false);
         setError(null);
-        
-        // Set mock providers
-        const mockProviders: ServiceProviderInfo[] = [
-          {
-            id: 'solar-provider',
-            name: 'Solar Provider',
-            description: 'Solar panel installation and maintenance',
-            logo: '/placeholder.svg',
-            url: 'https://example.com',
-            loginUrl: 'https://example.com/login',
-            assetTypes: ['rooftop'],
-            connected: false,
-            setupInstructions: 'Contact our team to set up solar panels',
-            referralLinkTemplate: undefined
-          }
-        ];
-        
-        setAvailableProviders(mockProviders);
-        setConnectedProviders([]);
-        setEarnings([]);
         return;
       }
 
@@ -51,79 +32,117 @@ export const useProviderData = () => {
         setIsLoading(true);
         setError(null);
 
-        // Try to fetch from service_providers table, fallback to mock data
-        let servicesData = [];
+        // Fetch all available service providers with error handling
+        let servicesData;
         try {
           const { data, error: servicesError } = await supabase
-            .from('service_providers')
+            .from('services')
             .select('*');
 
           if (servicesError) {
-            console.warn('⚠️ Service providers table error, using mock data:', servicesError);
+            console.warn('⚠️ Services table error:', servicesError);
+            // If services table doesn't exist or has issues, use empty array
             servicesData = [];
           } else {
             servicesData = data || [];
           }
         } catch (servicesErr) {
-          console.warn('⚠️ Failed to fetch service providers, using mock data:', servicesErr);
+          console.warn('⚠️ Failed to fetch services, using empty array:', servicesErr);
           servicesData = [];
         }
 
-        // Format the service provider data or use mock data
-        const formattedProviders: ServiceProviderInfo[] = servicesData.length > 0 
-          ? servicesData.map(provider => ({
-              id: provider.id,
-              name: provider.name,
-              description: provider.description || '',
-              logo: provider.logo_url || '/placeholder.svg',
-              url: provider.website_url || '',
-              loginUrl: provider.website_url || '',
-              assetTypes: [provider.category],
-              connected: false,
-              setupInstructions: `Contact ${provider.name} to get started`,
-              referralLinkTemplate: undefined
-            }))
-          : [
-              {
-                id: 'solar-provider',
-                name: 'Solar Provider',
-                description: 'Solar panel installation and maintenance',
-                logo: '/placeholder.svg',
-                url: 'https://example.com',
-                loginUrl: 'https://example.com/login',
-                assetTypes: ['rooftop'],
-                connected: false,
-                setupInstructions: 'Contact our team to set up solar panels',
-                referralLinkTemplate: undefined
-              }
-            ];
-
+        // Format the service provider data
+        const formattedProviders: ServiceProviderInfo[] = servicesData.map(formatProviderInfo);
         setAvailableProviders(formattedProviders);
-        setConnectedProviders([]);
-        setEarnings([]);
+
+        // Fetch user's connected providers with error handling
+        let credentialsData;
+        try {
+          const { data, error: credentialsError } = await supabase
+            .from('affiliate_credentials')
+            .select('*')
+            .eq('user_id', user.id);
+
+          if (credentialsError) {
+            console.warn('⚠️ Affiliate credentials error:', credentialsError);
+            credentialsData = [];
+          } else {
+            credentialsData = data || [];
+          }
+        } catch (credentialsErr) {
+          console.warn('⚠️ Failed to fetch credentials, using empty array:', credentialsErr);
+          credentialsData = [];
+        }
+
+        // Check FlexOffers sub-affiliate mappings with error handling
+        let hasFlexOffersMapping = false;
+        try {
+          const { data: flexoffersData } = await supabase
+            .from('affiliate_earnings')
+            .select('service')
+            .eq('user_id', user.id)
+            .eq('service', 'FlexOffers')
+            .single();
+          
+          hasFlexOffersMapping = !!flexoffersData;
+        } catch (err) {
+          // No FlexOffers mapping found or table doesn't exist
+          hasFlexOffersMapping = false;
+        }
+
+        // Mark which providers are connected
+        const connected = new Set((credentialsData || []).map(cred => cred.service?.toLowerCase()));
+        
+        // Add FlexOffers if mapping exists
+        if (hasFlexOffersMapping) {
+          connected.add('flexoffers');
+        }
+        
+        const updatedProviders = formattedProviders.map(provider => ({
+          ...provider,
+          connected: connected.has(provider.id.toLowerCase())
+        }));
+
+        const connectedProvidersList = updatedProviders.filter(p => p.connected);
+        
+        setAvailableProviders(updatedProviders);
+        setConnectedProviders(connectedProvidersList);
+
+        // Fetch earnings data with error handling
+        if (connectedProvidersList.length > 0) {
+          try {
+            const { data: earningsData, error: earningsError } = await supabase
+              .from('affiliate_earnings')
+              .select('*')
+              .eq('user_id', user.id);
+
+            if (earningsError) {
+              console.warn('⚠️ Earnings data error:', earningsError);
+              setEarnings([]);
+            } else {
+              setEarnings((earningsData || []).map(e => ({
+                id: e.id,
+                service: e.service,
+                earnings: e.earnings || 0,
+                lastSyncStatus: (e.last_sync_status as 'pending' | 'completed' | 'failed') || 'pending',
+                updatedAt: new Date(e.updated_at)
+              })));
+            }
+          } catch (earningsErr) {
+            console.warn('⚠️ Failed to fetch earnings:', earningsErr);
+            setEarnings([]);
+          }
+        } else {
+          setEarnings([]);
+        }
 
         console.log('✅ Service providers loaded successfully');
       } catch (err) {
         console.error('❌ Critical error fetching service providers:', err);
-        setError('Failed to load service providers. Using offline mode.');
+        setError('Failed to load service providers. This may be due to database connectivity issues.');
         
-        // Set fallback mock data
-        setAvailableProviders([
-          {
-            id: 'solar-provider',
-            name: 'Solar Provider',
-            description: 'Solar panel installation and maintenance',
-            logo: '/placeholder.svg',
-            url: 'https://example.com',
-            loginUrl: 'https://example.com/login',
-            assetTypes: ['rooftop'],
-            connected: false,
-            setupInstructions: 'Contact our team to set up solar panels',
-            referralLinkTemplate: undefined
-          }
-        ]);
-        setConnectedProviders([]);
-        setEarnings([]);
+        // Don't show toast for database connectivity issues
+        // The error will be handled by the parent component
       } finally {
         setIsLoading(false);
       }

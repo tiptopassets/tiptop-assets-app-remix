@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -5,7 +6,6 @@ import { Button } from '@/components/ui/button';
 import { CheckCircle2, Upload, User, LogIn } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
-import { journeyTracker } from '@/services/journeyTrackingService';
 
 const Options = () => {
   const [selectedOption, setSelectedOption] = useState<'manual' | 'concierge' | null>(null);
@@ -48,11 +48,6 @@ const Options = () => {
   const handleOptionSelect = (option: 'manual' | 'concierge') => {
     console.log('✅ Option selected:', option);
     setSelectedOption(option);
-    
-    // Track option selection
-    journeyTracker.updateStep('option_selected', {
-      option_selected: option
-    });
   };
 
   const handleContinue = async () => {
@@ -66,9 +61,6 @@ const Options = () => {
       });
       return;
     }
-    
-    // Track services viewed step
-    await journeyTracker.updateStep('services_viewed');
     
     // Show toast and proceed with Google authentication
     toast({

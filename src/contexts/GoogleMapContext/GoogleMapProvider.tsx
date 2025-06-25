@@ -2,7 +2,7 @@
 import React, { createContext, useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useUserData } from '@/hooks/useUserData';
-import { GoogleMapContextProps, AnalysisResults } from './types';
+import { GoogleMapContextProps } from './types';
 import { useToast } from "@/hooks/use-toast";
 import { generatePropertyAnalysis } from './propertyAnalysis';
 import { createInitialState } from './state';
@@ -121,7 +121,7 @@ const GoogleMapProvider = ({ children }: { children: React.ReactNode }) => {
     coordinates?: any,
     satelliteImageUrl?: string
   ) => {
-    return await syncAnalysisToDatabase(
+    return syncAnalysisToDatabase(
       user?.id,
       address,
       analysis,
@@ -165,11 +165,11 @@ const GoogleMapProvider = ({ children }: { children: React.ReactNode }) => {
   }, [user?.id, refreshUserData, toast]);
 
   // Enhanced wrapper function with integrated database saving
-  const generatePropertyAnalysisWrapper = async (propertyAddress: string): Promise<AnalysisResults | null> => {
+  const generatePropertyAnalysisWrapper = async (propertyAddress: string) => {
     console.log('🏠 Starting property analysis with database integration:', { propertyAddress, userId: user?.id });
     
     try {
-      await generatePropertyAnalysis({
+      const analysis = await generatePropertyAnalysis({
         propertyAddress,
         addressCoordinates,
         useLocalAnalysis,
@@ -187,10 +187,10 @@ const GoogleMapProvider = ({ children }: { children: React.ReactNode }) => {
         userId: user?.id
       });
 
-      return analysisResults;
+      return analysis;
     } catch (error) {
       console.error('❌ Property analysis failed:', error);
-      return null; // Return null instead of throwing
+      throw error;
     }
   };
 

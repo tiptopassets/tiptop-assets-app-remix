@@ -1,50 +1,56 @@
-import React, { useState, useEffect } from 'react';
+
+import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
+import { useToast } from '@/hooks/use-toast';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { 
+  Table, 
+  TableBody, 
+  TableCell, 
+  TableHead, 
+  TableHeader, 
+  TableRow 
+} from '@/components/ui/table';
+import { 
+  Search, 
+  MapPin, 
+  DollarSign, 
+  Calendar, 
+  Eye, 
+  Trash2, 
+  Download,
+  Filter,
+  TrendingUp
+} from 'lucide-react';
+import { motion } from 'framer-motion';
+import PropertyDetailsDialog from './PropertyDetailsDialog';
+import PropertyStatsCards from './PropertyStatsCards';
 
 interface PropertyAnalysis {
   id: string;
-  address: string;
-  coordinates?: any;
-  analysis_results: any;
+  property_address: string;
+  user_id: string;
   total_monthly_revenue: number;
   total_opportunities: number;
-  property_type?: string;
+  property_type: string;
   created_at: string;
-  is_active?: boolean; // Make this optional since it doesn't exist in the database
-}
-
-interface PropertyWithAddress {
-  id: string;
-  address: string;
-  coordinates?: any;
+  updated_at: string;
+  is_active: boolean;
+  coordinates: any;
   analysis_results: any;
-  total_monthly_revenue: number;
-  total_opportunities: number;
-  property_type?: string;
-  created_at: string;
-  is_active?: boolean; // Add this to match PropertyAnalysis interface
 }
 
 const PropertyManagement = () => {
-  const [properties, setProperties] = useState<PropertyWithAddress[]>([]);
+  const [properties, setProperties] = useState<PropertyAnalysis[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [dialogOpen, setDialogOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
   const [selectedProperty, setSelectedProperty] = useState<PropertyAnalysis | null>(null);
+  const [showDetailsDialog, setShowDetailsDialog] = useState(false);
+  const [filterType, setFilterType] = useState<string>('all');
+  const { toast } = useToast();
 
   useEffect(() => {
     fetchProperties();
@@ -53,153 +59,272 @@ const PropertyManagement = () => {
   const fetchProperties = async () => {
     try {
       setLoading(true);
-      
       const { data, error } = await supabase
-        .from('user_property_analyses')
-        .select(`
-          *,
-          user_addresses!inner(address)
-        `)
+        .from('property_analyses')
+        .select('*')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-
-      // Transform the data to match our interface
-      const transformedData: PropertyWithAddress[] = (data || []).map(item => ({
-        id: item.id,
-        address: item.user_addresses?.address || 'Unknown Address',
-        coordinates: item.coordinates,
-        analysis_results: item.analysis_results,
-        total_monthly_revenue: item.total_monthly_revenue || 0,
-        total_opportunities: item.total_opportunities || 0,
-        property_type: item.property_type,
-        created_at: item.created_at,
-        is_active: true // Default value since this field doesn't exist in database
-      }));
-
-      setProperties(transformedData);
+      setProperties(data || []);
     } catch (error) {
       console.error('Error fetching properties:', error);
-      setError('Failed to fetch properties');
+      toast({
+        title: "Error",
+        description: "Failed to fetch property data",
+        variant: "destructive"
+      });
     } finally {
       setLoading(false);
     }
   };
 
-  const filteredProperties = properties.filter(property =>
-    property.address.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const deleteProperty = async (propertyId: string) => {
+    try {
+      const { error } = await supabase
+        .from('property_analyses')
+        .delete()
+        .eq('id', propertyId);
 
-  const handlePropertySelect = (property: PropertyWithAddress) => {
-    // Add is_active if it's missing
-    const propertyWithDefaults: PropertyAnalysis = {
-      ...property,
-      is_active: property.is_active ?? true
-    };
-    setSelectedProperty(propertyWithDefaults);
-    setDialogOpen(true);
+      if (error) throw error;
+
+      setProperties(properties.filter(p => p.id !== propertyId));
+      toast({
+        title: "Success",
+        description: "Property deleted successfully"
+      });
+    } catch (error) {
+      console.error('Error deleting property:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete property",
+        variant: "destructive"
+      });
+    }
   };
 
-  const handleCloseDialog = () => {
-    setDialogOpen(false);
-    setSelectedProperty(null);
+  const exportPropertyData = async () => {
+    try {
+      const dataToExport = properties.map(property => ({
+        address: property.property_address,
+        type: property.property_type,
+        monthly_revenue: property.total_monthly_revenue,
+        opportunities: property.total_opportunities,
+        created_at: property.created_at,
+        is_active: property.is_active
+      }));
+
+      const csvContent = [
+        ['Address', 'Type', 'Monthly Revenue', 'Opportunities', 'Created At', 'Active'],
+        ...dataToExport.map(row => [
+          row.address,
+          row.type,
+          row.monthly_revenue,
+          row.opportunities,
+          row.created_at,
+          row.is_active
+        ])
+      ].map(row => row.join(',')).join('\n');
+
+      const blob = new Blob([csvContent], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `properties_${new Date().toISOString().split('T')[0]}.csv`;
+      a.click();
+      window.URL.revokeObjectURL(url);
+
+      toast({
+        title: "Success",
+        description: "Property data exported successfully"
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to export property data",
+        variant: "destructive"
+      });
+    }
   };
+
+  const filteredProperties = properties.filter(property => {
+    const matchesSearch = property.property_address
+      .toLowerCase()
+      .includes(searchTerm.toLowerCase());
+    
+    const matchesFilter = filterType === 'all' || 
+      (filterType === 'active' && property.is_active) ||
+      (filterType === 'inactive' && !property.is_active) ||
+      (filterType === property.property_type);
+
+    return matchesSearch && matchesFilter;
+  });
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="w-8 h-8 border-4 border-tiptop-purple border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
+  }
 
   return (
-    <div>
-      <div className="mb-4">
-        <Input
-          type="text"
-          placeholder="Search by address..."
-          value={searchQuery}
-          onChange={e => setSearchQuery(e.target.value)}
-        />
-      </div>
+    <motion.div 
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="space-y-6"
+    >
+      {/* Statistics Cards */}
+      <PropertyStatsCards properties={properties} />
 
-      {loading ? (
-        <p>Loading properties...</p>
-      ) : error ? (
-        <p className="text-red-500">Error: {error}</p>
-      ) : (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Address</TableHead>
-              <TableHead>Total Revenue</TableHead>
-              <TableHead>Opportunities</TableHead>
-              <TableHead>Property Type</TableHead>
-              <TableHead>Created At</TableHead>
-              <TableHead>Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filteredProperties.map(property => (
-              <TableRow key={property.id}>
-                <TableCell>{property.address}</TableCell>
-                <TableCell>${property.total_monthly_revenue}</TableCell>
-                <TableCell>{property.total_opportunities}</TableCell>
-                <TableCell>{property.property_type || 'N/A'}</TableCell>
-                <TableCell>{new Date(property.created_at).toLocaleDateString()}</TableCell>
-                <TableCell>
-                  <Button onClick={() => handlePropertySelect(property)}>View Details</Button>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      )}
-
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Property Details</DialogTitle>
-          </DialogHeader>
-          {selectedProperty && (
+      {/* Property Management Card */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
             <div>
-              <div className="grid gap-4 py-4">
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="address" className="text-right">
-                    Address
-                  </Label>
-                  <Input type="text" id="address" value={selectedProperty.address} className="col-span-3" readOnly />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="revenue" className="text-right">
-                    Total Revenue
-                  </Label>
-                  <Input type="text" id="revenue" value={`$${selectedProperty.total_monthly_revenue}`} className="col-span-3" readOnly />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="opportunities" className="text-right">
-                    Opportunities
-                  </Label>
-                  <Input type="text" id="opportunities" value={selectedProperty.total_opportunities} className="col-span-3" readOnly />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="propertyType" className="text-right">
-                    Property Type
-                  </Label>
-                  <Input type="text" id="propertyType" value={selectedProperty.property_type || 'N/A'} className="col-span-3" readOnly />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="createdAt" className="text-right">
-                    Created At
-                  </Label>
-                  <Input type="text" id="createdAt" value={new Date(selectedProperty.created_at).toLocaleDateString()} className="col-span-3" readOnly />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="analysisResults" className="text-right">
-                    Analysis Results
-                  </Label>
-                  <Textarea id="analysisResults" value={JSON.stringify(selectedProperty.analysis_results, null, 2)} className="col-span-3" readOnly />
-                </div>
-              </div>
+              <CardTitle className="flex items-center gap-2">
+                <MapPin className="h-5 w-5" />
+                Property Management
+              </CardTitle>
+              <CardDescription>
+                Manage all property analyses and user data
+              </CardDescription>
             </div>
-          )}
-          <Button onClick={handleCloseDialog}>Close</Button>
-        </DialogContent>
-      </Dialog>
-    </div>
+            <Button onClick={exportPropertyData} variant="outline" size="sm">
+              <Download className="h-4 w-4 mr-2" />
+              Export CSV
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {/* Search and Filter Controls */}
+          <div className="flex flex-col sm:flex-row gap-4 mb-6">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search by address..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant={filterType === 'all' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setFilterType('all')}
+              >
+                All
+              </Button>
+              <Button
+                variant={filterType === 'active' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setFilterType('active')}
+              >
+                Active
+              </Button>
+              <Button
+                variant={filterType === 'inactive' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setFilterType('inactive')}
+              >
+                Inactive
+              </Button>
+            </div>
+          </div>
+
+          {/* Properties Table */}
+          <div className="rounded-md border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Property Address</TableHead>
+                  <TableHead>Type</TableHead>
+                  <TableHead>Monthly Revenue</TableHead>
+                  <TableHead>Opportunities</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Created</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredProperties.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                      No properties found
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  filteredProperties.map((property) => (
+                    <TableRow key={property.id}>
+                      <TableCell className="font-medium max-w-xs truncate">
+                        {property.property_address}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline">
+                          {property.property_type || 'Unknown'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1">
+                          <DollarSign className="h-4 w-4 text-green-600" />
+                          ${property.total_monthly_revenue?.toLocaleString() || '0'}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1">
+                          <TrendingUp className="h-4 w-4 text-blue-600" />
+                          {property.total_opportunities || 0}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={property.is_active ? 'default' : 'secondary'}>
+                          {property.is_active ? 'Active' : 'Inactive'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                          <Calendar className="h-4 w-4" />
+                          {new Date(property.created_at).toLocaleDateString()}
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              setSelectedProperty(property);
+                              setShowDetailsDialog(true);
+                            }}
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => deleteProperty(property.id)}
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Property Details Dialog */}
+      <PropertyDetailsDialog
+        property={selectedProperty}
+        open={showDetailsDialog}
+        onOpenChange={setShowDetailsDialog}
+      />
+    </motion.div>
   );
 };
 

@@ -1,81 +1,257 @@
 
 import { useState } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/contexts/AuthContext';
+import {
+  ServiceProviderInfo,
+  RegisterServiceFormData,
+} from '../types';
 
-export const useProviderActions = () => {
-  const [loading, setLoading] = useState(false);
+export const useProviderActions = (
+  availableProviders: ServiceProviderInfo[],
+  setAvailableProviders: (providers: ServiceProviderInfo[]) => void,
+  connectedProviders: ServiceProviderInfo[],
+  setConnectedProviders: (providers: ServiceProviderInfo[]) => void
+) => {
+  const [actionInProgress, setActionInProgress] = useState(false);
   const { toast } = useToast();
-  const { user } = useAuth();
 
-  const registerWithProvider = async (providerId: string, userEmail: string) => {
-    if (!user) {
+  // Connect to a service provider
+  const connectToProvider = async (providerId: string, userId: string) => {
+    if (!userId) {
       toast({
-        title: "Authentication Required",
-        description: "Please sign in to register with providers",
-        variant: "destructive"
+        title: 'Authentication Required',
+        description: 'You need to be logged in to connect to service providers',
+        variant: 'destructive'
       });
-      return false;
+      return;
     }
-
-    setLoading(true);
+    
+    setActionInProgress(true);
     try {
-      console.log('🎯 Registering with provider:', providerId);
+      // For FlexOffers, we'll generate a unique sub-affiliate ID for the user
+      if (providerId.toLowerCase() === 'flexoffers') {
+        const subAffiliateId = `tiptop_${userId.substring(0, 8)}`;
+        
+        // Create a placeholder in affiliate_earnings
+        const { error: earningsError } = await supabase
+          .from('affiliate_earnings')
+          .insert({
+            user_id: userId,
+            service: 'FlexOffers',
+            earnings: 0,
+            last_sync_status: 'pending'
+          });
+        
+        if (earningsError) throw earningsError;
+        
+        // Find the FlexOffers provider and update UI
+        const flexoffersProvider = availableProviders.find(p => p.id.toLowerCase() === providerId.toLowerCase());
+        if (flexoffersProvider) {
+          const updatedProvider = {...flexoffersProvider, connected: true};
+          setConnectedProviders([...connectedProviders, updatedProvider]);
+          setAvailableProviders(
+            availableProviders.map(p => 
+              p.id.toLowerCase() === providerId.toLowerCase() 
+                ? {...p, connected: true} 
+                : p
+            )
+          );
+        }
+        
+        toast({
+          title: 'FlexOffers Connected',
+          description: 'Successfully connected to FlexOffers',
+        });
+        
+        return;
+      }
       
-      // Show success message since affiliate system is disabled
+      // For other providers, we'll use the existing flow
       toast({
-        title: "Registration Initiated",
-        description: "We'll contact you with next steps for this service provider",
+        title: 'Coming Soon',
+        description: 'Provider connection functionality will be available soon',
       });
-      
-      return true;
-    } catch (error) {
-      console.error('❌ Registration error:', error);
+    } catch (err) {
+      console.error('Error connecting to provider:', err);
       toast({
-        title: "Registration Error",
-        description: "Failed to register with provider. Please try again.",
-        variant: "destructive"
+        title: 'Connection Failed',
+        description: 'Failed to connect to service provider',
+        variant: 'destructive'
       });
-      return false;
     } finally {
-      setLoading(false);
+      setActionInProgress(false);
     }
   };
 
-  const trackEarnings = async (providerId: string, amount: number) => {
-    if (!user) return false;
-
-    setLoading(true);
+  // Register with a service provider
+  const registerWithProvider = async (formData: RegisterServiceFormData, userId: string) => {
+    if (!userId) {
+      toast({
+        title: 'Authentication Required',
+        description: 'You need to be logged in to register with service providers',
+        variant: 'destructive'
+      });
+      return;
+    }
+    
+    setActionInProgress(true);
     try {
-      console.log('💰 Tracking earnings (disabled):', { providerId, amount });
-      return true;
-    } catch (error) {
-      console.error('❌ Earnings tracking error:', error);
-      return false;
+      // For FlexOffers, we'll register the sub-affiliate ID
+      if (formData.service?.toLowerCase() === 'flexoffers' && formData.subAffiliateId) {
+        // Create a placeholder in affiliate_earnings
+        await supabase
+          .from('affiliate_earnings')
+          .insert({
+            user_id: userId,
+            service: 'FlexOffers',
+            earnings: 0,
+            last_sync_status: 'pending'
+          });
+        
+        toast({
+          title: 'FlexOffers Registered',
+          description: 'Your FlexOffers sub-affiliate ID has been registered.',
+        });
+        
+        // Refresh the providers list
+        const provider = availableProviders.find(p => p.id.toLowerCase() === formData.service?.toLowerCase());
+        if (provider) {
+          setConnectedProviders([...connectedProviders, {...provider, connected: true}]);
+          setAvailableProviders(
+            availableProviders.map(p => 
+              p.id.toLowerCase() === formData.service?.toLowerCase() 
+                ? {...p, connected: true} 
+                : p
+            )
+          );
+        }
+        
+        return;
+      }
+      
+      // For other providers, use the default flow
+      toast({
+        title: 'Coming Soon',
+        description: 'Provider registration functionality will be available soon',
+      });
+    } catch (err) {
+      console.error('Error registering with provider:', err);
+      toast({
+        title: 'Registration Failed',
+        description: 'Failed to register with service provider',
+        variant: 'destructive'
+      });
     } finally {
-      setLoading(false);
+      setActionInProgress(false);
     }
   };
 
-  const syncEarnings = async () => {
-    if (!user) return [];
-
-    setLoading(true);
-    try {
-      console.log('🔄 Syncing earnings (disabled)');
-      return [];
-    } catch (error) {
-      console.error('❌ Earnings sync error:', error);
-      return [];
-    } finally {
-      setLoading(false);
+  // Disconnect from a service provider
+  const disconnectProvider = async (providerId: string, userId: string) => {
+    if (!userId) {
+      toast({
+        title: 'Authentication Required',
+        description: 'You need to be logged in to disconnect from service providers',
+        variant: 'destructive'
+      });
+      return;
     }
+    
+    setActionInProgress(true);
+    try {
+      // For FlexOffers, remove the earnings record
+      if (providerId.toLowerCase() === 'flexoffers') {
+        await supabase
+          .from('affiliate_earnings')
+          .delete()
+          .eq('user_id', userId)
+          .eq('service', 'FlexOffers');
+        
+        // Update the UI
+        setConnectedProviders(connectedProviders.filter(p => p.id.toLowerCase() !== providerId.toLowerCase()));
+        setAvailableProviders(
+          availableProviders.map(p => 
+            p.id.toLowerCase() === providerId.toLowerCase() 
+              ? {...p, connected: false} 
+              : p
+          )
+        );
+        
+        toast({
+          title: 'FlexOffers Disconnected',
+          description: 'Successfully disconnected from FlexOffers',
+        });
+        
+        return;
+      }
+      
+      // For other providers, use the default flow
+      toast({
+        title: 'Coming Soon',
+        description: 'Provider disconnection functionality will be available soon',
+      });
+    } catch (err) {
+      console.error('Error disconnecting provider:', err);
+      toast({
+        title: 'Disconnection Failed',
+        description: 'Failed to disconnect from service provider',
+        variant: 'destructive'
+      });
+    } finally {
+      setActionInProgress(false);
+    }
+  };
+
+  // Sync earnings data from a service provider
+  const syncProviderEarnings = async (providerId: string, userId: string) => {
+    if (!userId) {
+      toast({
+        title: 'Authentication Required',
+        description: 'You need to be logged in to sync earnings',
+        variant: 'destructive'
+      });
+      return;
+    }
+    
+    setActionInProgress(true);
+    try {
+      toast({
+        title: 'Coming Soon',
+        description: 'Provider earnings sync functionality will be available soon',
+      });
+    } catch (err) {
+      console.error('Error syncing provider earnings:', err);
+      toast({
+        title: 'Sync Failed',
+        description: 'Failed to sync earnings from provider',
+        variant: 'destructive'
+      });
+    } finally {
+      setActionInProgress(false);
+    }
+  };
+
+  // Generate a referral link
+  const generateReferralLink = async (providerId: string, destinationUrl: string, userId: string | undefined): Promise<string> => {
+    const provider = availableProviders.find(p => p.id.toLowerCase() === providerId.toLowerCase());
+    
+    if (provider?.referralLinkTemplate && userId) {
+      return provider.referralLinkTemplate
+        .replace('{{subAffiliateId}}', `tiptop_${userId.substring(0, 8)}`)
+        .replace('{{destinationUrl}}', encodeURIComponent(destinationUrl));
+    }
+    
+    // If no template or user is not logged in, return the original URL
+    return destinationUrl;
   };
 
   return {
+    connectToProvider,
     registerWithProvider,
-    trackEarnings,
-    syncEarnings,
-    loading
+    disconnectProvider,
+    syncProviderEarnings,
+    generateReferralLink,
+    actionInProgress
   };
 };

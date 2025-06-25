@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -6,10 +7,6 @@ import { DashboardPropertyOverview } from './DashboardPropertyOverview';
 import { DashboardCharts } from './DashboardCharts';
 import { AssetsTable } from './AssetsTable';
 import DashboardHeader from './DashboardHeader';
-import { useEffect, useState } from 'react';
-import { getUserServiceSelections } from '@/services/availableServicesService';
-import { UserServiceSelection } from '@/types/journey';
-import { useAuth } from '@/contexts/AuthContext';
 
 interface DashboardContentProps {
   primaryAddress?: string;
@@ -28,25 +25,7 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
   analysesCount,
   onRefresh
 }) => {
-  const { user } = useAuth();
-  const [userSelections, setUserSelections] = useState<UserServiceSelection[]>([]);
   const analysisResults = latestAnalysis?.analysis_results;
-
-  // Load user service selections
-  useEffect(() => {
-    const loadUserSelections = async () => {
-      if (user) {
-        try {
-          const selections = await getUserServiceSelections(user.id);
-          setUserSelections(selections);
-        } catch (error) {
-          console.error('Failed to load user selections:', error);
-        }
-      }
-    };
-
-    loadUserSelections();
-  }, [user]);
 
   return (
     <div className="space-y-6">
@@ -78,44 +57,6 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
           totalMonthlyRevenue={totalMonthlyRevenue}
           satelliteImageUrl={latestAnalysis.satellite_image_url}
         />
-      )}
-
-      {/* User Service Selections */}
-      {userSelections.length > 0 && (
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.15 }}
-          className="space-y-4"
-        >
-          <Card>
-            <CardHeader>
-              <CardTitle>Your Selected Services</CardTitle>
-              <CardDescription>
-                Services you've shown interest in from your property analysis
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                {userSelections.map((selection) => (
-                  <div key={selection.id} className="flex items-center justify-between p-3 border rounded-lg">
-                    <div>
-                      <span className="font-medium">Service Selected</span>
-                      <p className="text-sm text-gray-600">
-                        Selection type: {selection.selection_type}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-sm text-gray-500">
-                        Selected: {new Date(selection.selected_at).toLocaleDateString()}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
       )}
 
       {/* Assets Table */}
