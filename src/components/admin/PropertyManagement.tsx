@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -21,7 +22,6 @@ import {
   Eye, 
   Trash2, 
   Download,
-  Filter,
   TrendingUp
 } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -40,7 +40,6 @@ interface PropertyAnalysis {
   analysis_results: any;
   coordinates: any;
   satellite_image_url?: string;
-  // We'll join with address data
   property_address?: string;
 }
 
@@ -73,7 +72,6 @@ const PropertyManagement = () => {
 
       if (error) throw error;
       
-      // Transform the data to include property_address
       const transformedData = (data || []).map(analysis => ({
         ...analysis,
         property_address: analysis.user_addresses?.formatted_address || analysis.user_addresses?.address || 'Unknown Address'
@@ -183,10 +181,8 @@ const PropertyManagement = () => {
       animate={{ opacity: 1 }}
       className="space-y-6"
     >
-      {/* Statistics Cards */}
       <PropertyStatsCards properties={properties} />
 
-      {/* Property Management Card */}
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
@@ -206,7 +202,6 @@ const PropertyManagement = () => {
           </div>
         </CardHeader>
         <CardContent>
-          {/* Search and Filter Controls */}
           <div className="flex flex-col sm:flex-row gap-4 mb-6">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
@@ -228,7 +223,6 @@ const PropertyManagement = () => {
             </div>
           </div>
 
-          {/* Properties Table */}
           <div className="rounded-md border">
             <Table>
               <TableHeader>
@@ -308,7 +302,6 @@ const PropertyManagement = () => {
         </CardContent>
       </Card>
 
-      {/* Property Details Dialog */}
       <PropertyDetailsDialog
         property={selectedProperty}
         open={showDetailsDialog}

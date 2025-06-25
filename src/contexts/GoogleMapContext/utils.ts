@@ -3,8 +3,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { saveUnauthenticatedAnalysis } from '@/services/unauthenticatedAnalysisService';
 import { journeyTracker } from '@/services/journeyTrackingService';
 import { createAvailableServices } from '@/services/availableServicesService';
-import { saveAddress } from '@/services/userAddressService';
-import { savePropertyAnalysis } from '@/services/userAnalysisService';
 
 export const syncAnalysisToDatabase = async (
   userId: string | undefined,
@@ -18,28 +16,55 @@ export const syncAnalysisToDatabase = async (
   
   try {
     if (!userId) {
-      console.log('ℹ️ No user ID - skipping database sync');
+      console.log('ℹ️ No user ID - saving to unauthenticated storage');
+      await saveUnauthenticatedAnalysis({
+        address,
+        analysis,
+        coordinates,
+        satelliteImageUrl
+      });
       return null;
     }
 
     // Save address first
-    const addressId = await saveAddress(userId, address, coordinates, address, true);
-    if (!addressId) {
-      throw new Error('Failed to save address');
-    }
+    const { data: addressData, error: addressError } = await supabase
+      .from('user_addresses')
+      .insert({
+        user_id: userId,
+        address: address,
+        formatted_address: address,
+        coordinates: coordinates,
+        is_primary: false
+      })
+      .select()
+      .single();
+
+    if (addressError) throw addressError;
 
     // Save analysis
-    const analysisId = await savePropertyAnalysis(userId, addressId, analysis, coordinates, satelliteImageUrl);
-    if (!analysisId) {
-      throw new Error('Failed to save analysis');
-    }
+    const { data: analysisData, error: analysisError } = await supabase
+      .from('user_property_analyses')
+      .insert({
+        user_id: userId,
+        address_id: addressData.id,
+        analysis_results: analysis,
+        coordinates: coordinates,
+        satellite_image_url: satelliteImageUrl,
+        total_monthly_revenue: analysis.summary?.totalMonthlyRevenue || 0,
+        total_opportunities: analysis.opportunities?.length || 0,
+        property_type: analysis.propertyType || 'unknown'
+      })
+      .select()
+      .single();
+
+    if (analysisError) throw analysisError;
 
     // Create available services from analysis
-    await createAvailableServices(analysisId, analysis);
+    await createAvailableServices(analysisData.id, analysis);
 
     // Update journey tracking
     await journeyTracker.updateStep('analysis_completed', {
-      analysis_id: analysisId
+      analysis_id: analysisData.id
     });
 
     console.log('✅ Analysis synced successfully');
@@ -49,7 +74,7 @@ export const syncAnalysisToDatabase = async (
       await refreshUserData();
     }
 
-    return analysisId;
+    return analysisData.id;
   } catch (error) {
     console.error('❌ Failed to sync analysis:', error);
     throw error;
@@ -91,9 +116,6 @@ export const generateAnalysis = async (
     }
 
     console.log('✅ Analysis completed successfully');
-    
-    // Note: Database saving is now handled in the propertyAnalysis.ts file
-    // through the integrated save functions passed from GoogleMapProvider
     
     return data.analysis;
   } catch (error) {

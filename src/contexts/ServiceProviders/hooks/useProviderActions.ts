@@ -1,6 +1,5 @@
 
 import { useState } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -23,7 +22,7 @@ export const useProviderActions = () => {
     try {
       console.log('🎯 Registering with provider:', providerId);
       
-      // For now, just show success since affiliate system is disabled
+      // Show success message since affiliate system is disabled
       toast({
         title: "Registration Initiated",
         description: "We'll contact you with next steps for this service provider",
@@ -49,10 +48,6 @@ export const useProviderActions = () => {
     setLoading(true);
     try {
       console.log('💰 Tracking earnings (disabled):', { providerId, amount });
-      
-      // Affiliate earnings tracking is temporarily disabled
-      // since we dropped the affiliate_earnings table
-      
       return true;
     } catch (error) {
       console.error('❌ Earnings tracking error:', error);
@@ -68,8 +63,6 @@ export const useProviderActions = () => {
     setLoading(true);
     try {
       console.log('🔄 Syncing earnings (disabled)');
-      
-      // Return empty array since affiliate system is disabled
       return [];
     } catch (error) {
       console.error('❌ Earnings sync error:', error);

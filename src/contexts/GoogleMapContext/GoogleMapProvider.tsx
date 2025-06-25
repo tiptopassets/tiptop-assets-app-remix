@@ -121,7 +121,7 @@ const GoogleMapProvider = ({ children }: { children: React.ReactNode }) => {
     coordinates?: any,
     satelliteImageUrl?: string
   ) => {
-    return syncAnalysisToDatabase(
+    const result = await syncAnalysisToDatabase(
       user?.id,
       address,
       analysis,
@@ -129,6 +129,7 @@ const GoogleMapProvider = ({ children }: { children: React.ReactNode }) => {
       satelliteImageUrl,
       refreshUserData
     );
+    return result; // This now returns string | null instead of void
   }, [user?.id, refreshUserData]);
 
   const handleGenerateAnalysis = useCallback(async (
