@@ -26,14 +26,18 @@ export const DashboardPropertyOverview = ({
   // Generate satellite image URL if coordinates are available but no image URL is provided
   useEffect(() => {
     const generateSatelliteImage = async () => {
-      if (!satelliteImageUrl && coordinates) {
+      if (!satelliteImageUrl && coordinates?.lat && coordinates?.lng) {
         try {
+          console.log('🗺️ Generating satellite image for coordinates:', coordinates);
           const apiKey = await getGoogleMapsApiKey();
           const generatedUrl = `https://maps.googleapis.com/maps/api/staticmap?center=${coordinates.lat},${coordinates.lng}&zoom=20&size=800x800&maptype=satellite&key=${apiKey}`;
           setDynamicSatelliteImageUrl(generatedUrl);
-          console.log('✅ Generated satellite image URL for dashboard');
+          console.log('✅ Generated satellite image URL for dashboard:', generatedUrl);
         } catch (error) {
           console.error('❌ Failed to generate satellite image:', error);
+          // Try without API key as fallback
+          const fallbackUrl = `https://maps.googleapis.com/maps/api/staticmap?center=${coordinates.lat},${coordinates.lng}&zoom=20&size=800x800&maptype=satellite`;
+          setDynamicSatelliteImageUrl(fallbackUrl);
         }
       }
     };
@@ -41,7 +45,7 @@ export const DashboardPropertyOverview = ({
     generateSatelliteImage();
   }, [satelliteImageUrl, coordinates]);
 
-  const description = `Property analysis completed on ${new Date(createdAt).toLocaleDateString()}. Found ${totalOpportunities} monetization opportunities with potential monthly revenue of $${totalMonthlyRevenue}.`;
+  const description = `Property analysis completed on ${new Date(createdAt).toLocaleDateString()}. Found ${totalOpportunities} monetization opportunities with potential monthly revenue of $${totalMonthlyRevenue.toLocaleString()}.`;
 
   return (
     <motion.div 

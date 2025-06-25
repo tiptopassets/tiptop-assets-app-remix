@@ -6,7 +6,7 @@ import { useJourneyTracking } from '@/hooks/useJourneyTracking';
 interface DashboardJourneyData {
   journeyId: string;
   propertyAddress: string;
-  analysisResults: any; // Using any to handle the JSON type from database
+  analysisResults: any;
   totalMonthlyRevenue: number;
   totalOpportunities: number;
   selectedServices: any[];
@@ -26,6 +26,42 @@ export const useDashboardJourneyData = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const extractDataFromAnalysisResults = (analysisResults: any) => {
+    let propertyAddress = '';
+    let totalRevenue = 0;
+    let totalOpportunities = 0;
+
+    if (analysisResults && typeof analysisResults === 'object') {
+      // Extract address - try multiple possible locations
+      propertyAddress = analysisResults.propertyAddress || 
+                       analysisResults.address || 
+                       analysisResults.property_address || 
+                       '';
+
+      // Extract revenue from topOpportunities
+      if (analysisResults.topOpportunities && Array.isArray(analysisResults.topOpportunities)) {
+        totalRevenue = analysisResults.topOpportunities.reduce(
+          (sum: number, opp: any) => sum + (opp.monthlyRevenue || 0), 0
+        );
+        totalOpportunities = analysisResults.topOpportunities.length;
+      }
+
+      // Fallback: use totalMonthlyRevenue if available
+      if (analysisResults.totalMonthlyRevenue && analysisResults.totalMonthlyRevenue > totalRevenue) {
+        totalRevenue = analysisResults.totalMonthlyRevenue;
+      }
+
+      console.log('📊 Extracted from analysis results:', {
+        propertyAddress,
+        totalRevenue,
+        totalOpportunities,
+        hasTopOpportunities: !!analysisResults.topOpportunities
+      });
+    }
+
+    return { propertyAddress, totalRevenue, totalOpportunities };
+  };
+
   useEffect(() => {
     const loadJourneyData = async () => {
       if (!user) {
@@ -44,12 +80,6 @@ export const useDashboardJourneyData = () => {
         console.log('📊 Raw dashboard data:', data);
         
         if (data) {
-          // Ensure we have proper property address
-          const propertyAddress = data.property_address || 'Unknown Address';
-          
-          // Ensure we have proper revenue calculation
-          let totalRevenue = data.total_monthly_revenue || 0;
-          
           // Parse analysis results if it's a string
           let analysisResults = data.analysis_results;
           if (typeof analysisResults === 'string') {
@@ -60,22 +90,22 @@ export const useDashboardJourneyData = () => {
               analysisResults = {};
             }
           }
-          
-          // If we have analysis results with opportunities, calculate revenue
-          if (analysisResults && typeof analysisResults === 'object' && analysisResults.topOpportunities && Array.isArray(analysisResults.topOpportunities)) {
-            const calculatedRevenue = analysisResults.topOpportunities.reduce(
-              (sum: number, opp: any) => sum + (opp.monthlyRevenue || 0), 0
-            );
-            
-            // Use the higher of stored revenue or calculated revenue
-            totalRevenue = Math.max(totalRevenue, calculatedRevenue);
-          }
-          
-          // Ensure we have proper opportunities count
-          const totalOpportunities = data.total_opportunities || 
-            (analysisResults?.topOpportunities?.length || 0);
 
-          // Parse selected services if it's a string
+          // Extract data from analysis results
+          const extracted = extractDataFromAnalysisResults(analysisResults);
+          
+          // Use stored values or extracted values (prefer extracted for address)
+          const propertyAddress = extracted.propertyAddress || data.property_address || 'Unknown Address';
+          const totalRevenue = Math.max(
+            extracted.totalRevenue,
+            data.total_monthly_revenue || 0
+          );
+          const totalOpportunities = Math.max(
+            extracted.totalOpportunities,
+            data.total_opportunities || 0
+          );
+
+          // Parse selected services
           let selectedServices = data.selected_services || [];
           if (typeof selectedServices === 'string') {
             try {
@@ -85,19 +115,24 @@ export const useDashboardJourneyData = () => {
             }
           }
 
-          // Parse journey progress if it's a string
+          // Parse journey progress
           let journeyProgress = data.journey_progress;
           if (typeof journeyProgress === 'string') {
             try {
               journeyProgress = JSON.parse(journeyProgress);
             } catch (e) {
-              journeyProgress = {
-                stepsCompleted: [],
-                currentStep: 'site_entry',
-                journeyStart: new Date().toISOString(),
-                lastActivity: new Date().toISOString()
-              };
+              journeyProgress = null;
             }
+          }
+
+          // Ensure we have proper journey progress structure
+          if (!journeyProgress || typeof journeyProgress !== 'object') {
+            journeyProgress = {
+              stepsCompleted: [],
+              currentStep: 'site_entry',
+              journeyStart: new Date().toISOString(),
+              lastActivity: new Date().toISOString()
+            };
           }
 
           const transformedData: DashboardJourneyData = {
@@ -108,12 +143,7 @@ export const useDashboardJourneyData = () => {
             totalOpportunities,
             selectedServices: Array.isArray(selectedServices) ? selectedServices : [],
             selectedOption: data.selected_option || 'manual',
-            journeyProgress: journeyProgress || {
-              stepsCompleted: [],
-              currentStep: 'site_entry',
-              journeyStart: new Date().toISOString(),
-              lastActivity: new Date().toISOString()
-            }
+            journeyProgress
           };
           
           console.log('✅ Transformed dashboard data:', transformedData);
@@ -141,10 +171,6 @@ export const useDashboardJourneyData = () => {
       const data = await getDashboardData();
       
       if (data) {
-        const propertyAddress = data.property_address || 'Unknown Address';
-        
-        let totalRevenue = data.total_monthly_revenue || 0;
-        
         let analysisResults = data.analysis_results;
         if (typeof analysisResults === 'string') {
           try {
@@ -153,16 +179,18 @@ export const useDashboardJourneyData = () => {
             analysisResults = {};
           }
         }
+
+        const extracted = extractDataFromAnalysisResults(analysisResults);
         
-        if (analysisResults && typeof analysisResults === 'object' && analysisResults.topOpportunities && Array.isArray(analysisResults.topOpportunities)) {
-          const calculatedRevenue = analysisResults.topOpportunities.reduce(
-            (sum: number, opp: any) => sum + (opp.monthlyRevenue || 0), 0
-          );
-          totalRevenue = Math.max(totalRevenue, calculatedRevenue);
-        }
-        
-        const totalOpportunities = data.total_opportunities || 
-          (analysisResults?.topOpportunities?.length || 0);
+        const propertyAddress = extracted.propertyAddress || data.property_address || 'Unknown Address';
+        const totalRevenue = Math.max(
+          extracted.totalRevenue,
+          data.total_monthly_revenue || 0
+        );
+        const totalOpportunities = Math.max(
+          extracted.totalOpportunities,
+          data.total_opportunities || 0
+        );
 
         let selectedServices = data.selected_services || [];
         if (typeof selectedServices === 'string') {
@@ -178,13 +206,17 @@ export const useDashboardJourneyData = () => {
           try {
             journeyProgress = JSON.parse(journeyProgress);
           } catch (e) {
-            journeyProgress = {
-              stepsCompleted: [],
-              currentStep: 'site_entry',
-              journeyStart: new Date().toISOString(),
-              lastActivity: new Date().toISOString()
-            };
+            journeyProgress = null;
           }
+        }
+
+        if (!journeyProgress || typeof journeyProgress !== 'object') {
+          journeyProgress = {
+            stepsCompleted: [],
+            currentStep: 'site_entry',
+            journeyStart: new Date().toISOString(),
+            lastActivity: new Date().toISOString()
+          };
         }
 
         setJourneyData({
@@ -195,12 +227,7 @@ export const useDashboardJourneyData = () => {
           totalOpportunities,
           selectedServices: Array.isArray(selectedServices) ? selectedServices : [],
           selectedOption: data.selected_option || 'manual',
-          journeyProgress: journeyProgress || {
-            stepsCompleted: [],
-            currentStep: 'site_entry',
-            journeyStart: new Date().toISOString(),
-            lastActivity: new Date().toISOString()
-          }
+          journeyProgress
         });
         
         console.log('✅ Dashboard data refreshed successfully');

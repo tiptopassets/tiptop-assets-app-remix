@@ -26,7 +26,8 @@ const Dashboard = () => {
       revenue: journeyData.totalMonthlyRevenue,
       opportunities: journeyData.totalOpportunities,
       selectedOption: journeyData.selectedOption,
-      currentStep: journeyData.journeyProgress?.currentStep
+      currentStep: journeyData.journeyProgress?.currentStep,
+      coordinates: journeyData.analysisResults?.coordinates || journeyData.analysisResults?.propertyCoordinates
     } : null
   });
 
@@ -66,9 +67,13 @@ const Dashboard = () => {
     );
   }
 
-  // Extract coordinates from analysis results
+  // Extract coordinates from analysis results - try multiple possible locations
   const coordinates = journeyData.analysisResults?.coordinates || 
-                    journeyData.analysisResults?.propertyCoordinates;
+                    journeyData.analysisResults?.propertyCoordinates ||
+                    (journeyData.analysisResults?.rooftop?.coordinates) ||
+                    null;
+
+  console.log('🗺️ Coordinates found for satellite image:', coordinates);
 
   // Convert journey data to the format expected by DashboardContent
   const mockLatestAnalysis = {

@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { AnalysisResults } from '@/contexts/GoogleMapContext/types';
 
@@ -86,6 +87,11 @@ export const trackAnalysisCompleted = async (
   let totalMonthlyRevenue = 0;
   let totalOpportunities = 0;
 
+  // Extract address from analysis results and store it properly
+  const propertyAddress = analysisResults.propertyAddress || 
+                         analysisResults.address || 
+                         address;
+
   // Check if we have topOpportunities and calculate from there
   if (analysisResults.topOpportunities && Array.isArray(analysisResults.topOpportunities)) {
     totalMonthlyRevenue = analysisResults.topOpportunities.reduce(
@@ -120,7 +126,7 @@ export const trackAnalysisCompleted = async (
       p_session_id: sessionId,
       p_step: 'analysis_completed',
       p_data: {
-        property_address: address,
+        property_address: propertyAddress, // Use extracted address
         property_coordinates: coordinates,
         analysis_results: analysisResults,
         total_monthly_revenue: totalMonthlyRevenue,
@@ -133,7 +139,7 @@ export const trackAnalysisCompleted = async (
       return null;
     }
 
-    console.log('✅ Analysis completion tracked for:', address);
+    console.log('✅ Analysis completion tracked for:', propertyAddress);
     console.log('💰 Revenue tracked:', totalMonthlyRevenue);
     console.log('🎯 Opportunities tracked:', totalOpportunities);
     return data;
