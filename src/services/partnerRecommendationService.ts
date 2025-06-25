@@ -22,45 +22,21 @@ export interface PartnerIntegrationProgress {
   next_steps: string[];
 }
 
-// Simple local interface to avoid recursive types
+// Simple provider interface without JSONB complexity
 interface SimpleProvider {
   id: string;
   name: string;
   priority_score: number;
   avg_earnings_low: number;
   avg_earnings_high: number;
-  supported_assets: string[];
-  setup_requirements: Record<string, any>;
   affiliate_base_url: string;
+  supported_assets: string[];
+  setup_requirements: Array<{
+    key: string;
+    value: string;
+    type: string;
+  }>;
 }
-
-// Helper function to safely convert database provider to simple interface
-const convertToSimpleProvider = (dbProvider: any): SimpleProvider => {
-  const supportedAssets: string[] = [];
-  if (dbProvider.supported_assets && Array.isArray(dbProvider.supported_assets)) {
-    for (const asset of dbProvider.supported_assets) {
-      if (typeof asset === 'string') {
-        supportedAssets.push(asset);
-      }
-    }
-  }
-
-  const setupRequirements: Record<string, any> = {};
-  if (dbProvider.setup_requirements && typeof dbProvider.setup_requirements === 'object') {
-    Object.assign(setupRequirements, dbProvider.setup_requirements);
-  }
-
-  return {
-    id: dbProvider.id || '',
-    name: dbProvider.name || '',
-    priority_score: dbProvider.priority_score || 5,
-    avg_earnings_low: dbProvider.avg_earnings_low || 0,
-    avg_earnings_high: dbProvider.avg_earnings_high || 0,
-    supported_assets: supportedAssets,
-    setup_requirements: setupRequirements,
-    affiliate_base_url: dbProvider.affiliate_base_url || ''
-  };
-};
 
 // Helper function to check asset match
 const checkAssetMatch = (detectedAssets: string[], supportedAssets: string[]): string[] => {
@@ -81,18 +57,11 @@ const checkAssetMatch = (detectedAssets: string[], supportedAssets: string[]): s
   return matches;
 };
 
-const getSetupComplexity = (requirements: Record<string, any>): 'easy' | 'medium' | 'hard' => {
-  if (!requirements || typeof requirements !== 'object') return 'medium';
-  
-  const reqs = requirements.requirements;
-  if (Array.isArray(reqs)) {
-    const reqCount = reqs.length;
-    if (reqCount <= 2) return 'easy';
-    if (reqCount <= 4) return 'medium';
-    return 'hard';
-  }
-  
-  return 'medium';
+const getSetupComplexity = (requirements: Array<{key: string; value: string; type: string}>): 'easy' | 'medium' | 'hard' => {
+  const reqCount = requirements.length;
+  if (reqCount <= 2) return 'easy';
+  if (reqCount <= 4) return 'medium';
+  return 'hard';
 };
 
 export const generatePartnerRecommendations = async (
@@ -102,24 +71,68 @@ export const generatePartnerRecommendations = async (
   try {
     console.log('🎯 Generating partner recommendations for assets:', detectedAssets);
     
-    const { data: rawProviders, error: providersError } = await supabase
+    // Get providers with their supported assets using JOIN
+    const { data: providersWithAssets, error: providersError } = await supabase
       .from('enhanced_service_providers')
-      .select('*')
+      .select(`
+        id,
+        name,
+        priority_score,
+        avg_earnings_low,
+        avg_earnings_high,
+        affiliate_base_url,
+        provider_supported_assets!inner(asset_type)
+      `)
       .eq('integration_status', 'active');
 
     if (providersError) throw providersError;
 
+    // Get setup requirements for all providers
+    const { data: allRequirements, error: requirementsError } = await supabase
+      .from('provider_setup_requirements')
+      .select('provider_id, requirement_key, requirement_value, requirement_type');
+
+    if (requirementsError) throw requirementsError;
+
     const recommendations: PartnerRecommendation[] = [];
     
-    if (rawProviders && rawProviders.length > 0) {
-      // Convert all providers to simple interface first
-      const simpleProviders: SimpleProvider[] = [];
-      for (const rawProvider of rawProviders) {
-        simpleProviders.push(convertToSimpleProvider(rawProvider));
+    if (providersWithAssets && providersWithAssets.length > 0) {
+      // Group providers by ID to handle multiple assets per provider
+      const providerMap = new Map<string, SimpleProvider>();
+      
+      for (const row of providersWithAssets) {
+        const providerId = row.id;
+        
+        if (!providerMap.has(providerId)) {
+          // Get requirements for this provider
+          const providerRequirements = allRequirements?.filter(req => req.provider_id === providerId) || [];
+          const setupRequirements = providerRequirements.map(req => ({
+            key: req.requirement_key,
+            value: req.requirement_value,
+            type: req.requirement_type || 'string'
+          }));
+
+          providerMap.set(providerId, {
+            id: providerId,
+            name: row.name || '',
+            priority_score: row.priority_score || 5,
+            avg_earnings_low: row.avg_earnings_low || 0,
+            avg_earnings_high: row.avg_earnings_high || 0,
+            affiliate_base_url: row.affiliate_base_url || '',
+            supported_assets: [],
+            setup_requirements: setupRequirements
+          });
+        }
+
+        // Add supported asset to the provider
+        const provider = providerMap.get(providerId)!;
+        if (row.provider_supported_assets?.asset_type) {
+          provider.supported_assets.push(row.provider_supported_assets.asset_type);
+        }
       }
 
-      // Process each simple provider
-      for (const provider of simpleProviders) {
+      // Process each provider for recommendations
+      for (const provider of providerMap.values()) {
         const matchingAssets = checkAssetMatch(detectedAssets, provider.supported_assets);
 
         if (matchingAssets.length > 0) {
@@ -145,18 +158,15 @@ export const generatePartnerRecommendations = async (
 
     // Save to database if we have recommendations
     if (recommendations.length > 0) {
-      const insertData = [];
-      for (const rec of recommendations) {
-        insertData.push({
-          onboarding_id: onboardingId,
-          partner_name: rec.partner_name,
-          asset_type: rec.asset_type,
-          priority_score: rec.priority_score,
-          estimated_monthly_earnings: rec.estimated_monthly_earnings,
-          setup_complexity: rec.setup_complexity,
-          recommendation_reason: rec.recommendation_reason
-        });
-      }
+      const insertData = recommendations.map(rec => ({
+        onboarding_id: onboardingId,
+        partner_name: rec.partner_name,
+        asset_type: rec.asset_type,
+        priority_score: rec.priority_score,
+        estimated_monthly_earnings: rec.estimated_monthly_earnings,
+        setup_complexity: rec.setup_complexity,
+        recommendation_reason: rec.recommendation_reason
+      }));
 
       const { error: insertError } = await supabase
         .from('partner_recommendations')
@@ -200,34 +210,14 @@ export const initializePartnerIntegration = async (
 
     if (error) throw error;
 
-    const registrationData: Record<string, any> = {};
-    const earningsData: Record<string, any> = {};
-    const nextSteps: string[] = [];
-
-    if (data.registration_data && typeof data.registration_data === 'object') {
-      Object.assign(registrationData, data.registration_data);
-    }
-
-    if (data.earnings_data && typeof data.earnings_data === 'object') {
-      Object.assign(earningsData, data.earnings_data);
-    }
-
-    if (Array.isArray(data.next_steps)) {
-      for (const step of data.next_steps) {
-        if (typeof step === 'string') {
-          nextSteps.push(step);
-        }
-      }
-    }
-
     return {
       id: data.id,
       partner_name: data.partner_name,
       integration_status: data.integration_status as 'pending' | 'in_progress' | 'completed' | 'failed',
       referral_link: data.referral_link || '',
-      registration_data: registrationData,
-      earnings_data: earningsData,
-      next_steps: nextSteps
+      registration_data: data.registration_data || {},
+      earnings_data: data.earnings_data || {},
+      next_steps: Array.isArray(data.next_steps) ? data.next_steps : []
     };
 
   } catch (error) {
@@ -282,43 +272,15 @@ export const getUserIntegrationProgress = async (
 
     if (error) throw error;
 
-    const results: PartnerIntegrationProgress[] = [];
-
-    if (data) {
-      for (const item of data) {
-        const registrationData: Record<string, any> = {};
-        const earningsData: Record<string, any> = {};
-        const nextSteps: string[] = [];
-
-        if (item.registration_data && typeof item.registration_data === 'object') {
-          Object.assign(registrationData, item.registration_data);
-        }
-
-        if (item.earnings_data && typeof item.earnings_data === 'object') {
-          Object.assign(earningsData, item.earnings_data);
-        }
-
-        if (Array.isArray(item.next_steps)) {
-          for (const step of item.next_steps) {
-            if (typeof step === 'string') {
-              nextSteps.push(step);
-            }
-          }
-        }
-
-        results.push({
-          id: item.id,
-          partner_name: item.partner_name,
-          integration_status: item.integration_status as 'pending' | 'in_progress' | 'completed' | 'failed',
-          referral_link: item.referral_link || '',
-          registration_data: registrationData,
-          earnings_data: earningsData,
-          next_steps: nextSteps
-        });
-      }
-    }
-
-    return results;
+    return (data || []).map(item => ({
+      id: item.id,
+      partner_name: item.partner_name,
+      integration_status: item.integration_status as 'pending' | 'in_progress' | 'completed' | 'failed',
+      referral_link: item.referral_link || '',
+      registration_data: item.registration_data || {},
+      earnings_data: item.earnings_data || {},
+      next_steps: Array.isArray(item.next_steps) ? item.next_steps : []
+    }));
 
   } catch (error) {
     console.error('❌ Error getting integration progress:', error);

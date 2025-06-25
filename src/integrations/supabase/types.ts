@@ -270,6 +270,7 @@ export type Database = {
           commission_rate: number | null
           created_at: string | null
           id: string
+          integration_status: string | null
           name: string
           priority_score: number | null
           setup_requirements: Json | null
@@ -285,6 +286,7 @@ export type Database = {
           commission_rate?: number | null
           created_at?: string | null
           id?: string
+          integration_status?: string | null
           name: string
           priority_score?: number | null
           setup_requirements?: Json | null
@@ -300,6 +302,7 @@ export type Database = {
           commission_rate?: number | null
           created_at?: string | null
           id?: string
+          integration_status?: string | null
           name?: string
           priority_score?: number | null
           setup_requirements?: Json | null
@@ -541,6 +544,70 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      provider_setup_requirements: {
+        Row: {
+          created_at: string
+          id: string
+          provider_id: string
+          requirement_key: string
+          requirement_type: string | null
+          requirement_value: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          provider_id: string
+          requirement_key: string
+          requirement_type?: string | null
+          requirement_value: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          provider_id?: string
+          requirement_key?: string
+          requirement_type?: string | null
+          requirement_value?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "provider_setup_requirements_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "enhanced_service_providers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      provider_supported_assets: {
+        Row: {
+          asset_type: string
+          created_at: string
+          id: string
+          provider_id: string
+        }
+        Insert: {
+          asset_type: string
+          created_at?: string
+          id?: string
+          provider_id: string
+        }
+        Update: {
+          asset_type?: string
+          created_at?: string
+          id?: string
+          provider_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "provider_supported_assets_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "enhanced_service_providers"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       service_integrations: {
         Row: {
