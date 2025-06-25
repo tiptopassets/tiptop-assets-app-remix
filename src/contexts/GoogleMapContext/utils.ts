@@ -11,7 +11,7 @@ export const syncAnalysisToDatabase = async (
   coordinates?: any,
   satelliteImageUrl?: string,
   refreshUserData?: () => Promise<void>
-) => {
+): Promise<string | null> => {
   console.log('🔄 Starting analysis sync to database:', { userId, address });
   
   try {

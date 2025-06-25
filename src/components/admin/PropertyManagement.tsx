@@ -27,27 +27,17 @@ import {
 import { motion } from 'framer-motion';
 import PropertyDetailsDialog from './PropertyDetailsDialog';
 import PropertyStatsCards from './PropertyStatsCards';
+import { UserPropertyAnalysisRow } from '@/types/database';
 
-interface PropertyAnalysis {
-  id: string;
-  address_id: string;
-  user_id: string;
-  total_monthly_revenue: number;
-  total_opportunities: number;
-  property_type: string;
-  created_at: string;
-  updated_at: string;
-  analysis_results: any;
-  coordinates: any;
-  satellite_image_url?: string;
+interface PropertyWithAddress extends UserPropertyAnalysisRow {
   property_address?: string;
 }
 
 const PropertyManagement = () => {
-  const [properties, setProperties] = useState<PropertyAnalysis[]>([]);
+  const [properties, setProperties] = useState<PropertyWithAddress[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedProperty, setSelectedProperty] = useState<PropertyAnalysis | null>(null);
+  const [selectedProperty, setSelectedProperty] = useState<PropertyWithAddress | null>(null);
   const [showDetailsDialog, setShowDetailsDialog] = useState(false);
   const [filterType, setFilterType] = useState<string>('all');
   const { toast } = useToast();
@@ -72,7 +62,7 @@ const PropertyManagement = () => {
 
       if (error) throw error;
       
-      const transformedData = (data || []).map(analysis => ({
+      const transformedData: PropertyWithAddress[] = (data || []).map(analysis => ({
         ...analysis,
         property_address: analysis.user_addresses?.formatted_address || analysis.user_addresses?.address || 'Unknown Address'
       }));
