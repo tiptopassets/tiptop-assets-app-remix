@@ -39,8 +39,8 @@ function App() {
           <BrowserRouter>
             <AuthProvider>
               <GoogleMapProvider>
-                <ServiceProviderProvider>
-                  <ModelGenerationProvider>
+                <ModelGenerationProvider>
+                  <ServiceProviderProvider>
                     <Routes>
                       <Route path="/" element={<Index />} />
                       <Route path="/dashboard" element={<Dashboard />} />
@@ -58,8 +58,8 @@ function App() {
                       <Route path="/options" element={<Options />} />
                       <Route path="*" element={<NotFound />} />
                     </Routes>
-                  </ModelGenerationProvider>
-                </ServiceProviderProvider>
+                  </ServiceProviderProvider>
+                </ModelGenerationProvider>
               </GoogleMapProvider>
             </AuthProvider>
           </BrowserRouter>
