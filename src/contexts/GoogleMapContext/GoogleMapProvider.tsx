@@ -14,10 +14,16 @@ export const GoogleMapContext = createContext<GoogleMapContextProps | undefined>
 );
 
 const GoogleMapProvider = ({ children }: { children: React.ReactNode }) => {
-  // Use try-catch to handle cases where AuthProvider might not be ready
+  // Initialize auth context safely
+  const [authReady, setAuthReady] = useState(false);
+  const [userDataReady, setUserDataReady] = useState(false);
+  
   let authContext;
+  let userDataContext;
+  
   try {
     authContext = useAuth();
+    setAuthReady(true);
   } catch (error) {
     console.warn('⚠️ AuthProvider not available yet, proceeding without auth context');
     authContext = { user: null };
@@ -26,9 +32,25 @@ const GoogleMapProvider = ({ children }: { children: React.ReactNode }) => {
   const { user } = authContext;
   
   // Only use useUserData hook if we have a valid auth context
-  let userDataContext;
   try {
-    userDataContext = useUserData();
+    if (authReady && user) {
+      userDataContext = useUserData();
+      setUserDataReady(true);
+    } else {
+      userDataContext = { 
+        refreshUserData: async () => {
+          console.log('📝 User not authenticated, skipping data refresh');
+        },
+        saveAddress: async () => {
+          console.log('📝 User not authenticated, skipping address save');
+          return null;
+        },
+        savePropertyAnalysis: async () => {
+          console.log('📝 User not authenticated, skipping analysis save');
+          return null;
+        }
+      };
+    }
   } catch (error) {
     console.warn('⚠️ UserData hook not available, proceeding without user data');
     userDataContext = { 
@@ -164,9 +186,14 @@ const GoogleMapProvider = ({ children }: { children: React.ReactNode }) => {
     }
   }, [user?.id, refreshUserData, toast]);
 
-  // Enhanced wrapper function with integrated database saving
+  // Enhanced wrapper function with integrated database saving and comprehensive error handling
   const generatePropertyAnalysisWrapper = async (propertyAddress: string) => {
-    console.log('🏠 Starting property analysis with database integration:', { propertyAddress, userId: user?.id });
+    console.log('🏠 Starting property analysis with database integration:', { 
+      propertyAddress, 
+      userId: user?.id,
+      userDataReady,
+      hasSaveFunctions: !!(saveAddress && savePropertyAnalysis)
+    });
     
     try {
       const analysis = await generatePropertyAnalysis({
@@ -180,10 +207,39 @@ const GoogleMapProvider = ({ children }: { children: React.ReactNode }) => {
         setUseLocalAnalysis,
         setAnalysisError,
         toast,
-        // Pass database save functions
-        saveAddress: user ? saveAddress : null,
-        savePropertyAnalysis: user ? savePropertyAnalysis : null,
-        refreshUserData: user ? refreshUserData : null,
+        // Pass database save functions with error handling
+        saveAddress: user ? async (address, coordinates, formattedAddress) => {
+          try {
+            console.log('💾 Saving address to database:', { address, userId: user.id });
+            const result = await saveAddress(address, coordinates, formattedAddress);
+            console.log('✅ Address saved successfully:', result);
+            return result;
+          } catch (error) {
+            console.error('❌ Failed to save address:', error);
+            throw error;
+          }
+        } : null,
+        savePropertyAnalysis: user ? async (addressId, analysisResults, coordinates) => {
+          try {
+            console.log('💾 Saving property analysis to database:', { addressId, userId: user.id });
+            const result = await savePropertyAnalysis(addressId, analysisResults, coordinates);
+            console.log('✅ Property analysis saved successfully:', result);
+            return result;
+          } catch (error) {
+            console.error('❌ Failed to save property analysis:', error);
+            throw error;
+          }
+        } : null,
+        refreshUserData: user ? async () => {
+          try {
+            console.log('🔄 Refreshing user data after analysis save');
+            await refreshUserData();
+            console.log('✅ User data refreshed successfully');
+          } catch (error) {
+            console.error('❌ Failed to refresh user data:', error);
+            throw error;
+          }
+        } : null,
         userId: user?.id
       });
 

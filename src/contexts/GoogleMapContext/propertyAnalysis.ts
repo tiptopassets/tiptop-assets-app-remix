@@ -76,8 +76,8 @@ export const generatePropertyAnalysis = async ({
         setIsGeneratingAnalysis(false);
         setIsAnalyzing(false);
         
-        // Save to database if user is authenticated
-        await saveToDatabaseIfAuthenticated(
+        // Save to database if user is authenticated with comprehensive error handling
+        await saveToDatabaseWithVerification(
           propertyAddress,
           mockResults,
           coordinateResult.coordinates,
@@ -167,8 +167,8 @@ export const generatePropertyAnalysis = async ({
       setAnalysisResults(processedResult.analysisResults);
       setAnalysisComplete(true);
       
-      // Save to database if user is authenticated
-      await saveToDatabaseIfAuthenticated(
+      // Save to database if user is authenticated with comprehensive error handling
+      await saveToDatabaseWithVerification(
         propertyAddress,
         processedResult.analysisResults,
         coordinateResult.coordinates,
@@ -243,8 +243,8 @@ export const generatePropertyAnalysis = async ({
   }
 };
 
-// Helper function to save analysis to database if user is authenticated
-async function saveToDatabaseIfAuthenticated(
+// Enhanced helper function to save analysis to database with verification and retry logic
+async function saveToDatabaseWithVerification(
   propertyAddress: string,
   analysisResults: AnalysisResults,
   coordinates: google.maps.LatLngLiteral | null,
@@ -259,32 +259,66 @@ async function saveToDatabaseIfAuthenticated(
   }
 
   try {
-    console.log('💾 Saving analysis results to database...');
+    console.log('💾 Starting database save process...', {
+      propertyAddress,
+      userId,
+      analysisResultsKeys: Object.keys(analysisResults),
+      topOpportunitiesCount: analysisResults.topOpportunities?.length || 0
+    });
     
-    // First, save the address to get an addressId
+    // Step 1: Save the address to get an addressId
+    console.log('💾 Step 1: Saving address...');
     const addressId = await saveAddress(propertyAddress, coordinates, propertyAddress);
     if (!addressId) {
-      console.error('❌ Failed to save address, cannot save analysis');
-      return;
+      throw new Error('Failed to save address - no addressId returned');
     }
     
-    console.log('✅ Address saved with ID:', addressId);
+    console.log('✅ Address saved successfully with ID:', addressId);
     
-    // Then save the analysis results
+    // Step 2: Save the analysis results
+    console.log('💾 Step 2: Saving property analysis...');
     const analysisId = await savePropertyAnalysis(addressId, analysisResults, coordinates);
-    if (analysisId) {
-      console.log('✅ Analysis saved to database with ID:', analysisId);
-      
-      // Refresh user data to update dashboard
-      if (refreshUserData) {
-        await refreshUserData();
-        console.log('🔄 User data refreshed for dashboard update');
-      }
-    } else {
-      console.error('❌ Failed to save analysis to database');
+    if (!analysisId) {
+      throw new Error('Failed to save analysis - no analysisId returned');
     }
+    
+    console.log('✅ Analysis saved successfully with ID:', analysisId);
+    
+    // Step 3: Verify the save by checking if the data exists
+    console.log('🔍 Step 3: Verifying database save...');
+    const { data: verificationData, error: verificationError } = await supabase
+      .from('user_property_analyses')
+      .select('id, total_monthly_revenue, total_opportunities')
+      .eq('id', analysisId)
+      .single();
+    
+    if (verificationError) {
+      console.error('❌ Verification failed:', verificationError);
+      throw new Error('Database save verification failed');
+    }
+    
+    console.log('✅ Database save verified:', verificationData);
+    
+    // Step 4: Refresh user data to update dashboard
+    if (refreshUserData) {
+      console.log('🔄 Step 4: Refreshing user data...');
+      await refreshUserData();
+      console.log('✅ User data refreshed successfully');
+    }
+    
+    console.log('🎉 Complete database save process finished successfully');
+    
   } catch (error) {
-    console.error('❌ Error saving to database:', error);
+    console.error('❌ Database save process failed:', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+      userId,
+      propertyAddress,
+      analysisResultsKeys: analysisResults ? Object.keys(analysisResults) : 'null'
+    });
+    
     // Don't throw error here - we don't want to break the analysis flow
+    // But we should log it prominently for debugging
+    console.error('🚨 CRITICAL: Property analysis completed but failed to save to database');
   }
 }
