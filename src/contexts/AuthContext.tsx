@@ -1,3 +1,4 @@
+
 import { createContext, useState, useEffect, useContext, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Session, User } from '@supabase/supabase-js';
@@ -28,6 +29,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // Function to update login statistics in the database
   const updateLoginStats = async (userId: string) => {
     try {
+      console.log('📊 Updating login stats for user:', userId);
       // Get user agent and IP information
       const userAgent = navigator.userAgent;
       
@@ -48,6 +50,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             last_user_agent: userAgent,
           })
           .eq('user_id', userId);
+        console.log('✅ Updated existing login stats');
       } else {
         // First time login - create new record
         await supabase
@@ -59,9 +62,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             last_login_at: new Date().toISOString(),
             last_user_agent: userAgent,
           });
+        console.log('✅ Created new login stats record');
       }
     } catch (error) {
-      console.error('Error updating login stats:', error);
+      console.error('❌ Error updating login stats:', error);
       // Don't block authentication if this fails
     }
   };
@@ -69,15 +73,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // Function to handle analysis recovery after sign-in
   const handleAnalysisRecovery = async (userId: string) => {
     try {
+      console.log('🔍 Checking for analyses to recover for user:', userId);
+      
       if (!hasUnauthenticatedAnalyses()) {
         console.log('ℹ️ No unauthenticated analyses to recover');
         return;
       }
       
-      console.log('🔄 Starting analysis recovery for user:', userId);
+      console.log('🔄 Starting analysis recovery process...');
       const result = await recoverAnalysesToDatabase(userId);
       
+      console.log('📊 Recovery result:', result);
+      
       if (result.recovered > 0) {
+        console.log('✅ Successfully recovered analyses:', result.recovered);
         toast({
           title: "Analysis Recovered",
           description: `Successfully recovered ${result.recovered} property analysis${result.recovered > 1 ? 'es' : ''} to your dashboard`,
@@ -113,7 +122,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         // Set up auth state listener first
         authSubscription = supabase.auth.onAuthStateChange(
           async (event, currentSession) => {
-            console.log('Auth state changed:', event, currentSession?.user?.email);
+            console.log('🔐 Auth state changed:', event, currentSession?.user?.email);
             
             if (!mounted) return;
 
@@ -123,6 +132,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             
             // Handle specific auth events
             if (event === 'SIGNED_IN' && currentSession?.user) {
+              console.log('👤 User signed in, processing post-signin tasks...');
               // Use setTimeout to prevent deadlocking in the auth state change handler
               setTimeout(() => {
                 if (mounted) {
@@ -132,13 +142,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                   handleAnalysisRecovery(currentSession.user.id);
                   
                   // Always redirect to dashboard when user signs in
+                  console.log('🔄 Redirecting to dashboard...');
                   navigate('/dashboard');
                 }
-              }, 0);
+              }, 100); // Small delay to ensure state is updated
             }
             
             // Redirect to homepage if user logs out
             if (event === 'SIGNED_OUT') {
+              console.log('🚪 User signed out, redirecting to home...');
               setTimeout(() => {
                 if (mounted) {
                   navigate('/');
@@ -157,27 +169,29 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         const { data: { session: currentSession }, error } = await supabase.auth.getSession();
         
         if (error) {
-          console.error('Error getting session:', error);
+          console.error('❌ Error getting session:', error);
         }
         
         if (mounted) {
+          console.log('🔐 Initial session check:', currentSession?.user?.email || 'No session');
           setSession(currentSession);
           setUser(currentSession?.user ?? null);
           
           // If user was already signed in on page load, update login stats and recover analyses
           if (currentSession?.user) {
+            console.log('👤 User already signed in on page load, processing tasks...');
             setTimeout(() => {
               if (mounted) {
                 updateLoginStats(currentSession.user.id);
                 handleAnalysisRecovery(currentSession.user.id);
               }
-            }, 0);
+            }, 100);
           }
           
           setLoading(false);
         }
       } catch (error) {
-        console.error('Error initializing auth:', error);
+        console.error('❌ Error initializing auth:', error);
         if (mounted) {
           setLoading(false);
         }
@@ -197,11 +211,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const signInWithGoogle = async () => {
     try {
-      console.log("Starting Google sign-in process");
+      console.log("🔐 Starting Google sign-in process");
       setLoading(true);
       
       const origin = window.location.origin;
-      console.log("Current origin:", origin);
+      console.log("🌐 Current origin:", origin);
       
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
@@ -211,13 +225,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       });
       
       if (error) {
-        console.error('Google sign in error:', error);
+        console.error('❌ Google sign in error:', error);
         throw error;
       }
       
-      console.log("Sign in initiated:", data);
+      console.log("✅ Sign in initiated:", data);
     } catch (error) {
-      console.error('Google sign in error:', error);
+      console.error('❌ Google sign in error:', error);
       setLoading(false);
       toast({
         title: "Sign In Error",
@@ -232,8 +246,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       console.log('🚪 Starting sign out process');
       setLoading(true);
       await supabase.auth.signOut();
+      console.log('✅ Sign out completed');
     } catch (error) {
-      console.error('Sign out error:', error);
+      console.error('❌ Sign out error:', error);
       toast({
         title: "Sign Out Error",
         description: "Failed to sign out. Please try again.",

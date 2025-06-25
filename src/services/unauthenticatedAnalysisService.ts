@@ -1,3 +1,4 @@
+
 import { AnalysisResults } from '@/contexts/GoogleMapContext/types';
 import { supabase } from '@/integrations/supabase/client';
 import { saveAddress } from './userAddressService';
@@ -22,6 +23,17 @@ export const saveUnauthenticatedAnalysis = (
   formattedAddress?: string
 ): void => {
   try {
+    console.log('💾 Saving unauthenticated analysis:', {
+      address,
+      formattedAddress,
+      coordinates,
+      analysisResults: {
+        propertyType: analysisResults.propertyType,
+        topOpportunities: analysisResults.topOpportunities?.length || 0,
+        totalRevenue: analysisResults.topOpportunities?.reduce((sum, opp) => sum + (opp.monthlyRevenue || 0), 0) || 0
+      }
+    });
+
     const analysis: UnauthenticatedAnalysis = {
       id: crypto.randomUUID(),
       address,
@@ -41,7 +53,10 @@ export const saveUnauthenticatedAnalysis = (
     const updated = [analysis, ...existing].slice(0, 3);
     
     localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
-    console.log('📱 Saved unauthenticated analysis to localStorage:', analysis.id);
+    console.log('✅ Successfully saved unauthenticated analysis to localStorage:', {
+      analysisId: analysis.id,
+      totalStored: updated.length
+    });
     
   } catch (error) {
     console.error('❌ Failed to save unauthenticated analysis:', error);
@@ -68,9 +83,22 @@ export const saveUnauthenticatedAnalysis = (
 export const getUnauthenticatedAnalyses = (): UnauthenticatedAnalysis[] => {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
-    if (!stored) return [];
+    if (!stored) {
+      console.log('📱 No unauthenticated analyses found in localStorage');
+      return [];
+    }
     
     const analyses: UnauthenticatedAnalysis[] = JSON.parse(stored);
+    console.log('📱 Found unauthenticated analyses in localStorage:', {
+      count: analyses.length,
+      analyses: analyses.map(a => ({
+        id: a.id,
+        address: a.address,
+        timestamp: new Date(a.timestamp).toISOString(),
+        hasAnalysisResults: !!a.analysisResults,
+        opportunitiesCount: a.analysisResults?.topOpportunities?.length || 0
+      }))
+    });
     
     // Filter out expired analyses
     const now = Date.now();
@@ -81,6 +109,10 @@ export const getUnauthenticatedAnalyses = (): UnauthenticatedAnalysis[] => {
     // Update storage if we filtered anything out
     if (valid.length !== analyses.length) {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(valid));
+      console.log('🧹 Cleaned up expired analyses:', {
+        original: analyses.length,
+        remaining: valid.length
+      });
     }
     
     return valid;
@@ -125,6 +157,7 @@ export const recoverAnalysesToDatabase = async (userId: string): Promise<{
   console.log(`🔄 Starting recovery of ${analyses.length} analyses for user:`, userId);
   
   if (analyses.length === 0) {
+    console.log('ℹ️ No analyses to recover');
     return { recovered: 0, failed: 0, errors: [] };
   }
   
@@ -134,9 +167,15 @@ export const recoverAnalysesToDatabase = async (userId: string): Promise<{
   
   for (const analysis of analyses) {
     try {
-      console.log(`💾 Recovering analysis: ${analysis.id} for address: ${analysis.address}`);
+      console.log(`💾 Recovering analysis: ${analysis.id} for address: ${analysis.address}`, {
+        hasCoordinates: !!analysis.coordinates,
+        hasAnalysisResults: !!analysis.analysisResults,
+        opportunitiesCount: analysis.analysisResults?.topOpportunities?.length || 0,
+        totalRevenue: analysis.analysisResults?.topOpportunities?.reduce((sum, opp) => sum + (opp.monthlyRevenue || 0), 0) || 0
+      });
       
       // Save address first
+      console.log('📍 Saving address...');
       const addressId = await saveAddress(
         userId,
         analysis.address,
@@ -146,12 +185,13 @@ export const recoverAnalysesToDatabase = async (userId: string): Promise<{
       );
       
       if (!addressId) {
-        throw new Error('Failed to save address');
+        throw new Error('Failed to save address - no addressId returned');
       }
       
       console.log(`✅ Address saved with ID: ${addressId}`);
       
       // Save analysis results
+      console.log('📊 Saving analysis results...');
       const analysisId = await savePropertyAnalysis(
         userId,
         addressId,
@@ -160,7 +200,7 @@ export const recoverAnalysesToDatabase = async (userId: string): Promise<{
       );
       
       if (!analysisId) {
-        throw new Error('Failed to save analysis');
+        throw new Error('Failed to save analysis - no analysisId returned');
       }
       
       console.log(`✅ Analysis saved with ID: ${analysisId}`);
@@ -169,7 +209,13 @@ export const recoverAnalysesToDatabase = async (userId: string): Promise<{
     } catch (error) {
       console.error(`❌ Failed to recover analysis ${analysis.id}:`, error);
       failed++;
-      errors.push(`Failed to recover analysis for ${analysis.address}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      errors.push(`Failed to recover analysis for ${analysis.address}: ${errorMessage}`);
+      console.error('Recovery error details:', {
+        analysisId: analysis.id,
+        address: analysis.address,
+        error: errorMessage
+      });
     }
   }
   
@@ -177,11 +223,15 @@ export const recoverAnalysesToDatabase = async (userId: string): Promise<{
   if (recovered > 0) {
     clearUnauthenticatedAnalyses();
     console.log(`✅ Recovery complete: ${recovered} recovered, ${failed} failed`);
+  } else {
+    console.log(`❌ Recovery failed: 0 recovered, ${failed} failed`);
   }
   
   return { recovered, failed, errors };
 };
 
 export const hasUnauthenticatedAnalyses = (): boolean => {
-  return getUnauthenticatedAnalyses().length > 0;
+  const count = getUnauthenticatedAnalyses().length;
+  console.log(`🔍 Checking for unauthenticated analyses: ${count} found`);
+  return count > 0;
 };

@@ -11,7 +11,18 @@ export const savePropertyAnalysis = async (
   satelliteImageUrl?: string
 ): Promise<string | null> => {
   try {
-    console.log('💾 Saving property analysis:', { userId, addressId, satelliteImageUrl });
+    console.log('💾 Saving property analysis:', { 
+      userId, 
+      addressId, 
+      satelliteImageUrl,
+      analysisResultsData: {
+        propertyType: analysisResults.propertyType,
+        topOpportunitiesCount: analysisResults.topOpportunities?.length || 0,
+        totalRevenue: analysisResults.topOpportunities?.reduce((sum, opp) => sum + (opp.monthlyRevenue || 0), 0) || 0,
+        hasRooftopData: !!analysisResults.rooftop,
+        usingRealSolarData: analysisResults.rooftop?.usingRealSolarData || false
+      }
+    });
     
     if (!userId) {
       throw new Error('User ID is required');
@@ -27,6 +38,14 @@ export const savePropertyAnalysis = async (
 
     const totalRevenue = analysisResults.topOpportunities?.reduce((sum, opp) => sum + (opp.monthlyRevenue || 0), 0) || 0;
     
+    console.log('📊 Preparing to insert analysis with calculated values:', {
+      totalRevenue,
+      totalOpportunities: analysisResults.topOpportunities?.length || 0,
+      propertyType: analysisResults.propertyType,
+      hasCoordinates: !!coordinates,
+      satelliteImageUrl
+    });
+
     const { data, error } = await supabase
       .from('user_property_analyses')
       .insert({
@@ -45,10 +64,23 @@ export const savePropertyAnalysis = async (
 
     if (error) {
       console.error('❌ Error inserting analysis:', error);
+      console.error('❌ Insert error details:', {
+        code: error.code,
+        message: error.message,
+        details: error.details,
+        hint: error.hint
+      });
       throw error;
     }
     
-    console.log('✅ Analysis saved successfully:', data.id);
+    console.log('✅ Analysis saved successfully:', {
+      analysisId: data.id,
+      userId: data.user_id,
+      addressId: data.address_id,
+      totalRevenue: data.total_monthly_revenue,
+      totalOpportunities: data.total_opportunities,
+      propertyType: data.property_type
+    });
     return data.id;
   } catch (err) {
     console.error('❌ Error saving property analysis:', err);
@@ -81,7 +113,17 @@ export const loadUserAnalyses = async (userId: string): Promise<UserPropertyAnal
       analysis_results: item.analysis_results as unknown as AnalysisResults
     }));
     
-    console.log('✅ Loaded analyses:', typedAnalysisData.length);
+    console.log('✅ Loaded analyses:', {
+      count: typedAnalysisData.length,
+      analyses: typedAnalysisData.map(analysis => ({
+        id: analysis.id,
+        addressId: analysis.address_id,
+        totalRevenue: analysis.total_monthly_revenue,
+        totalOpportunities: analysis.total_opportunities,
+        propertyType: analysis.property_type,
+        createdAt: analysis.created_at
+      }))
+    });
     return typedAnalysisData;
   } catch (err) {
     console.error('❌ Error loading analyses:', err);

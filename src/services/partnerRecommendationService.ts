@@ -33,6 +33,18 @@ interface RawProvider {
   setup_requirements: any;
 }
 
+const convertJsonToStringArray = (jsonArray: any): string[] => {
+  if (!Array.isArray(jsonArray)) return [];
+  return jsonArray.filter(item => typeof item === 'string');
+};
+
+const convertJsonToRecord = (jsonData: any): Record<string, any> => {
+  if (jsonData && typeof jsonData === 'object' && !Array.isArray(jsonData)) {
+    return jsonData as Record<string, any>;
+  }
+  return {};
+};
+
 export const generatePartnerRecommendations = async (
   onboardingId: string,
   detectedAssets: string[]
@@ -55,11 +67,11 @@ export const generatePartnerRecommendations = async (
           name: rawProvider.name || '',
           category: rawProvider.category || '',
           affiliate_base_url: rawProvider.affiliate_base_url || '',
-          supported_assets: Array.isArray(rawProvider.supported_assets) ? rawProvider.supported_assets : [],
+          supported_assets: convertJsonToStringArray(rawProvider.supported_assets),
           priority_score: rawProvider.priority_score || 5,
           avg_earnings_low: rawProvider.avg_earnings_low || 0,
           avg_earnings_high: rawProvider.avg_earnings_high || 0,
-          setup_requirements: rawProvider.setup_requirements || {}
+          setup_requirements: convertJsonToRecord(rawProvider.setup_requirements)
         };
 
         const matchingAssets = detectedAssets.filter(asset => 
@@ -147,9 +159,9 @@ export const initializePartnerIntegration = async (
       partner_name: data.partner_name,
       integration_status: data.integration_status as 'pending' | 'in_progress' | 'completed' | 'failed',
       referral_link: data.referral_link || '',
-      registration_data: data.registration_data || {},
-      earnings_data: data.earnings_data || {},
-      next_steps: Array.isArray(data.next_steps) ? data.next_steps : []
+      registration_data: convertJsonToRecord(data.registration_data),
+      earnings_data: convertJsonToRecord(data.earnings_data),
+      next_steps: convertJsonToStringArray(data.next_steps)
     };
 
   } catch (error) {
@@ -209,9 +221,9 @@ export const getUserIntegrationProgress = async (
       partner_name: item.partner_name,
       integration_status: item.integration_status as 'pending' | 'in_progress' | 'completed' | 'failed',
       referral_link: item.referral_link || '',
-      registration_data: item.registration_data || {},
-      earnings_data: item.earnings_data || {},
-      next_steps: Array.isArray(item.next_steps) ? item.next_steps : []
+      registration_data: convertJsonToRecord(item.registration_data),
+      earnings_data: convertJsonToRecord(item.earnings_data),
+      next_steps: convertJsonToStringArray(item.next_steps)
     }));
 
   } catch (error) {
