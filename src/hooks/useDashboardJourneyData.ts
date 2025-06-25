@@ -62,36 +62,6 @@ export const useDashboardJourneyData = () => {
     return { propertyAddress, totalRevenue, totalOpportunities };
   };
 
-  const parseJourneyProgress = (journeyProgress: any) => {
-    // Handle different formats of journey progress data
-    if (!journeyProgress) {
-      return {
-        stepsCompleted: [],
-        currentStep: 'site_entry',
-        journeyStart: new Date().toISOString(),
-        lastActivity: new Date().toISOString()
-      };
-    }
-
-    // If it's already in the correct format
-    if (journeyProgress.stepsCompleted && journeyProgress.currentStep) {
-      return {
-        stepsCompleted: Array.isArray(journeyProgress.stepsCompleted) ? journeyProgress.stepsCompleted : [],
-        currentStep: journeyProgress.currentStep || 'site_entry',
-        journeyStart: journeyProgress.journeyStart || new Date().toISOString(),
-        lastActivity: journeyProgress.lastActivity || new Date().toISOString()
-      };
-    }
-
-    // If it's a generic object, try to extract what we can
-    return {
-      stepsCompleted: [],
-      currentStep: 'site_entry',
-      journeyStart: new Date().toISOString(),
-      lastActivity: new Date().toISOString()
-    };
-  };
-
   useEffect(() => {
     const loadJourneyData = async () => {
       if (!user) {
@@ -145,7 +115,7 @@ export const useDashboardJourneyData = () => {
             }
           }
 
-          // Parse journey progress with better handling
+          // Parse journey progress
           let journeyProgress = data.journey_progress;
           if (typeof journeyProgress === 'string') {
             try {
@@ -155,7 +125,15 @@ export const useDashboardJourneyData = () => {
             }
           }
 
-          const parsedJourneyProgress = parseJourneyProgress(journeyProgress);
+          // Ensure we have proper journey progress structure
+          if (!journeyProgress || typeof journeyProgress !== 'object') {
+            journeyProgress = {
+              stepsCompleted: [],
+              currentStep: 'site_entry',
+              journeyStart: new Date().toISOString(),
+              lastActivity: new Date().toISOString()
+            };
+          }
 
           const transformedData: DashboardJourneyData = {
             journeyId: data.journey_id,
@@ -165,7 +143,7 @@ export const useDashboardJourneyData = () => {
             totalOpportunities,
             selectedServices: Array.isArray(selectedServices) ? selectedServices : [],
             selectedOption: data.selected_option || 'manual',
-            journeyProgress: parsedJourneyProgress
+            journeyProgress
           };
           
           console.log('✅ Transformed dashboard data:', transformedData);
@@ -232,7 +210,14 @@ export const useDashboardJourneyData = () => {
           }
         }
 
-        const parsedJourneyProgress = parseJourneyProgress(journeyProgress);
+        if (!journeyProgress || typeof journeyProgress !== 'object') {
+          journeyProgress = {
+            stepsCompleted: [],
+            currentStep: 'site_entry',
+            journeyStart: new Date().toISOString(),
+            lastActivity: new Date().toISOString()
+          };
+        }
 
         setJourneyData({
           journeyId: data.journey_id,
@@ -242,7 +227,7 @@ export const useDashboardJourneyData = () => {
           totalOpportunities,
           selectedServices: Array.isArray(selectedServices) ? selectedServices : [],
           selectedOption: data.selected_option || 'manual',
-          journeyProgress: parsedJourneyProgress
+          journeyProgress
         });
         
         console.log('✅ Dashboard data refreshed successfully');

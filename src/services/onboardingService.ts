@@ -4,21 +4,13 @@ import { supabase } from '@/integrations/supabase/client';
 export interface OnboardingData {
   id: string;
   user_id: string;
-  current_step: string;
-  status: 'active' | 'completed' | 'paused';
-  completed_assets: string[];
-  progress_data: {
-    communicationStyle?: 'formal' | 'casual';
-    primaryGoals?: string[];
-    experienceLevel?: 'beginner' | 'intermediate' | 'advanced';
-    propertyInfo?: {
-      address?: string;
-      propertyType?: string;
-      interestedServices?: string[];
-    };
-  };
   selected_option: 'manual' | 'concierge';
+  status: 'not_started' | 'in_progress' | 'completed' | 'paused';
+  current_step: number;
   total_steps: number;
+  chat_history: any[];
+  completed_assets: string[];
+  progress_data: any;
   created_at: string;
   updated_at: string;
 }
@@ -32,132 +24,127 @@ export interface OnboardingMessage {
   created_at: string;
 }
 
-export const getOnboardingData = async (userId: string): Promise<OnboardingData | null> => {
+// Helper function to convert database row to OnboardingData
+const convertToOnboardingData = (row: any): OnboardingData => {
+  return {
+    ...row,
+    chat_history: Array.isArray(row.chat_history) ? row.chat_history : [],
+    progress_data: row.progress_data || {},
+    completed_assets: Array.isArray(row.completed_assets) ? row.completed_assets : []
+  };
+};
+
+// Helper function to convert database row to OnboardingMessage
+const convertToOnboardingMessage = (row: any): OnboardingMessage => {
+  return {
+    ...row,
+    role: row.role as 'user' | 'assistant' | 'system',
+    metadata: row.metadata || {}
+  };
+};
+
+export const createOnboarding = async (
+  userId: string,
+  selectedOption: 'manual' | 'concierge'
+): Promise<OnboardingData | null> => {
   try {
+    console.log('📝 Creating onboarding session:', { userId, selectedOption });
+    
+    // Ensure we have the authenticated user
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user || user.id !== userId) {
+      throw new Error('User must be authenticated to create onboarding session');
+    }
+    
+    const { data, error } = await supabase
+      .from('user_onboarding')
+      .insert({
+        user_id: userId,
+        selected_option: selectedOption,
+        status: 'in_progress',
+        current_step: 1,
+        total_steps: 5,
+        chat_history: [],
+        completed_assets: [],
+        progress_data: {}
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error('❌ Error creating onboarding:', error);
+      throw error;
+    }
+
+    console.log('✅ Onboarding session created:', data.id);
+    return convertToOnboardingData(data);
+  } catch (err) {
+    console.error('❌ Error in createOnboarding:', err);
+    throw err;
+  }
+};
+
+export const getOnboarding = async (userId: string): Promise<OnboardingData | null> => {
+  try {
+    console.log('🔍 Getting onboarding for user:', userId);
+    
+    // Ensure we have the authenticated user
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user || user.id !== userId) {
+      throw new Error('User must be authenticated to access onboarding data');
+    }
+    
     const { data, error } = await supabase
       .from('user_onboarding')
       .select('*')
       .eq('user_id', userId)
-      .single();
+      .order('created_at', { ascending: false })
+      .maybeSingle();
 
-    if (error) {
-      if (error.code === 'PGRST116') {
-        return null;
-      }
+    if (error && error.code !== 'PGRST116') {
+      console.error('❌ Error getting onboarding:', error);
       throw error;
     }
 
-    if (!data) return null;
-
-    // Transform database data to OnboardingData interface
-    const onboardingData = data.onboarding_data as any || {};
-    
-    return {
-      id: data.id,
-      user_id: data.user_id,
-      current_step: onboardingData.current_step || 'welcome',
-      status: onboardingData.status || 'active',
-      completed_assets: onboardingData.completed_assets || [],
-      progress_data: onboardingData.progress_data || {},
-      selected_option: onboardingData.selected_option || 'manual',
-      total_steps: onboardingData.total_steps || 5,
-      created_at: data.created_at,
-      updated_at: data.updated_at
-    };
-  } catch (error) {
-    console.error('Error fetching onboarding data:', error);
-    return null;
+    console.log('✅ Found onboarding:', !!data);
+    return data ? convertToOnboardingData(data) : null;
+  } catch (err) {
+    console.error('❌ Error in getOnboarding:', err);
+    throw err;
   }
-};
-
-export const saveOnboardingData = async (userId: string, data: Partial<OnboardingData>): Promise<void> => {
-  try {
-    const { error } = await supabase
-      .from('user_onboarding')
-      .upsert({
-        user_id: userId,
-        onboarding_data: {
-          current_step: data.current_step,
-          status: data.status,
-          completed_assets: data.completed_assets,
-          progress_data: data.progress_data,
-          selected_option: data.selected_option,
-          total_steps: data.total_steps
-        },
-        updated_at: new Date().toISOString()
-      });
-
-    if (error) throw error;
-  } catch (error) {
-    console.error('Error saving onboarding data:', error);
-    throw error;
-  }
-};
-
-export const createOnboarding = async (userId: string, selectedOption: 'manual' | 'concierge'): Promise<OnboardingData> => {
-  const newOnboardingData: Partial<OnboardingData> = {
-    current_step: 'welcome',
-    status: 'active',
-    completed_assets: [],
-    progress_data: {},
-    selected_option: selectedOption,
-    total_steps: 5
-  };
-
-  await saveOnboardingData(userId, newOnboardingData);
-  
-  const savedData = await getOnboardingData(userId);
-  if (!savedData) {
-    throw new Error('Failed to create onboarding data');
-  }
-  
-  return savedData;
-};
-
-export const getOnboarding = async (userId: string): Promise<OnboardingData | null> => {
-  return getOnboardingData(userId);
 };
 
 export const updateOnboardingProgress = async (
-  id: string, 
+  onboardingId: string,
   updates: Partial<Pick<OnboardingData, 'current_step' | 'status' | 'completed_assets' | 'progress_data'>>
 ): Promise<OnboardingData | null> => {
   try {
-    // First get the current data
-    const { data: currentData, error: fetchError } = await supabase
+    console.log('🔄 Updating onboarding progress:', { onboardingId, updates });
+    
+    // Ensure user is authenticated
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      throw new Error('User must be authenticated to update onboarding');
+    }
+    
+    const { data, error } = await supabase
       .from('user_onboarding')
-      .select('*')
-      .eq('id', id)
+      .update(updates)
+      .eq('id', onboardingId)
+      .eq('user_id', user.id) // Ensure user can only update their own data
+      .select()
       .single();
 
-    if (fetchError || !currentData) {
-      console.error('Error fetching current onboarding data:', fetchError);
-      return null;
+    if (error) {
+      console.error('❌ Error updating onboarding:', error);
+      throw error;
     }
 
-    const currentOnboardingData = currentData.onboarding_data as any || {};
-    
-    // Merge updates with current data
-    const updatedOnboardingData = {
-      ...currentOnboardingData,
-      ...updates
-    };
-
-    const { error } = await supabase
-      .from('user_onboarding')
-      .update({
-        onboarding_data: updatedOnboardingData,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', id);
-
-    if (error) throw error;
-
-    // Return updated data
-    return getOnboardingData(currentData.user_id);
-  } catch (error) {
-    console.error('Error updating onboarding progress:', error);
-    return null;
+    console.log('✅ Onboarding updated successfully');
+    return convertToOnboardingData(data);
+  } catch (err) {
+    console.error('❌ Error in updateOnboardingProgress:', err);
+    throw err;
   }
 };
 
@@ -168,6 +155,25 @@ export const addOnboardingMessage = async (
   metadata?: any
 ): Promise<OnboardingMessage | null> => {
   try {
+    console.log('💬 Adding onboarding message:', { onboardingId, role, content: content.substring(0, 50) + '...' });
+    
+    // Ensure user is authenticated
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      throw new Error('User must be authenticated to add messages');
+    }
+    
+    // Verify the onboarding session belongs to the authenticated user
+    const { data: onboardingData, error: checkError } = await supabase
+      .from('user_onboarding')
+      .select('user_id')
+      .eq('id', onboardingId)
+      .single();
+    
+    if (checkError || !onboardingData || onboardingData.user_id !== user.id) {
+      throw new Error('Access denied: onboarding session not found or not owned by user');
+    }
+    
     const { data, error } = await supabase
       .from('onboarding_messages')
       .insert({
@@ -179,59 +185,46 @@ export const addOnboardingMessage = async (
       .select()
       .single();
 
-    if (error) throw error;
-    return data;
-  } catch (error) {
-    console.error('Error adding onboarding message:', error);
-    return null;
+    if (error) {
+      console.error('❌ Error adding message:', error);
+      throw error;
+    }
+
+    console.log('✅ Message added successfully');
+    return convertToOnboardingMessage(data);
+  } catch (err) {
+    console.error('❌ Error in addOnboardingMessage:', err);
+    throw err;
   }
 };
 
 export const getOnboardingMessages = async (onboardingId: string): Promise<OnboardingMessage[]> => {
   try {
+    console.log('📨 Getting messages for onboarding:', onboardingId);
+    
+    // Ensure user is authenticated
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      throw new Error('User must be authenticated to view messages');
+    }
+    
+    // The RLS policy will automatically filter messages to only show those
+    // belonging to onboarding sessions owned by the authenticated user
     const { data, error } = await supabase
       .from('onboarding_messages')
       .select('*')
       .eq('onboarding_id', onboardingId)
       .order('created_at', { ascending: true });
 
-    if (error) throw error;
-    return data || [];
-  } catch (error) {
-    console.error('Error fetching onboarding messages:', error);
-    return [];
-  }
-};
+    if (error) {
+      console.error('❌ Error getting messages:', error);
+      throw error;
+    }
 
-export const updateOnboardingStep = async (userId: string, step: string): Promise<void> => {
-  try {
-    const currentData = await getOnboardingData(userId);
-    if (!currentData) return;
-
-    await updateOnboardingProgress(currentData.id, {
-      current_step: step,
-      completed_assets: [
-        ...currentData.completed_assets,
-        step
-      ].filter((value, index, self) => self.indexOf(value) === index)
-    });
-  } catch (error) {
-    console.error('Error updating onboarding step:', error);
-    throw error;
-  }
-};
-
-export const completeOnboarding = async (userId: string): Promise<void> => {
-  try {
-    const currentData = await getOnboardingData(userId);
-    if (!currentData) return;
-
-    await updateOnboardingProgress(currentData.id, {
-      current_step: 'completed',
-      status: 'completed'
-    });
-  } catch (error) {
-    console.error('Error completing onboarding:', error);
-    throw error;
+    console.log('✅ Found messages:', data?.length || 0);
+    return data ? data.map(convertToOnboardingMessage) : [];
+  } catch (err) {
+    console.error('❌ Error in getOnboardingMessages:', err);
+    throw err;
   }
 };

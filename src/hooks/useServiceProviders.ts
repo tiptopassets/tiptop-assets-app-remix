@@ -4,27 +4,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { ServiceProvider, AffiliateRegistration } from '@/contexts/ServiceProviders/types';
 
-// Temporary type for database row until Supabase types are updated
-interface ServiceProviderRow {
-  id: string;
-  name: string;
-  category: string;
-  description: string | null;
-  logo_url: string | null;
-  website_url: string | null;
-  commission_rate: number;
-  setup_cost: number;
-  avg_monthly_earnings_low: number;
-  avg_monthly_earnings_high: number;
-  priority: number;
-  is_active: boolean;
-  conversion_rate?: number | null;
-  referral_link_template?: string | null;
-  affiliate_program_url?: string | null;
-  created_at: string;
-  updated_at: string;
-}
-
 export const useServiceProviders = () => {
   const { user } = useAuth();
   const [providers, setProviders] = useState<ServiceProvider[]>([]);
@@ -49,27 +28,7 @@ export const useServiceProviders = () => {
         .order('priority', { ascending: false });
 
       if (error) throw error;
-      
-      // Transform the data to match ServiceProvider interface
-      const transformedProviders: ServiceProvider[] = (data as ServiceProviderRow[]).map(provider => ({
-        id: provider.id,
-        name: provider.name,
-        category: provider.category,
-        description: provider.description || '',
-        logo_url: provider.logo_url,
-        website_url: provider.website_url,
-        affiliate_program_url: provider.affiliate_program_url || '',
-        referral_link_template: provider.referral_link_template || '',
-        commission_rate: provider.commission_rate,
-        setup_cost: provider.setup_cost,
-        avg_monthly_earnings_low: provider.avg_monthly_earnings_low,
-        avg_monthly_earnings_high: provider.avg_monthly_earnings_high,
-        conversion_rate: provider.conversion_rate || 2.5,
-        priority: provider.priority,
-        is_active: provider.is_active
-      }));
-      
-      setProviders(transformedProviders);
+      setProviders(data || []);
     } catch (err) {
       console.error('Error fetching providers:', err);
       setError(err instanceof Error ? err.message : 'Failed to fetch providers');
