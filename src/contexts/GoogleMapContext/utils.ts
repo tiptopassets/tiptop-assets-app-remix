@@ -1,7 +1,5 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { saveAddress } from '@/services/userAddressService';
-import { savePropertyAnalysis } from '@/services/userAnalysisService';
 import { saveUnauthenticatedAnalysis } from '@/services/unauthenticatedAnalysisService';
 
 export const syncAnalysisToDatabase = async (
@@ -19,35 +17,8 @@ export const syncAnalysisToDatabase = async (
     return;
   }
 
-  try {
-    console.log('🔄 Syncing analysis to database for authenticated user...', { address, userId });
-    
-    // First, save or get the address
-    const addressId = await saveAddress(userId, address, coordinates);
-    if (!addressId) {
-      console.error('❌ Failed to save address, cannot sync analysis');
-      return;
-    }
-
-    // Then save the analysis with the satellite image URL
-    const analysisId = await savePropertyAnalysis(
-      userId, 
-      addressId, 
-      analysis, 
-      coordinates,
-      satelliteImageUrl
-    );
-    
-    if (analysisId) {
-      console.log('✅ Analysis synced successfully to database:', analysisId);
-      // Refresh user data to reflect the new analysis
-      if (refreshUserData) {
-        await refreshUserData();
-      }
-    }
-  } catch (error) {
-    console.error('❌ Error syncing analysis to database:', error);
-  }
+  console.log('🔄 Syncing analysis to database deprecated - use UserData service functions directly');
+  console.warn('⚠️ syncAnalysisToDatabase is deprecated. Use saveAddress and savePropertyAnalysis from UserData service instead.');
 };
 
 export const generateAnalysis = async (
@@ -86,28 +57,8 @@ export const generateAnalysis = async (
 
     console.log('✅ Analysis completed successfully');
     
-    // Handle saving based on authentication status
-    if (userId && refreshUserData) {
-      console.log('👤 User authenticated - saving directly to database');
-      // Sync to database for authenticated users
-      await syncAnalysisToDatabase(
-        userId,
-        address, 
-        data.analysis, 
-        coords || data.propertyInfo?.coordinates,
-        data.satelliteImageUrl,
-        refreshUserData
-      );
-    } else {
-      console.log('🔄 User not authenticated - saving to localStorage');
-      // Save to localStorage for unauthenticated users
-      saveUnauthenticatedAnalysis(
-        address, 
-        data.analysis, 
-        coords || data.propertyInfo?.coordinates, 
-        address
-      );
-    }
+    // Note: Database saving is now handled in the propertyAnalysis.ts file
+    // through the integrated save functions passed from GoogleMapProvider
     
     return data.analysis;
   } catch (error) {

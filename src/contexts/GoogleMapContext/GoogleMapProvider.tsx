@@ -31,10 +31,14 @@ const GoogleMapProvider = ({ children }: { children: React.ReactNode }) => {
     userDataContext = useUserData();
   } catch (error) {
     console.warn('⚠️ UserData hook not available, proceeding without user data');
-    userDataContext = { refreshUserData: async () => {} };
+    userDataContext = { 
+      refreshUserData: async () => {},
+      saveAddress: async () => null,
+      savePropertyAnalysis: async () => null
+    };
   }
   
-  const { refreshUserData } = userDataContext;
+  const { refreshUserData, saveAddress, savePropertyAnalysis } = userDataContext;
   const { toast } = useToast();
 
   // Initialize state
@@ -160,20 +164,34 @@ const GoogleMapProvider = ({ children }: { children: React.ReactNode }) => {
     }
   }, [user?.id, refreshUserData, toast]);
 
-  // Wrapper function that matches the expected signature
+  // Enhanced wrapper function with integrated database saving
   const generatePropertyAnalysisWrapper = async (propertyAddress: string) => {
-    return generatePropertyAnalysis({
-      propertyAddress,
-      addressCoordinates,
-      useLocalAnalysis,
-      setIsGeneratingAnalysis,
-      setIsAnalyzing,
-      setAnalysisResults,
-      setAnalysisComplete,
-      setUseLocalAnalysis,
-      setAnalysisError,
-      toast
-    });
+    console.log('🏠 Starting property analysis with database integration:', { propertyAddress, userId: user?.id });
+    
+    try {
+      const analysis = await generatePropertyAnalysis({
+        propertyAddress,
+        addressCoordinates,
+        useLocalAnalysis,
+        setIsGeneratingAnalysis,
+        setIsAnalyzing,
+        setAnalysisResults,
+        setAnalysisComplete,
+        setUseLocalAnalysis,
+        setAnalysisError,
+        toast,
+        // Pass database save functions
+        saveAddress: user ? saveAddress : null,
+        savePropertyAnalysis: user ? savePropertyAnalysis : null,
+        refreshUserData: user ? refreshUserData : null,
+        userId: user?.id
+      });
+
+      return analysis;
+    } catch (error) {
+      console.error('❌ Property analysis failed:', error);
+      throw error;
+    }
   };
 
   const value: GoogleMapContextProps = {

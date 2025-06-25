@@ -18,6 +18,11 @@ interface AnalysisParams {
   setUseLocalAnalysis: (value: boolean) => void;
   setAnalysisError: (error: string | null) => void;
   toast: typeof toast;
+  // Database integration parameters
+  saveAddress?: ((address: string, coordinates?: any, formattedAddress?: string) => Promise<string | null>) | null;
+  savePropertyAnalysis?: ((addressId: string, analysisResults: AnalysisResults, coordinates?: any) => Promise<string | null>) | null;
+  refreshUserData?: (() => Promise<void>) | null;
+  userId?: string;
 }
 
 export const generatePropertyAnalysis = async ({
@@ -30,7 +35,11 @@ export const generatePropertyAnalysis = async ({
   setAnalysisComplete,
   setUseLocalAnalysis,
   setAnalysisError,
-  toast
+  toast,
+  saveAddress,
+  savePropertyAnalysis,
+  refreshUserData,
+  userId
 }: AnalysisParams): Promise<void> => {
   if (!propertyAddress) {
     toast({
@@ -47,6 +56,13 @@ export const generatePropertyAnalysis = async ({
     setIsGeneratingAnalysis(true);
     setIsAnalyzing(true);
     
+    console.log('🏠 Starting property analysis:', { 
+      propertyAddress, 
+      useLocalAnalysis, 
+      hasUserId: !!userId,
+      hasSaveFunctions: !!(saveAddress && savePropertyAnalysis)
+    });
+    
     // Ensure coordinates are always available using centralized service
     const coordinateResult = await ensureCoordinates(propertyAddress, addressCoordinates);
     console.log("📍 Ensured coordinates:", coordinateResult);
@@ -59,6 +75,17 @@ export const generatePropertyAnalysis = async ({
         setAnalysisComplete(true);
         setIsGeneratingAnalysis(false);
         setIsAnalyzing(false);
+        
+        // Save to database if user is authenticated
+        await saveToDatabaseIfAuthenticated(
+          propertyAddress,
+          mockResults,
+          coordinateResult.coordinates,
+          saveAddress,
+          savePropertyAnalysis,
+          refreshUserData,
+          userId
+        );
         
         toast({
           title: "Analysis Complete",
@@ -74,9 +101,9 @@ export const generatePropertyAnalysis = async ({
       try {
         const mapUrls = await generateMapImageUrls(coordinateResult.coordinates);
         satelliteImage = await imageUrlToBase64(mapUrls.satelliteImageUrl);
-        console.log("Captured satellite image for analysis");
+        console.log("📸 Captured satellite image for analysis");
       } catch (err) {
-        console.error("Failed to capture satellite image:", err);
+        console.error("❌ Failed to capture satellite image:", err);
       }
     }
     
@@ -101,7 +128,7 @@ export const generatePropertyAnalysis = async ({
     if (error) {
       // Check if it's a quota error
       if (error.message.includes('quota') || error.message.includes('insufficient_quota')) {
-        console.log("API quota exceeded, switching to fallback mode");
+        console.log("💡 API quota exceeded, switching to fallback mode");
         setUseLocalAnalysis(true);
         toast({
           title: "API Quota Exceeded",
@@ -118,7 +145,11 @@ export const generatePropertyAnalysis = async ({
           setAnalysisComplete,
           setUseLocalAnalysis,
           setAnalysisError,
-          toast
+          toast,
+          saveAddress,
+          savePropertyAnalysis,
+          refreshUserData,
+          userId
         });
       }
       throw new Error(error.message);
@@ -136,18 +167,30 @@ export const generatePropertyAnalysis = async ({
       setAnalysisResults(processedResult.analysisResults);
       setAnalysisComplete(true);
       
+      // Save to database if user is authenticated
+      await saveToDatabaseIfAuthenticated(
+        propertyAddress,
+        processedResult.analysisResults,
+        coordinateResult.coordinates,
+        saveAddress,
+        savePropertyAnalysis,
+        refreshUserData,
+        userId
+      );
+      
       // Show toast with validation summary
       const validationSummary = processedResult.validationLog.join(', ');
+      const savedToDashboard = userId && saveAddress && savePropertyAnalysis ? " and saved to dashboard" : "";
       toast({
         title: "Analysis Complete",
-        description: `Found ${processedResult.analysisResults.topOpportunities.length} opportunities. ${validationSummary}`,
+        description: `Found ${processedResult.analysisResults.topOpportunities.length} opportunities${savedToDashboard}. ${validationSummary}`,
       });
     } else {
       throw new Error("No analysis data received");
     }
     
   } catch (error) {
-    console.error("Error generating property analysis:", error);
+    console.error("❌ Error generating property analysis:", error);
     
     // If we encounter any API error, fall back to local analysis with guaranteed coordinates
     if (error instanceof Error && 
@@ -157,7 +200,7 @@ export const generatePropertyAnalysis = async ({
          error.message.includes('geocode') ||
          error.message.includes('coordinates'))) {
       
-      console.log("API error, switching to fallback mode with guaranteed coordinates");
+      console.log("💡 API error, switching to fallback mode with guaranteed coordinates");
       setUseLocalAnalysis(true);
       toast({
         title: "API Connection Issue",
@@ -176,7 +219,11 @@ export const generatePropertyAnalysis = async ({
         setAnalysisComplete,
         setUseLocalAnalysis,
         setAnalysisError,
-        toast
+        toast,
+        saveAddress,
+        savePropertyAnalysis,
+        refreshUserData,
+        userId
       });
     }
     
@@ -195,3 +242,49 @@ export const generatePropertyAnalysis = async ({
     }
   }
 };
+
+// Helper function to save analysis to database if user is authenticated
+async function saveToDatabaseIfAuthenticated(
+  propertyAddress: string,
+  analysisResults: AnalysisResults,
+  coordinates: google.maps.LatLngLiteral | null,
+  saveAddress: ((address: string, coordinates?: any, formattedAddress?: string) => Promise<string | null>) | null | undefined,
+  savePropertyAnalysis: ((addressId: string, analysisResults: AnalysisResults, coordinates?: any) => Promise<string | null>) | null | undefined,
+  refreshUserData: (() => Promise<void>) | null | undefined,
+  userId?: string
+) {
+  if (!userId || !saveAddress || !savePropertyAnalysis) {
+    console.log('📝 User not authenticated or save functions not available, skipping database save');
+    return;
+  }
+
+  try {
+    console.log('💾 Saving analysis results to database...');
+    
+    // First, save the address to get an addressId
+    const addressId = await saveAddress(propertyAddress, coordinates, propertyAddress);
+    if (!addressId) {
+      console.error('❌ Failed to save address, cannot save analysis');
+      return;
+    }
+    
+    console.log('✅ Address saved with ID:', addressId);
+    
+    // Then save the analysis results
+    const analysisId = await savePropertyAnalysis(addressId, analysisResults, coordinates);
+    if (analysisId) {
+      console.log('✅ Analysis saved to database with ID:', analysisId);
+      
+      // Refresh user data to update dashboard
+      if (refreshUserData) {
+        await refreshUserData();
+        console.log('🔄 User data refreshed for dashboard update');
+      }
+    } else {
+      console.error('❌ Failed to save analysis to database');
+    }
+  } catch (error) {
+    console.error('❌ Error saving to database:', error);
+    // Don't throw error here - we don't want to break the analysis flow
+  }
+}
