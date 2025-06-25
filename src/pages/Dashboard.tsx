@@ -1,30 +1,18 @@
 
 import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { useUserData } from '@/hooks/useUserData';
+import { useDashboardJourneyData } from '@/hooks/useDashboardJourneyData';
 import DashboardLayout from '@/components/dashboard/DashboardLayout';
 import { DashboardEmptyState } from '@/components/dashboard/DashboardEmptyState';
 import DashboardLoadingState from '@/components/dashboard/DashboardLoadingState';
 import DashboardErrorState from '@/components/dashboard/DashboardErrorState';
 import DashboardAuthGuard from '@/components/dashboard/DashboardAuthGuard';
 import DashboardContent from '@/components/dashboard/DashboardContent';
+import JourneyTracker from '@/components/JourneyTracker';
 
 const Dashboard = () => {
   const { user, loading: authLoading } = useAuth();
-  const { 
-    addresses, 
-    analyses, 
-    assetSelections, 
-    loading: dataLoading, 
-    error,
-    loadUserData,
-    refreshUserData,
-    getPrimaryAddress,
-    getLatestAnalysis 
-  } = useUserData();
-
-  const primaryAddress = getPrimaryAddress();
-  const latestAnalysis = getLatestAnalysis();
+  const { journeyData, loading: dataLoading, error, refreshJourneyData } = useDashboardJourneyData();
 
   console.log('📊 Dashboard render state:', {
     authLoading,
@@ -32,11 +20,14 @@ const Dashboard = () => {
     user: !!user,
     userId: user?.id,
     error,
-    addressesCount: addresses.length,
-    analysesCount: analyses.length,
-    assetSelectionsCount: assetSelections.length,
-    primaryAddress: primaryAddress?.address,
-    latestAnalysis: !!latestAnalysis
+    hasJourneyData: !!journeyData,
+    journeyData: journeyData ? {
+      address: journeyData.propertyAddress,
+      revenue: journeyData.totalMonthlyRevenue,
+      opportunities: journeyData.totalOpportunities,
+      selectedOption: journeyData.selectedOption,
+      currentStep: journeyData.journeyProgress?.currentStep
+    } : null
   });
 
   // Show loading state while auth is loading
@@ -59,34 +50,42 @@ const Dashboard = () => {
     return (
       <DashboardErrorState 
         error={error}
-        onRefresh={refreshUserData}
-        onReload={loadUserData}
+        onRefresh={refreshJourneyData}
+        onReload={refreshJourneyData}
       />
     );
   }
 
-  // Show empty state if no analysis data is found
-  if (analyses.length === 0) {
+  // Show empty state if no journey data is found
+  if (!journeyData) {
     return (
       <DashboardLayout>
+        <JourneyTracker />
         <DashboardEmptyState />
       </DashboardLayout>
     );
   }
 
-  // Calculate total revenue from analysis results
-  const totalMonthlyRevenue = latestAnalysis?.total_monthly_revenue || 0;
-  const totalOpportunities = latestAnalysis?.total_opportunities || 0;
+  // Convert journey data to the format expected by DashboardContent
+  const mockLatestAnalysis = {
+    id: journeyData.journeyId,
+    analysis_results: journeyData.analysisResults,
+    total_monthly_revenue: journeyData.totalMonthlyRevenue,
+    total_opportunities: journeyData.totalOpportunities,
+    created_at: journeyData.journeyProgress?.journeyStart || new Date().toISOString(),
+    satellite_image_url: journeyData.analysisResults?.rooftop?.satelliteImageUrl
+  };
 
   return (
     <DashboardLayout>
+      <JourneyTracker />
       <DashboardContent
-        primaryAddress={primaryAddress?.address}
-        latestAnalysis={latestAnalysis}
-        totalMonthlyRevenue={totalMonthlyRevenue}
-        totalOpportunities={totalOpportunities}
-        analysesCount={analyses.length}
-        onRefresh={refreshUserData}
+        primaryAddress={journeyData.propertyAddress}
+        latestAnalysis={mockLatestAnalysis}
+        totalMonthlyRevenue={journeyData.totalMonthlyRevenue}
+        totalOpportunities={journeyData.totalOpportunities}
+        analysesCount={1} // We have journey data, so at least 1 analysis
+        onRefresh={refreshJourneyData}
       />
     </DashboardLayout>
   );

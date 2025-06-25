@@ -6,11 +6,13 @@ import { Button } from '@/components/ui/button';
 import { CheckCircle2, Upload, User, LogIn } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
+import { useJourneyTracking } from '@/hooks/useJourneyTracking';
 
 const Options = () => {
   const [selectedOption, setSelectedOption] = useState<'manual' | 'concierge' | null>(null);
   const [isInitialized, setIsInitialized] = useState(false);
   const { signInWithGoogle, loading: authLoading, user } = useAuth();
+  const { trackOption } = useJourneyTracking();
   const { toast } = useToast();
 
   console.log('🎯 Options page state:', {
@@ -45,9 +47,12 @@ const Options = () => {
     }
   }, [user, authLoading, selectedOption]);
 
-  const handleOptionSelect = (option: 'manual' | 'concierge') => {
+  const handleOptionSelect = async (option: 'manual' | 'concierge') => {
     console.log('✅ Option selected:', option);
     setSelectedOption(option);
+    
+    // Track the option selection
+    await trackOption(option);
   };
 
   const handleContinue = async () => {

@@ -9,644 +9,138 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      affiliate_credentials: {
+      available_services: {
         Row: {
-          created_at: string
-          encrypted_email: string | null
-          encrypted_password: string | null
-          encryption_key_id: string | null
-          id: string
-          service: string
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          encrypted_email?: string | null
-          encrypted_password?: string | null
-          encryption_key_id?: string | null
-          id?: string
-          service: string
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          encrypted_email?: string | null
-          encrypted_password?: string | null
-          encryption_key_id?: string | null
-          id?: string
-          service?: string
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
-      affiliate_earnings: {
-        Row: {
-          created_at: string
-          earnings: number
-          id: string
-          last_sync_at: string | null
-          last_sync_status: string
-          service: string
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          earnings?: number
-          id?: string
-          last_sync_at?: string | null
-          last_sync_status?: string
-          service: string
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          earnings?: number
-          id?: string
-          last_sync_at?: string | null
-          last_sync_status?: string
-          service?: string
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
-      affiliate_registrations: {
-        Row: {
-          affiliate_link: string | null
-          bundle_selection_id: string | null
-          created_at: string
-          first_commission_date: string | null
-          id: string
-          last_sync_at: string
-          provider_id: string
-          registration_date: string | null
-          registration_status: string
-          total_earnings: number
-          tracking_code: string | null
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          affiliate_link?: string | null
-          bundle_selection_id?: string | null
-          created_at?: string
-          first_commission_date?: string | null
-          id?: string
-          last_sync_at?: string
-          provider_id: string
-          registration_date?: string | null
-          registration_status?: string
-          total_earnings?: number
-          tracking_code?: string | null
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          affiliate_link?: string | null
-          bundle_selection_id?: string | null
-          created_at?: string
-          first_commission_date?: string | null
-          id?: string
-          last_sync_at?: string
-          provider_id?: string
-          registration_date?: string | null
-          registration_status?: string
-          total_earnings?: number
-          tracking_code?: string | null
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "affiliate_registrations_provider_id_fkey"
-            columns: ["provider_id"]
-            isOneToOne: false
-            referencedRelation: "service_providers"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      bundle_analytics: {
-        Row: {
-          analytics_data: Json
-          bundle_id: string
+          analysis_id: string | null
           created_at: string | null
           id: string
-          period_end: string | null
-          period_start: string | null
-          updated_at: string | null
-          user_id: string | null
-        }
-        Insert: {
-          analytics_data: Json
-          bundle_id: string
-          created_at?: string | null
-          id?: string
-          period_end?: string | null
-          period_start?: string | null
-          updated_at?: string | null
-          user_id?: string | null
-        }
-        Update: {
-          analytics_data?: Json
-          bundle_id?: string
-          created_at?: string | null
-          id?: string
-          period_end?: string | null
-          period_start?: string | null
-          updated_at?: string | null
-          user_id?: string | null
-        }
-        Relationships: []
-      }
-      bundle_configurations: {
-        Row: {
-          asset_requirements: Json
-          created_at: string
-          description: string | null
-          id: string
-          is_active: boolean
-          max_providers_per_asset: number
-          min_assets: number
-          name: string
-          total_monthly_earnings_high: number
-          total_monthly_earnings_low: number
-          total_setup_cost: number
-          updated_at: string
-        }
-        Insert: {
-          asset_requirements?: Json
-          created_at?: string
-          description?: string | null
-          id?: string
-          is_active?: boolean
-          max_providers_per_asset?: number
-          min_assets?: number
-          name: string
-          total_monthly_earnings_high?: number
-          total_monthly_earnings_low?: number
-          total_setup_cost?: number
-          updated_at?: string
-        }
-        Update: {
-          asset_requirements?: Json
-          created_at?: string
-          description?: string | null
-          id?: string
-          is_active?: boolean
-          max_providers_per_asset?: number
-          min_assets?: number
-          name?: string
-          total_monthly_earnings_high?: number
-          total_monthly_earnings_low?: number
-          total_setup_cost?: number
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      enhanced_property_analyses: {
-        Row: {
-          accuracy_score: number | null
-          analysis_version: string | null
-          coordinates: Json | null
-          created_at: string | null
-          data_sources_used: Json | null
-          final_analysis_results: Json | null
-          google_solar_data: Json | null
-          gpt_analysis_raw: Json | null
-          id: string
-          property_address: string
-          satellite_image_url: string | null
-          street_view_image_url: string | null
-          updated_at: string | null
-          user_id: string
-        }
-        Insert: {
-          accuracy_score?: number | null
-          analysis_version?: string | null
-          coordinates?: Json | null
-          created_at?: string | null
-          data_sources_used?: Json | null
-          final_analysis_results?: Json | null
-          google_solar_data?: Json | null
-          gpt_analysis_raw?: Json | null
-          id?: string
-          property_address: string
-          satellite_image_url?: string | null
-          street_view_image_url?: string | null
-          updated_at?: string | null
-          user_id: string
-        }
-        Update: {
-          accuracy_score?: number | null
-          analysis_version?: string | null
-          coordinates?: Json | null
-          created_at?: string | null
-          data_sources_used?: Json | null
-          final_analysis_results?: Json | null
-          google_solar_data?: Json | null
-          gpt_analysis_raw?: Json | null
-          id?: string
-          property_address?: string
-          satellite_image_url?: string | null
-          street_view_image_url?: string | null
-          updated_at?: string | null
-          user_id?: string
-        }
-        Relationships: []
-      }
-      enhanced_service_providers: {
-        Row: {
-          affiliate_base_url: string | null
-          api_type: string | null
-          avg_earnings_high: number | null
-          avg_earnings_low: number | null
-          category: string
-          commission_rate: number | null
-          created_at: string | null
-          id: string
-          integration_status: string | null
-          name: string
+          is_available: boolean | null
+          monthly_revenue_high: number | null
+          monthly_revenue_low: number | null
           priority_score: number | null
-          setup_requirements: Json | null
-          supported_assets: Json | null
-          updated_at: string | null
+          provider_info: Json | null
+          requirements: Json | null
+          roi_months: number | null
+          service_name: string
+          service_type: string
+          setup_cost: number | null
         }
         Insert: {
-          affiliate_base_url?: string | null
-          api_type?: string | null
-          avg_earnings_high?: number | null
-          avg_earnings_low?: number | null
-          category: string
-          commission_rate?: number | null
+          analysis_id?: string | null
           created_at?: string | null
           id?: string
-          integration_status?: string | null
-          name: string
+          is_available?: boolean | null
+          monthly_revenue_high?: number | null
+          monthly_revenue_low?: number | null
           priority_score?: number | null
-          setup_requirements?: Json | null
-          supported_assets?: Json | null
-          updated_at?: string | null
+          provider_info?: Json | null
+          requirements?: Json | null
+          roi_months?: number | null
+          service_name: string
+          service_type: string
+          setup_cost?: number | null
         }
         Update: {
-          affiliate_base_url?: string | null
-          api_type?: string | null
-          avg_earnings_high?: number | null
-          avg_earnings_low?: number | null
-          category?: string
-          commission_rate?: number | null
+          analysis_id?: string | null
           created_at?: string | null
           id?: string
-          integration_status?: string | null
-          name?: string
+          is_available?: boolean | null
+          monthly_revenue_high?: number | null
+          monthly_revenue_low?: number | null
           priority_score?: number | null
-          setup_requirements?: Json | null
-          supported_assets?: Json | null
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
-      onboarding_messages: {
-        Row: {
-          content: string
-          created_at: string
-          id: string
-          metadata: Json | null
-          onboarding_id: string
-          role: string
-        }
-        Insert: {
-          content: string
-          created_at?: string
-          id?: string
-          metadata?: Json | null
-          onboarding_id: string
-          role: string
-        }
-        Update: {
-          content?: string
-          created_at?: string
-          id?: string
-          metadata?: Json | null
-          onboarding_id?: string
-          role?: string
+          provider_info?: Json | null
+          requirements?: Json | null
+          roi_months?: number | null
+          service_name?: string
+          service_type?: string
+          setup_cost?: number | null
         }
         Relationships: [
           {
-            foreignKeyName: "onboarding_messages_onboarding_id_fkey"
-            columns: ["onboarding_id"]
+            foreignKeyName: "available_services_analysis_id_fkey"
+            columns: ["analysis_id"]
             isOneToOne: false
-            referencedRelation: "user_onboarding"
+            referencedRelation: "user_property_analyses"
             referencedColumns: ["id"]
           },
         ]
       }
-      partner_earnings_sync: {
+      journey_analytics: {
         Row: {
+          address_conversion_rate: number | null
+          addresses_entered: number | null
+          analyses_completed: number | null
+          analysis_conversion_rate: number | null
+          auth_conversion_rate: number | null
+          auths_completed: number | null
           created_at: string | null
-          earnings_data: Json | null
+          dashboard_conversion_rate: number | null
+          dashboards_accessed: number | null
+          date: string
           id: string
-          last_sync_at: string | null
-          partner_name: string
-          sync_status: string | null
-          updated_at: string | null
-          user_id: string
+          manual_vs_concierge: Json | null
+          option_selection_rate: number | null
+          options_selected: number | null
+          popular_services: Json | null
+          returning_visitors: number | null
+          service_view_rate: number | null
+          services_viewed: number | null
+          total_visitors: number | null
+          unique_visitors: number | null
         }
         Insert: {
+          address_conversion_rate?: number | null
+          addresses_entered?: number | null
+          analyses_completed?: number | null
+          analysis_conversion_rate?: number | null
+          auth_conversion_rate?: number | null
+          auths_completed?: number | null
           created_at?: string | null
-          earnings_data?: Json | null
+          dashboard_conversion_rate?: number | null
+          dashboards_accessed?: number | null
+          date?: string
           id?: string
-          last_sync_at?: string | null
-          partner_name: string
-          sync_status?: string | null
-          updated_at?: string | null
-          user_id: string
+          manual_vs_concierge?: Json | null
+          option_selection_rate?: number | null
+          options_selected?: number | null
+          popular_services?: Json | null
+          returning_visitors?: number | null
+          service_view_rate?: number | null
+          services_viewed?: number | null
+          total_visitors?: number | null
+          unique_visitors?: number | null
         }
         Update: {
+          address_conversion_rate?: number | null
+          addresses_entered?: number | null
+          analyses_completed?: number | null
+          analysis_conversion_rate?: number | null
+          auth_conversion_rate?: number | null
+          auths_completed?: number | null
           created_at?: string | null
-          earnings_data?: Json | null
+          dashboard_conversion_rate?: number | null
+          dashboards_accessed?: number | null
+          date?: string
           id?: string
-          last_sync_at?: string | null
-          partner_name?: string
-          sync_status?: string | null
-          updated_at?: string | null
-          user_id?: string
-        }
-        Relationships: []
-      }
-      partner_integration_progress: {
-        Row: {
-          created_at: string | null
-          earnings_data: Json | null
-          id: string
-          integration_status: string
-          next_steps: Json | null
-          onboarding_id: string | null
-          partner_name: string
-          referral_link: string | null
-          registration_data: Json | null
-          updated_at: string | null
-          user_id: string
-        }
-        Insert: {
-          created_at?: string | null
-          earnings_data?: Json | null
-          id?: string
-          integration_status?: string
-          next_steps?: Json | null
-          onboarding_id?: string | null
-          partner_name: string
-          referral_link?: string | null
-          registration_data?: Json | null
-          updated_at?: string | null
-          user_id: string
-        }
-        Update: {
-          created_at?: string | null
-          earnings_data?: Json | null
-          id?: string
-          integration_status?: string
-          next_steps?: Json | null
-          onboarding_id?: string | null
-          partner_name?: string
-          referral_link?: string | null
-          registration_data?: Json | null
-          updated_at?: string | null
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "partner_integration_progress_onboarding_id_fkey"
-            columns: ["onboarding_id"]
-            isOneToOne: false
-            referencedRelation: "user_onboarding"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      partner_recommendations: {
-        Row: {
-          asset_type: string
-          created_at: string | null
-          estimated_monthly_earnings: number | null
-          id: string
-          onboarding_id: string | null
-          partner_name: string
-          priority_score: number | null
-          recommendation_reason: string | null
-          setup_complexity: string | null
-        }
-        Insert: {
-          asset_type: string
-          created_at?: string | null
-          estimated_monthly_earnings?: number | null
-          id?: string
-          onboarding_id?: string | null
-          partner_name: string
-          priority_score?: number | null
-          recommendation_reason?: string | null
-          setup_complexity?: string | null
-        }
-        Update: {
-          asset_type?: string
-          created_at?: string | null
-          estimated_monthly_earnings?: number | null
-          id?: string
-          onboarding_id?: string | null
-          partner_name?: string
-          priority_score?: number | null
-          recommendation_reason?: string | null
-          setup_complexity?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "partner_recommendations_onboarding_id_fkey"
-            columns: ["onboarding_id"]
-            isOneToOne: false
-            referencedRelation: "user_onboarding"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      property_analyses: {
-        Row: {
-          analysis_results: Json | null
-          coordinates: Json | null
-          created_at: string | null
-          id: string
-          is_active: boolean | null
-          property_address: string
-          property_type: string | null
-          total_monthly_revenue: number | null
-          total_opportunities: number | null
-          updated_at: string | null
-          user_id: string
-        }
-        Insert: {
-          analysis_results?: Json | null
-          coordinates?: Json | null
-          created_at?: string | null
-          id?: string
-          is_active?: boolean | null
-          property_address: string
-          property_type?: string | null
-          total_monthly_revenue?: number | null
-          total_opportunities?: number | null
-          updated_at?: string | null
-          user_id: string
-        }
-        Update: {
-          analysis_results?: Json | null
-          coordinates?: Json | null
-          created_at?: string | null
-          id?: string
-          is_active?: boolean | null
-          property_address?: string
-          property_type?: string | null
-          total_monthly_revenue?: number | null
-          total_opportunities?: number | null
-          updated_at?: string | null
-          user_id?: string
-        }
-        Relationships: []
-      }
-      property_submissions: {
-        Row: {
-          created_at: string | null
-          id: string
-          property_address: string
-          status: string | null
-          submission_data: Json
-          updated_at: string | null
-          user_id: string
-        }
-        Insert: {
-          created_at?: string | null
-          id?: string
-          property_address: string
-          status?: string | null
-          submission_data: Json
-          updated_at?: string | null
-          user_id: string
-        }
-        Update: {
-          created_at?: string | null
-          id?: string
-          property_address?: string
-          status?: string | null
-          submission_data?: Json
-          updated_at?: string | null
-          user_id?: string
-        }
-        Relationships: []
-      }
-      provider_setup_requirements: {
-        Row: {
-          created_at: string
-          id: string
-          provider_id: string
-          requirement_key: string
-          requirement_type: string | null
-          requirement_value: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          provider_id: string
-          requirement_key: string
-          requirement_type?: string | null
-          requirement_value: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          provider_id?: string
-          requirement_key?: string
-          requirement_type?: string | null
-          requirement_value?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "provider_setup_requirements_provider_id_fkey"
-            columns: ["provider_id"]
-            isOneToOne: false
-            referencedRelation: "enhanced_service_providers"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      provider_supported_assets: {
-        Row: {
-          asset_type: string
-          created_at: string
-          id: string
-          provider_id: string
-        }
-        Insert: {
-          asset_type: string
-          created_at?: string
-          id?: string
-          provider_id: string
-        }
-        Update: {
-          asset_type?: string
-          created_at?: string
-          id?: string
-          provider_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "provider_supported_assets_provider_id_fkey"
-            columns: ["provider_id"]
-            isOneToOne: false
-            referencedRelation: "enhanced_service_providers"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      service_integrations: {
-        Row: {
-          configuration: Json | null
-          created_at: string | null
-          id: string
-          integration_status: string | null
-          service_id: string
-          updated_at: string | null
-          user_id: string
-        }
-        Insert: {
-          configuration?: Json | null
-          created_at?: string | null
-          id?: string
-          integration_status?: string | null
-          service_id: string
-          updated_at?: string | null
-          user_id: string
-        }
-        Update: {
-          configuration?: Json | null
-          created_at?: string | null
-          id?: string
-          integration_status?: string | null
-          service_id?: string
-          updated_at?: string | null
-          user_id?: string
+          manual_vs_concierge?: Json | null
+          option_selection_rate?: number | null
+          options_selected?: number | null
+          popular_services?: Json | null
+          returning_visitors?: number | null
+          service_view_rate?: number | null
+          services_viewed?: number | null
+          total_visitors?: number | null
+          unique_visitors?: number | null
         }
         Relationships: []
       }
       service_providers: {
         Row: {
-          affiliate_program_url: string | null
           avg_monthly_earnings_high: number
           avg_monthly_earnings_low: number
           category: string
           commission_rate: number
-          conversion_rate: number
+          contact_info: Json | null
           created_at: string
           description: string | null
           id: string
@@ -654,18 +148,17 @@ export type Database = {
           logo_url: string | null
           name: string
           priority: number
-          referral_link_template: string | null
+          service_areas: Json | null
           setup_cost: number
           updated_at: string
           website_url: string | null
         }
         Insert: {
-          affiliate_program_url?: string | null
           avg_monthly_earnings_high?: number
           avg_monthly_earnings_low?: number
           category: string
           commission_rate?: number
-          conversion_rate?: number
+          contact_info?: Json | null
           created_at?: string
           description?: string | null
           id?: string
@@ -673,18 +166,17 @@ export type Database = {
           logo_url?: string | null
           name: string
           priority?: number
-          referral_link_template?: string | null
+          service_areas?: Json | null
           setup_cost?: number
           updated_at?: string
           website_url?: string | null
         }
         Update: {
-          affiliate_program_url?: string | null
           avg_monthly_earnings_high?: number
           avg_monthly_earnings_low?: number
           category?: string
           commission_rate?: number
-          conversion_rate?: number
+          contact_info?: Json | null
           created_at?: string
           description?: string | null
           id?: string
@@ -692,40 +184,10 @@ export type Database = {
           logo_url?: string | null
           name?: string
           priority?: number
-          referral_link_template?: string | null
+          service_areas?: Json | null
           setup_cost?: number
           updated_at?: string
           website_url?: string | null
-        }
-        Relationships: []
-      }
-      services: {
-        Row: {
-          category: string
-          created_at: string | null
-          description: string | null
-          id: string
-          name: string
-          status: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          category: string
-          created_at?: string | null
-          description?: string | null
-          id?: string
-          name: string
-          status?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          category?: string
-          created_at?: string | null
-          description?: string | null
-          id?: string
-          name?: string
-          status?: string | null
-          updated_at?: string | null
         }
         Relationships: []
       }
@@ -792,42 +254,6 @@ export type Database = {
         }
         Relationships: []
       }
-      user_affiliate_journeys: {
-        Row: {
-          completed_at: string | null
-          created_at: string | null
-          current_step: string | null
-          id: string
-          journey_data: Json
-          started_at: string | null
-          status: string | null
-          updated_at: string | null
-          user_id: string
-        }
-        Insert: {
-          completed_at?: string | null
-          created_at?: string | null
-          current_step?: string | null
-          id?: string
-          journey_data: Json
-          started_at?: string | null
-          status?: string | null
-          updated_at?: string | null
-          user_id: string
-        }
-        Update: {
-          completed_at?: string | null
-          created_at?: string | null
-          current_step?: string | null
-          id?: string
-          journey_data?: Json
-          started_at?: string | null
-          status?: string | null
-          updated_at?: string | null
-          user_id?: string
-        }
-        Relationships: []
-      }
       user_asset_selections: {
         Row: {
           analysis_id: string
@@ -875,36 +301,6 @@ export type Database = {
           },
         ]
       }
-      user_bundle_selections: {
-        Row: {
-          bundle_id: string
-          created_at: string | null
-          id: string
-          selected_at: string | null
-          selection_status: string | null
-          updated_at: string | null
-          user_id: string
-        }
-        Insert: {
-          bundle_id: string
-          created_at?: string | null
-          id?: string
-          selected_at?: string | null
-          selection_status?: string | null
-          updated_at?: string | null
-          user_id: string
-        }
-        Update: {
-          bundle_id?: string
-          created_at?: string | null
-          id?: string
-          selected_at?: string | null
-          selection_status?: string | null
-          updated_at?: string | null
-          user_id?: string
-        }
-        Relationships: []
-      }
       user_dashboard_preferences: {
         Row: {
           created_at: string | null
@@ -943,6 +339,195 @@ export type Database = {
           },
         ]
       }
+      user_journey_complete: {
+        Row: {
+          address_entered_at: string | null
+          analysis_completed_at: string | null
+          analysis_results: Json | null
+          auth_completed_at: string | null
+          conversion_type: string | null
+          created_at: string | null
+          current_step: string | null
+          dashboard_accessed_at: string | null
+          drop_off_step: string | null
+          extra_data_filled_at: string | null
+          extra_form_data: Json | null
+          id: string
+          interested_services: Json | null
+          ip_address: unknown | null
+          is_conversion: boolean | null
+          journey_complete_at: string | null
+          journey_start_at: string | null
+          landing_page: string | null
+          options_selected_at: string | null
+          property_address: string | null
+          property_coordinates: Json | null
+          referrer: string | null
+          selected_option: string | null
+          selected_services: Json | null
+          services_viewed_at: string | null
+          session_id: string
+          site_entered_at: string | null
+          total_monthly_revenue: number | null
+          total_opportunities: number | null
+          updated_at: string | null
+          user_agent: string | null
+          user_id: string | null
+          utm_campaign: string | null
+          utm_medium: string | null
+          utm_source: string | null
+        }
+        Insert: {
+          address_entered_at?: string | null
+          analysis_completed_at?: string | null
+          analysis_results?: Json | null
+          auth_completed_at?: string | null
+          conversion_type?: string | null
+          created_at?: string | null
+          current_step?: string | null
+          dashboard_accessed_at?: string | null
+          drop_off_step?: string | null
+          extra_data_filled_at?: string | null
+          extra_form_data?: Json | null
+          id?: string
+          interested_services?: Json | null
+          ip_address?: unknown | null
+          is_conversion?: boolean | null
+          journey_complete_at?: string | null
+          journey_start_at?: string | null
+          landing_page?: string | null
+          options_selected_at?: string | null
+          property_address?: string | null
+          property_coordinates?: Json | null
+          referrer?: string | null
+          selected_option?: string | null
+          selected_services?: Json | null
+          services_viewed_at?: string | null
+          session_id: string
+          site_entered_at?: string | null
+          total_monthly_revenue?: number | null
+          total_opportunities?: number | null
+          updated_at?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+          utm_campaign?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+        }
+        Update: {
+          address_entered_at?: string | null
+          analysis_completed_at?: string | null
+          analysis_results?: Json | null
+          auth_completed_at?: string | null
+          conversion_type?: string | null
+          created_at?: string | null
+          current_step?: string | null
+          dashboard_accessed_at?: string | null
+          drop_off_step?: string | null
+          extra_data_filled_at?: string | null
+          extra_form_data?: Json | null
+          id?: string
+          interested_services?: Json | null
+          ip_address?: unknown | null
+          is_conversion?: boolean | null
+          journey_complete_at?: string | null
+          journey_start_at?: string | null
+          landing_page?: string | null
+          options_selected_at?: string | null
+          property_address?: string | null
+          property_coordinates?: Json | null
+          referrer?: string | null
+          selected_option?: string | null
+          selected_services?: Json | null
+          services_viewed_at?: string | null
+          session_id?: string
+          site_entered_at?: string | null
+          total_monthly_revenue?: number | null
+          total_opportunities?: number | null
+          updated_at?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+          utm_campaign?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+        }
+        Relationships: []
+      }
+      user_journey_progress: {
+        Row: {
+          address_data: Json | null
+          address_entered: boolean | null
+          analysis_completed: boolean | null
+          analysis_id: string | null
+          auth_completed: boolean | null
+          created_at: string | null
+          current_step: string | null
+          dashboard_accessed: boolean | null
+          extra_data: Json | null
+          extra_data_filled: boolean | null
+          id: string
+          option_selected: string | null
+          services_viewed: boolean | null
+          session_id: string | null
+          step_completed_at: Json | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          address_data?: Json | null
+          address_entered?: boolean | null
+          analysis_completed?: boolean | null
+          analysis_id?: string | null
+          auth_completed?: boolean | null
+          created_at?: string | null
+          current_step?: string | null
+          dashboard_accessed?: boolean | null
+          extra_data?: Json | null
+          extra_data_filled?: boolean | null
+          id?: string
+          option_selected?: string | null
+          services_viewed?: boolean | null
+          session_id?: string | null
+          step_completed_at?: Json | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          address_data?: Json | null
+          address_entered?: boolean | null
+          analysis_completed?: boolean | null
+          analysis_id?: string | null
+          auth_completed?: boolean | null
+          created_at?: string | null
+          current_step?: string | null
+          dashboard_accessed?: boolean | null
+          extra_data?: Json | null
+          extra_data_filled?: boolean | null
+          id?: string
+          option_selected?: string | null
+          services_viewed?: boolean | null
+          session_id?: string | null
+          step_completed_at?: Json | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_journey_progress_analysis_id_fkey"
+            columns: ["analysis_id"]
+            isOneToOne: false
+            referencedRelation: "user_property_analyses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_journey_progress_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "visitor_sessions"
+            referencedColumns: ["session_id"]
+          },
+        ]
+      }
       user_login_stats: {
         Row: {
           first_login_at: string | null
@@ -969,48 +554,6 @@ export type Database = {
           last_login_at?: string | null
           last_user_agent?: string | null
           login_count?: number | null
-          user_id?: string
-        }
-        Relationships: []
-      }
-      user_onboarding: {
-        Row: {
-          chat_history: Json | null
-          completed_assets: string[] | null
-          created_at: string
-          current_step: number | null
-          id: string
-          progress_data: Json | null
-          selected_option: Database["public"]["Enums"]["onboarding_option"]
-          status: Database["public"]["Enums"]["onboarding_status"]
-          total_steps: number | null
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          chat_history?: Json | null
-          completed_assets?: string[] | null
-          created_at?: string
-          current_step?: number | null
-          id?: string
-          progress_data?: Json | null
-          selected_option: Database["public"]["Enums"]["onboarding_option"]
-          status?: Database["public"]["Enums"]["onboarding_status"]
-          total_steps?: number | null
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          chat_history?: Json | null
-          completed_assets?: string[] | null
-          created_at?: string
-          current_step?: number | null
-          id?: string
-          progress_data?: Json | null
-          selected_option?: Database["public"]["Enums"]["onboarding_option"]
-          status?: Database["public"]["Enums"]["onboarding_status"]
-          total_steps?: number | null
-          updated_at?: string
           user_id?: string
         }
         Relationships: []
@@ -1092,18 +635,177 @@ export type Database = {
         }
         Relationships: []
       }
+      user_service_selections: {
+        Row: {
+          available_service_id: string | null
+          created_at: string | null
+          id: string
+          journey_id: string | null
+          notes: string | null
+          priority: number | null
+          selected_at: string | null
+          selection_type: string | null
+          user_id: string | null
+        }
+        Insert: {
+          available_service_id?: string | null
+          created_at?: string | null
+          id?: string
+          journey_id?: string | null
+          notes?: string | null
+          priority?: number | null
+          selected_at?: string | null
+          selection_type?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          available_service_id?: string | null
+          created_at?: string | null
+          id?: string
+          journey_id?: string | null
+          notes?: string | null
+          priority?: number | null
+          selected_at?: string | null
+          selection_type?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_service_selections_available_service_id_fkey"
+            columns: ["available_service_id"]
+            isOneToOne: false
+            referencedRelation: "available_services"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_service_selections_journey_id_fkey"
+            columns: ["journey_id"]
+            isOneToOne: false
+            referencedRelation: "user_journey_progress"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      visitor_sessions: {
+        Row: {
+          address_entered_at: string | null
+          analysis_completed_at: string | null
+          analysis_data: Json | null
+          auth_completed_at: string | null
+          completed_at: string | null
+          conversion_type: string | null
+          created_at: string | null
+          current_step: string | null
+          dashboard_accessed_at: string | null
+          extra_data: Json | null
+          id: string
+          ip_address: unknown | null
+          journey_data: Json | null
+          landing_page: string | null
+          options_selected_at: string | null
+          property_address: string | null
+          referrer: string | null
+          selected_option: string | null
+          selected_services: Json | null
+          services_viewed_at: string | null
+          session_id: string
+          started_at: string | null
+          total_time_seconds: number | null
+          updated_at: string | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          address_entered_at?: string | null
+          analysis_completed_at?: string | null
+          analysis_data?: Json | null
+          auth_completed_at?: string | null
+          completed_at?: string | null
+          conversion_type?: string | null
+          created_at?: string | null
+          current_step?: string | null
+          dashboard_accessed_at?: string | null
+          extra_data?: Json | null
+          id?: string
+          ip_address?: unknown | null
+          journey_data?: Json | null
+          landing_page?: string | null
+          options_selected_at?: string | null
+          property_address?: string | null
+          referrer?: string | null
+          selected_option?: string | null
+          selected_services?: Json | null
+          services_viewed_at?: string | null
+          session_id: string
+          started_at?: string | null
+          total_time_seconds?: number | null
+          updated_at?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          address_entered_at?: string | null
+          analysis_completed_at?: string | null
+          analysis_data?: Json | null
+          auth_completed_at?: string | null
+          completed_at?: string | null
+          conversion_type?: string | null
+          created_at?: string | null
+          current_step?: string | null
+          dashboard_accessed_at?: string | null
+          extra_data?: Json | null
+          id?: string
+          ip_address?: unknown | null
+          journey_data?: Json | null
+          landing_page?: string | null
+          options_selected_at?: string | null
+          property_address?: string | null
+          referrer?: string | null
+          selected_option?: string | null
+          selected_services?: Json | null
+          services_viewed_at?: string | null
+          session_id?: string
+          started_at?: string | null
+          total_time_seconds?: number | null
+          updated_at?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      get_user_dashboard_data: {
+        Args: { p_user_id: string }
+        Returns: {
+          journey_id: string
+          property_address: string
+          analysis_results: Json
+          total_monthly_revenue: number
+          total_opportunities: number
+          selected_services: Json
+          selected_option: string
+          journey_progress: Json
+        }[]
+      }
       get_user_role: {
         Args: Record<PropertyKey, never> | { user_uuid: string }
         Returns: string
       }
+      link_journey_to_user: {
+        Args: { p_session_id: string; p_user_id: string }
+        Returns: undefined
+      }
       sum_login_count: {
         Args: Record<PropertyKey, never>
         Returns: number
+      }
+      update_journey_step: {
+        Args: { p_session_id: string; p_step: string; p_data?: Json }
+        Returns: string
       }
     }
     Enums: {

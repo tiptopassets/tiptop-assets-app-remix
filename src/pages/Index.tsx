@@ -9,6 +9,7 @@ import AssetResultList from '@/components/asset-results/AssetResultList';
 import ModelGenerationSheet from '@/components/ModelGenerationSheet';
 import HomeModelViewer from '@/components/home-model-viewer';
 import DataSyncNotification from '@/components/DataSyncNotification';
+import JourneyTracker from '@/components/JourneyTracker';
 import { useGoogleMap } from '@/contexts/GoogleMapContext';
 import { PlusCircle } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -43,6 +44,9 @@ const Index = () => {
 
   return (
     <div className="min-h-screen relative overflow-hidden flex flex-col bg-gradient-to-b from-gray-900 to-black">
+      {/* Journey Tracker */}
+      <JourneyTracker />
+
       {/* Google Map as background */}
       <GoogleMap />
 
