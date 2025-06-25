@@ -38,6 +38,19 @@ interface SimpleProvider {
   }>;
 }
 
+// Database row interface for JOIN results
+interface ProviderWithAssetRow {
+  id: string;
+  name: string;
+  priority_score: number;
+  avg_earnings_low: number;
+  avg_earnings_high: number;
+  affiliate_base_url: string;
+  provider_supported_assets: {
+    asset_type: string;
+  } | null;
+}
+
 // Helper function to check asset match
 const checkAssetMatch = (detectedAssets: string[], supportedAssets: string[]): string[] => {
   const matches: string[] = [];
@@ -100,7 +113,10 @@ export const generatePartnerRecommendations = async (
       // Group providers by ID to handle multiple assets per provider
       const providerMap = new Map<string, SimpleProvider>();
       
-      for (const row of providersWithAssets) {
+      // Cast the data to our known interface to avoid TypeScript recursion
+      const typedRows = providersWithAssets as unknown as ProviderWithAssetRow[];
+      
+      for (const row of typedRows) {
         const providerId = row.id;
         
         if (!providerMap.has(providerId)) {
@@ -215,9 +231,9 @@ export const initializePartnerIntegration = async (
       partner_name: data.partner_name,
       integration_status: data.integration_status as 'pending' | 'in_progress' | 'completed' | 'failed',
       referral_link: data.referral_link || '',
-      registration_data: data.registration_data || {},
-      earnings_data: data.earnings_data || {},
-      next_steps: Array.isArray(data.next_steps) ? data.next_steps : []
+      registration_data: (data.registration_data as Record<string, any>) || {},
+      earnings_data: (data.earnings_data as Record<string, any>) || {},
+      next_steps: Array.isArray(data.next_steps) ? (data.next_steps as string[]) : []
     };
 
   } catch (error) {
@@ -277,9 +293,9 @@ export const getUserIntegrationProgress = async (
       partner_name: item.partner_name,
       integration_status: item.integration_status as 'pending' | 'in_progress' | 'completed' | 'failed',
       referral_link: item.referral_link || '',
-      registration_data: item.registration_data || {},
-      earnings_data: item.earnings_data || {},
-      next_steps: Array.isArray(item.next_steps) ? item.next_steps : []
+      registration_data: (item.registration_data as Record<string, any>) || {},
+      earnings_data: (item.earnings_data as Record<string, any>) || {},
+      next_steps: Array.isArray(item.next_steps) ? (item.next_steps as string[]) : []
     }));
 
   } catch (error) {
