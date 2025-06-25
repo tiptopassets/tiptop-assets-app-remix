@@ -143,16 +143,16 @@ export const recoverAnalysesToDatabase = async (userId: string): Promise<{
   const errors: string[] = [];
   
   for (const [index, analysis] of analyses.entries()) {
+    console.log(`💾 [RECOVERY] Processing analysis ${index + 1}/${analyses.length}:`, {
+      analysisId: analysis.id,
+      address: analysis.address,
+      hasCoordinates: !!analysis.coordinates,
+      hasAnalysisResults: !!analysis.analysisResults,
+      opportunitiesCount: analysis.analysisResults?.topOpportunities?.length || 0,
+      totalRevenue: analysis.analysisResults?.topOpportunities?.reduce((sum, opp) => sum + (opp.monthlyRevenue || 0), 0) || 0
+    });
+    
     try {
-      console.log(`💾 [RECOVERY] Processing analysis ${index + 1}/${analyses.length}:`, {
-        analysisId: analysis.id,
-        address: analysis.address,
-        hasCoordinates: !!analysis.coordinates,
-        hasAnalysisResults: !!analysis.analysisResults,
-        opportunitiesCount: analysis.analysisResults?.topOpportunities?.length || 0,
-        totalRevenue: analysis.analysisResults?.topOpportunities?.reduce((sum, opp) => sum + (opp.monthlyRevenue || 0), 0) || 0
-      });
-      
       // Validate analysis data
       if (!analysis.analysisResults) {
         throw new Error('Missing analysis results');
@@ -160,6 +160,12 @@ export const recoverAnalysesToDatabase = async (userId: string): Promise<{
       
       if (!analysis.address) {
         throw new Error('Missing address');
+      }
+      
+      // Validate analysis results structure
+      if (!analysis.analysisResults.topOpportunities || !Array.isArray(analysis.analysisResults.topOpportunities)) {
+        console.warn('⚠️ [RECOVERY] Invalid topOpportunities structure, fixing...');
+        analysis.analysisResults.topOpportunities = [];
       }
       
       // Save address first
@@ -195,16 +201,16 @@ export const recoverAnalysesToDatabase = async (userId: string): Promise<{
       recovered++;
       
     } catch (error) {
-      console.error(`❌ [RECOVERY] Failed to recover analysis ${analysis.id}:`, error);
+      console.error(`❌ [RECOVERY] Failed to recover analysis ${analysis.id}:`, {
+        error: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+        analysisId: analysis.id,
+        address: analysis.address,
+        userId
+      });
       failed++;
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       errors.push(`Failed to recover analysis for ${analysis.address}: ${errorMessage}`);
-      console.error('❌ [RECOVERY] Recovery error details:', {
-        analysisId: analysis.id,
-        address: analysis.address,
-        error: errorMessage,
-        stack: error instanceof Error ? error.stack : undefined
-      });
     }
   }
   
@@ -212,7 +218,8 @@ export const recoverAnalysesToDatabase = async (userId: string): Promise<{
     totalAnalyses: analyses.length,
     recovered,
     failed,
-    errors: errors.length
+    errors: errors.length,
+    userId
   });
   
   // Clear localStorage after successful recovery (even if some failed)

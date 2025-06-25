@@ -13,6 +13,7 @@ import { saveAddress, loadUserAddresses } from '@/services/userAddressService';
 import { savePropertyAnalysis, loadUserAnalyses } from '@/services/userAnalysisService';
 import { saveAssetSelection, loadUserAssetSelections } from '@/services/userAssetService';
 import { loadUserPreferences } from '@/services/userPreferencesService';
+import { recoverAnalysesToDatabase, hasUnauthenticatedAnalyses } from '@/services/unauthenticatedAnalysisService';
 
 export const useUserData = () => {
   const { user } = useAuth();
@@ -27,12 +28,12 @@ export const useUserData = () => {
   // Save address to database
   const handleSaveAddress = async (address: string, coordinates?: any, formattedAddress?: string): Promise<string | null> => {
     if (!user) {
-      console.warn('❌ Cannot save address: User not authenticated');
+      console.warn('❌ [USER DATA] Cannot save address: User not authenticated');
       return null;
     }
 
     try {
-      console.log('💾 Saving address:', address);
+      console.log('💾 [USER DATA] Saving address:', address);
       const addressId = await saveAddress(user.id, address, coordinates, formattedAddress, addresses.length === 0);
       
       // Reload addresses to get the updated data
@@ -40,7 +41,7 @@ export const useUserData = () => {
       
       return addressId;
     } catch (err) {
-      console.error('❌ Error saving address:', err);
+      console.error('❌ [USER DATA] Error saving address:', err);
       toast({
         title: "Error",
         description: "Failed to save address",
@@ -57,12 +58,12 @@ export const useUserData = () => {
     coordinates?: any
   ): Promise<string | null> => {
     if (!user) {
-      console.warn('❌ Cannot save analysis: User not authenticated');
+      console.warn('❌ [USER DATA] Cannot save analysis: User not authenticated');
       return null;
     }
 
     try {
-      console.log('💾 Saving property analysis for address:', addressId);
+      console.log('💾 [USER DATA] Saving property analysis for address:', addressId);
       const analysisId = await savePropertyAnalysis(user.id, addressId, analysisResults, coordinates);
       
       // Reload all data to get the updated analysis
@@ -70,7 +71,7 @@ export const useUserData = () => {
       
       return analysisId;
     } catch (err) {
-      console.error('❌ Error saving property analysis:', err);
+      console.error('❌ [USER DATA] Error saving property analysis:', err);
       toast({
         title: "Error",
         description: "Failed to save property analysis",
@@ -90,12 +91,12 @@ export const useUserData = () => {
     roiMonths?: number
   ): Promise<string | null> => {
     if (!user) {
-      console.warn('❌ Cannot save asset selection: User not authenticated');
+      console.warn('❌ [USER DATA] Cannot save asset selection: User not authenticated');
       return null;
     }
 
     try {
-      console.log('💾 Saving asset selection:', assetType);
+      console.log('💾 [USER DATA] Saving asset selection:', assetType);
       const selectionId = await saveAssetSelection(
         user.id, 
         analysisId, 
@@ -111,7 +112,7 @@ export const useUserData = () => {
       
       return selectionId;
     } catch (err) {
-      console.error('❌ Error saving asset selection:', err);
+      console.error('❌ [USER DATA] Error saving asset selection:', err);
       toast({
         title: "Error",
         description: "Failed to save asset selection",
@@ -121,14 +122,54 @@ export const useUserData = () => {
     }
   };
 
-  // Refresh user data function for external use
-  const refreshUserData = async () => {
-    if (!user) {
-      console.warn('❌ Cannot refresh data: User not authenticated');
+  // Enhanced recovery function with detailed logging
+  const attemptAnalysisRecovery = async (): Promise<void> => {
+    if (!user || !hasUnauthenticatedAnalyses()) {
       return;
     }
 
-    console.log('🔄 Refreshing user data for:', user.id);
+    console.log('🔄 [USER DATA] Attempting to recover unauthenticated analyses...');
+    
+    try {
+      const result = await recoverAnalysesToDatabase(user.id);
+      
+      if (result.recovered > 0) {
+        console.log(`✅ [USER DATA] Successfully recovered ${result.recovered} analyses`);
+        toast({
+          title: "Analysis Recovery",
+          description: `Successfully recovered ${result.recovered} property analysis${result.recovered > 1 ? 'es' : ''} from your previous session`,
+        });
+        
+        // Refresh data to show recovered analyses
+        await refreshUserData();
+      }
+      
+      if (result.failed > 0) {
+        console.warn(`⚠️ [USER DATA] Failed to recover ${result.failed} analyses:`, result.errors);
+        toast({
+          title: "Partial Recovery",
+          description: `Recovered ${result.recovered} analyses, but ${result.failed} failed to recover`,
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      console.error('❌ [USER DATA] Recovery process failed:', error);
+      toast({
+        title: "Recovery Failed",
+        description: "Could not recover your previous analysis data",
+        variant: "destructive"
+      });
+    }
+  };
+
+  // Refresh user data function for external use
+  const refreshUserData = async () => {
+    if (!user) {
+      console.warn('❌ [USER DATA] Cannot refresh data: User not authenticated');
+      return;
+    }
+
+    console.log('🔄 [USER DATA] Refreshing user data for:', user.id);
     try {
       const [addressData, analysisData, assetData, prefData] = await Promise.all([
         loadUserAddresses(user.id),
@@ -137,7 +178,7 @@ export const useUserData = () => {
         loadUserPreferences(user.id)
       ]);
 
-      console.log('✅ Refreshed user data:', {
+      console.log('✅ [USER DATA] Refreshed user data:', {
         addresses: addressData.length,
         analyses: analysisData.length,
         assetSelections: assetData.length,
@@ -150,7 +191,7 @@ export const useUserData = () => {
       setDashboardPreferences(prefData);
 
     } catch (err) {
-      console.error('❌ Error refreshing user data:', err);
+      console.error('❌ [USER DATA] Error refreshing user data:', err);
       throw err;
     }
   };
@@ -158,19 +199,23 @@ export const useUserData = () => {
   // Load user data
   const loadUserData = useCallback(async () => {
     if (!user) {
-      console.warn('❌ Cannot load data: User not authenticated');
+      console.warn('❌ [USER DATA] Cannot load data: User not authenticated');
       setLoading(false);
       return;
     }
 
-    console.log('🔄 Loading user data for:', user.id);
+    console.log('🔄 [USER DATA] Loading user data for:', user.id);
     setLoading(true);
     setError(null);
 
     try {
       await refreshUserData();
+      
+      // Attempt recovery after initial load
+      await attemptAnalysisRecovery();
+      
     } catch (err) {
-      console.error('❌ Error loading user data:', err);
+      console.error('❌ [USER DATA] Error loading user data:', err);
       const errorMessage = err instanceof Error ? err.message : 'Failed to load user data';
       setError(errorMessage);
       toast({

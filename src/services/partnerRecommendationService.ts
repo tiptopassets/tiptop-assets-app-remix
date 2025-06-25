@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 export interface PartnerRecommendation {
@@ -40,10 +39,13 @@ export const generatePartnerRecommendations = async (
     
     if (providers) {
       for (const provider of providers) {
-        // Simple type handling - convert to arrays/objects as needed
-        const supportedAssets = Array.isArray(provider.supported_assets) 
-          ? provider.supported_assets.filter(asset => typeof asset === 'string')
-          : [];
+        // Safe type handling for supported_assets
+        let supportedAssets: string[] = [];
+        if (Array.isArray(provider.supported_assets)) {
+          supportedAssets = provider.supported_assets.filter((asset: any) => 
+            typeof asset === 'string'
+          ) as string[];
+        }
           
         const matchingAssets = detectedAssets.filter(asset => 
           supportedAssets.some(supported => 
@@ -53,10 +55,11 @@ export const generatePartnerRecommendations = async (
         );
 
         if (matchingAssets.length > 0) {
-          const setupRequirements = provider.setup_requirements && 
-            typeof provider.setup_requirements === 'object' 
-            ? provider.setup_requirements 
-            : {};
+          // Safe type handling for setup_requirements
+          let setupRequirements: Record<string, any> = {};
+          if (provider.setup_requirements && typeof provider.setup_requirements === 'object' && !Array.isArray(provider.setup_requirements)) {
+            setupRequirements = provider.setup_requirements as Record<string, any>;
+          }
 
           const recommendation: PartnerRecommendation = {
             id: `${onboardingId}_${provider.name}`,
@@ -130,14 +133,29 @@ export const initializePartnerIntegration = async (
 
     if (error) throw error;
 
+    // Safe type conversion for database response
+    const safeRegistrationData: Record<string, any> = 
+      data.registration_data && typeof data.registration_data === 'object' && !Array.isArray(data.registration_data)
+        ? data.registration_data as Record<string, any>
+        : {};
+
+    const safeEarningsData: Record<string, any> = 
+      data.earnings_data && typeof data.earnings_data === 'object' && !Array.isArray(data.earnings_data)
+        ? data.earnings_data as Record<string, any>
+        : {};
+
+    const safeNextSteps: string[] = Array.isArray(data.next_steps) 
+      ? data.next_steps.filter((step: any) => typeof step === 'string') as string[]
+      : [];
+
     return {
       id: data.id,
       partner_name: data.partner_name,
       integration_status: data.integration_status as 'pending' | 'in_progress' | 'completed' | 'failed',
       referral_link: data.referral_link || '',
-      registration_data: data.registration_data || {},
-      earnings_data: data.earnings_data || {},
-      next_steps: Array.isArray(data.next_steps) ? data.next_steps.filter(step => typeof step === 'string') : []
+      registration_data: safeRegistrationData,
+      earnings_data: safeEarningsData,
+      next_steps: safeNextSteps
     };
 
   } catch (error) {
@@ -192,15 +210,32 @@ export const getUserIntegrationProgress = async (
 
     if (error) throw error;
 
-    return (data || []).map(item => ({
-      id: item.id,
-      partner_name: item.partner_name,
-      integration_status: item.integration_status as 'pending' | 'in_progress' | 'completed' | 'failed',
-      referral_link: item.referral_link || '',
-      registration_data: item.registration_data || {},
-      earnings_data: item.earnings_data || {},
-      next_steps: Array.isArray(item.next_steps) ? item.next_steps.filter(step => typeof step === 'string') : []
-    }));
+    return (data || []).map(item => {
+      // Safe type conversion for database response
+      const safeRegistrationData: Record<string, any> = 
+        item.registration_data && typeof item.registration_data === 'object' && !Array.isArray(item.registration_data)
+          ? item.registration_data as Record<string, any>
+          : {};
+
+      const safeEarningsData: Record<string, any> = 
+        item.earnings_data && typeof item.earnings_data === 'object' && !Array.isArray(item.earnings_data)
+          ? item.earnings_data as Record<string, any>
+          : {};
+
+      const safeNextSteps: string[] = Array.isArray(item.next_steps) 
+        ? item.next_steps.filter((step: any) => typeof step === 'string') as string[]
+        : [];
+
+      return {
+        id: item.id,
+        partner_name: item.partner_name,
+        integration_status: item.integration_status as 'pending' | 'in_progress' | 'completed' | 'failed',
+        referral_link: item.referral_link || '',
+        registration_data: safeRegistrationData,
+        earnings_data: safeEarningsData,
+        next_steps: safeNextSteps
+      };
+    });
 
   } catch (error) {
     console.error('❌ Error getting integration progress:', error);
@@ -208,7 +243,7 @@ export const getUserIntegrationProgress = async (
   }
 };
 
-const getSetupComplexity = (requirements: any): 'easy' | 'medium' | 'hard' => {
+const getSetupComplexity = (requirements: Record<string, any>): 'easy' | 'medium' | 'hard' => {
   if (!requirements || typeof requirements !== 'object') return 'medium';
   
   if (Array.isArray(requirements.requirements)) {
