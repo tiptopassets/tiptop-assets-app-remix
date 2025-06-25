@@ -6,27 +6,49 @@ import { useUserData } from '@/hooks/useUserData';
 export const useAuthContextIntegration = () => {
   const [authReady, setAuthReady] = useState(false);
   const [userDataReady, setUserDataReady] = useState(false);
-  
-  let authContext;
-  let userDataContext;
+  const [authContext, setAuthContext] = useState<{ user: any } | null>(null);
+  const [userDataContext, setUserDataContext] = useState<any>(null);
+
+  // Always call useAuth hook - handle errors in useEffect
+  let authHookResult = null;
+  let authHookError = false;
   
   try {
-    authContext = useAuth();
-    setAuthReady(true);
+    authHookResult = useAuth();
   } catch (error) {
-    console.warn('⚠️ AuthProvider not available yet, proceeding without auth context');
-    authContext = { user: null };
+    authHookError = true;
   }
 
-  const { user } = authContext;
+  // Always call useUserData hook - handle errors in useEffect
+  let userDataHookResult = null;
+  let userDataHookError = false;
   
-  // Only use useUserData hook if we have a valid auth context
   try {
-    if (authReady && user) {
-      userDataContext = useUserData();
-      setUserDataReady(true);
-    } else {
-      userDataContext = { 
+    userDataHookResult = useUserData();
+  } catch (error) {
+    userDataHookError = true;
+  }
+
+  // Handle auth context initialization
+  useEffect(() => {
+    if (authHookError) {
+      console.warn('⚠️ AuthProvider not available yet, proceeding without auth context');
+      setAuthContext({ user: null });
+      setAuthReady(false);
+    } else if (authHookResult) {
+      setAuthContext(authHookResult);
+      setAuthReady(true);
+    }
+  }, [authHookError, authHookResult]);
+
+  // Handle user data context initialization
+  useEffect(() => {
+    if (userDataHookError || !authReady || !authContext?.user) {
+      if (userDataHookError) {
+        console.warn('⚠️ UserData hook not available, proceeding without user data');
+      }
+      
+      setUserDataContext({
         refreshUserData: async () => {
           console.log('📝 User not authenticated, skipping data refresh');
         },
@@ -38,23 +60,20 @@ export const useAuthContextIntegration = () => {
           console.log('📝 User not authenticated, skipping analysis save');
           return null;
         }
-      };
+      });
+      setUserDataReady(false);
+    } else if (userDataHookResult) {
+      setUserDataContext(userDataHookResult);
+      setUserDataReady(true);
     }
-  } catch (error) {
-    console.warn('⚠️ UserData hook not available, proceeding without user data');
-    userDataContext = { 
-      refreshUserData: async () => {},
-      saveAddress: async () => null,
-      savePropertyAnalysis: async () => null
-    };
-  }
+  }, [userDataHookError, authReady, authContext?.user, userDataHookResult]);
 
   return {
-    user,
+    user: authContext?.user || null,
     authReady,
     userDataReady,
-    refreshUserData: userDataContext.refreshUserData,
-    saveAddress: userDataContext.saveAddress,
-    savePropertyAnalysis: userDataContext.savePropertyAnalysis
+    refreshUserData: userDataContext?.refreshUserData || (async () => {}),
+    saveAddress: userDataContext?.saveAddress || (async () => null),
+    savePropertyAnalysis: userDataContext?.savePropertyAnalysis || (async () => null)
   };
 };

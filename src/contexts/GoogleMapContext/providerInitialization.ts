@@ -45,9 +45,6 @@ export const useGoogleMapsInitialization = () => {
 
   return {
     isGoogleMapsLoaded,
-    googleMapsLoadError,
-    setUseLocalAnalysis: (value: boolean) => {
-      // This will be passed from the main provider
-    }
+    googleMapsLoadError
   };
 };
