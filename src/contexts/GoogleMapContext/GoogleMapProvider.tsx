@@ -18,7 +18,7 @@ const GoogleMapProvider = ({ children }: { children: React.ReactNode }) => {
   // Initialize Google Maps
   const { isGoogleMapsLoaded, googleMapsLoadError } = useGoogleMapsInitialization();
   
-  // Initialize auth context
+  // Initialize auth context with safe error handling
   const {
     user,
     authReady,
@@ -122,19 +122,17 @@ const GoogleMapProvider = ({ children }: { children: React.ReactNode }) => {
     setZoomLevel,
   };
 
-  // Only render children when Google Maps is loaded or when using local analysis
-  if (!isGoogleMapsLoaded && !useLocalAnalysis) {
-    return (
-      <LoadingComponent 
-        googleMapsLoadError={googleMapsLoadError}
-        setUseLocalAnalysis={setUseLocalAnalysis}
-      />
-    );
-  }
-
+  // Render children even if Google Maps is not loaded - the app should work without it
   return (
     <GoogleMapContext.Provider value={value}>
-      {children}
+      {!isGoogleMapsLoaded && !useLocalAnalysis ? (
+        <LoadingComponent 
+          googleMapsLoadError={googleMapsLoadError}
+          setUseLocalAnalysis={setUseLocalAnalysis}
+        />
+      ) : (
+        children
+      )}
     </GoogleMapContext.Provider>
   );
 };

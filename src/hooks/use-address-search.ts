@@ -22,7 +22,7 @@ export const useAddressSearch = () => {
   const [hasSelectedAddress, setHasSelectedAddress] = useState(false);
   const { capturePropertyImages } = useModelGeneration();
 
-  // Start analysis function
+  // Start analysis function - simplified without dependencies
   const startAnalysis = useCallback((addressToAnalyze: string) => {
     console.log('startAnalysis: Starting analysis for address:', addressToAnalyze);
 
@@ -33,7 +33,7 @@ export const useAddressSearch = () => {
     generatePropertyAnalysis(addressToAnalyze);
   }, [generatePropertyAnalysis, analysisError, setAnalysisError]);
 
-  // Place change handler - simplified without direct database dependency
+  // Place change handler - simplified and more robust
   const handlePlaceChanged = useCallback(() => {
     if (!autocompleteRef.current || !mapInstance) return;
     
@@ -91,36 +91,53 @@ export const useAddressSearch = () => {
     }
   }, [mapInstance, setAddress, setAddressCoordinates, capturePropertyImages, startAnalysis, toast, setHasSelectedAddress]);
 
-  // Initialize Google Places Autocomplete
+  // Initialize Google Places Autocomplete with improved error handling
   useEffect(() => {
-    if (!mapLoaded || !searchInputRef.current || !window.google) return;
+    if (!mapLoaded || !searchInputRef.current) return;
 
-    // Clean up existing autocomplete
-    if (autocompleteRef.current) {
-      google.maps.event.clearInstanceListeners(autocompleteRef.current);
-      autocompleteRef.current = null;
-    }
+    const initializeAutocomplete = async () => {
+      // Clean up existing autocomplete
+      if (autocompleteRef.current) {
+        google.maps.event.clearInstanceListeners(autocompleteRef.current);
+        autocompleteRef.current = null;
+      }
 
-    try {
-      // Initialize the Places Autocomplete
-      autocompleteRef.current = new google.maps.places.Autocomplete(searchInputRef.current, {
-        types: ['address'],
-        fields: ['formatted_address', 'geometry', 'place_id']
-      });
+      try {
+        // Wait for Google Maps to be available
+        let attempts = 0;
+        while (!window.google?.maps?.places && attempts < 10) {
+          console.log('Waiting for Google Places API...');
+          await new Promise(resolve => setTimeout(resolve, 500));
+          attempts++;
+        }
 
-      // Add event listener
-      autocompleteRef.current.addListener('place_changed', handlePlaceChanged);
+        if (!window.google?.maps?.places) {
+          throw new Error('Google Places API not available after waiting');
+        }
 
-      console.log('useAddressSearch: Autocomplete initialized successfully');
+        // Initialize the Places Autocomplete with better configuration
+        autocompleteRef.current = new google.maps.places.Autocomplete(searchInputRef.current, {
+          types: ['address'],
+          fields: ['formatted_address', 'geometry', 'place_id', 'address_components'],
+          componentRestrictions: { country: ['us', 'ca'] } // Restrict to US and Canada for better results
+        });
 
-    } catch (error) {
-      console.error("useAddressSearch: Error initializing autocomplete:", error);
-      toast({
-        title: "Error",
-        description: "Failed to load address search. Please try again later.",
-        variant: "destructive"
-      });
-    }
+        // Add event listener
+        autocompleteRef.current.addListener('place_changed', handlePlaceChanged);
+
+        console.log('useAddressSearch: Autocomplete initialized successfully');
+
+      } catch (error) {
+        console.error("useAddressSearch: Error initializing autocomplete:", error);
+        toast({
+          title: "Address Search Unavailable",
+          description: "Address autocomplete is temporarily unavailable. You can still enter addresses manually.",
+          variant: "destructive"
+        });
+      }
+    };
+
+    initializeAutocomplete();
 
     return () => {
       if (autocompleteRef.current) {

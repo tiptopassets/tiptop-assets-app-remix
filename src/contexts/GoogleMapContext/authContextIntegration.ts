@@ -1,54 +1,47 @@
 
 import { useState, useEffect } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
-import { useUserData } from '@/hooks/useUserData';
 
-export const useAuthContextIntegration = () => {
-  const [authReady, setAuthReady] = useState(false);
-  const [userDataReady, setUserDataReady] = useState(false);
-  const [authContext, setAuthContext] = useState<{ user: any } | null>(null);
-  const [userDataContext, setUserDataContext] = useState<any>(null);
+// Create a safe hook wrapper that doesn't violate Rules of Hooks
+const useSafeAuth = () => {
+  const [authState, setAuthState] = useState<{
+    user: any;
+    error: boolean;
+  }>({
+    user: null,
+    error: false
+  });
 
-  // Always call useAuth hook - handle errors in useEffect
-  let authHookResult = null;
-  let authHookError = false;
-  
-  try {
-    authHookResult = useAuth();
-  } catch (error) {
-    authHookError = true;
-  }
-
-  // Always call useUserData hook - handle errors in useEffect
-  let userDataHookResult = null;
-  let userDataHookError = false;
-  
-  try {
-    userDataHookResult = useUserData();
-  } catch (error) {
-    userDataHookError = true;
-  }
-
-  // Handle auth context initialization
   useEffect(() => {
-    if (authHookError) {
-      console.warn('⚠️ AuthProvider not available yet, proceeding without auth context');
-      setAuthContext({ user: null });
-      setAuthReady(false);
-    } else if (authHookResult) {
-      setAuthContext(authHookResult);
-      setAuthReady(true);
-    }
-  }, [authHookError, authHookResult]);
-
-  // Handle user data context initialization
-  useEffect(() => {
-    if (userDataHookError || !authReady || !authContext?.user) {
-      if (userDataHookError) {
-        console.warn('⚠️ UserData hook not available, proceeding without user data');
+    // Try to import auth context dynamically
+    const loadAuthContext = async () => {
+      try {
+        const { useAuth } = await import('@/contexts/AuthContext');
+        const authResult = useAuth();
+        setAuthState({
+          user: authResult.user,
+          error: false
+        });
+      } catch (error) {
+        console.warn('⚠️ AuthProvider not available, proceeding without auth context');
+        setAuthState({
+          user: null,
+          error: true
+        });
       }
-      
-      setUserDataContext({
+    };
+
+    loadAuthContext();
+  }, []);
+
+  return authState;
+};
+
+const useSafeUserData = (user: any) => {
+  const [userDataState, setUserDataState] = useState<any>(null);
+
+  useEffect(() => {
+    if (!user) {
+      setUserDataState({
         refreshUserData: async () => {
           console.log('📝 User not authenticated, skipping data refresh');
         },
@@ -61,19 +54,40 @@ export const useAuthContextIntegration = () => {
           return null;
         }
       });
-      setUserDataReady(false);
-    } else if (userDataHookResult) {
-      setUserDataContext(userDataHookResult);
-      setUserDataReady(true);
+      return;
     }
-  }, [userDataHookError, authReady, authContext?.user, userDataHookResult]);
+
+    const loadUserData = async () => {
+      try {
+        const { useUserData } = await import('@/hooks/useUserData');
+        const userDataResult = useUserData();
+        setUserDataState(userDataResult);
+      } catch (error) {
+        console.warn('⚠️ UserData hook not available, proceeding without user data');
+        setUserDataState({
+          refreshUserData: async () => {},
+          saveAddress: async () => null,
+          savePropertyAnalysis: async () => null
+        });
+      }
+    };
+
+    loadUserData();
+  }, [user]);
+
+  return userDataState;
+};
+
+export const useAuthContextIntegration = () => {
+  const authState = useSafeAuth();
+  const userDataState = useSafeUserData(authState.user);
 
   return {
-    user: authContext?.user || null,
-    authReady,
-    userDataReady,
-    refreshUserData: userDataContext?.refreshUserData || (async () => {}),
-    saveAddress: userDataContext?.saveAddress || (async () => null),
-    savePropertyAnalysis: userDataContext?.savePropertyAnalysis || (async () => null)
+    user: authState.user,
+    authReady: !authState.error,
+    userDataReady: !!userDataState,
+    refreshUserData: userDataState?.refreshUserData || (async () => {}),
+    saveAddress: userDataState?.saveAddress || (async () => null),
+    savePropertyAnalysis: userDataState?.savePropertyAnalysis || (async () => null)
   };
 };
