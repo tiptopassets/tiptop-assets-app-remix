@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 
 export interface PartnerRecommendation {
@@ -21,6 +22,47 @@ export interface PartnerIntegrationProgress {
   next_steps: string[];
 }
 
+// Helper function to safely extract supported assets
+const extractSupportedAssets = (data: unknown): string[] => {
+  if (!data || typeof data !== 'object') return [];
+  if (!Array.isArray(data)) return [];
+  
+  const result: string[] = [];
+  for (const item of data) {
+    if (typeof item === 'string') {
+      result.push(item);
+    }
+  }
+  return result;
+};
+
+// Helper function to safely extract setup requirements
+const extractSetupRequirements = (data: unknown): Record<string, any> => {
+  if (!data || typeof data !== 'object' || Array.isArray(data)) {
+    return {};
+  }
+  return data as Record<string, any>;
+};
+
+// Helper function to check asset match
+const checkAssetMatch = (detectedAssets: string[], supportedAssets: string[]): string[] => {
+  const matches: string[] = [];
+  
+  for (const detected of detectedAssets) {
+    for (const supported of supportedAssets) {
+      const detectedLower = detected.toLowerCase();
+      const supportedLower = supported.toLowerCase();
+      
+      if (detectedLower.includes(supportedLower) || supportedLower.includes(detectedLower)) {
+        matches.push(detected);
+        break;
+      }
+    }
+  }
+  
+  return matches;
+};
+
 export const generatePartnerRecommendations = async (
   onboardingId: string,
   detectedAssets: string[]
@@ -37,29 +79,17 @@ export const generatePartnerRecommendations = async (
 
     const recommendations: PartnerRecommendation[] = [];
     
-    if (providers) {
+    if (providers && providers.length > 0) {
       for (const provider of providers) {
-        // Safe type handling for supported_assets
-        let supportedAssets: string[] = [];
-        if (Array.isArray(provider.supported_assets)) {
-          supportedAssets = provider.supported_assets.filter((asset: any) => 
-            typeof asset === 'string'
-          ) as string[];
-        }
-          
-        const matchingAssets = detectedAssets.filter(asset => 
-          supportedAssets.some(supported => 
-            supported.toLowerCase().includes(asset.toLowerCase()) || 
-            asset.toLowerCase().includes(supported.toLowerCase())
-          )
-        );
+        // Extract supported assets safely
+        const supportedAssets = extractSupportedAssets(provider.supported_assets);
+        
+        // Check for matches
+        const matchingAssets = checkAssetMatch(detectedAssets, supportedAssets);
 
         if (matchingAssets.length > 0) {
-          // Safe type handling for setup_requirements
-          let setupRequirements: Record<string, any> = {};
-          if (provider.setup_requirements && typeof provider.setup_requirements === 'object' && !Array.isArray(provider.setup_requirements)) {
-            setupRequirements = provider.setup_requirements as Record<string, any>;
-          }
+          // Extract setup requirements safely
+          const setupRequirements = extractSetupRequirements(provider.setup_requirements);
 
           const recommendation: PartnerRecommendation = {
             id: `${onboardingId}_${provider.name}`,
@@ -76,24 +106,26 @@ export const generatePartnerRecommendations = async (
       }
     }
 
+    // Sort recommendations
     recommendations.sort((a, b) => 
       (b.priority_score * b.estimated_monthly_earnings) - (a.priority_score * a.estimated_monthly_earnings)
     );
 
+    // Save to database if we have recommendations
     if (recommendations.length > 0) {
+      const insertData = recommendations.map(rec => ({
+        onboarding_id: onboardingId,
+        partner_name: rec.partner_name,
+        asset_type: rec.asset_type,
+        priority_score: rec.priority_score,
+        estimated_monthly_earnings: rec.estimated_monthly_earnings,
+        setup_complexity: rec.setup_complexity,
+        recommendation_reason: rec.recommendation_reason
+      }));
+
       const { error: insertError } = await supabase
         .from('partner_recommendations')
-        .insert(
-          recommendations.map(rec => ({
-            onboarding_id: onboardingId,
-            partner_name: rec.partner_name,
-            asset_type: rec.asset_type,
-            priority_score: rec.priority_score,
-            estimated_monthly_earnings: rec.estimated_monthly_earnings,
-            setup_complexity: rec.setup_complexity,
-            recommendation_reason: rec.recommendation_reason
-          }))
-        );
+        .insert(insertData);
 
       if (insertError) {
         console.error('Error saving recommendations:', insertError);
@@ -133,29 +165,14 @@ export const initializePartnerIntegration = async (
 
     if (error) throw error;
 
-    // Safe type conversion for database response
-    const safeRegistrationData: Record<string, any> = 
-      data.registration_data && typeof data.registration_data === 'object' && !Array.isArray(data.registration_data)
-        ? data.registration_data as Record<string, any>
-        : {};
-
-    const safeEarningsData: Record<string, any> = 
-      data.earnings_data && typeof data.earnings_data === 'object' && !Array.isArray(data.earnings_data)
-        ? data.earnings_data as Record<string, any>
-        : {};
-
-    const safeNextSteps: string[] = Array.isArray(data.next_steps) 
-      ? data.next_steps.filter((step: any) => typeof step === 'string') as string[]
-      : [];
-
     return {
       id: data.id,
       partner_name: data.partner_name,
       integration_status: data.integration_status as 'pending' | 'in_progress' | 'completed' | 'failed',
       referral_link: data.referral_link || '',
-      registration_data: safeRegistrationData,
-      earnings_data: safeEarningsData,
-      next_steps: safeNextSteps
+      registration_data: (data.registration_data as Record<string, any>) || {},
+      earnings_data: (data.earnings_data as Record<string, any>) || {},
+      next_steps: Array.isArray(data.next_steps) ? data.next_steps as string[] : []
     };
 
   } catch (error) {
@@ -210,32 +227,15 @@ export const getUserIntegrationProgress = async (
 
     if (error) throw error;
 
-    return (data || []).map(item => {
-      // Safe type conversion for database response
-      const safeRegistrationData: Record<string, any> = 
-        item.registration_data && typeof item.registration_data === 'object' && !Array.isArray(item.registration_data)
-          ? item.registration_data as Record<string, any>
-          : {};
-
-      const safeEarningsData: Record<string, any> = 
-        item.earnings_data && typeof item.earnings_data === 'object' && !Array.isArray(item.earnings_data)
-          ? item.earnings_data as Record<string, any>
-          : {};
-
-      const safeNextSteps: string[] = Array.isArray(item.next_steps) 
-        ? item.next_steps.filter((step: any) => typeof step === 'string') as string[]
-        : [];
-
-      return {
-        id: item.id,
-        partner_name: item.partner_name,
-        integration_status: item.integration_status as 'pending' | 'in_progress' | 'completed' | 'failed',
-        referral_link: item.referral_link || '',
-        registration_data: safeRegistrationData,
-        earnings_data: safeEarningsData,
-        next_steps: safeNextSteps
-      };
-    });
+    return (data || []).map(item => ({
+      id: item.id,
+      partner_name: item.partner_name,
+      integration_status: item.integration_status as 'pending' | 'in_progress' | 'completed' | 'failed',
+      referral_link: item.referral_link || '',
+      registration_data: (item.registration_data as Record<string, any>) || {},
+      earnings_data: (item.earnings_data as Record<string, any>) || {},
+      next_steps: Array.isArray(item.next_steps) ? item.next_steps as string[] : []
+    }));
 
   } catch (error) {
     console.error('❌ Error getting integration progress:', error);
@@ -246,8 +246,9 @@ export const getUserIntegrationProgress = async (
 const getSetupComplexity = (requirements: Record<string, any>): 'easy' | 'medium' | 'hard' => {
   if (!requirements || typeof requirements !== 'object') return 'medium';
   
-  if (Array.isArray(requirements.requirements)) {
-    const reqCount = requirements.requirements.length;
+  const reqs = requirements.requirements;
+  if (Array.isArray(reqs)) {
+    const reqCount = reqs.length;
     if (reqCount <= 2) return 'easy';
     if (reqCount <= 4) return 'medium';
     return 'hard';
