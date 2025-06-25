@@ -1,4 +1,3 @@
-
 // Define types for the asset analysis
 export interface ProviderInfo {
   name: string;
@@ -66,23 +65,22 @@ export interface AnalysisResults {
 }
 
 export interface FormField {
-  type: "text" | "number" | "select";
+  type: 'text' | 'number' | 'select';
   name: string;
   label: string;
-  value: string | number;
+  value: any;
   options?: string[];
 }
 
 export interface Opportunity {
-  title: string;
   icon: string;
+  title: string;
   monthlyRevenue: number;
   description: string;
-  provider?: string;
-  setupCost?: number;
-  roi?: number;
+  provider: string;
+  setupCost: number;
+  roi: number;
   formFields?: FormField[];
-  usingRealSolarData?: boolean;
 }
 
 export interface AdditionalOpportunity {

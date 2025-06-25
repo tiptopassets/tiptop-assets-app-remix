@@ -65,15 +65,16 @@ export interface UserBundleSelection {
 export interface AffiliateRegistration {
   id: string;
   user_id: string;
-  bundle_selection_id: string;
-  provider_id: string;
+  bundle_selection_id?: string;
+  provider_id?: string;
   affiliate_link?: string;
-  tracking_code: string;
+  tracking_code?: string;
   registration_status: 'pending' | 'completed' | 'failed';
   registration_date?: string;
   first_commission_date?: string;
   total_earnings: number;
   last_sync_at: string;
+  created_at: string;
 }
 
 export interface BundleRecommendation {

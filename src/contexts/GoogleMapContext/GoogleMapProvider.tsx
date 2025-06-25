@@ -190,7 +190,7 @@ const GoogleMapProvider = ({ children }: { children: React.ReactNode }) => {
       return analysisResults;
     } catch (error) {
       console.error('❌ Property analysis failed:', error);
-      throw error;
+      return null; // Return null instead of throwing
     }
   };
 
