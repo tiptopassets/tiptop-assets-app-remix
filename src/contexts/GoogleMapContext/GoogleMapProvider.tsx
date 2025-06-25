@@ -2,7 +2,7 @@
 import React, { createContext, useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useUserData } from '@/hooks/useUserData';
-import { GoogleMapContextProps } from './types';
+import { GoogleMapContextProps, AnalysisResults } from './types';
 import { useToast } from "@/hooks/use-toast";
 import { generatePropertyAnalysis } from './propertyAnalysis';
 import { createInitialState } from './state';
@@ -165,11 +165,11 @@ const GoogleMapProvider = ({ children }: { children: React.ReactNode }) => {
   }, [user?.id, refreshUserData, toast]);
 
   // Enhanced wrapper function with integrated database saving
-  const generatePropertyAnalysisWrapper = async (propertyAddress: string) => {
+  const generatePropertyAnalysisWrapper = async (propertyAddress: string): Promise<AnalysisResults | null> => {
     console.log('🏠 Starting property analysis with database integration:', { propertyAddress, userId: user?.id });
     
     try {
-      const analysis = await generatePropertyAnalysis({
+      await generatePropertyAnalysis({
         propertyAddress,
         addressCoordinates,
         useLocalAnalysis,
@@ -187,7 +187,7 @@ const GoogleMapProvider = ({ children }: { children: React.ReactNode }) => {
         userId: user?.id
       });
 
-      return analysis;
+      return analysisResults;
     } catch (error) {
       console.error('❌ Property analysis failed:', error);
       throw error;

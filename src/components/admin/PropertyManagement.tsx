@@ -26,11 +26,14 @@ import {
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import PropertyDetailsDialog from './PropertyDetailsDialog';
-import PropertyStatsCards from './PropertyStatsCards';
 import { UserPropertyAnalysisRow } from '@/types/database';
 
 interface PropertyWithAddress extends UserPropertyAnalysisRow {
   property_address?: string;
+  user_addresses?: {
+    address: string;
+    formatted_address?: string;
+  };
 }
 
 const PropertyManagement = () => {
@@ -171,8 +174,6 @@ const PropertyManagement = () => {
       animate={{ opacity: 1 }}
       className="space-y-6"
     >
-      <PropertyStatsCards properties={properties} />
-
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">

@@ -1,6 +1,22 @@
 
 import { AnalysisResults } from '@/types/analysis';
 
+export interface Opportunity {
+  icon: string;
+  title: string;
+  monthlyRevenue: number;
+  description: string;
+  provider: string;
+  setupCost: number;
+  roi: number;
+  formFields?: Array<{
+    type: string;
+    name: string;
+    label: string;
+    value: any;
+  }>;
+}
+
 export interface GoogleMapContextProps {
   address: string;
   setAddress: (address: string) => void;
@@ -49,4 +65,7 @@ export interface GoogleMapContextProps {
   setZoomLevel: (zoom: number) => void;
 }
 
-export { AnalysisResults };
+// Alias for compatibility
+export type GoogleMapContextType = GoogleMapContextProps;
+
+export type { AnalysisResults };

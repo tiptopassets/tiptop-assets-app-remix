@@ -17,12 +17,12 @@ export const syncAnalysisToDatabase = async (
   try {
     if (!userId) {
       console.log('ℹ️ No user ID - saving to unauthenticated storage');
-      await saveUnauthenticatedAnalysis({
+      await saveUnauthenticatedAnalysis(
         address,
         analysis,
         coordinates,
         satelliteImageUrl
-      });
+      );
       return null;
     }
 
