@@ -14,8 +14,27 @@ export const GoogleMapContext = createContext<GoogleMapContextProps | undefined>
 );
 
 const GoogleMapProvider = ({ children }: { children: React.ReactNode }) => {
-  const { user } = useAuth();
-  const { refreshUserData } = useUserData();
+  // Use try-catch to handle cases where AuthProvider might not be ready
+  let authContext;
+  try {
+    authContext = useAuth();
+  } catch (error) {
+    console.warn('⚠️ AuthProvider not available yet, proceeding without auth context');
+    authContext = { user: null };
+  }
+
+  const { user } = authContext;
+  
+  // Only use useUserData hook if we have a valid auth context
+  let userDataContext;
+  try {
+    userDataContext = useUserData();
+  } catch (error) {
+    console.warn('⚠️ UserData hook not available, proceeding without user data');
+    userDataContext = { refreshUserData: async () => {} };
+  }
+  
+  const { refreshUserData } = userDataContext;
   const { toast } = useToast();
 
   // Initialize state
