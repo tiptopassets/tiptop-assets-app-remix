@@ -1,164 +1,91 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
-import { useToast } from '@/hooks/use-toast';
-import { 
-  ServiceProviderInfo, 
-  ServiceProviderEarnings
-} from '../types';
-import { formatProviderInfo } from '../utils/providerUtils';
+import { ServiceProvider } from '../types';
 
 export const useProviderData = () => {
-  const [availableProviders, setAvailableProviders] = useState<ServiceProviderInfo[]>([]);
-  const [connectedProviders, setConnectedProviders] = useState<ServiceProviderInfo[]>([]);
-  const [earnings, setEarnings] = useState<ServiceProviderEarnings[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [providers, setProviders] = useState<ServiceProvider[]>([]);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { toast } = useToast();
-  const { user } = useAuth();
+
+  const fetchProviders = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const { data, error: fetchError } = await supabase
+        .from('service_providers')
+        .select('*')
+        .eq('is_active', true)
+        .order('priority', { ascending: false });
+
+      if (fetchError) throw fetchError;
+
+      const transformedProviders: ServiceProvider[] = (data || []).map(provider => ({
+        id: provider.id,
+        name: provider.name,
+        category: provider.category,
+        description: provider.description || '',
+        logoUrl: provider.logo_url || '',
+        websiteUrl: provider.website_url || '',
+        avgMonthlyEarnings: {
+          low: provider.avg_monthly_earnings_low,
+          high: provider.avg_monthly_earnings_high
+        },
+        setupCost: provider.setup_cost,
+        commissionRate: provider.commission_rate,
+        priority: provider.priority,
+        isActive: provider.is_active,
+        serviceAreas: provider.service_areas || [],
+        contactInfo: provider.contact_info || {}
+      }));
+
+      setProviders(transformedProviders);
+    } catch (err) {
+      console.error('Error fetching providers:', err);
+      setError(err instanceof Error ? err.message : 'Failed to fetch providers');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchServiceCategories = async () => {
+    try {
+      const { data, error: fetchError } = await supabase
+        .from('service_providers')
+        .select('category')
+        .eq('is_active', true);
+
+      if (fetchError) throw fetchError;
+
+      const categories = [...new Set(data?.map(item => item.category) || [])];
+      return categories;
+    } catch (err) {
+      console.error('Error fetching service categories:', err);
+      return [];
+    }
+  };
+
+  const getProviderById = (id: string): ServiceProvider | undefined => {
+    return providers.find(provider => provider.id === id);
+  };
+
+  const getProvidersByCategory = (category: string): ServiceProvider[] => {
+    return providers.filter(provider => provider.category === category);
+  };
 
   useEffect(() => {
-    const fetchServiceProviders = async () => {
-      if (!user) {
-        console.log('🔄 No user found, skipping provider data fetch');
-        setIsLoading(false);
-        setError(null);
-        return;
-      }
-
-      try {
-        console.log('🔄 Fetching service providers for user:', user.email);
-        setIsLoading(true);
-        setError(null);
-
-        // Fetch all available service providers with error handling
-        let servicesData;
-        try {
-          const { data, error: servicesError } = await supabase
-            .from('services')
-            .select('*');
-
-          if (servicesError) {
-            console.warn('⚠️ Services table error:', servicesError);
-            // If services table doesn't exist or has issues, use empty array
-            servicesData = [];
-          } else {
-            servicesData = data || [];
-          }
-        } catch (servicesErr) {
-          console.warn('⚠️ Failed to fetch services, using empty array:', servicesErr);
-          servicesData = [];
-        }
-
-        // Format the service provider data
-        const formattedProviders: ServiceProviderInfo[] = servicesData.map(formatProviderInfo);
-        setAvailableProviders(formattedProviders);
-
-        // Fetch user's connected providers with error handling
-        let credentialsData;
-        try {
-          const { data, error: credentialsError } = await supabase
-            .from('affiliate_credentials')
-            .select('*')
-            .eq('user_id', user.id);
-
-          if (credentialsError) {
-            console.warn('⚠️ Affiliate credentials error:', credentialsError);
-            credentialsData = [];
-          } else {
-            credentialsData = data || [];
-          }
-        } catch (credentialsErr) {
-          console.warn('⚠️ Failed to fetch credentials, using empty array:', credentialsErr);
-          credentialsData = [];
-        }
-
-        // Check FlexOffers sub-affiliate mappings with error handling
-        let hasFlexOffersMapping = false;
-        try {
-          const { data: flexoffersData } = await supabase
-            .from('affiliate_earnings')
-            .select('service')
-            .eq('user_id', user.id)
-            .eq('service', 'FlexOffers')
-            .single();
-          
-          hasFlexOffersMapping = !!flexoffersData;
-        } catch (err) {
-          // No FlexOffers mapping found or table doesn't exist
-          hasFlexOffersMapping = false;
-        }
-
-        // Mark which providers are connected
-        const connected = new Set((credentialsData || []).map(cred => cred.service?.toLowerCase()));
-        
-        // Add FlexOffers if mapping exists
-        if (hasFlexOffersMapping) {
-          connected.add('flexoffers');
-        }
-        
-        const updatedProviders = formattedProviders.map(provider => ({
-          ...provider,
-          connected: connected.has(provider.id.toLowerCase())
-        }));
-
-        const connectedProvidersList = updatedProviders.filter(p => p.connected);
-        
-        setAvailableProviders(updatedProviders);
-        setConnectedProviders(connectedProvidersList);
-
-        // Fetch earnings data with error handling
-        if (connectedProvidersList.length > 0) {
-          try {
-            const { data: earningsData, error: earningsError } = await supabase
-              .from('affiliate_earnings')
-              .select('*')
-              .eq('user_id', user.id);
-
-            if (earningsError) {
-              console.warn('⚠️ Earnings data error:', earningsError);
-              setEarnings([]);
-            } else {
-              setEarnings((earningsData || []).map(e => ({
-                id: e.id,
-                service: e.service,
-                earnings: e.earnings || 0,
-                lastSyncStatus: (e.last_sync_status as 'pending' | 'completed' | 'failed') || 'pending',
-                updatedAt: new Date(e.updated_at)
-              })));
-            }
-          } catch (earningsErr) {
-            console.warn('⚠️ Failed to fetch earnings:', earningsErr);
-            setEarnings([]);
-          }
-        } else {
-          setEarnings([]);
-        }
-
-        console.log('✅ Service providers loaded successfully');
-      } catch (err) {
-        console.error('❌ Critical error fetching service providers:', err);
-        setError('Failed to load service providers. This may be due to database connectivity issues.');
-        
-        // Don't show toast for database connectivity issues
-        // The error will be handled by the parent component
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchServiceProviders();
-  }, [user, toast]);
+    fetchProviders();
+  }, []);
 
   return {
-    availableProviders,
-    setAvailableProviders,
-    connectedProviders, 
-    setConnectedProviders,
-    earnings,
-    setEarnings,
-    isLoading,
-    error
+    providers,
+    loading,
+    error,
+    fetchProviders,
+    fetchServiceCategories,
+    getProviderById,
+    getProvidersByCategory,
+    refetch: fetchProviders
   };
 };

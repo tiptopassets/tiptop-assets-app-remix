@@ -2,256 +2,191 @@
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import {
-  ServiceProviderInfo,
-  RegisterServiceFormData,
-} from '../types';
 
-export const useProviderActions = (
-  availableProviders: ServiceProviderInfo[],
-  setAvailableProviders: (providers: ServiceProviderInfo[]) => void,
-  connectedProviders: ServiceProviderInfo[],
-  setConnectedProviders: (providers: ServiceProviderInfo[]) => void
-) => {
-  const [actionInProgress, setActionInProgress] = useState(false);
+export const useProviderActions = () => {
+  const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
-  // Connect to a service provider
-  const connectToProvider = async (providerId: string, userId: string) => {
-    if (!userId) {
-      toast({
-        title: 'Authentication Required',
-        description: 'You need to be logged in to connect to service providers',
-        variant: 'destructive'
-      });
-      return;
-    }
-    
-    setActionInProgress(true);
+  const updateEarnings = async (providerId: string, earningsData: any) => {
     try {
-      // For FlexOffers, we'll generate a unique sub-affiliate ID for the user
-      if (providerId.toLowerCase() === 'flexoffers') {
-        const subAffiliateId = `tiptop_${userId.substring(0, 8)}`;
-        
-        // Create a placeholder in affiliate_earnings
-        const { error: earningsError } = await supabase
-          .from('affiliate_earnings')
-          .insert({
-            user_id: userId,
-            service: 'FlexOffers',
-            earnings: 0,
-            last_sync_status: 'pending'
-          });
-        
-        if (earningsError) throw earningsError;
-        
-        // Find the FlexOffers provider and update UI
-        const flexoffersProvider = availableProviders.find(p => p.id.toLowerCase() === providerId.toLowerCase());
-        if (flexoffersProvider) {
-          const updatedProvider = {...flexoffersProvider, connected: true};
-          setConnectedProviders([...connectedProviders, updatedProvider]);
-          setAvailableProviders(
-            availableProviders.map(p => 
-              p.id.toLowerCase() === providerId.toLowerCase() 
-                ? {...p, connected: true} 
-                : p
-            )
-          );
-        }
-        
-        toast({
-          title: 'FlexOffers Connected',
-          description: 'Successfully connected to FlexOffers',
-        });
-        
-        return;
-      }
+      setIsLoading(true);
       
-      // For other providers, we'll use the existing flow
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
+      const { data, error } = await supabase
+        .from('service_providers')
+        .update({
+          avg_monthly_earnings_low: earningsData.low,
+          avg_monthly_earnings_high: earningsData.high,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', providerId)
+        .select()
+        .single();
+
+      if (error) throw error;
+
       toast({
-        title: 'Coming Soon',
-        description: 'Provider connection functionality will be available soon',
+        title: "Success",
+        description: "Provider earnings updated successfully"
       });
-    } catch (err) {
-      console.error('Error connecting to provider:', err);
+
+      return data;
+    } catch (error) {
+      console.error('Error updating earnings:', error);
       toast({
-        title: 'Connection Failed',
-        description: 'Failed to connect to service provider',
-        variant: 'destructive'
+        title: "Error", 
+        description: "Failed to update earnings",
+        variant: "destructive"
       });
+      throw error;
     } finally {
-      setActionInProgress(false);
+      setIsLoading(false);
     }
   };
 
-  // Register with a service provider
-  const registerWithProvider = async (formData: RegisterServiceFormData, userId: string) => {
-    if (!userId) {
-      toast({
-        title: 'Authentication Required',
-        description: 'You need to be logged in to register with service providers',
-        variant: 'destructive'
-      });
-      return;
-    }
-    
-    setActionInProgress(true);
+  const syncEarnings = async (providerId: string) => {
     try {
-      // For FlexOffers, we'll register the sub-affiliate ID
-      if (formData.service?.toLowerCase() === 'flexoffers' && formData.subAffiliateId) {
-        // Create a placeholder in affiliate_earnings
-        await supabase
-          .from('affiliate_earnings')
-          .insert({
-            user_id: userId,
-            service: 'FlexOffers',
-            earnings: 0,
-            last_sync_status: 'pending'
-          });
-        
-        toast({
-          title: 'FlexOffers Registered',
-          description: 'Your FlexOffers sub-affiliate ID has been registered.',
-        });
-        
-        // Refresh the providers list
-        const provider = availableProviders.find(p => p.id.toLowerCase() === formData.service?.toLowerCase());
-        if (provider) {
-          setConnectedProviders([...connectedProviders, {...provider, connected: true}]);
-          setAvailableProviders(
-            availableProviders.map(p => 
-              p.id.toLowerCase() === formData.service?.toLowerCase() 
-                ? {...p, connected: true} 
-                : p
-            )
-          );
-        }
-        
-        return;
-      }
+      setIsLoading(true);
       
-      // For other providers, use the default flow
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
+      // Get provider info
+      const { data: provider, error: providerError } = await supabase
+        .from('service_providers')
+        .select('*')
+        .eq('id', providerId)
+        .single();
+
+      if (providerError) throw providerError;
+
+      // Create earnings record
+      const { data, error } = await supabase
+        .from('service_providers')
+        .update({
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', providerId)
+        .select()
+        .single();
+
+      if (error) throw error;
+
       toast({
-        title: 'Coming Soon',
-        description: 'Provider registration functionality will be available soon',
+        title: "Success",
+        description: "Earnings synced successfully"
       });
-    } catch (err) {
-      console.error('Error registering with provider:', err);
+
+      return data;
+    } catch (error) {
+      console.error('Error syncing earnings:', error);
       toast({
-        title: 'Registration Failed',
-        description: 'Failed to register with service provider',
-        variant: 'destructive'
+        title: "Error",
+        description: "Failed to sync earnings", 
+        variant: "destructive"
       });
+      throw error;
     } finally {
-      setActionInProgress(false);
+      setIsLoading(false);
     }
   };
 
-  // Disconnect from a service provider
-  const disconnectProvider = async (providerId: string, userId: string) => {
-    if (!userId) {
-      toast({
-        title: 'Authentication Required',
-        description: 'You need to be logged in to disconnect from service providers',
-        variant: 'destructive'
-      });
-      return;
-    }
-    
-    setActionInProgress(true);
+  const registerWithProvider = async (providerId: string, credentials: any) => {
     try {
-      // For FlexOffers, remove the earnings record
-      if (providerId.toLowerCase() === 'flexoffers') {
-        await supabase
-          .from('affiliate_earnings')
-          .delete()
-          .eq('user_id', userId)
-          .eq('service', 'FlexOffers');
-        
-        // Update the UI
-        setConnectedProviders(connectedProviders.filter(p => p.id.toLowerCase() !== providerId.toLowerCase()));
-        setAvailableProviders(
-          availableProviders.map(p => 
-            p.id.toLowerCase() === providerId.toLowerCase() 
-              ? {...p, connected: false} 
-              : p
-          )
-        );
-        
-        toast({
-          title: 'FlexOffers Disconnected',
-          description: 'Successfully disconnected from FlexOffers',
-        });
-        
-        return;
-      }
+      setIsLoading(true);
       
-      // For other providers, use the default flow
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
+      // Store credentials
+      const { data, error } = await supabase
+        .from('affiliate_credentials')
+        .upsert({
+          user_id: user.id,
+          provider_name: credentials.providerName,
+          api_key: credentials.apiKey,
+          secret_key: credentials.secretKey,
+          account_id: credentials.accountId,
+          status: 'active'
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
       toast({
-        title: 'Coming Soon',
-        description: 'Provider disconnection functionality will be available soon',
+        title: "Success",
+        description: "Successfully registered with provider"
       });
-    } catch (err) {
-      console.error('Error disconnecting provider:', err);
+
+      return data;
+    } catch (error) {
+      console.error('Error registering with provider:', error);
       toast({
-        title: 'Disconnection Failed',
-        description: 'Failed to disconnect from service provider',
-        variant: 'destructive'
+        title: "Error",
+        description: "Failed to register with provider",
+        variant: "destructive"
       });
+      throw error;
     } finally {
-      setActionInProgress(false);
+      setIsLoading(false);
     }
   };
 
-  // Sync earnings data from a service provider
-  const syncProviderEarnings = async (providerId: string, userId: string) => {
-    if (!userId) {
-      toast({
-        title: 'Authentication Required',
-        description: 'You need to be logged in to sync earnings',
-        variant: 'destructive'
-      });
-      return;
-    }
-    
-    setActionInProgress(true);
+  const createEarningsRecord = async (earningsData: any) => {
     try {
-      toast({
-        title: 'Coming Soon',
-        description: 'Provider earnings sync functionality will be available soon',
-      });
-    } catch (err) {
-      console.error('Error syncing provider earnings:', err);
-      toast({
-        title: 'Sync Failed',
-        description: 'Failed to sync earnings from provider',
-        variant: 'destructive'
-      });
-    } finally {
-      setActionInProgress(false);
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
+      const { data, error } = await supabase
+        .from('service_providers')
+        .insert({
+          user_id: user.id,
+          name: earningsData.providerName,
+          category: earningsData.serviceType,
+          avg_monthly_earnings_low: earningsData.amount,
+          avg_monthly_earnings_high: earningsData.amount,
+          commission_rate: earningsData.commissionRate || 0
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Error creating earnings record:', error);
+      throw error;
     }
   };
 
-  // Generate a referral link
-  const generateReferralLink = async (providerId: string, destinationUrl: string, userId: string | undefined): Promise<string> => {
-    const provider = availableProviders.find(p => p.id.toLowerCase() === providerId.toLowerCase());
-    
-    if (provider?.referralLinkTemplate && userId) {
-      return provider.referralLinkTemplate
-        .replace('{{subAffiliateId}}', `tiptop_${userId.substring(0, 8)}`)
-        .replace('{{destinationUrl}}', encodeURIComponent(destinationUrl));
+  const getEarningsHistory = async (providerId?: string) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
+      let query = supabase
+        .from('service_providers')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      const { data, error } = await query;
+
+      if (error) throw error;
+      return data || [];
+    } catch (error) {
+      console.error('Error fetching earnings history:', error);
+      throw error;
     }
-    
-    // If no template or user is not logged in, return the original URL
-    return destinationUrl;
   };
 
   return {
-    connectToProvider,
+    updateEarnings,
+    syncEarnings,
     registerWithProvider,
-    disconnectProvider,
-    syncProviderEarnings,
-    generateReferralLink,
-    actionInProgress
+    createEarningsRecord,
+    getEarningsHistory,
+    isLoading
   };
 };

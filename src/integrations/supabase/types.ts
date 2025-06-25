@@ -9,6 +9,84 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      affiliate_credentials: {
+        Row: {
+          account_id: string | null
+          api_key: string | null
+          created_at: string | null
+          id: string
+          provider_name: string
+          secret_key: string | null
+          status: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          account_id?: string | null
+          api_key?: string | null
+          created_at?: string | null
+          id?: string
+          provider_name: string
+          secret_key?: string | null
+          status?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          account_id?: string | null
+          api_key?: string | null
+          created_at?: string | null
+          id?: string
+          provider_name?: string
+          secret_key?: string | null
+          status?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      affiliate_earnings: {
+        Row: {
+          commission_rate: number | null
+          created_at: string | null
+          earnings_amount: number | null
+          id: string
+          metadata: Json | null
+          provider_name: string
+          service_type: string
+          status: string | null
+          transaction_date: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          commission_rate?: number | null
+          created_at?: string | null
+          earnings_amount?: number | null
+          id?: string
+          metadata?: Json | null
+          provider_name: string
+          service_type: string
+          status?: string | null
+          transaction_date?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          commission_rate?: number | null
+          created_at?: string | null
+          earnings_amount?: number | null
+          id?: string
+          metadata?: Json | null
+          provider_name?: string
+          service_type?: string
+          status?: string | null
+          transaction_date?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       available_services: {
         Row: {
           analysis_id: string | null
@@ -188,6 +266,45 @@ export type Database = {
           setup_cost?: number
           updated_at?: string
           website_url?: string | null
+        }
+        Relationships: []
+      }
+      services: {
+        Row: {
+          base_price: number | null
+          category: string
+          commission_rate: number | null
+          created_at: string | null
+          description: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          provider_info: Json | null
+          updated_at: string | null
+        }
+        Insert: {
+          base_price?: number | null
+          category: string
+          commission_rate?: number | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          provider_info?: Json | null
+          updated_at?: string | null
+        }
+        Update: {
+          base_price?: number | null
+          category?: string
+          commission_rate?: number | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          provider_info?: Json | null
+          updated_at?: string | null
         }
         Relationships: []
       }

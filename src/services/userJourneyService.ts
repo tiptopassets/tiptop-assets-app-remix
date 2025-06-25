@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { AnalysisResults } from '@/contexts/GoogleMapContext/types';
 
@@ -80,12 +79,41 @@ export const trackAnalysisCompleted = async (
 ) => {
   const sessionId = getSessionId();
   
-  // Calculate totals from analysis results
-  const totalMonthlyRevenue = analysisResults.topOpportunities?.reduce(
-    (sum, opp) => sum + (opp.monthlyRevenue || 0), 0
-  ) || 0;
+  console.log('📊 Tracking analysis completion for:', address);
+  console.log('📈 Analysis results:', analysisResults);
   
-  const totalOpportunities = analysisResults.topOpportunities?.length || 0;
+  // Calculate totals from analysis results with better logic
+  let totalMonthlyRevenue = 0;
+  let totalOpportunities = 0;
+
+  // Check if we have topOpportunities and calculate from there
+  if (analysisResults.topOpportunities && Array.isArray(analysisResults.topOpportunities)) {
+    totalMonthlyRevenue = analysisResults.topOpportunities.reduce(
+      (sum, opp) => sum + (opp.monthlyRevenue || 0), 0
+    );
+    totalOpportunities = analysisResults.topOpportunities.length;
+  } else {
+    // Fallback: calculate from individual asset types
+    const assetRevenues = [
+      analysisResults.rooftop?.revenue || 0,
+      analysisResults.parking?.revenue || 0,
+      analysisResults.garden?.revenue || 0,
+      analysisResults.pool?.revenue || 0,
+      analysisResults.storage?.revenue || 0,
+      analysisResults.bandwidth?.revenue || 0,
+      analysisResults.internet?.monthlyRevenue || 0
+    ];
+    
+    totalMonthlyRevenue = assetRevenues.reduce((sum, revenue) => sum + revenue, 0);
+    totalOpportunities = assetRevenues.filter(revenue => revenue > 0).length;
+  }
+
+  // Use the totalMonthlyRevenue from analysisResults if available
+  if (analysisResults.totalMonthlyRevenue && analysisResults.totalMonthlyRevenue > totalMonthlyRevenue) {
+    totalMonthlyRevenue = analysisResults.totalMonthlyRevenue;
+  }
+
+  console.log('💰 Calculated totals:', { totalMonthlyRevenue, totalOpportunities });
   
   try {
     const { data, error } = await supabase.rpc('update_journey_step', {
@@ -106,6 +134,8 @@ export const trackAnalysisCompleted = async (
     }
 
     console.log('✅ Analysis completion tracked for:', address);
+    console.log('💰 Revenue tracked:', totalMonthlyRevenue);
+    console.log('🎯 Opportunities tracked:', totalOpportunities);
     return data;
   } catch (error) {
     console.error('❌ Error in trackAnalysisCompleted:', error);
@@ -216,6 +246,8 @@ export const trackDashboardAccessed = async () => {
 // Get user's complete dashboard data
 export const getUserDashboardData = async (userId: string) => {
   try {
+    console.log('📊 Fetching dashboard data for user:', userId);
+    
     const { data, error } = await supabase.rpc('get_user_dashboard_data', {
       p_user_id: userId
     });
@@ -225,8 +257,19 @@ export const getUserDashboardData = async (userId: string) => {
       return null;
     }
 
-    console.log('✅ Dashboard data retrieved for user:', userId);
-    return data?.[0] || null;
+    const result = data?.[0] || null;
+    console.log('📊 Raw dashboard data from DB:', result);
+    
+    if (result) {
+      console.log('✅ Dashboard data retrieved successfully');
+      console.log('🏠 Property address:', result.property_address);
+      console.log('💰 Monthly revenue:', result.total_monthly_revenue);
+      console.log('🎯 Total opportunities:', result.total_opportunities);
+    } else {
+      console.log('❌ No dashboard data found for user');
+    }
+    
+    return result;
   } catch (error) {
     console.error('❌ Error in getUserDashboardData:', error);
     return null;

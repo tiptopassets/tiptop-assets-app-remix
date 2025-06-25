@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -60,12 +59,39 @@ const PropertyManagement = () => {
     try {
       setLoading(true);
       const { data, error } = await supabase
-        .from('property_analyses')
-        .select('*')
+        .from('user_property_analyses')
+        .select(`
+          id,
+          user_id,
+          total_monthly_revenue,
+          total_opportunities,
+          property_type,
+          created_at,
+          updated_at,
+          coordinates,
+          analysis_results,
+          user_addresses!inner(address)
+        `)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setProperties(data || []);
+      
+      // Transform the data to match the PropertyAnalysis interface
+      const transformedData = data?.map((item: any) => ({
+        id: item.id,
+        property_address: item.user_addresses?.address || 'Unknown Address',
+        user_id: item.user_id,
+        total_monthly_revenue: item.total_monthly_revenue || 0,
+        total_opportunities: item.total_opportunities || 0,
+        property_type: item.property_type || 'Unknown',
+        created_at: item.created_at,
+        updated_at: item.updated_at,
+        is_active: true, // Default to active for user analyses
+        coordinates: item.coordinates,
+        analysis_results: item.analysis_results
+      })) || [];
+
+      setProperties(transformedData);
     } catch (error) {
       console.error('Error fetching properties:', error);
       toast({
@@ -81,7 +107,7 @@ const PropertyManagement = () => {
   const deleteProperty = async (propertyId: string) => {
     try {
       const { error } = await supabase
-        .from('property_analyses')
+        .from('user_property_analyses')
         .delete()
         .eq('id', propertyId);
 
