@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 export interface PartnerRecommendation {
@@ -22,35 +21,6 @@ export interface PartnerIntegrationProgress {
   next_steps: string[];
 }
 
-// Simple provider interface without JSONB complexity
-interface SimpleProvider {
-  id: string;
-  name: string;
-  priority_score: number;
-  avg_earnings_low: number;
-  avg_earnings_high: number;
-  affiliate_base_url: string;
-  supported_assets: string[];
-  setup_requirements: Array<{
-    key: string;
-    value: string;
-    type: string;
-  }>;
-}
-
-// Database row interface for JOIN results
-interface ProviderWithAssetRow {
-  id: string;
-  name: string;
-  priority_score: number;
-  avg_earnings_low: number;
-  avg_earnings_high: number;
-  affiliate_base_url: string;
-  provider_supported_assets: {
-    asset_type: string;
-  } | null;
-}
-
 // Helper function to check asset match
 const checkAssetMatch = (detectedAssets: string[], supportedAssets: string[]): string[] => {
   const matches: string[] = [];
@@ -70,10 +40,9 @@ const checkAssetMatch = (detectedAssets: string[], supportedAssets: string[]): s
   return matches;
 };
 
-const getSetupComplexity = (requirements: Array<{key: string; value: string; type: string}>): 'easy' | 'medium' | 'hard' => {
-  const reqCount = requirements.length;
-  if (reqCount <= 2) return 'easy';
-  if (reqCount <= 4) return 'medium';
+const getSetupComplexity = (requirementsCount: number): 'easy' | 'medium' | 'hard' => {
+  if (requirementsCount <= 2) return 'easy';
+  if (requirementsCount <= 4) return 'medium';
   return 'hard';
 };
 
@@ -84,86 +53,74 @@ export const generatePartnerRecommendations = async (
   try {
     console.log('🎯 Generating partner recommendations for assets:', detectedAssets);
     
-    // Get providers with their supported assets using JOIN
-    const { data: providersWithAssets, error: providersError } = await supabase
+    // Step 1: Get all active providers
+    const { data: providers, error: providersError } = await supabase
       .from('enhanced_service_providers')
-      .select(`
-        id,
-        name,
-        priority_score,
-        avg_earnings_low,
-        avg_earnings_high,
-        affiliate_base_url,
-        provider_supported_assets!inner(asset_type)
-      `)
-      .eq('integration_status', 'active');
+      .select('*')
+      .eq('integration_status', 'active')
+      .eq('is_active', true);
 
-    if (providersError) throw providersError;
+    if (providersError) {
+      console.error('Error fetching providers:', providersError);
+      throw providersError;
+    }
 
-    // Get setup requirements for all providers
-    const { data: allRequirements, error: requirementsError } = await supabase
+    if (!providers || providers.length === 0) {
+      console.log('No active providers found');
+      return [];
+    }
+
+    // Step 2: Get supported assets for all providers
+    const providerIds = providers.map(p => p.id);
+    const { data: supportedAssets, error: assetsError } = await supabase
+      .from('provider_supported_assets')
+      .select('provider_id, asset_type')
+      .in('provider_id', providerIds);
+
+    if (assetsError) {
+      console.error('Error fetching supported assets:', assetsError);
+      throw assetsError;
+    }
+
+    // Step 3: Get setup requirements for all providers
+    const { data: setupRequirements, error: requirementsError } = await supabase
       .from('provider_setup_requirements')
-      .select('provider_id, requirement_key, requirement_value, requirement_type');
+      .select('provider_id, requirement_key, requirement_value, requirement_type')
+      .in('provider_id', providerIds);
 
-    if (requirementsError) throw requirementsError;
+    if (requirementsError) {
+      console.error('Error fetching setup requirements:', requirementsError);
+      throw requirementsError;
+    }
 
     const recommendations: PartnerRecommendation[] = [];
-    
-    if (providersWithAssets && providersWithAssets.length > 0) {
-      // Group providers by ID to handle multiple assets per provider
-      const providerMap = new Map<string, SimpleProvider>();
-      
-      // Cast the data to our known interface to avoid TypeScript recursion
-      const typedRows = providersWithAssets as unknown as ProviderWithAssetRow[];
-      
-      for (const row of typedRows) {
-        const providerId = row.id;
-        
-        if (!providerMap.has(providerId)) {
-          // Get requirements for this provider
-          const providerRequirements = allRequirements?.filter(req => req.provider_id === providerId) || [];
-          const setupRequirements = providerRequirements.map(req => ({
-            key: req.requirement_key,
-            value: req.requirement_value,
-            type: req.requirement_type || 'string'
-          }));
 
-          providerMap.set(providerId, {
-            id: providerId,
-            name: row.name || '',
-            priority_score: row.priority_score || 5,
-            avg_earnings_low: row.avg_earnings_low || 0,
-            avg_earnings_high: row.avg_earnings_high || 0,
-            affiliate_base_url: row.affiliate_base_url || '',
-            supported_assets: [],
-            setup_requirements: setupRequirements
-          });
-        }
+    // Step 4: Process each provider
+    for (const provider of providers) {
+      // Get supported assets for this provider
+      const providerAssets = (supportedAssets || [])
+        .filter(asset => asset.provider_id === provider.id)
+        .map(asset => asset.asset_type);
 
-        // Add supported asset to the provider
-        const provider = providerMap.get(providerId)!;
-        if (row.provider_supported_assets?.asset_type) {
-          provider.supported_assets.push(row.provider_supported_assets.asset_type);
-        }
-      }
+      // Get setup requirements count for this provider
+      const providerRequirementsCount = (setupRequirements || [])
+        .filter(req => req.provider_id === provider.id).length;
 
-      // Process each provider for recommendations
-      for (const provider of providerMap.values()) {
-        const matchingAssets = checkAssetMatch(detectedAssets, provider.supported_assets);
+      // Check if provider supports any of the detected assets
+      const matchingAssets = checkAssetMatch(detectedAssets, providerAssets);
 
-        if (matchingAssets.length > 0) {
-          const recommendation: PartnerRecommendation = {
-            id: `${onboardingId}_${provider.name}`,
-            partner_name: provider.name,
-            asset_type: matchingAssets[0],
-            priority_score: provider.priority_score,
-            estimated_monthly_earnings: (provider.avg_earnings_low + provider.avg_earnings_high) / 2,
-            setup_complexity: getSetupComplexity(provider.setup_requirements),
-            recommendation_reason: `Perfect match for your ${matchingAssets.join(', ')} asset${matchingAssets.length > 1 ? 's' : ''}`,
-            referral_link: provider.affiliate_base_url || undefined
-          };
-          recommendations.push(recommendation);
-        }
+      if (matchingAssets.length > 0) {
+        const recommendation: PartnerRecommendation = {
+          id: `${onboardingId}_${provider.name}`,
+          partner_name: provider.name,
+          asset_type: matchingAssets[0],
+          priority_score: provider.priority_score || 5,
+          estimated_monthly_earnings: ((provider.avg_earnings_low || 0) + (provider.avg_earnings_high || 0)) / 2,
+          setup_complexity: getSetupComplexity(providerRequirementsCount),
+          recommendation_reason: `Perfect match for your ${matchingAssets.join(', ')} asset${matchingAssets.length > 1 ? 's' : ''}`,
+          referral_link: provider.affiliate_base_url || undefined
+        };
+        recommendations.push(recommendation);
       }
     }
 
