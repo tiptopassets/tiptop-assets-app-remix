@@ -31,7 +31,7 @@ export const useBundleRecommendations = (selectedAssets: string[] = []) => {
 
       if (bundlesError) throw bundlesError;
 
-      // Fetch service providers
+      // Fetch service providers with the new columns
       const { data: providers, error: providersError } = await supabase
         .from('service_providers')
         .select('*')
@@ -42,16 +42,20 @@ export const useBundleRecommendations = (selectedAssets: string[] = []) => {
       // Filter bundles that match selected assets and convert types
       const matchingBundles: BundleRecommendation[] = (bundles || [])
         .map(bundle => {
-          // Convert asset_requirements to string array
-          const assetRequirements = Array.isArray(bundle.asset_requirements) 
-            ? bundle.asset_requirements as string[]
-            : typeof bundle.asset_requirements === 'string'
-            ? JSON.parse(bundle.asset_requirements)
-            : [];
-
+          // Bundle now has proper structure from database
           const bundleConfig: BundleConfiguration = {
-            ...bundle,
-            asset_requirements: assetRequirements
+            id: bundle.id,
+            name: bundle.name,
+            description: bundle.description || '',
+            asset_requirements: Array.isArray(bundle.asset_requirements) 
+              ? bundle.asset_requirements 
+              : [],
+            min_assets: bundle.min_assets || 1,
+            max_providers_per_asset: bundle.max_providers_per_asset || 3,
+            total_setup_cost: bundle.total_setup_cost || 0,
+            total_monthly_earnings_low: bundle.total_monthly_earnings_low || 0,
+            total_monthly_earnings_high: bundle.total_monthly_earnings_high || 0,
+            is_active: bundle.is_active || true
           };
 
           const matchingAssets = bundleConfig.asset_requirements.filter(asset => 

@@ -206,6 +206,51 @@ export type Database = {
           },
         ]
       }
+      bundle_configurations: {
+        Row: {
+          asset_requirements: string[] | null
+          created_at: string | null
+          description: string | null
+          id: string
+          is_active: boolean | null
+          max_providers_per_asset: number | null
+          min_assets: number | null
+          name: string
+          total_monthly_earnings_high: number | null
+          total_monthly_earnings_low: number | null
+          total_setup_cost: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          asset_requirements?: string[] | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          max_providers_per_asset?: number | null
+          min_assets?: number | null
+          name: string
+          total_monthly_earnings_high?: number | null
+          total_monthly_earnings_low?: number | null
+          total_setup_cost?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          asset_requirements?: string[] | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          max_providers_per_asset?: number | null
+          min_assets?: number | null
+          name?: string
+          total_monthly_earnings_high?: number | null
+          total_monthly_earnings_low?: number | null
+          total_setup_cost?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       enhanced_service_providers: {
         Row: {
           asset_types: string[] | null
@@ -341,6 +386,116 @@ export type Database = {
         }
         Relationships: []
       }
+      onboarding_messages: {
+        Row: {
+          content: string
+          created_at: string | null
+          id: string
+          metadata: Json | null
+          onboarding_id: string
+          role: string
+        }
+        Insert: {
+          content: string
+          created_at?: string | null
+          id?: string
+          metadata?: Json | null
+          onboarding_id: string
+          role: string
+        }
+        Update: {
+          content?: string
+          created_at?: string | null
+          id?: string
+          metadata?: Json | null
+          onboarding_id?: string
+          role?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_onboarding_messages_onboarding_id"
+            columns: ["onboarding_id"]
+            isOneToOne: false
+            referencedRelation: "user_onboarding"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      partner_integration_progress: {
+        Row: {
+          created_at: string | null
+          id: string
+          integration_status: string | null
+          onboarding_id: string
+          partner_name: string
+          referral_link: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          integration_status?: string | null
+          onboarding_id: string
+          partner_name: string
+          referral_link?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          integration_status?: string | null
+          onboarding_id?: string
+          partner_name?: string
+          referral_link?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      partner_recommendations: {
+        Row: {
+          asset_type: string
+          created_at: string | null
+          estimated_monthly_earnings: number | null
+          id: string
+          onboarding_id: string
+          partner_name: string
+          priority_score: number | null
+          recommendation_reason: string | null
+          referral_link: string | null
+          setup_complexity: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          asset_type: string
+          created_at?: string | null
+          estimated_monthly_earnings?: number | null
+          id?: string
+          onboarding_id: string
+          partner_name: string
+          priority_score?: number | null
+          recommendation_reason?: string | null
+          referral_link?: string | null
+          setup_complexity?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          asset_type?: string
+          created_at?: string | null
+          estimated_monthly_earnings?: number | null
+          id?: string
+          onboarding_id?: string
+          partner_name?: string
+          priority_score?: number | null
+          recommendation_reason?: string | null
+          referral_link?: string | null
+          setup_complexity?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       provider_setup_requirements: {
         Row: {
           created_at: string
@@ -407,11 +562,13 @@ export type Database = {
       }
       service_providers: {
         Row: {
+          affiliate_program_url: string | null
           avg_monthly_earnings_high: number
           avg_monthly_earnings_low: number
           category: string
           commission_rate: number
           contact_info: Json | null
+          conversion_rate: number | null
           created_at: string
           description: string | null
           id: string
@@ -419,17 +576,20 @@ export type Database = {
           logo_url: string | null
           name: string
           priority: number
+          referral_link_template: string | null
           service_areas: Json | null
           setup_cost: number
           updated_at: string
           website_url: string | null
         }
         Insert: {
+          affiliate_program_url?: string | null
           avg_monthly_earnings_high?: number
           avg_monthly_earnings_low?: number
           category: string
           commission_rate?: number
           contact_info?: Json | null
+          conversion_rate?: number | null
           created_at?: string
           description?: string | null
           id?: string
@@ -437,17 +597,20 @@ export type Database = {
           logo_url?: string | null
           name: string
           priority?: number
+          referral_link_template?: string | null
           service_areas?: Json | null
           setup_cost?: number
           updated_at?: string
           website_url?: string | null
         }
         Update: {
+          affiliate_program_url?: string | null
           avg_monthly_earnings_high?: number
           avg_monthly_earnings_low?: number
           category?: string
           commission_rate?: number
           contact_info?: Json | null
+          conversion_rate?: number | null
           created_at?: string
           description?: string | null
           id?: string
@@ -455,6 +618,7 @@ export type Database = {
           logo_url?: string | null
           name?: string
           priority?: number
+          referral_link_template?: string | null
           service_areas?: Json | null
           setup_cost?: number
           updated_at?: string
@@ -904,6 +1068,48 @@ export type Database = {
         }
         Relationships: []
       }
+      user_onboarding: {
+        Row: {
+          chat_history: Json | null
+          completed_assets: string[] | null
+          created_at: string | null
+          current_step: number | null
+          id: string
+          progress_data: Json | null
+          selected_option: Database["public"]["Enums"]["onboarding_option"]
+          status: Database["public"]["Enums"]["onboarding_status"]
+          total_steps: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          chat_history?: Json | null
+          completed_assets?: string[] | null
+          created_at?: string | null
+          current_step?: number | null
+          id?: string
+          progress_data?: Json | null
+          selected_option: Database["public"]["Enums"]["onboarding_option"]
+          status?: Database["public"]["Enums"]["onboarding_status"]
+          total_steps?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          chat_history?: Json | null
+          completed_assets?: string[] | null
+          created_at?: string | null
+          current_step?: number | null
+          id?: string
+          progress_data?: Json | null
+          selected_option?: Database["public"]["Enums"]["onboarding_option"]
+          status?: Database["public"]["Enums"]["onboarding_status"]
+          total_steps?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_property_analyses: {
         Row: {
           address_id: string
@@ -1124,6 +1330,23 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_bundle_configurations: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          id: string
+          name: string
+          description: string
+          asset_requirements: string[]
+          min_assets: number
+          max_providers_per_asset: number
+          total_setup_cost: number
+          total_monthly_earnings_low: number
+          total_monthly_earnings_high: number
+          is_active: boolean
+          created_at: string
+          updated_at: string
+        }[]
+      }
       get_user_dashboard_data: {
         Args: { p_user_id: string }
         Returns: {
@@ -1137,6 +1360,12 @@ export type Database = {
           journey_progress: Json
         }[]
       }
+      get_user_onboarding_data: {
+        Args: { user_id: string }
+        Returns: {
+          onboarding_data: Json
+        }[]
+      }
       get_user_role: {
         Args: Record<PropertyKey, never> | { user_uuid: string }
         Returns: string
@@ -1144,6 +1373,10 @@ export type Database = {
       link_journey_to_user: {
         Args: { p_session_id: string; p_user_id: string }
         Returns: undefined
+      }
+      save_user_onboarding_data: {
+        Args: { user_id: string; onboarding_data: Json }
+        Returns: string
       }
       sum_login_count: {
         Args: Record<PropertyKey, never>

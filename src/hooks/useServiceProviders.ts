@@ -28,7 +28,27 @@ export const useServiceProviders = () => {
         .order('priority', { ascending: false });
 
       if (error) throw error;
-      setProviders(data || []);
+      
+      // Transform data to match ServiceProvider interface
+      const transformedProviders: ServiceProvider[] = (data || []).map(provider => ({
+        id: provider.id,
+        name: provider.name,
+        category: provider.category,
+        description: provider.description || '',
+        logo_url: provider.logo_url,
+        website_url: provider.website_url,
+        affiliate_program_url: provider.affiliate_program_url,
+        referral_link_template: provider.referral_link_template,
+        commission_rate: provider.commission_rate,
+        setup_cost: provider.setup_cost,
+        avg_monthly_earnings_low: provider.avg_monthly_earnings_low,
+        avg_monthly_earnings_high: provider.avg_monthly_earnings_high,
+        conversion_rate: provider.conversion_rate || 2.5,
+        priority: provider.priority,
+        is_active: provider.is_active
+      }));
+      
+      setProviders(transformedProviders);
     } catch (err) {
       console.error('Error fetching providers:', err);
       setError(err instanceof Error ? err.message : 'Failed to fetch providers');
