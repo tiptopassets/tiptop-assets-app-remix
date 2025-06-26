@@ -23,12 +23,12 @@ export const useFlexOffersSubId = () => {
         // Check if user has FlexOffers earnings record
         const { data, error: queryError } = await supabase
           .from('affiliate_earnings')
-          .select('service')
+          .select('provider_name')
           .eq('user_id', user.id)
-          .eq('service', 'FlexOffers')
-          .single();
+          .eq('provider_name', 'FlexOffers')
+          .maybeSingle();
           
-        if (queryError && queryError.code !== 'PGRST116') {
+        if (queryError) {
           throw queryError;
         }
         

@@ -219,6 +219,8 @@ export const initializePartnerIntegration = async (
         partner_name: partnerName,
         integration_status: 'in_progress',
         referral_link: referralLink,
+        registration_data: {},
+        earnings_data: {},
         next_steps: getNextSteps(partnerName)
       })
       .select()

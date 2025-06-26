@@ -424,31 +424,40 @@ export type Database = {
       partner_integration_progress: {
         Row: {
           created_at: string | null
+          earnings_data: Json | null
           id: string
           integration_status: string | null
+          next_steps: string[] | null
           onboarding_id: string
           partner_name: string
           referral_link: string | null
+          registration_data: Json | null
           updated_at: string | null
           user_id: string
         }
         Insert: {
           created_at?: string | null
+          earnings_data?: Json | null
           id?: string
           integration_status?: string | null
+          next_steps?: string[] | null
           onboarding_id: string
           partner_name: string
           referral_link?: string | null
+          registration_data?: Json | null
           updated_at?: string | null
           user_id: string
         }
         Update: {
           created_at?: string | null
+          earnings_data?: Json | null
           id?: string
           integration_status?: string | null
+          next_steps?: string[] | null
           onboarding_id?: string
           partner_name?: string
           referral_link?: string | null
+          registration_data?: Json | null
           updated_at?: string | null
           user_id?: string
         }
@@ -523,6 +532,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "fk_provider_setup_requirements_provider_id"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "enhanced_service_providers"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "provider_setup_requirements_provider_id_fkey"
             columns: ["provider_id"]
             isOneToOne: false
@@ -551,6 +567,13 @@ export type Database = {
           provider_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "fk_provider_supported_assets_provider_id"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "enhanced_service_providers"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "provider_supported_assets_provider_id_fkey"
             columns: ["provider_id"]
@@ -1075,6 +1098,7 @@ export type Database = {
           created_at: string | null
           current_step: number | null
           id: string
+          onboarding_data: Json | null
           progress_data: Json | null
           selected_option: Database["public"]["Enums"]["onboarding_option"]
           status: Database["public"]["Enums"]["onboarding_status"]
@@ -1088,6 +1112,7 @@ export type Database = {
           created_at?: string | null
           current_step?: number | null
           id?: string
+          onboarding_data?: Json | null
           progress_data?: Json | null
           selected_option: Database["public"]["Enums"]["onboarding_option"]
           status?: Database["public"]["Enums"]["onboarding_status"]
@@ -1101,6 +1126,7 @@ export type Database = {
           created_at?: string | null
           current_step?: number | null
           id?: string
+          onboarding_data?: Json | null
           progress_data?: Json | null
           selected_option?: Database["public"]["Enums"]["onboarding_option"]
           status?: Database["public"]["Enums"]["onboarding_status"]

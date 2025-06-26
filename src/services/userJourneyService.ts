@@ -88,8 +88,8 @@ export const trackAnalysisCompleted = async (
   let totalOpportunities = 0;
 
   // Extract address from analysis results and store it properly
-  const propertyAddress = analysisResults.propertyAddress || 
-                         analysisResults.address || 
+  const propertyAddress = (analysisResults as any).propertyAddress || 
+                         (analysisResults as any).address || 
                          address;
 
   // Check if we have topOpportunities and calculate from there
@@ -107,7 +107,7 @@ export const trackAnalysisCompleted = async (
       analysisResults.pool?.revenue || 0,
       analysisResults.storage?.revenue || 0,
       analysisResults.bandwidth?.revenue || 0,
-      analysisResults.internet?.monthlyRevenue || 0
+      (analysisResults as any).internet?.monthlyRevenue || 0
     ];
     
     totalMonthlyRevenue = assetRevenues.reduce((sum, revenue) => sum + revenue, 0);
@@ -115,8 +115,8 @@ export const trackAnalysisCompleted = async (
   }
 
   // Use the totalMonthlyRevenue from analysisResults if available
-  if (analysisResults.totalMonthlyRevenue && analysisResults.totalMonthlyRevenue > totalMonthlyRevenue) {
-    totalMonthlyRevenue = analysisResults.totalMonthlyRevenue;
+  if ((analysisResults as any).totalMonthlyRevenue && (analysisResults as any).totalMonthlyRevenue > totalMonthlyRevenue) {
+    totalMonthlyRevenue = (analysisResults as any).totalMonthlyRevenue;
   }
 
   console.log('💰 Calculated totals:', { totalMonthlyRevenue, totalOpportunities });
@@ -128,7 +128,7 @@ export const trackAnalysisCompleted = async (
       p_data: {
         property_address: propertyAddress, // Use extracted address
         property_coordinates: coordinates,
-        analysis_results: analysisResults,
+        analysis_results: analysisResults as any,
         total_monthly_revenue: totalMonthlyRevenue,
         total_opportunities: totalOpportunities
       }
