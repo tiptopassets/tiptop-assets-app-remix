@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from "framer-motion";
 import { PropertyOverviewCard } from './PropertyOverviewCard';
-import { getGoogleMapsApiKey } from '@/utils/googleMapsLoader';
+import { useSatelliteImage } from '@/hooks/useSatelliteImage';
 
 interface DashboardPropertyOverviewProps {
   address: string;
@@ -21,30 +21,12 @@ export const DashboardPropertyOverview = ({
   satelliteImageUrl,
   coordinates
 }: DashboardPropertyOverviewProps) => {
-  const [dynamicSatelliteImageUrl, setDynamicSatelliteImageUrl] = useState<string | undefined>(satelliteImageUrl);
+  // Use the new satellite image hook for real-time updates
+  const { imageUrl: realtimeImageUrl, loading: imageLoading } = useSatelliteImage(address, coordinates);
   
-  // Generate satellite image URL if coordinates are available but no image URL is provided
-  useEffect(() => {
-    const generateSatelliteImage = async () => {
-      if (!satelliteImageUrl && coordinates?.lat && coordinates?.lng) {
-        try {
-          console.log('🗺️ Generating satellite image for coordinates:', coordinates);
-          const apiKey = await getGoogleMapsApiKey();
-          const generatedUrl = `https://maps.googleapis.com/maps/api/staticmap?center=${coordinates.lat},${coordinates.lng}&zoom=20&size=800x800&maptype=satellite&key=${apiKey}`;
-          setDynamicSatelliteImageUrl(generatedUrl);
-          console.log('✅ Generated satellite image URL for dashboard:', generatedUrl);
-        } catch (error) {
-          console.error('❌ Failed to generate satellite image:', error);
-          // Try without API key as fallback
-          const fallbackUrl = `https://maps.googleapis.com/maps/api/staticmap?center=${coordinates.lat},${coordinates.lng}&zoom=20&size=800x800&maptype=satellite`;
-          setDynamicSatelliteImageUrl(fallbackUrl);
-        }
-      }
-    };
-
-    generateSatelliteImage();
-  }, [satelliteImageUrl, coordinates]);
-
+  // Prefer real-time image over stored image
+  const finalImageUrl = realtimeImageUrl || satelliteImageUrl;
+  
   const description = `Property analysis completed on ${new Date(createdAt).toLocaleDateString()}. Found ${totalOpportunities} monetization opportunities with potential monthly revenue of $${totalMonthlyRevenue.toLocaleString()}.`;
 
   return (
@@ -56,7 +38,8 @@ export const DashboardPropertyOverview = ({
       <PropertyOverviewCard 
         address={address}
         description={description}
-        imageUrl={dynamicSatelliteImageUrl}
+        imageUrl={finalImageUrl}
+        loading={imageLoading}
       />
     </motion.div>
   );

@@ -1,13 +1,20 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Loader2 } from "lucide-react";
 
 interface PropertyOverviewProps {
   address: string;
   description: string;
   imageUrl?: string;
+  loading?: boolean;
 }
 
-export const PropertyOverviewCard = ({ address, description, imageUrl }: PropertyOverviewProps) => {
+export const PropertyOverviewCard = ({ 
+  address, 
+  description, 
+  imageUrl, 
+  loading = false 
+}: PropertyOverviewProps) => {
   return (
     <Card className="overflow-hidden hover:shadow-lg transition-shadow duration-300 border-0 shadow-md relative">
       {/* Glassmorphism effect */}
@@ -16,7 +23,14 @@ export const PropertyOverviewCard = ({ address, description, imageUrl }: Propert
       
       <div className="grid grid-cols-1 lg:grid-cols-3 relative z-10">
         <div className="lg:col-span-1">
-          {imageUrl ? (
+          {loading ? (
+            <div className="h-full min-h-[200px] bg-gray-100 flex items-center justify-center">
+              <div className="text-center">
+                <Loader2 className="h-6 w-6 animate-spin mx-auto mb-2 text-tiptop-purple" />
+                <span className="text-sm text-gray-500">Loading satellite view...</span>
+              </div>
+            </div>
+          ) : imageUrl ? (
             <div 
               className="h-full min-h-[200px] bg-cover bg-center bg-gray-100" 
               style={{ backgroundImage: `url(${imageUrl})` }}
