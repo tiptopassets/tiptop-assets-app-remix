@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
@@ -142,7 +143,7 @@ const DashboardSidebar = () => {
       {/* Sidebar */}
       <motion.aside 
         className={cn(
-          "fixed md:relative h-screen w-64 bg-gray-800 text-white z-50",
+          "fixed h-screen w-64 bg-gray-800 text-white z-50",
           isMobile ? "shadow-xl" : ""
         )}
         initial={isMobile ? "closed" : "open"}
@@ -152,7 +153,7 @@ const DashboardSidebar = () => {
         <div className="flex flex-col h-full p-5">
           {/* Logo */}
           <div className="mb-8 mt-4 flex justify-center">
-            <Link to="/" className="text-2xl font-bold text-tiptop-purple">TipTop</Link>
+            <Link to="/" className="text-2xl font-bold text-tiptop-purple">tiptop</Link>
           </div>
           
           {/* Navigation */}
