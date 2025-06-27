@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
@@ -142,17 +143,17 @@ const DashboardSidebar = () => {
       {/* Sidebar */}
       <motion.aside 
         className={cn(
-          "fixed md:relative h-screen w-64 bg-gray-800 text-white z-50",
-          isMobile ? "shadow-xl" : ""
+          "fixed inset-y-0 left-0 z-50 w-64 bg-gray-800 text-white",
+          isMobile ? "shadow-xl" : "md:relative md:z-auto"
         )}
         initial={isMobile ? "closed" : "open"}
         animate={isOpen ? "open" : "closed"}
         variants={sidebarVariants}
       >
-        <div className="flex flex-col h-full p-5">
+        <div className="flex flex-col h-full p-5 overflow-y-auto">
           {/* Logo */}
           <div className="mb-8 mt-4 flex justify-center">
-            <Link to="/" className="text-2xl font-bold text-tiptop-purple">TipTop</Link>
+            <Link to="/" className="text-2xl font-bold text-tiptop-purple">tiptop</Link>
           </div>
           
           {/* Navigation */}
