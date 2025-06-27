@@ -10,7 +10,6 @@ import ModelGenerationSheet from '@/components/ModelGenerationSheet';
 import HomeModelViewer from '@/components/home-model-viewer';
 import DataSyncNotification from '@/components/DataSyncNotification';
 import JourneyTracker from '@/components/JourneyTracker';
-import { SatelliteMonitor } from '@/components/satellite/SatelliteMonitor';
 import { useGoogleMap } from '@/contexts/GoogleMapContext';
 import { Settings } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -97,18 +96,6 @@ const Index = () => {
             <SearchBar isCollapsed={isCollapsed} />
             {!isAnalyzing && !analysisComplete && <AnalyzeButton />}
           </div>
-
-          {/* Real-time Satellite Monitor - shows when address is entered but analysis isn't complete */}
-          {hasAddress && !analysisComplete && !isAnalyzing && (
-            <motion.div 
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
-              className="w-full max-w-md mt-6"
-            >
-              <SatelliteMonitor />
-            </motion.div>
-          )}
 
           {/* Asset Icons positioned responsively */}
           <div className={`w-full flex flex-col justify-center items-center ${!analysisComplete && !isAnalyzing ? (isMobile ? 'mt-6 sm:mt-8' : 'mt-12 lg:mt-16') : ''}`}>
