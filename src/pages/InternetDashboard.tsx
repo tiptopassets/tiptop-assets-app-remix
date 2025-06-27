@@ -6,9 +6,10 @@ import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
 import { motion } from "framer-motion";
-import { Wifi, Download, Upload, DollarSign, TrendingUp, Globe, Shield, Activity, Clock, Settings, Router } from "lucide-react";
+import { Wifi, Download, Upload, DollarSign, TrendingUp, Globe, Shield, Activity, Clock, Settings, Router, Brain } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area, PieChart, Pie, Cell, BarChart, Bar } from 'recharts';
 import SpeedTestWidget from "@/components/internet/SpeedTestWidget";
+import { AIEarningsAnalysis } from "@/components/internet/AIEarningsAnalysis";
 import { useInternetSpeed } from "@/hooks/useInternetSpeed";
 
 const InternetDashboard = () => {
@@ -17,19 +18,28 @@ const InternetDashboard = () => {
     testHistory, 
     calculateAverageSpeed, 
     getNetworkQuality,
-    getBandwidthSharingPotential 
+    getBandwidthSharingPotential,
+    aiEarningsAnalysis,
+    isAnalyzingEarnings,
+    getAIOptimizationTips,
+    getMarketFactors,
+    getBestSharingSchedule
   } = useInternetSpeed();
 
   // Use real data if available, otherwise fall back to mock data
   const averageSpeeds = calculateAverageSpeed();
   const networkQuality = getNetworkQuality();
   const sharingPotential = getBandwidthSharingPotential();
+  const optimizationTips = getAIOptimizationTips();
+  const marketFactors = getMarketFactors();
+  const sharingSchedule = getBestSharingSchedule();
 
+  // Enhanced bandwidth data with AI predictions
   const bandwidthData = {
     totalBandwidth: latestResult?.downloadSpeed || 1000,
     sharedBandwidth: sharingPotential.shareable || 250,
-    monthlyEarnings: sharingPotential.potential || 42,
-    totalEarnings: sharingPotential.potential * 12 || 520,
+    monthlyEarnings: aiEarningsAnalysis?.monthlyEarnings.average || sharingPotential.potential || 42,
+    totalEarnings: (aiEarningsAnalysis?.monthlyEarnings.average || sharingPotential.potential || 42) * 12,
     connectedDevices: 8,
     dataShared: 2.4,
     uptime: 99.8,
@@ -105,7 +115,7 @@ const InternetDashboard = () => {
             </div>
             <div>
               <h1 className="text-3xl font-bold text-gray-800">Internet Bandwidth Sharing</h1>
-              <p className="text-gray-600">Monetize your unused internet bandwidth</p>
+              <p className="text-gray-600">AI-powered earnings optimization and bandwidth monetization</p>
             </div>
           </div>
           <div className="flex gap-2">
@@ -120,76 +130,81 @@ const InternetDashboard = () => {
           </div>
         </div>
 
-        {/* Speed Test Widget */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-1">
-            <SpeedTestWidget />
-          </div>
-          
-          {/* Key Metrics Cards */}
-          <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Card className="bg-white border-gray-200">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-gray-600">Available Bandwidth</p>
-                    <p className="text-2xl font-bold text-gray-900">{Math.round(bandwidthData.totalBandwidth)} Mbps</p>
-                    <p className="text-xs text-blue-600">Sharing: {Math.round(bandwidthData.sharedBandwidth)} Mbps</p>
-                  </div>
-                  <Router className="h-8 w-8 text-blue-500" />
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-white border-gray-200">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-gray-600">Monthly Earnings</p>
-                    <p className="text-2xl font-bold text-gray-900">${bandwidthData.monthlyEarnings}</p>
-                    <p className="text-xs text-green-600">Based on current speed</p>
-                  </div>
-                  <DollarSign className="h-8 w-8 text-green-500" />
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-white border-gray-200">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-gray-600">Network Quality</p>
-                    <p className="text-2xl font-bold text-gray-900">{networkQuality}%</p>
-                    <p className="text-xs text-purple-600">
-                      {networkQuality >= 80 ? 'Excellent' : networkQuality >= 60 ? 'Good' : 'Fair'}
-                    </p>
-                  </div>
-                  <Shield className="h-8 w-8 text-purple-500" />
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-white border-gray-200">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-gray-600">Current Ping</p>
-                    <p className="text-2xl font-bold text-gray-900">{latestResult?.ping || '--'} ms</p>
-                    <p className="text-xs text-green-600">
-                      {latestResult?.ping ? (latestResult.ping <= 20 ? 'Excellent' : latestResult.ping <= 50 ? 'Good' : 'Fair') : 'Run test'}
-                    </p>
-                  </div>
-                  <Clock className="h-8 w-8 text-green-500" />
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+        {/* Speed Test and AI Analysis Row */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <SpeedTestWidget />
+          <AIEarningsAnalysis 
+            analysis={aiEarningsAnalysis} 
+            isAnalyzingEarnings={isAnalyzingEarnings}
+          />
         </div>
 
-        {/* Main Content Tabs */}
+        {/* Enhanced Key Metrics Cards with AI Data */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <Card className="bg-white border-gray-200">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600">AI Predicted Earnings</p>
+                  <p className="text-2xl font-bold text-gray-900">
+                    ${bandwidthData.monthlyEarnings}
+                  </p>
+                  <p className="text-xs text-green-600">
+                    {aiEarningsAnalysis ? 'AI-optimized' : 'Basic calculation'}
+                  </p>
+                </div>
+                <Brain className={`h-8 w-8 ${aiEarningsAnalysis ? 'text-purple-500' : 'text-gray-400'}`} />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-white border-gray-200">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600">Available Bandwidth</p>
+                  <p className="text-2xl font-bold text-gray-900">{Math.round(bandwidthData.totalBandwidth)} Mbps</p>
+                  <p className="text-xs text-blue-600">Sharing: {Math.round(bandwidthData.sharedBandwidth)} Mbps</p>
+                </div>
+                <Router className="h-8 w-8 text-blue-500" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-white border-gray-200">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600">Market Demand</p>
+                  <p className="text-2xl font-bold text-gray-900 capitalize">{marketFactors.demandLevel}</p>
+                  <p className="text-xs text-purple-600">{marketFactors.locationPremium}x location premium</p>
+                </div>
+                <TrendingUp className="h-8 w-8 text-purple-500" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-white border-gray-200">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600">Network Quality</p>
+                  <p className="text-2xl font-bold text-gray-900">{networkQuality}%</p>
+                  <p className="text-xs text-green-600">
+                    {networkQuality >= 80 ? 'Excellent' : networkQuality >= 60 ? 'Good' : 'Fair'}
+                  </p>
+                </div>
+                <Shield className="h-8 w-8 text-green-500" />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Main Content Tabs with AI Insights */}
         <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4 bg-white border-gray-200">
+          <TabsList className="grid w-full grid-cols-5 bg-white border-gray-200">
             <TabsTrigger value="overview" className="text-gray-700 data-[state=active]:bg-tiptop-purple data-[state=active]:text-white">Overview</TabsTrigger>
+            <TabsTrigger value="ai-insights" className="text-gray-700 data-[state=active]:bg-tiptop-purple data-[state=active]:text-white">AI Insights</TabsTrigger>
             <TabsTrigger value="bandwidth" className="text-gray-700 data-[state=active]:bg-tiptop-purple data-[state=active]:text-white">Bandwidth</TabsTrigger>
             <TabsTrigger value="devices" className="text-gray-700 data-[state=active]:bg-tiptop-purple data-[state=active]:text-white">Devices</TabsTrigger>
             <TabsTrigger value="security" className="text-gray-700 data-[state=active]:bg-tiptop-purple data-[state=active]:text-white">Security</TabsTrigger>
@@ -299,6 +314,61 @@ const InternetDashboard = () => {
                     <p className="text-sm text-gray-300">Projected</p>
                     <p className="text-2xl font-bold text-orange-400">${Math.round(bandwidthData.monthlyEarnings * 1.08)}</p>
                     <p className="text-xs text-gray-400">Next month</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="ai-insights" className="space-y-6">
+            {/* AI Optimization Tips */}
+            <Card className="bg-gradient-to-br from-purple-900/10 to-blue-900/10 border-purple-500/20">
+              <CardHeader>
+                <CardTitle className="text-gray-800 flex items-center gap-2">
+                  <Brain className="h-5 w-5 text-purple-500" />
+                  AI-Powered Optimization Recommendations
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {optimizationTips.length > 0 ? (
+                  <ul className="space-y-3">
+                    {optimizationTips.map((tip, index) => (
+                      <li key={index} className="flex items-start gap-3 p-3 bg-white/50 rounded-lg">
+                        <div className="w-2 h-2 bg-purple-500 rounded-full mt-2 flex-shrink-0"></div>
+                        <span className="text-gray-700">{tip}</span>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-gray-600 text-center py-4">
+                    Run a speed test to get personalized AI optimization recommendations
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Optimal Sharing Schedule */}
+            <Card className="bg-gradient-to-br from-blue-900/10 to-green-900/10 border-blue-500/20">
+              <CardHeader>
+                <CardTitle className="text-gray-800 flex items-center gap-2">
+                  <Clock className="h-5 w-5 text-blue-500" />
+                  AI-Recommended Sharing Schedule
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="p-4 bg-green-500/10 rounded-lg border border-green-500/20">
+                    <h4 className="font-medium text-green-700 mb-2">Peak Earning Hours</h4>
+                    <ul className="space-y-1">
+                      {sharingSchedule.peakHours.map((hour, index) => (
+                        <li key={index} className="text-green-600 text-sm">{hour}</li>
+                      ))}
+                    </ul>
+                  </div>
+                  <div className="p-4 bg-blue-500/10 rounded-lg border border-blue-500/20">
+                    <h4 className="font-medium text-blue-700 mb-2">Recommended Uptime</h4>
+                    <p className="text-2xl font-bold text-blue-600">{sharingSchedule.recommendedUptime}h</p>
+                    <p className="text-blue-600 text-sm">per day for optimal earnings</p>
                   </div>
                 </div>
               </CardContent>

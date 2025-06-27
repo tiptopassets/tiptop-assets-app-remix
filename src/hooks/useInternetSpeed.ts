@@ -1,6 +1,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { internetSpeedService } from '@/services/internetSpeedService';
+import { aiEarningsService, AIEarningsResponse } from '@/services/aiEarningsService';
 
 interface SpeedTestResult {
   downloadSpeed: number;
@@ -15,6 +16,8 @@ export const useInternetSpeed = () => {
   const [latestResult, setLatestResult] = useState<SpeedTestResult | null>(null);
   const [testHistory, setTestHistory] = useState<SpeedTestResult[]>([]);
   const [isTestRunning, setIsTestRunning] = useState(false);
+  const [aiEarningsAnalysis, setAiEarningsAnalysis] = useState<AIEarningsResponse | null>(null);
+  const [isAnalyzingEarnings, setIsAnalyzingEarnings] = useState(false);
 
   // Load initial data
   useEffect(() => {
@@ -23,6 +26,11 @@ export const useInternetSpeed = () => {
     
     setLatestResult(latest);
     setTestHistory(history);
+
+    // Auto-analyze earnings when we have data
+    if (latest) {
+      analyzeEarningsWithAI(latest, history);
+    }
   }, []);
 
   // Check if test is running
@@ -41,6 +49,43 @@ export const useInternetSpeed = () => {
     
     setLatestResult(latest);
     setTestHistory(history);
+
+    // Re-analyze earnings with updated data
+    if (latest) {
+      analyzeEarningsWithAI(latest, history);
+    }
+  }, []);
+
+  const analyzeEarningsWithAI = useCallback(async (
+    result: SpeedTestResult, 
+    history: SpeedTestResult[] = []
+  ) => {
+    if (!result) return;
+
+    setIsAnalyzingEarnings(true);
+    console.log('🤖 Starting AI earnings analysis...');
+
+    try {
+      const analysis = await aiEarningsService.analyzeEarningsPotential({
+        downloadSpeed: result.downloadSpeed,
+        uploadSpeed: result.uploadSpeed,
+        ping: result.ping,
+        jitter: result.jitter,
+        testHistory: history.map(h => ({
+          downloadSpeed: h.downloadSpeed,
+          uploadSpeed: h.uploadSpeed,
+          ping: h.ping,
+          timestamp: h.timestamp
+        }))
+      });
+
+      setAiEarningsAnalysis(analysis);
+      console.log('✅ AI earnings analysis completed:', analysis);
+    } catch (error) {
+      console.error('Failed to analyze earnings with AI:', error);
+    } finally {
+      setIsAnalyzingEarnings(false);
+    }
   }, []);
 
   const calculateAverageSpeed = useCallback(() => {
@@ -60,23 +105,52 @@ export const useInternetSpeed = () => {
     return internetSpeedService.calculateNetworkQuality(latestResult);
   }, [latestResult]);
 
+  // Enhanced bandwidth sharing potential using AI analysis
   const getBandwidthSharingPotential = useCallback(() => {
     if (!latestResult) return { shareable: 0, potential: 0 };
 
-    // Conservative estimate: share 25% of available bandwidth
+    // If we have AI analysis, use those predictions
+    if (aiEarningsAnalysis) {
+      const shareableDownload = latestResult.downloadSpeed * 0.25;
+      return {
+        shareable: Math.round(shareableDownload * 100) / 100,
+        potential: aiEarningsAnalysis.monthlyEarnings.average,
+        aiPrediction: aiEarningsAnalysis
+      };
+    }
+
+    // Fallback to basic calculation
     const shareableDownload = latestResult.downloadSpeed * 0.25;
     const shareableUpload = latestResult.uploadSpeed * 0.25;
     
-    // Estimate potential monthly earnings based on shared bandwidth
-    // Using a conservative rate of $0.02 per GB shared
-    const avgDataPerMonth = shareableDownload * 30 * 24 * 3600 / 8; // GB per month
+    const avgDataPerMonth = shareableDownload * 30 * 24 * 3600 / 8;
     const potentialEarnings = avgDataPerMonth * 0.02;
 
     return {
       shareable: Math.round(shareableDownload * 100) / 100,
       potential: Math.round(potentialEarnings * 100) / 100
     };
-  }, [latestResult]);
+  }, [latestResult, aiEarningsAnalysis]);
+
+  const getAIOptimizationTips = useCallback(() => {
+    return aiEarningsAnalysis?.optimizationTips || [];
+  }, [aiEarningsAnalysis]);
+
+  const getMarketFactors = useCallback(() => {
+    return aiEarningsAnalysis?.marketFactors || {
+      locationPremium: 1.0,
+      demandLevel: 'medium' as const,
+      competitionLevel: 'medium' as const
+    };
+  }, [aiEarningsAnalysis]);
+
+  const getBestSharingSchedule = useCallback(() => {
+    return aiEarningsAnalysis?.bestSharingSchedule || {
+      peakHours: ['19:00-23:00'],
+      offPeakHours: ['02:00-06:00'],
+      recommendedUptime: 16
+    };
+  }, [aiEarningsAnalysis]);
 
   return {
     latestResult,
@@ -85,6 +159,13 @@ export const useInternetSpeed = () => {
     refreshData,
     calculateAverageSpeed,
     getNetworkQuality,
-    getBandwidthSharingPotential
+    getBandwidthSharingPotential,
+    // New AI-powered features
+    aiEarningsAnalysis,
+    isAnalyzingEarnings,
+    analyzeEarningsWithAI,
+    getAIOptimizationTips,
+    getMarketFactors,
+    getBestSharingSchedule
   };
 };
