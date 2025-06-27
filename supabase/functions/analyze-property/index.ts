@@ -1,3 +1,4 @@
+
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.43.1';
 import { corsHeaders } from '../_shared/cors.ts';
 import { analyzeImage } from './imageAnalysis.ts';
@@ -99,7 +100,7 @@ Deno.serve(async (req) => {
     
     if (!forceLocalAnalysis) {
       try {
-        console.log('☀️ Fetching solar data from Solar API...');
+        console.log('☀️ Fetching enhanced solar data from Solar API...');
         const { data: solarResponse, error } = await supabase.functions.invoke('solar-api', {
           body: { 
             address: address,
@@ -114,13 +115,13 @@ Deno.serve(async (req) => {
             imageAnalysis = await analyzeImage(satelliteImage, address);
           }
         } else if (solarResponse.success && solarResponse.solarData) {
-          console.log('✅ Received solar data:', solarResponse.solarData);
+          console.log('✅ Received enhanced solar data:', solarResponse.solarData);
           solarData = solarResponse.solarData;
           
           imageAnalysis = {
             ...imageAnalysis,
-            roofSize: solarData.roofTotalAreaSqFt,
-            solarPotential: solarData.solarPotential ? 'High' : 'Low'
+            roofSize: solarData.roofAreaSqFt,
+            solarPotential: solarData.maxSunshineHoursPerYear > 1000 ? 'High' : 'Medium'
           };
         }
       } catch (error) {
@@ -142,7 +143,7 @@ Deno.serve(async (req) => {
       classification: initialClassification
     };
     
-    console.log('🔬 Generating property analysis with classification:', propertyInfo.classification);
+    console.log('🔬 Generating property analysis with enhanced solar data');
     let analysis = await generatePropertyAnalysis(propertyInfo, imageAnalysis);
     
     // Apply market validation for non-vacant land properties
@@ -151,21 +152,31 @@ Deno.serve(async (req) => {
       console.log('✅ Applied market-based revenue validation');
     }
     
-    // Enhanced solar data integration
+    // Enhanced solar data integration with all detailed fields
     if (solarData && analysis.propertyType !== 'vacant_land') {
       const maxSolarRevenue = analysis.propertyType?.toLowerCase().includes('commercial') ? 500 : 200;
       const validatedSolarRevenue = Math.min(solarData.monthlyRevenue || 0, maxSolarRevenue);
       
       analysis.rooftop = {
         ...analysis.rooftop,
-        area: solarData.roofTotalAreaSqFt,
-        solarCapacity: solarData.maxSolarCapacityKW,
-        solarPotential: solarData.solarPotential,
+        area: solarData.roofAreaSqFt || analysis.rooftop.area,
+        solarCapacity: solarData.maxSolarCapacityKW || analysis.rooftop.solarCapacity,
+        solarPotential: solarData.maxSunshineHoursPerYear > 1000,
         yearlyEnergyKWh: solarData.yearlyEnergyKWh,
         panelsCount: solarData.panelsCount,
         revenue: validatedSolarRevenue,
         setupCost: solarData.setupCost,
-        usingRealSolarData: true
+        usingRealSolarData: solarData.usingRealSolarData,
+        // Enhanced solar data fields
+        maxSunshineHoursPerYear: solarData.maxSunshineHoursPerYear,
+        roofSegments: solarData.roofSegments,
+        panelConfigurations: solarData.panelConfigurations,
+        panelCapacityWatts: solarData.panelCapacityWatts,
+        panelHeightMeters: solarData.panelHeightMeters,
+        panelWidthMeters: solarData.panelWidthMeters,
+        panelLifetimeYears: solarData.panelLifetimeYears,
+        carbonOffsetFactorKgPerMwh: solarData.carbonOffsetFactorKgPerMwh,
+        imageryDate: solarData.imageryDate
       };
       
       const solarOpportunityIndex = analysis.topOpportunities.findIndex(
@@ -177,13 +188,15 @@ Deno.serve(async (req) => {
           ...analysis.topOpportunities[solarOpportunityIndex],
           monthlyRevenue: validatedSolarRevenue,
           setupCost: solarData.setupCost,
-          roi: Math.ceil(solarData.setupCost / validatedSolarRevenue),
-          description: `Install ${solarData.panelsCount} solar panels producing ${solarData.yearlyEnergyKWh} kWh/year on your ${solarData.roofTotalAreaSqFt} sq ft roof.`,
-          usingRealSolarData: true
+          roi: Math.ceil((solarData.setupCost || 15000) / (validatedSolarRevenue || 100)),
+          description: solarData.panelsCount ? 
+            `Install ${solarData.panelsCount} solar panels (${solarData.panelCapacityWatts}W each) producing ${solarData.yearlyEnergyKWh?.toLocaleString()} kWh/year with ${solarData.maxSunshineHoursPerYear?.toLocaleString()} sunshine hours annually.` :
+            `Solar installation on your ${solarData.roofAreaSqFt} sq ft roof with ${solarData.maxSunshineHoursPerYear?.toLocaleString()} sunshine hours per year.`,
+          usingRealSolarData: solarData.usingRealSolarData
         };
       }
       
-      console.log(`☀️ Solar revenue validated: ${solarData.monthlyRevenue} → ${validatedSolarRevenue}`);
+      console.log(`☀️ Enhanced solar data integrated: ${solarData.monthlyRevenue} → ${validatedSolarRevenue}, ${solarData.roofSegments?.length || 0} roof segments, ${solarData.maxSunshineHoursPerYear} sun hours/year`);
     }
     
     // Ensure address is properly included in response
@@ -202,10 +215,11 @@ Deno.serve(async (req) => {
       solarData: solarData,
       satelliteImageUrl: satelliteImageUrl,
       validationApplied: true,
-      enhancedClassification: true
+      enhancedClassification: true,
+      enhancedSolarData: !!solarData?.roofSegments?.length
     };
     
-    console.log('✅ Enhanced property analysis completed successfully');
+    console.log('✅ Enhanced property analysis with detailed solar data completed successfully');
     
     return new Response(
       JSON.stringify(responseData),

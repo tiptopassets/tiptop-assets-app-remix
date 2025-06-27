@@ -27,6 +27,55 @@ export interface SolarApiResult {
   apiError?: any;
 }
 
+export interface RoofSegmentData {
+  pitchDegrees: number;
+  azimuthDegrees: number;
+  areaMeters2: number;
+  sunshineHours: number;
+  centerLatitude: number;
+  centerLongitude: number;
+  planeHeightMeters: number;
+}
+
+export interface PanelConfiguration {
+  panelsCount: number;
+  yearlyEnergyDcKwh: number;
+  roofSegmentSummaries: Array<{
+    pitchDegrees: number;
+    azimuthDegrees: number;
+    panelsCount: number;
+    yearlyEnergyDcKwh: number;
+    segmentIndex: number;
+  }>;
+}
+
+export interface FormattedSolarData {
+  roofAreaSqFt: number;
+  maxArrayAreaSqFt: number;
+  maxSolarCapacityKW: number;
+  yearlyEnergyKWh: number;
+  panelsCount: number;
+  monthlyRevenue: number;
+  setupCost: number;
+  dataSource: string;
+  usingRealSolarData: boolean;
+  estimationMethod?: string;
+  // New detailed fields
+  maxSunshineHoursPerYear?: number;
+  roofSegments?: RoofSegmentData[];
+  panelConfigurations?: PanelConfiguration[];
+  panelCapacityWatts?: number;
+  panelHeightMeters?: number;
+  panelWidthMeters?: number;
+  panelLifetimeYears?: number;
+  carbonOffsetFactorKgPerMwh?: number;
+  imageryDate?: {
+    year: number;
+    month: number;
+    day: number;
+  };
+}
+
 export interface SolarPotentialResponse {
   solarPotential?: {
     maxArrayPanelsCount?: number;

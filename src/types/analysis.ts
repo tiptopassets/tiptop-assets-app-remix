@@ -8,6 +8,28 @@ export interface ProviderInfo {
   url?: string;
 }
 
+export interface RoofSegmentData {
+  pitchDegrees: number;
+  azimuthDegrees: number;
+  areaMeters2: number;
+  sunshineHours: number;
+  centerLatitude: number;
+  centerLongitude: number;
+  planeHeightMeters: number;
+}
+
+export interface PanelConfiguration {
+  panelsCount: number;
+  yearlyEnergyDcKwh: number;
+  roofSegmentSummaries: Array<{
+    pitchDegrees: number;
+    azimuthDegrees: number;
+    panelsCount: number;
+    yearlyEnergyDcKwh: number;
+    segmentIndex: number;
+  }>;
+}
+
 export interface AnalysisResults {
   propertyType: string;
   amenities: string[];
@@ -22,6 +44,20 @@ export interface AnalysisResults {
     yearlyEnergyKWh?: number;
     panelsCount?: number;
     setupCost?: number;
+    // New detailed solar fields
+    maxSunshineHoursPerYear?: number;
+    roofSegments?: RoofSegmentData[];
+    panelConfigurations?: PanelConfiguration[];
+    panelCapacityWatts?: number;
+    panelHeightMeters?: number;
+    panelWidthMeters?: number;
+    panelLifetimeYears?: number;
+    carbonOffsetFactorKgPerMwh?: number;
+    imageryDate?: {
+      year: number;
+      month: number;
+      day: number;
+    };
   };
   garden: {
     area: number;

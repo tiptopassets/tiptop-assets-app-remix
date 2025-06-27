@@ -1,4 +1,5 @@
-import { SolarPotentialResponse, FormattedSolarData } from './types.ts';
+
+import { FormattedSolarData, RoofSegmentData, PanelConfiguration } from './types.ts';
 
 // Helper function to generate estimated solar data when the API is not available
 export function generateEstimatedSolarData(
@@ -65,6 +66,9 @@ export function generateEstimatedSolarData(
   const costPerKW = countryCode === 'US' ? 2500 : 3000; // Higher costs outside US
   const setupCost = Math.round(solarCapacityKW * costPerKW);
 
+  // Estimated sun exposure hours (varies by latitude and season)
+  const maxSunshineHoursPerYear = Math.round(solarIrradiance / 5.5); // Rough approximation
+
   return {
     roofAreaSqFt: Math.round(roofSizeSqFt),
     maxArrayAreaSqFt: Math.round(usableRoofSqFt),
@@ -75,13 +79,19 @@ export function generateEstimatedSolarData(
     setupCost,
     dataSource: 'estimated',
     usingRealSolarData: false,
-    estimationMethod: `Geographic estimation for ${countryCode || 'unknown region'} at ${latitude.toFixed(1)}° latitude`
+    estimationMethod: `Geographic estimation for ${countryCode || 'unknown region'} at ${latitude.toFixed(1)}° latitude`,
+    maxSunshineHoursPerYear,
+    panelCapacityWatts: 400, // Standard panel size
+    panelHeightMeters: 2.0,
+    panelWidthMeters: 1.0,
+    panelLifetimeYears: 25
   };
 }
 
-// Helper function to format the Solar API response into our app's data model
+// Enhanced function to format the Solar API response into our app's data model with detailed extraction
 export function formatSolarData(rawData: any): FormattedSolarData {
-  // Enhanced solar data formatting with better error handling
+  console.log('🔍 Raw Solar API Response:', JSON.stringify(rawData, null, 2));
+
   if (!rawData) {
     return generateFallbackSolarData();
   }
@@ -93,7 +103,7 @@ export function formatSolarData(rawData: any): FormattedSolarData {
     return generateFallbackSolarData();
   }
 
-  // Extract roof area
+  // Extract roof area with enhanced precision
   let roofAreaSqM = 0;
   if (buildingInsights?.statsInsights?.areaStats?.roofAreaMeters2) {
     roofAreaSqM = buildingInsights.statsInsights.areaStats.roofAreaMeters2;
@@ -103,32 +113,103 @@ export function formatSolarData(rawData: any): FormattedSolarData {
 
   const roofAreaSqFt = convertSquareMetersToSquareFeet(roofAreaSqM);
 
-  // Extract solar capacity
-  let maxArrayAreaSqM = 0;
+  // Extract maximum sunshine hours per year
+  let maxSunshineHoursPerYear = 0;
+  if (buildingInsights?.solarPotential?.maxSunshineHoursPerYear) {
+    maxSunshineHoursPerYear = buildingInsights.solarPotential.maxSunshineHoursPerYear;
+  } else if (solarPotential?.maxSunshineHoursPerYear) {
+    maxSunshineHoursPerYear = solarPotential.maxSunshineHoursPerYear;
+  }
+
+  // Extract detailed roof segment data
+  const roofSegments: RoofSegmentData[] = [];
+  if (solarPotential?.roofSegmentStats) {
+    solarPotential.roofSegmentStats.forEach((segment: any) => {
+      if (segment.pitchDegrees !== undefined && segment.azimuthDegrees !== undefined) {
+        const sunshineHours = segment.stats?.sunshineQuantiles?.[5] || 0; // Use median sunshine quantile
+        roofSegments.push({
+          pitchDegrees: segment.pitchDegrees,
+          azimuthDegrees: segment.azimuthDegrees,
+          areaMeters2: segment.stats?.areaMeters2 || 0,
+          sunshineHours: sunshineHours,
+          centerLatitude: segment.center?.latitude || 0,
+          centerLongitude: segment.center?.longitude || 0,
+          planeHeightMeters: segment.planeHeightAtCenterMeters || 0
+        });
+      }
+    });
+  }
+
+  // Extract panel configurations with detailed breakdown
+  const panelConfigurations: PanelConfiguration[] = [];
   let maxSolarCapacityKW = 0;
-  
+  let yearlyEnergyKWh = 0;
+  let maxArrayAreaSqM = 0;
+
   if (solarPotential?.solarPanelConfigs?.length > 0) {
-    const bestConfig = solarPotential.solarPanelConfigs[0];
-    maxArrayAreaSqM = bestConfig.roofSegmentSummaries?.[0]?.azimuthStats?.areaMeters2 || 0;
-    maxSolarCapacityKW = bestConfig.yearlyEnergyDcKwh ? bestConfig.yearlyEnergyDcKwh / 1200 : 0;
+    solarPotential.solarPanelConfigs.forEach((config: any, index: number) => {
+      if (config.panelsCount && config.yearlyEnergyDcKwh) {
+        const panelConfig: PanelConfiguration = {
+          panelsCount: config.panelsCount,
+          yearlyEnergyDcKwh: config.yearlyEnergyDcKwh,
+          roofSegmentSummaries: config.roofSegmentSummaries || []
+        };
+        panelConfigurations.push(panelConfig);
+
+        // Use the best (first) configuration for main metrics
+        if (index === 0) {
+          yearlyEnergyKWh = config.yearlyEnergyDcKwh;
+          // Estimate capacity based on energy production (rough approximation)
+          maxSolarCapacityKW = Math.round((config.yearlyEnergyDcKwh / 1200) * 100) / 100;
+          
+          // Calculate array area from roof segment summaries
+          if (config.roofSegmentSummaries) {
+            config.roofSegmentSummaries.forEach((summary: any) => {
+              if (summary.azimuthStats?.areaMeters2) {
+                maxArrayAreaSqM += summary.azimuthStats.areaMeters2;
+              }
+            });
+          }
+        }
+      }
+    });
   }
 
   const maxArrayAreaSqFt = convertSquareMetersToSquareFeet(maxArrayAreaSqM);
 
-  // Calculate yearly energy production
-  let yearlyEnergyKWh = 0;
-  if (solarPotential?.solarPanelConfigs?.length > 0) {
-    yearlyEnergyKWh = solarPotential.solarPanelConfigs[0].yearlyEnergyDcKwh || 0;
-  }
+  // Extract panel specifications
+  const panelCapacityWatts = buildingInsights?.solarPotential?.panelCapacityWatts || 400;
+  const panelHeightMeters = buildingInsights?.solarPotential?.panelHeightMeters || 2.0;
+  const panelWidthMeters = buildingInsights?.solarPotential?.panelWidthMeters || 1.0;
+  const panelLifetimeYears = buildingInsights?.solarPotential?.panelLifetimeYears || 25;
 
-  // Estimate panels count
-  const panelsCount = maxSolarCapacityKW > 0 ? Math.round(maxSolarCapacityKW / 0.4) : 0;
+  // Calculate panels count
+  const panelsCount = panelConfigurations.length > 0 ? 
+    panelConfigurations[0].panelsCount : 
+    Math.round(maxSolarCapacityKW / (panelCapacityWatts / 1000));
   
-  // Calculate monthly revenue (simplified)
-  const monthlyRevenue = Math.round((yearlyEnergyKWh * 0.12) / 12); // $0.12 per kWh average
+  // Calculate monthly revenue (enhanced calculation)
+  const averageElectricityRate = 0.13; // $0.13 per kWh average in US
+  const monthlyRevenue = Math.round((yearlyEnergyKWh * averageElectricityRate) / 12);
   
-  // Estimate setup costs
-  const setupCost = maxSolarCapacityKW * 2500; // $2500 per kW average
+  // Estimate setup costs based on system size
+  const setupCost = Math.round(maxSolarCapacityKW * 2500); // $2500 per kW average
+
+  // Extract imagery date
+  const imageryDate = buildingInsights?.imageryDate;
+
+  // Extract carbon offset factor
+  const carbonOffsetFactorKgPerMwh = solarPotential?.carbonOffsetFactorKgPerMwh || 
+    buildingInsights?.solarPotential?.carbonOffsetFactorKgPerMwh || 400;
+
+  console.log('✅ Enhanced Solar Data Extracted:', {
+    roofAreaSqFt: Math.round(roofAreaSqFt),
+    maxSunshineHoursPerYear,
+    roofSegmentsCount: roofSegments.length,
+    panelConfigurationsCount: panelConfigurations.length,
+    yearlyEnergyKWh,
+    panelsCount
+  });
 
   return {
     roofAreaSqFt: Math.round(roofAreaSqFt),
@@ -139,7 +220,16 @@ export function formatSolarData(rawData: any): FormattedSolarData {
     monthlyRevenue,
     setupCost: Math.round(setupCost),
     dataSource: 'google_solar_api',
-    usingRealSolarData: true
+    usingRealSolarData: true,
+    maxSunshineHoursPerYear,
+    roofSegments,
+    panelConfigurations,
+    panelCapacityWatts,
+    panelHeightMeters,
+    panelWidthMeters,
+    panelLifetimeYears,
+    carbonOffsetFactorKgPerMwh,
+    imageryDate
   };
 }
 
@@ -148,7 +238,7 @@ export function convertSquareMetersToSquareFeet(squareMeters: number): number {
   return squareMeters * 10.764;
 }
 
-function generateFallbackSolarData() {
+function generateFallbackSolarData(): FormattedSolarData {
   return {
     roofAreaSqFt: 0,
     maxArrayAreaSqFt: 0,
