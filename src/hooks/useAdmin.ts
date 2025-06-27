@@ -16,12 +16,17 @@ export const useAdmin = () => {
     }
 
     try {
-      // Check if user has admin role using the new secure function
-      const { data, error } = await supabase.rpc('is_admin');
+      // Use direct query instead of RPC until types are updated
+      const { data, error } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user.id)
+        .eq('role', 'admin')
+        .maybeSingle();
 
       if (error) throw error;
 
-      setIsAdmin(data || false);
+      setIsAdmin(!!data);
     } catch (error) {
       console.error("Error checking admin status:", error);
       setIsAdmin(false);
