@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
@@ -35,13 +36,21 @@ const EnhancedOnboardingChatbot = () => {
   const [conversationStartTime] = useState(Date.now());
   const [messageCount, setMessageCount] = useState(0);
   const [showAnalytics, setShowAnalytics] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
   
   // Get asset from URL parameters (from dashboard "Start Now" button)
   const targetAsset = searchParams.get('asset');
   
-  // Initialize conversation with property data
+  // Initialize conversation with property data - fix loading loop
   useEffect(() => {
-    if (propertyData && !propertyLoading) {
+    if (propertyData && !propertyLoading && !isInitialized && user) {
+      console.log('🔄 [ONBOARDING] Initializing conversation with property data:', {
+        address: propertyData.address,
+        totalRevenue: propertyData.totalMonthlyRevenue,
+        availableAssets: propertyData.availableAssets.length,
+        targetAsset
+      });
+      
       const userName = user?.user_metadata?.full_name?.split(' ')[0] || user?.email?.split('@')[0] || 'there';
       initializeConversation(targetAsset || undefined, userName);
       
@@ -58,8 +67,10 @@ const EnhancedOnboardingChatbot = () => {
           });
         }
       }
+      
+      setIsInitialized(true);
     }
-  }, [propertyData, propertyLoading, targetAsset, user, initializeConversation, selectAsset, toast]);
+  }, [propertyData, propertyLoading, targetAsset, user, initializeConversation, selectAsset, toast, isInitialized]);
 
   const [analytics, setAnalytics] = useState({
     totalMessages: 0,
@@ -132,13 +143,31 @@ const EnhancedOnboardingChatbot = () => {
     });
   };
 
-  // Show loading state while auth or property data is being loaded
-  if (authLoading || propertyLoading) {
+  // Improved loading state - prevent infinite loops
+  const isLoading = authLoading || (propertyLoading && !propertyData) || !isInitialized;
+
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-tiptop-purple border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading your property data...</p>
+          <p className="text-gray-600">
+            {authLoading ? 'Authenticating...' : 'Loading your property data...'}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state if no property data after loading
+  if (!propertyData && !propertyLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-gray-600 mb-4">No property data found. Please analyze a property first.</p>
+          <Button onClick={() => navigate('/submit-property')}>
+            Analyze Property
+          </Button>
         </div>
       </div>
     );

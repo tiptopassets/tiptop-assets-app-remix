@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -54,7 +53,7 @@ const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Auto-scroll to bottom
+  // Auto-scroll to bottom with improved behavior
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
@@ -275,7 +274,7 @@ const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
   };
 
   const handleSuggestedAction = (action: string) => {
-    // Directly send the message instead of just setting input
+    // Directly send the message - no delay, no input field update
     const userMessage: Message = {
       id: Date.now().toString(),
       role: 'user',
@@ -389,8 +388,8 @@ const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
         </div>
       )}
 
-      {/* Messages Area - Fixed scroll bug by using native scrolling */}
-      <div className="flex-1 overflow-y-auto p-4" style={{ maxHeight: 'calc(100vh - 200px)' }}>
+      {/* Messages Area - Fixed scroll implementation */}
+      <div className="flex-1 overflow-y-auto p-4 scroll-smooth" style={{ scrollBehavior: 'smooth' }}>
         <div className="space-y-4">
           <AnimatePresence>
             {messages.map((message) => (
