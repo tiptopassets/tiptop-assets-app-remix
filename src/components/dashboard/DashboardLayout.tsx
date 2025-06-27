@@ -2,7 +2,6 @@
 import { ReactNode } from 'react';
 import DashboardSidebar from './DashboardSidebar';
 import { useAuth } from '@/contexts/AuthContext';
-import { useIsMobile } from '@/hooks/use-mobile';
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -10,7 +9,6 @@ interface DashboardLayoutProps {
 
 const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   const { user, loading } = useAuth();
-  const isMobile = useIsMobile();
 
   // Show loading state if authentication is still loading
   if (loading) {
@@ -27,7 +25,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   return (
     <div className="flex min-h-screen">
       <DashboardSidebar />
-      <main className={`flex-1 bg-gray-50 overflow-auto ${isMobile ? '' : 'md:ml-64'}`}>
+      <main className="flex-1 bg-gray-50 overflow-auto">
         <div className="p-6 max-w-7xl mx-auto">
           {children}
         </div>
