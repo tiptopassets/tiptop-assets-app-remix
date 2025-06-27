@@ -135,7 +135,7 @@ const InternetDashboard = () => {
           <SpeedTestWidget />
           <AIEarningsAnalysis 
             analysis={aiEarningsAnalysis} 
-            isAnalyzingEarnings={isAnalyzingEarnings}
+            isAnalyzing={isAnalyzingEarnings}
           />
         </div>
 

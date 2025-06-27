@@ -16,7 +16,7 @@ interface NetworkAnalysisData {
   }>;
 }
 
-interface AIEarningsResponse {
+export interface AIEarningsResponse {
   monthlyEarnings: {
     conservative: number;
     average: number;
