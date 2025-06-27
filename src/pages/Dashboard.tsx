@@ -59,6 +59,7 @@ const Dashboard = () => {
 
   // Show empty state if no journey data is found
   if (!journeyData) {
+    console.log('❌ No journey data available, showing empty state');
     return (
       <DashboardLayout>
         <JourneyTracker />
@@ -74,6 +75,7 @@ const Dashboard = () => {
                     null;
 
   console.log('🗺️ Coordinates found for satellite image:', coordinates);
+  console.log('🏠 Using property address:', journeyData.propertyAddress);
 
   // Convert journey data to the format expected by DashboardContent
   const mockLatestAnalysis = {

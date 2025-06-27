@@ -63,7 +63,6 @@ export const useDashboardJourneyData = () => {
   };
 
   const parseJourneyProgress = (progressData: any) => {
-    // Handle different journey progress data structures
     if (!progressData || typeof progressData !== 'object') {
       return {
         stepsCompleted: [],
@@ -73,7 +72,6 @@ export const useDashboardJourneyData = () => {
       };
     }
 
-    // If it's already in the correct format
     if (progressData.stepsCompleted && progressData.currentStep) {
       return {
         stepsCompleted: Array.isArray(progressData.stepsCompleted) ? progressData.stepsCompleted : [],
@@ -83,13 +81,81 @@ export const useDashboardJourneyData = () => {
       };
     }
 
-    // Try to extract from different possible formats
     return {
       stepsCompleted: progressData.steps_completed || [],
       currentStep: progressData.current_step || 'site_entry',
       journeyStart: progressData.journey_start || new Date().toISOString(),
       lastActivity: progressData.last_activity || new Date().toISOString()
     };
+  };
+
+  const processJourneyData = (data: any): DashboardJourneyData | null => {
+    if (!data) return null;
+
+    try {
+      // Parse analysis results if it's a string
+      let analysisResults = data.analysis_results;
+      if (typeof analysisResults === 'string') {
+        try {
+          analysisResults = JSON.parse(analysisResults);
+        } catch (e) {
+          console.warn('Failed to parse analysis results:', e);
+          analysisResults = {};
+        }
+      }
+
+      // Extract data from analysis results
+      const extracted = extractDataFromAnalysisResults(analysisResults);
+      
+      // Use stored values or extracted values (prefer stored for consistency)
+      const propertyAddress = data.property_address || extracted.propertyAddress || 'Unknown Address';
+      const totalRevenue = Math.max(
+        data.total_monthly_revenue || 0,
+        extracted.totalRevenue
+      );
+      const totalOpportunities = Math.max(
+        data.total_opportunities || 0,
+        extracted.totalOpportunities
+      );
+
+      // Parse selected services
+      let selectedServices = data.selected_services || [];
+      if (typeof selectedServices === 'string') {
+        try {
+          selectedServices = JSON.parse(selectedServices);
+        } catch (e) {
+          selectedServices = [];
+        }
+      }
+
+      // Parse journey progress
+      let journeyProgress = data.journey_progress;
+      if (typeof journeyProgress === 'string') {
+        try {
+          journeyProgress = JSON.parse(journeyProgress);
+        } catch (e) {
+          journeyProgress = null;
+        }
+      }
+
+      const transformedData: DashboardJourneyData = {
+        journeyId: data.journey_id,
+        propertyAddress,
+        analysisResults,
+        totalMonthlyRevenue: totalRevenue,
+        totalOpportunities,
+        selectedServices: Array.isArray(selectedServices) ? selectedServices : [],
+        selectedOption: data.selected_option || 'manual',
+        journeyProgress: parseJourneyProgress(journeyProgress)
+      };
+      
+      console.log('✅ Processed dashboard data:', transformedData);
+      return transformedData;
+
+    } catch (error) {
+      console.error('❌ Error processing journey data:', error);
+      return null;
+    }
   };
 
   useEffect(() => {
@@ -109,72 +175,17 @@ export const useDashboardJourneyData = () => {
         
         console.log('📊 Raw dashboard data:', data);
         
-        if (data) {
-          // Parse analysis results if it's a string
-          let analysisResults = data.analysis_results;
-          if (typeof analysisResults === 'string') {
-            try {
-              analysisResults = JSON.parse(analysisResults);
-            } catch (e) {
-              console.warn('Failed to parse analysis results:', e);
-              analysisResults = {};
-            }
-          }
-
-          // Extract data from analysis results
-          const extracted = extractDataFromAnalysisResults(analysisResults);
-          
-          // Use stored values or extracted values (prefer extracted for address)
-          const propertyAddress = extracted.propertyAddress || data.property_address || 'Unknown Address';
-          const totalRevenue = Math.max(
-            extracted.totalRevenue,
-            data.total_monthly_revenue || 0
-          );
-          const totalOpportunities = Math.max(
-            extracted.totalOpportunities,
-            data.total_opportunities || 0
-          );
-
-          // Parse selected services
-          let selectedServices = data.selected_services || [];
-          if (typeof selectedServices === 'string') {
-            try {
-              selectedServices = JSON.parse(selectedServices);
-            } catch (e) {
-              selectedServices = [];
-            }
-          }
-
-          // Parse journey progress with better handling
-          let journeyProgress = data.journey_progress;
-          if (typeof journeyProgress === 'string') {
-            try {
-              journeyProgress = JSON.parse(journeyProgress);
-            } catch (e) {
-              journeyProgress = null;
-            }
-          }
-
-          const transformedData: DashboardJourneyData = {
-            journeyId: data.journey_id,
-            propertyAddress,
-            analysisResults,
-            totalMonthlyRevenue: totalRevenue,
-            totalOpportunities,
-            selectedServices: Array.isArray(selectedServices) ? selectedServices : [],
-            selectedOption: data.selected_option || 'manual',
-            journeyProgress: parseJourneyProgress(journeyProgress)
-          };
-          
-          console.log('✅ Transformed dashboard data:', transformedData);
-          setJourneyData(transformedData);
-        } else {
-          console.log('❌ No dashboard data found');
-          setJourneyData(null);
+        const processedData = processJourneyData(data);
+        setJourneyData(processedData);
+        
+        if (!processedData) {
+          console.log('❌ No valid dashboard data found');
         }
+        
       } catch (err) {
         console.error('❌ Error loading journey data:', err);
-        setError('Failed to load journey data');
+        const errorMessage = err instanceof Error ? err.message : 'Failed to load journey data';
+        setError(errorMessage);
       } finally {
         setLoading(false);
       }
@@ -190,59 +201,10 @@ export const useDashboardJourneyData = () => {
       console.log('🔄 Refreshing dashboard data...');
       const data = await getDashboardData();
       
-      if (data) {
-        let analysisResults = data.analysis_results;
-        if (typeof analysisResults === 'string') {
-          try {
-            analysisResults = JSON.parse(analysisResults);
-          } catch (e) {
-            analysisResults = {};
-          }
-        }
-
-        const extracted = extractDataFromAnalysisResults(analysisResults);
-        
-        const propertyAddress = extracted.propertyAddress || data.property_address || 'Unknown Address';
-        const totalRevenue = Math.max(
-          extracted.totalRevenue,
-          data.total_monthly_revenue || 0
-        );
-        const totalOpportunities = Math.max(
-          extracted.totalOpportunities,
-          data.total_opportunities || 0
-        );
-
-        let selectedServices = data.selected_services || [];
-        if (typeof selectedServices === 'string') {
-          try {
-            selectedServices = JSON.parse(selectedServices);
-          } catch (e) {
-            selectedServices = [];
-          }
-        }
-
-        let journeyProgress = data.journey_progress;
-        if (typeof journeyProgress === 'string') {
-          try {
-            journeyProgress = JSON.parse(journeyProgress);
-          } catch (e) {
-            journeyProgress = null;
-          }
-        }
-
-        setJourneyData({
-          journeyId: data.journey_id,
-          propertyAddress,
-          analysisResults,
-          totalMonthlyRevenue: totalRevenue,
-          totalOpportunities,
-          selectedServices: Array.isArray(selectedServices) ? selectedServices : [],
-          selectedOption: data.selected_option || 'manual',
-          journeyProgress: parseJourneyProgress(journeyProgress)
-        });
-        
-        console.log('✅ Dashboard data refreshed successfully');
-      }
+      const processedData = processJourneyData(data);
+      setJourneyData(processedData);
+      
+      console.log('✅ Dashboard data refreshed successfully');
     } catch (err) {
       console.error('❌ Error refreshing journey data:', err);
     }

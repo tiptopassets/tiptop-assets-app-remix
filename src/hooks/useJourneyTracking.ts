@@ -27,10 +27,20 @@ export const useJourneyTracking = () => {
     initJourney();
   }, []);
 
-  // Track authentication completion
+  // Enhanced authentication completion tracking
   useEffect(() => {
     if (user) {
-      trackAuthCompleted(user.id);
+      const handleAuthCompletion = async () => {
+        console.log('🔐 User authenticated, linking journey data:', user.id);
+        await trackAuthCompleted(user.id);
+        
+        // Small delay to ensure the linking is processed
+        setTimeout(() => {
+          console.log('🔄 Auth completion processed, journey should be linked');
+        }, 1000);
+      };
+      
+      handleAuthCompletion();
     }
   }, [user]);
 
