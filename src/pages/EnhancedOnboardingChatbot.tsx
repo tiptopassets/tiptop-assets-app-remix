@@ -10,6 +10,8 @@ import EnhancedChatInterface from '@/components/onboarding/EnhancedChatInterface
 import SmartAssetDetection from '@/components/onboarding/SmartAssetDetection';
 import ConversationAnalytics from '@/components/onboarding/ConversationAnalytics';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useUserPropertyAnalysis } from '@/hooks/useUserPropertyAnalysis';
+import { useIntelligentConversation } from '@/hooks/useIntelligentConversation';
 
 const EnhancedOnboardingChatbot = () => {
   const { user, loading: authLoading } = useAuth();
@@ -17,16 +19,48 @@ const EnhancedOnboardingChatbot = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   
+  // Property analysis integration
+  const { propertyData, loading: propertyLoading, hasPropertyData } = useUserPropertyAnalysis();
+  const { 
+    conversationState, 
+    initializeConversation, 
+    generateWelcomeMessage,
+    generateAssetSuggestions,
+    selectAsset,
+    generateAssetResponse
+  } = useIntelligentConversation(propertyData);
+  
   const [detectedAssets, setDetectedAssets] = useState<string[]>([]);
   const [conversationStage, setConversationStage] = useState('greeting');
   const [conversationStartTime] = useState(Date.now());
   const [messageCount, setMessageCount] = useState(0);
   const [showAnalytics, setShowAnalytics] = useState(false);
   
-  // Get asset from URL parameters
+  // Get asset from URL parameters (from dashboard "Start Now" button)
   const targetAsset = searchParams.get('asset');
   
-  // Simulated conversation analytics
+  // Initialize conversation with property data
+  useEffect(() => {
+    if (propertyData && !propertyLoading) {
+      const userName = user?.user_metadata?.full_name?.split(' ')[0] || user?.email?.split('@')[0] || 'there';
+      initializeConversation(targetAsset || undefined, userName);
+      
+      if (targetAsset) {
+        setDetectedAssets([targetAsset]);
+        setConversationStage('asset_configuration');
+        selectAsset(targetAsset);
+        
+        const assetInfo = propertyData.availableAssets.find(a => a.type === targetAsset);
+        if (assetInfo) {
+          toast({
+            title: "Asset Configuration Started",
+            description: `Let's set up your ${assetInfo.name.toLowerCase()} for $${assetInfo.monthlyRevenue}/month potential earnings.`,
+          });
+        }
+      }
+    }
+  }, [propertyData, propertyLoading, targetAsset, user, initializeConversation, selectAsset, toast]);
+
   const [analytics, setAnalytics] = useState({
     totalMessages: 0,
     conversationDuration: 0,
@@ -36,19 +70,6 @@ const EnhancedOnboardingChatbot = () => {
     keyInsights: []
   });
 
-  // Pre-populate detected assets if coming from dashboard with specific asset
-  useEffect(() => {
-    if (targetAsset) {
-      setDetectedAssets([targetAsset]);
-      setConversationStage('asset_configuration');
-      toast({
-        title: "Asset Configuration Started",
-        description: `Let's configure your ${targetAsset.replace('_', ' ')} monetization setup.`,
-      });
-    }
-  }, [targetAsset, toast]);
-
-  // Update analytics periodically
   useEffect(() => {
     const interval = setInterval(() => {
       setAnalytics(prev => ({
@@ -72,7 +93,7 @@ const EnhancedOnboardingChatbot = () => {
     }
     
     if (assets.includes('rooftop')) {
-      insights.push('High solar potential based on conversation');
+      insights.push('High solar potential based on analysis');
     }
     
     if (stage === 'recommendation') {
@@ -92,6 +113,7 @@ const EnhancedOnboardingChatbot = () => {
   };
 
   const handleAssetSelect = (assetId: string) => {
+    selectAsset(assetId);
     toast({
       title: "Asset Selected",
       description: `Setting up ${assetId.replace('_', ' ')} monetization...`,
@@ -110,13 +132,13 @@ const EnhancedOnboardingChatbot = () => {
     });
   };
 
-  // Show loading state while auth is being checked
-  if (authLoading) {
+  // Show loading state while auth or property data is being loaded
+  if (authLoading || propertyLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-tiptop-purple border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading enhanced chatbot...</p>
+          <p className="text-gray-600">Loading your property data...</p>
         </div>
       </div>
     );
@@ -150,6 +172,11 @@ const EnhancedOnboardingChatbot = () => {
                     {targetAsset.replace('_', ' ')} Setup
                   </Badge>
                 )}
+                {hasPropertyData && (
+                  <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                    Property Analyzed
+                  </Badge>
+                )}
               </div>
             </div>
             
@@ -180,12 +207,56 @@ const EnhancedOnboardingChatbot = () => {
               <EnhancedChatInterface
                 onAssetDetected={handleAssetDetected}
                 onConversationStageChange={handleConversationStageChange}
+                propertyData={propertyData}
+                conversationState={conversationState}
+                generateAssetResponse={generateAssetResponse}
+                generateWelcomeMessage={generateWelcomeMessage}
+                generateAssetSuggestions={generateAssetSuggestions}
               />
             </Card>
           </div>
 
           {/* Sidebar */}
           <div className="lg:col-span-4 space-y-6">
+            {/* Property Summary */}
+            {hasPropertyData && (
+              <motion.div
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+              >
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <Settings2 className="h-5 w-5 text-tiptop-purple" />
+                      Property Overview
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      <div>
+                        <p className="text-sm font-medium text-gray-700">Address</p>
+                        <p className="text-sm text-gray-600">{propertyData?.address}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-700">Total Potential</p>
+                        <p className="text-lg font-bold text-green-600">${propertyData?.totalMonthlyRevenue}/month</p>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-700">Available Assets</p>
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {propertyData?.availableAssets.map((asset) => (
+                            <Badge key={asset.type} variant="outline" className="text-xs">
+                              {asset.name}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            )}
+
             {/* Smart Asset Detection */}
             {detectedAssets.length > 0 && (
               <motion.div
@@ -256,13 +327,13 @@ const EnhancedOnboardingChatbot = () => {
                   <div className="p-3 bg-tiptop-purple/5 rounded-lg">
                     <p className="font-medium text-tiptop-purple mb-1">Be Specific</p>
                     <p className="text-gray-600">
-                      The more details you provide about your property, the better recommendations you'll receive.
+                      I already know your property details, so we can focus on specific setup questions.
                     </p>
                   </div>
                   <div className="p-3 bg-green-50 rounded-lg">
                     <p className="font-medium text-green-700 mb-1">Ask Questions</p>
                     <p className="text-gray-600">
-                      Don't hesitate to ask about setup costs, time requirements, or potential earnings.
+                      Ask about setup costs, time requirements, or potential earnings for any asset.
                     </p>
                   </div>
                 </div>
