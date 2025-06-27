@@ -3,7 +3,6 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, Send, Mic, MicOff, Lightbulb, TrendingUp } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -17,6 +16,8 @@ interface Message {
   suggestedActions?: string[];
   detectedAssets?: string[];
   confidence?: number;
+  type?: 'message' | 'asset_analysis';
+  assetAnalysisData?: any;
 }
 
 interface ConversationState {
@@ -110,6 +111,36 @@ const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
     });
 
     return detected;
+  };
+
+  const addAssetAnalysisMessage = (detectedAssets: string[]) => {
+    if (detectedAssets.length === 0) return;
+
+    // Generate mock analysis for detected assets
+    const analysisData = detectedAssets.map(asset => ({
+      id: asset,
+      name: asset.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()),
+      confidence: 0.7 + (Math.random() * 0.3), // 70-100% confidence
+      estimatedRevenue: Math.floor(Math.random() * 800) + 200, // $200-$1000
+      setupComplexity: ['low', 'medium', 'high'][Math.floor(Math.random() * 3)] as 'low' | 'medium' | 'high',
+      marketOpportunity: ['high', 'medium', 'low'][Math.floor(Math.random() * 3)] as 'high' | 'medium' | 'low'
+    }));
+
+    const analysisMessage: Message = {
+      id: `analysis-${Date.now()}`,
+      role: 'assistant',
+      content: `Great! I've analyzed your property and detected ${detectedAssets.length} monetization opportunities. Here's what I found:`,
+      timestamp: new Date(),
+      type: 'asset_analysis',
+      assetAnalysisData: analysisData,
+      suggestedActions: [
+        `Set up ${analysisData[0]?.name}`,
+        'Tell me more about requirements',
+        'Show other opportunities'
+      ]
+    };
+
+    setMessages(prev => [...prev, analysisMessage]);
   };
 
   const generateIntelligentResponse = (userMessage: string): { message: string; suggestedActions: string[]; detectedAssets: string[] } => {
@@ -226,6 +257,13 @@ const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
 
       setMessages(prev => [...prev, assistantMessage]);
       
+      // Add asset analysis if assets were detected
+      if (response.detectedAssets.length > 0) {
+        setTimeout(() => {
+          addAssetAnalysisMessage(response.detectedAssets);
+        }, 1000);
+      }
+      
       // Notify parent components
       if (response.detectedAssets.length > 0) {
         onAssetDetected(response.detectedAssets);
@@ -237,8 +275,45 @@ const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
   };
 
   const handleSuggestedAction = (action: string) => {
-    setInputMessage(action);
-    setTimeout(() => handleSendMessage(), 100);
+    // Directly send the message instead of just setting input
+    const userMessage: Message = {
+      id: Date.now().toString(),
+      role: 'user',
+      content: action,
+      timestamp: new Date()
+    };
+    
+    setMessages(prev => [...prev, userMessage]);
+    setShowSuggestions(false);
+    setIsAnalyzing(true);
+    
+    // Generate response for the suggested action
+    setTimeout(() => {
+      const response = generateIntelligentResponse(action);
+      
+      const assistantMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        role: 'assistant',
+        content: response.message,
+        timestamp: new Date(),
+        suggestedActions: response.suggestedActions,
+        detectedAssets: response.detectedAssets,
+        confidence: 0.9
+      };
+
+      setMessages(prev => [...prev, assistantMessage]);
+      
+      // Add asset analysis if assets were detected
+      if (response.detectedAssets.length > 0) {
+        setTimeout(() => {
+          addAssetAnalysisMessage(response.detectedAssets);
+        }, 1000);
+        onAssetDetected(response.detectedAssets);
+      }
+      
+      onConversationStageChange('discussion');
+      setIsAnalyzing(false);
+    }, 1500);
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -256,6 +331,40 @@ const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
   const getStageIcon = () => {
     if (conversationState?.currentAsset) return <TrendingUp className="h-4 w-4" />;
     return <Lightbulb className="h-4 w-4" />;
+  };
+
+  const renderAssetAnalysis = (analysisData: any[]) => {
+    return (
+      <div className="mt-3 space-y-3">
+        {analysisData.map((asset, index) => (
+          <motion.div
+            key={index}
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: index * 0.2 }}
+            className="border border-tiptop-purple/20 rounded-lg p-3 bg-gradient-to-r from-tiptop-purple/5 to-purple-50"
+          >
+            <div className="flex items-center justify-between mb-2">
+              <h4 className="font-semibold text-tiptop-purple">{asset.name}</h4>
+              <Badge className="text-xs bg-green-50 text-green-700 border-green-200">
+                ${asset.estimatedRevenue}/month
+              </Badge>
+            </div>
+            <div className="flex flex-wrap gap-2 text-xs">
+              <Badge variant="outline" className="text-xs">
+                {Math.round(asset.confidence * 100)}% confidence
+              </Badge>
+              <Badge variant="outline" className="text-xs">
+                {asset.setupComplexity} setup
+              </Badge>
+              <Badge variant="outline" className="text-xs">
+                {asset.marketOpportunity} demand
+              </Badge>
+            </div>
+          </motion.div>
+        ))}
+      </div>
+    );
   };
 
   return (
@@ -280,8 +389,8 @@ const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
         </div>
       )}
 
-      {/* Messages Area */}
-      <ScrollArea className="flex-1 p-4">
+      {/* Messages Area - Fixed scroll bug by using native scrolling */}
+      <div className="flex-1 overflow-y-auto p-4" style={{ maxHeight: 'calc(100vh - 200px)' }}>
         <div className="space-y-4">
           <AnimatePresence>
             {messages.map((message) => (
@@ -299,6 +408,11 @@ const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
                   }`}>
                     <CardContent className="p-3">
                       <p className="text-sm">{message.content}</p>
+                      
+                      {/* Asset Analysis Data */}
+                      {message.type === 'asset_analysis' && message.assetAnalysisData && (
+                        renderAssetAnalysis(message.assetAnalysisData)
+                      )}
                       
                       {/* Confidence indicator for AI messages */}
                       {message.role === 'assistant' && message.confidence && (
@@ -368,7 +482,7 @@ const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
           )}
         </div>
         <div ref={messagesEndRef} />
-      </ScrollArea>
+      </div>
 
       {/* Input Area */}
       <div className="border-t p-4 bg-white">
