@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import SearchBar from '@/components/SearchBar';
@@ -11,11 +12,12 @@ import DataSyncNotification from '@/components/DataSyncNotification';
 import JourneyTracker from '@/components/JourneyTracker';
 import { SatelliteMonitor } from '@/components/satellite/SatelliteMonitor';
 import { useGoogleMap } from '@/contexts/GoogleMapContext';
-import { PlusCircle } from 'lucide-react';
+import { Settings } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import FooterCarousel from '@/components/FooterCarousel';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
+import { useAdmin } from '@/hooks/useAdmin';
 
 const Index = () => {
   const { isAnalyzing, analysisComplete, address, analysisResults } = useGoogleMap();
@@ -24,6 +26,7 @@ const Index = () => {
   const isMobile = useIsMobile();
   const hasAddress = !!address;
   const { user, loading } = useAuth();
+  const { isAdmin } = useAdmin();
 
   // Collapse UI elements when analysis is complete
   useEffect(() => {
@@ -61,14 +64,16 @@ const Index = () => {
             tiptop
           </Link>
           <div className="flex gap-2 sm:gap-3 md:gap-4">
-            <Link
-              to="/submit-property"
-              className="glass-effect px-2 py-1 sm:px-3 sm:py-2 md:px-4 md:py-2 rounded-full flex items-center gap-1 sm:gap-2 text-white hover:scale-105 transition-transform text-xs sm:text-sm md:text-base relative"
-            >
-              <PlusCircle size={isMobile ? 12 : 16} className="sm:w-4 sm:h-4 md:w-5 md:h-5" />
-              <span className="text-gray-100">{isMobile ? 'Submit' : 'Submit Property'}</span>
-              <div className="absolute -inset-0.5 bg-gradient-to-r from-purple-500/20 to-violet-500/20 rounded-full blur-sm -z-10"></div>
-            </Link>
+            {isAdmin && (
+              <Link
+                to="/dashboard/admin"
+                className="glass-effect px-2 py-1 sm:px-3 sm:py-2 md:px-4 md:py-2 rounded-full flex items-center gap-1 sm:gap-2 text-white hover:scale-105 transition-transform text-xs sm:text-sm md:text-base relative"
+              >
+                <Settings size={isMobile ? 12 : 16} className="sm:w-4 sm:h-4 md:w-5 md:h-5" />
+                <span className="text-gray-100">Admin</span>
+                <div className="absolute -inset-0.5 bg-gradient-to-r from-red-500/20 to-orange-500/20 rounded-full blur-sm -z-10"></div>
+              </Link>
+            )}
             <Link 
               to="/dashboard" 
               className="glass-effect px-2 py-1 sm:px-3 sm:py-2 md:px-4 md:py-2 rounded-full flex items-center gap-1 sm:gap-2 text-white hover:scale-105 transition-transform text-xs sm:text-sm md:text-base relative"
