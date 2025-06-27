@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useModelGeneration } from '@/contexts/ModelGeneration';
 import { useGoogleMap } from '@/contexts/GoogleMapContext';
+import { useJourneyTracking } from '@/hooks/useJourneyTracking';
 import ModelHeader from './ModelHeader';
 import LoadingState from './LoadingState';
 import PropertyAnalysisContent from './PropertyAnalysisContent';
@@ -13,13 +14,31 @@ const HomeModelViewer = () => {
     analysisResults, 
     isGeneratingAnalysis, 
     address,
-    addressCoordinates 
+    addressCoordinates,
+    analysisComplete 
   } = useGoogleMap();
+  const { trackAddress, trackAnalysis } = useJourneyTracking();
   const [isVisible, setIsVisible] = useState(false);
   const [showFullAnalysis, setShowFullAnalysis] = useState(false);
   
   const isGenerating = isGeneratingAnalysis || status === 'generating';
   const isComplete = !isGenerating && analysisResults;
+  
+  // Track address entry when address is available
+  useEffect(() => {
+    if (address && address.trim()) {
+      trackAddress(address, addressCoordinates);
+      console.log('📍 Tracked address entry:', address);
+    }
+  }, [address, addressCoordinates, trackAddress]);
+
+  // Track analysis completion when results are available
+  useEffect(() => {
+    if (analysisComplete && analysisResults && address) {
+      trackAnalysis(address, analysisResults, addressCoordinates);
+      console.log('📊 Tracked analysis completion for:', address);
+    }
+  }, [analysisComplete, analysisResults, address, addressCoordinates, trackAnalysis]);
   
   // Determine if we should show the component
   useEffect(() => {

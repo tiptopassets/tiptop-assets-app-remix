@@ -25,6 +25,7 @@ export const useDashboardJourneyData = () => {
   const [journeyData, setJourneyData] = useState<DashboardJourneyData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
 
   const extractDataFromAnalysisResults = (analysisResults: any) => {
     let propertyAddress = '';
@@ -66,7 +67,7 @@ export const useDashboardJourneyData = () => {
     if (!progressData || typeof progressData !== 'object') {
       return {
         stepsCompleted: [],
-        currentStep: 'site_entry',
+        currentStep: 'analysis_completed', // Default to analysis_completed since we have data
         journeyStart: new Date().toISOString(),
         lastActivity: new Date().toISOString()
       };
@@ -82,8 +83,8 @@ export const useDashboardJourneyData = () => {
     }
 
     return {
-      stepsCompleted: progressData.steps_completed || [],
-      currentStep: progressData.current_step || 'site_entry',
+      stepsCompleted: progressData.steps_completed || ['address_entered', 'analysis_completed'],
+      currentStep: progressData.current_step || 'analysis_completed',
       journeyStart: progressData.journey_start || new Date().toISOString(),
       lastActivity: progressData.last_activity || new Date().toISOString()
     };
@@ -93,6 +94,8 @@ export const useDashboardJourneyData = () => {
     if (!data) return null;
 
     try {
+      console.log('🔄 Processing raw journey data:', data);
+
       // Parse analysis results if it's a string
       let analysisResults = data.analysis_results;
       if (typeof analysisResults === 'string') {
@@ -102,6 +105,12 @@ export const useDashboardJourneyData = () => {
           console.warn('Failed to parse analysis results:', e);
           analysisResults = {};
         }
+      }
+
+      // Ensure we have analysis results
+      if (!analysisResults || Object.keys(analysisResults).length === 0) {
+        console.warn('⚠️ No analysis results found in journey data');
+        return null;
       }
 
       // Extract data from analysis results
@@ -117,6 +126,15 @@ export const useDashboardJourneyData = () => {
         data.total_opportunities || 0,
         extracted.totalOpportunities
       );
+
+      // Ensure we have meaningful data
+      if (!propertyAddress || propertyAddress === 'Unknown Address' || totalRevenue === 0) {
+        console.warn('⚠️ Journey data lacks essential information:', {
+          hasAddress: !!propertyAddress && propertyAddress !== 'Unknown Address',
+          hasRevenue: totalRevenue > 0,
+          hasOpportunities: totalOpportunities > 0
+        });
+      }
 
       // Parse selected services
       let selectedServices = data.selected_services || [];
@@ -149,7 +167,7 @@ export const useDashboardJourneyData = () => {
         journeyProgress: parseJourneyProgress(journeyProgress)
       };
       
-      console.log('✅ Processed dashboard data:', transformedData);
+      console.log('✅ Successfully processed dashboard data:', transformedData);
       return transformedData;
 
     } catch (error) {
@@ -158,55 +176,95 @@ export const useDashboardJourneyData = () => {
     }
   };
 
-  useEffect(() => {
-    const loadJourneyData = async () => {
-      if (!user) {
-        setLoading(false);
-        return;
-      }
+  const loadJourneyData = async (isRetry: boolean = false) => {
+    if (!user) {
+      setLoading(false);
+      return;
+    }
 
-      try {
+    try {
+      if (!isRetry) {
         setLoading(true);
         setError(null);
-        
-        console.log('🔍 Loading dashboard data for user:', user.id);
-        
-        const data = await getDashboardData();
-        
-        console.log('📊 Raw dashboard data:', data);
-        
-        const processedData = processJourneyData(data);
+      }
+      
+      console.log(`🔍 ${isRetry ? 'Retrying' : 'Loading'} dashboard data for user:`, user.id);
+      
+      const data = await getDashboardData();
+      
+      console.log('📊 Raw dashboard data received:', data);
+      
+      const processedData = processJourneyData(data);
+      
+      if (processedData) {
         setJourneyData(processedData);
+        setRetryCount(0); // Reset retry count on success
+        console.log('✅ Dashboard data loaded successfully');
+      } else {
+        console.log('❌ No valid dashboard data found');
         
-        if (!processedData) {
-          console.log('❌ No valid dashboard data found');
+        // If this is not a retry and we have no data, try again after a short delay
+        if (!isRetry && retryCount < 3) {
+          console.log(`🔄 Scheduling retry ${retryCount + 1}/3 in 3 seconds...`);
+          setRetryCount(prev => prev + 1);
+          setTimeout(() => {
+            loadJourneyData(true);
+          }, 3000);
         }
-        
-      } catch (err) {
-        console.error('❌ Error loading journey data:', err);
-        const errorMessage = err instanceof Error ? err.message : 'Failed to load journey data';
-        setError(errorMessage);
-      } finally {
+      }
+      
+    } catch (err) {
+      console.error('❌ Error loading journey data:', err);
+      const errorMessage = err instanceof Error ? err.message : 'Failed to load journey data';
+      setError(errorMessage);
+      
+      // Retry logic for errors
+      if (!isRetry && retryCount < 2) {
+        console.log(`🔄 Scheduling error retry ${retryCount + 1}/2 in 5 seconds...`);
+        setRetryCount(prev => prev + 1);
+        setTimeout(() => {
+          loadJourneyData(true);
+        }, 5000);
+      }
+    } finally {
+      if (!isRetry) {
         setLoading(false);
       }
-    };
+    }
+  };
 
-    loadJourneyData();
+  useEffect(() => {
+    if (user) {
+      loadJourneyData();
+    } else {
+      // Clear data when user logs out
+      setJourneyData(null);
+      setError(null);
+      setRetryCount(0);
+    }
   }, [user, getDashboardData]);
 
   const refreshJourneyData = async () => {
     if (!user) return;
     
     try {
-      console.log('🔄 Refreshing dashboard data...');
-      const data = await getDashboardData();
+      console.log('🔄 Manually refreshing dashboard data...');
+      setError(null); // Clear any existing errors
       
+      const data = await getDashboardData();
       const processedData = processJourneyData(data);
+      
       setJourneyData(processedData);
       
-      console.log('✅ Dashboard data refreshed successfully');
+      if (processedData) {
+        console.log('✅ Dashboard data refreshed successfully');
+      } else {
+        console.log('❌ No data found during manual refresh');
+      }
     } catch (err) {
       console.error('❌ Error refreshing journey data:', err);
+      const errorMessage = err instanceof Error ? err.message : 'Failed to refresh journey data';
+      setError(errorMessage);
     }
   };
 

@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { AnalysisResults } from '@/contexts/GoogleMapContext/types';
 
@@ -72,7 +71,7 @@ export const trackAddressEntered = async (address: string, coordinates?: any) =>
   }
 };
 
-// Enhanced analysis tracking with better user linking
+// Enhanced analysis tracking with better user linking and data persistence
 export const trackAnalysisCompleted = async (
   address: string,
   analysisResults: AnalysisResults,
@@ -136,6 +135,23 @@ export const trackAnalysisCompleted = async (
 
     if (error) {
       console.error('❌ Error tracking analysis completed:', error);
+      
+      // Store in localStorage as backup
+      const backupData = {
+        sessionId,
+        address: propertyAddress,
+        analysisResults,
+        coordinates,
+        totalMonthlyRevenue,
+        totalOpportunities,
+        timestamp: new Date().toISOString()
+      };
+      
+      const existingBackups = JSON.parse(localStorage.getItem('tiptop_analysis_backup') || '[]');
+      existingBackups.push(backupData);
+      localStorage.setItem('tiptop_analysis_backup', JSON.stringify(existingBackups));
+      
+      console.log('💾 Stored analysis as backup in localStorage');
       return null;
     }
 
@@ -201,11 +217,13 @@ export const trackOptionSelected = async (selectedOption: 'manual' | 'concierge'
   }
 };
 
-// Enhanced auth completion tracking with better session linking
+// Enhanced auth completion tracking with better session linking and backup recovery
 export const trackAuthCompleted = async (userId: string) => {
   const sessionId = getSessionId();
   
   try {
+    console.log('🔐 Starting auth completion tracking for user:', userId);
+    
     // First, link the journey to the authenticated user
     const { error: linkError } = await supabase.rpc('link_journey_to_user', {
       p_session_id: sessionId,
@@ -218,8 +236,7 @@ export const trackAuthCompleted = async (userId: string) => {
       console.log('✅ Journey linked to authenticated user:', userId);
     }
 
-    // Also try to find and link any unlinked journey data for this user
-    // This helps recover data from sessions before authentication
+    // Try to find and link any unlinked journey data for this user
     const { error: recoveryError } = await supabase
       .from('user_journey_complete')
       .update({ user_id: userId })
@@ -231,6 +248,46 @@ export const trackAuthCompleted = async (userId: string) => {
       console.warn('⚠️ Could not recover unlinked journey data:', recoveryError);
     } else {
       console.log('🔄 Attempted to recover unlinked journey data');
+    }
+
+    // Check for and recover backup data from localStorage
+    const backupData = localStorage.getItem('tiptop_analysis_backup');
+    if (backupData) {
+      try {
+        const backups = JSON.parse(backupData);
+        console.log('🔄 Found backup analysis data, attempting to recover:', backups.length, 'items');
+        
+        for (const backup of backups) {
+          // Try to save backup data to database now that user is authenticated
+          const { error: backupError } = await supabase.rpc('update_journey_step', {
+            p_session_id: backup.sessionId || sessionId,
+            p_step: 'analysis_completed',
+            p_data: {
+              property_address: backup.address,
+              property_coordinates: backup.coordinates,
+              analysis_results: backup.analysisResults,
+              total_monthly_revenue: backup.totalMonthlyRevenue,
+              total_opportunities: backup.totalOpportunities
+            }
+          });
+          
+          if (!backupError) {
+            // Link this recovered data to the user
+            await supabase.rpc('link_journey_to_user', {
+              p_session_id: backup.sessionId || sessionId,
+              p_user_id: userId
+            });
+            console.log('✅ Recovered backup analysis for:', backup.address);
+          }
+        }
+        
+        // Clear backup data after successful recovery
+        localStorage.removeItem('tiptop_analysis_backup');
+        console.log('🧹 Cleared backup data after recovery');
+        
+      } catch (parseError) {
+        console.warn('⚠️ Could not parse backup data:', parseError);
+      }
     }
 
     return sessionId;
@@ -264,74 +321,90 @@ export const trackDashboardAccessed = async () => {
   }
 };
 
-// Enhanced dashboard data retrieval with fallback logic
+// Enhanced dashboard data retrieval with multiple fallback strategies
 export const getUserDashboardData = async (userId: string) => {
   try {
     console.log('📊 Fetching dashboard data for user:', userId);
     
-    // First try the RPC function
-    const { data, error } = await supabase.rpc('get_user_dashboard_data', {
+    // Strategy 1: Try the RPC function first
+    const { data: rpcData, error: rpcError } = await supabase.rpc('get_user_dashboard_data', {
       p_user_id: userId
     });
 
-    if (error) {
-      console.error('❌ Error getting dashboard data via RPC:', error);
+    if (!rpcError && rpcData && rpcData.length > 0) {
+      console.log('✅ Found data via RPC function:', rpcData[0]);
+      return rpcData[0];
     }
 
-    let result = data?.[0] || null;
-    
-    // If RPC didn't return data, try direct query as fallback
-    if (!result) {
-      console.log('🔄 Trying direct query as fallback...');
-      
-      const { data: directData, error: directError } = await supabase
-        .from('user_journey_complete')
-        .select('*')
-        .eq('user_id', userId)
-        .not('property_address', 'is', null)
-        .not('property_address', 'eq', '')
-        .order('updated_at', { ascending: false })
-        .limit(1);
+    console.log('🔄 RPC returned no data, trying direct queries...');
 
-      if (directError) {
-        console.error('❌ Error with direct query:', directError);
-      } else if (directData && directData.length > 0) {
-        const journey = directData[0];
-        result = {
-          journey_id: journey.id,
-          property_address: journey.property_address,
-          analysis_results: journey.analysis_results,
-          total_monthly_revenue: journey.total_monthly_revenue,
-          total_opportunities: journey.total_opportunities,
-          selected_services: journey.selected_services,
-          selected_option: journey.selected_option,
-          journey_progress: {
-            steps_completed: [],
-            current_step: journey.current_step,
-            journey_start: journey.journey_start_at,
-            last_activity: journey.updated_at
-          }
-        };
-        console.log('✅ Found data via direct query:', result);
+    // Strategy 2: Direct query with user_id
+    const { data: directData, error: directError } = await supabase
+      .from('user_journey_complete')
+      .select('*')
+      .eq('user_id', userId)
+      .not('property_address', 'is', null)
+      .not('property_address', 'eq', '')
+      .order('updated_at', { ascending: false })
+      .limit(1);
+
+    if (!directError && directData && directData.length > 0) {
+      return formatJourneyData(directData[0]);
+    }
+
+    // Strategy 3: Look for recent unlinked data that might belong to this user
+    const { data: unlinkedData, error: unlinkedError } = await supabase
+      .from('user_journey_complete')
+      .select('*')
+      .is('user_id', null)
+      .not('property_address', 'is', null)
+      .not('property_address', 'eq', '')
+      .not('analysis_results', 'is', null)
+      .order('updated_at', { ascending: false })
+      .limit(3);
+
+    if (!unlinkedError && unlinkedData && unlinkedData.length > 0) {
+      console.log('🔍 Found unlinked data, attempting to link to user:', unlinkedData.length, 'records');
+      
+      // Try to link the most recent unlinked data to this user
+      const mostRecent = unlinkedData[0];
+      const { error: linkError } = await supabase
+        .from('user_journey_complete')
+        .update({ user_id: userId })
+        .eq('id', mostRecent.id);
+
+      if (!linkError) {
+        console.log('✅ Successfully linked unlinked data to user');
+        return formatJourneyData({ ...mostRecent, user_id: userId });
       }
     }
 
-    console.log('📊 Raw dashboard data from DB:', result);
+    console.log('❌ No dashboard data found for user after all strategies');
+    return null;
     
-    if (result) {
-      console.log('✅ Dashboard data retrieved successfully');
-      console.log('🏠 Property address:', result.property_address);
-      console.log('💰 Monthly revenue:', result.total_monthly_revenue);
-      console.log('🎯 Total opportunities:', result.total_opportunities);
-    } else {
-      console.log('❌ No dashboard data found for user');
-    }
-    
-    return result;
   } catch (error) {
     console.error('❌ Error in getUserDashboardData:', error);
     return null;
   }
+};
+
+// Helper function to format journey data consistently
+const formatJourneyData = (journey: any) => {
+  return {
+    journey_id: journey.id,
+    property_address: journey.property_address,
+    analysis_results: journey.analysis_results,
+    total_monthly_revenue: journey.total_monthly_revenue || 0,
+    total_opportunities: journey.total_opportunities || 0,
+    selected_services: journey.selected_services || [],
+    selected_option: journey.selected_option || 'manual',
+    journey_progress: {
+      steps_completed: [],
+      current_step: journey.current_step || 'analysis_completed',
+      journey_start: journey.journey_start_at || journey.created_at,
+      last_activity: journey.updated_at
+    }
+  };
 };
 
 // Clear session data (for testing or logout)

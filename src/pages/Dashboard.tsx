@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useDashboardJourneyData } from '@/hooks/useDashboardJourneyData';
 import DashboardLayout from '@/components/dashboard/DashboardLayout';
@@ -30,6 +30,36 @@ const Dashboard = () => {
       coordinates: journeyData.analysisResults?.coordinates || journeyData.analysisResults?.propertyCoordinates
     } : null
   });
+
+  // Auto-refresh dashboard data when user first authenticates
+  useEffect(() => {
+    if (user && !dataLoading && !journeyData) {
+      console.log('🔄 User authenticated but no data found, attempting refresh...');
+      setTimeout(() => {
+        refreshJourneyData();
+      }, 2000); // Give time for auth linking to complete
+    }
+  }, [user, dataLoading, journeyData, refreshJourneyData]);
+
+  // Periodic refresh to catch any delayed data updates
+  useEffect(() => {
+    if (user && !journeyData) {
+      const intervalId = setInterval(() => {
+        console.log('🔄 Periodic refresh attempt...');
+        refreshJourneyData();
+      }, 10000); // Check every 10 seconds
+
+      // Clear interval after 2 minutes
+      const timeoutId = setTimeout(() => {
+        clearInterval(intervalId);
+      }, 120000);
+
+      return () => {
+        clearInterval(intervalId);
+        clearTimeout(timeoutId);
+      };
+    }
+  }, [user, journeyData, refreshJourneyData]);
 
   // Show loading state while auth is loading
   if (authLoading) {

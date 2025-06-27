@@ -1,6 +1,7 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AnalysisResults as PropertyAnalysis } from '@/types/analysis';
+import { useJourneyTracking } from '@/hooks/useJourneyTracking';
 import PropertyInsights from './PropertyInsights';
 import AnalysisTabs from './AnalysisTabs';
 
@@ -18,8 +19,18 @@ const PropertyAnalysisContent = ({
   address 
 }: PropertyAnalysisContentProps) => {
   const [localAnalysis, setLocalAnalysis] = useState<PropertyAnalysis>(analysisResults);
-  const [showManualAdjustment, setShowManualAdjustment] = useState(false); // Start collapsed by default
+  const [showManualAdjustment, setShowManualAdjustment] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
+  const { trackServices } = useJourneyTracking();
+
+  // Track services when analysis results are viewed
+  useEffect(() => {
+    if (analysisResults?.topOpportunities && analysisResults.topOpportunities.length > 0) {
+      const serviceNames = analysisResults.topOpportunities.map(opp => opp.title);
+      trackServices(serviceNames);
+      console.log('📊 Tracked services viewed:', serviceNames);
+    }
+  }, [analysisResults, trackServices]);
   
   return (
     <div className="p-4 md:p-6">
