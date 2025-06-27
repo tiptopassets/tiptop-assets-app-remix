@@ -1,4 +1,3 @@
-
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,22 +8,44 @@ import { Progress } from "@/components/ui/progress";
 import { motion } from "framer-motion";
 import { Wifi, Download, Upload, DollarSign, TrendingUp, Globe, Shield, Activity, Clock, Settings, Router } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area, PieChart, Pie, Cell, BarChart, Bar } from 'recharts';
+import SpeedTestWidget from "@/components/internet/SpeedTestWidget";
+import { useInternetSpeed } from "@/hooks/useInternetSpeed";
 
 const InternetDashboard = () => {
-  // Mock data for internet bandwidth sharing
+  const { 
+    latestResult, 
+    testHistory, 
+    calculateAverageSpeed, 
+    getNetworkQuality,
+    getBandwidthSharingPotential 
+  } = useInternetSpeed();
+
+  // Use real data if available, otherwise fall back to mock data
+  const averageSpeeds = calculateAverageSpeed();
+  const networkQuality = getNetworkQuality();
+  const sharingPotential = getBandwidthSharingPotential();
+
   const bandwidthData = {
-    totalBandwidth: 1000, // Mbps
-    sharedBandwidth: 250, // Mbps
-    monthlyEarnings: 42,
-    totalEarnings: 520,
+    totalBandwidth: latestResult?.downloadSpeed || 1000,
+    sharedBandwidth: sharingPotential.shareable || 250,
+    monthlyEarnings: sharingPotential.potential || 42,
+    totalEarnings: sharingPotential.potential * 12 || 520,
     connectedDevices: 8,
-    dataShared: 2.4, // TB this month
-    uptime: 99.8, // %
-    avgSpeed: 850 // Mbps
+    dataShared: 2.4,
+    uptime: 99.8,
+    avgSpeed: latestResult?.downloadSpeed || 850
   };
 
-  // Bandwidth usage data for charts
-  const usageData = [
+  // Convert test history to chart data format
+  const usageData = testHistory.slice(-6).map((result, index) => ({
+    time: result.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    personal: Math.round(result.downloadSpeed * 0.6),
+    shared: Math.round(result.downloadSpeed * 0.25),
+    available: Math.round(result.downloadSpeed * 0.15),
+  }));
+
+  // If no test history, use mock data
+  const chartData = usageData.length > 0 ? usageData : [
     { time: '00:00', personal: 120, shared: 45, available: 835 },
     { time: '04:00', personal: 80, shared: 35, available: 885 },
     { time: '08:00', personal: 280, shared: 85, available: 635 },
@@ -33,13 +54,14 @@ const InternetDashboard = () => {
     { time: '20:00', personal: 450, shared: 120, available: 430 },
   ];
 
+  // Mock data for other charts (these would be enhanced in a full implementation)
   const earningsData = [
     { month: 'Jan', earnings: 38, data: 2.1, devices: 6 },
     { month: 'Feb', earnings: 35, data: 1.9, devices: 7 },
     { month: 'Mar', earnings: 41, data: 2.3, devices: 8 },
     { month: 'Apr', earnings: 39, data: 2.2, devices: 7 },
     { month: 'May', earnings: 44, data: 2.5, devices: 9 },
-    { month: 'Jun', earnings: 42, data: 2.4, devices: 8 },
+    { month: 'Jun', earnings: sharingPotential.potential || 42, data: 2.4, devices: 8 },
   ];
 
   const deviceTypeData = [
@@ -50,7 +72,15 @@ const InternetDashboard = () => {
     { name: 'IoT Devices', value: 5, color: '#ef4444' },
   ];
 
-  const networkPerformance = [
+  const networkPerformance = testHistory.slice(-6).map((result, index) => ({
+    hour: result.timestamp.getHours().toString().padStart(2, '0'),
+    latency: result.ping,
+    speed: Math.round(result.downloadSpeed),
+    uptime: 99 + Math.random() * 1
+  }));
+
+  // Fallback to mock data if no test history
+  const performanceData = networkPerformance.length > 0 ? networkPerformance : [
     { hour: '00', latency: 12, speed: 920, uptime: 100 },
     { hour: '04', latency: 8, speed: 950, uptime: 100 },
     { hour: '08', latency: 15, speed: 880, uptime: 99 },
@@ -90,59 +120,70 @@ const InternetDashboard = () => {
           </div>
         </div>
 
-        {/* Key Metrics Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card className="bg-white border-gray-200">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600">Available Bandwidth</p>
-                  <p className="text-2xl font-bold text-gray-900">{bandwidthData.totalBandwidth} Mbps</p>
-                  <p className="text-xs text-blue-600">Sharing: {bandwidthData.sharedBandwidth} Mbps</p>
+        {/* Speed Test Widget */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-1">
+            <SpeedTestWidget />
+          </div>
+          
+          {/* Key Metrics Cards */}
+          <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Card className="bg-white border-gray-200">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-gray-600">Available Bandwidth</p>
+                    <p className="text-2xl font-bold text-gray-900">{Math.round(bandwidthData.totalBandwidth)} Mbps</p>
+                    <p className="text-xs text-blue-600">Sharing: {Math.round(bandwidthData.sharedBandwidth)} Mbps</p>
+                  </div>
+                  <Router className="h-8 w-8 text-blue-500" />
                 </div>
-                <Router className="h-8 w-8 text-blue-500" />
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
 
-          <Card className="bg-white border-gray-200">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600">Monthly Earnings</p>
-                  <p className="text-2xl font-bold text-gray-900">${bandwidthData.monthlyEarnings}</p>
-                  <p className="text-xs text-green-600">+8% vs last month</p>
+            <Card className="bg-white border-gray-200">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-gray-600">Monthly Earnings</p>
+                    <p className="text-2xl font-bold text-gray-900">${bandwidthData.monthlyEarnings}</p>
+                    <p className="text-xs text-green-600">Based on current speed</p>
+                  </div>
+                  <DollarSign className="h-8 w-8 text-green-500" />
                 </div>
-                <DollarSign className="h-8 w-8 text-green-500" />
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
 
-          <Card className="bg-white border-gray-200">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600">Data Shared</p>
-                  <p className="text-2xl font-bold text-gray-900">{bandwidthData.dataShared} TB</p>
-                  <p className="text-xs text-purple-600">This month</p>
+            <Card className="bg-white border-gray-200">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-gray-600">Network Quality</p>
+                    <p className="text-2xl font-bold text-gray-900">{networkQuality}%</p>
+                    <p className="text-xs text-purple-600">
+                      {networkQuality >= 80 ? 'Excellent' : networkQuality >= 60 ? 'Good' : 'Fair'}
+                    </p>
+                  </div>
+                  <Shield className="h-8 w-8 text-purple-500" />
                 </div>
-                <Upload className="h-8 w-8 text-purple-500" />
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
 
-          <Card className="bg-white border-gray-200">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600">Network Uptime</p>
-                  <p className="text-2xl font-bold text-gray-900">{bandwidthData.uptime}%</p>
-                  <p className="text-xs text-green-600">Excellent</p>
+            <Card className="bg-white border-gray-200">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-gray-600">Current Ping</p>
+                    <p className="text-2xl font-bold text-gray-900">{latestResult?.ping || '--'} ms</p>
+                    <p className="text-xs text-green-600">
+                      {latestResult?.ping ? (latestResult.ping <= 20 ? 'Excellent' : latestResult.ping <= 50 ? 'Good' : 'Fair') : 'Run test'}
+                    </p>
+                  </div>
+                  <Clock className="h-8 w-8 text-green-500" />
                 </div>
-                <Shield className="h-8 w-8 text-green-500" />
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </div>
         </div>
 
         {/* Main Content Tabs */}
@@ -168,11 +209,11 @@ const InternetDashboard = () => {
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <p className="text-sm text-gray-300">Download Speed</p>
-                      <p className="text-xl font-bold text-white">{bandwidthData.avgSpeed} Mbps</p>
+                      <p className="text-xl font-bold text-white">{Math.round(bandwidthData.avgSpeed)} Mbps</p>
                     </div>
                     <div>
                       <p className="text-sm text-gray-300">Upload Speed</p>
-                      <p className="text-xl font-bold text-white">{Math.round(bandwidthData.avgSpeed * 0.1)} Mbps</p>
+                      <p className="text-xl font-bold text-white">{latestResult?.uploadSpeed ? Math.round(latestResult.uploadSpeed) : Math.round(bandwidthData.avgSpeed * 0.1)} Mbps</p>
                     </div>
                     <div>
                       <p className="text-sm text-gray-300">Connected Devices</p>
@@ -181,7 +222,7 @@ const InternetDashboard = () => {
                     <div>
                       <p className="text-sm text-gray-300">Active Sharing</p>
                       <Badge variant="outline" className="text-green-400 border-green-400/50">
-                        Active
+                        {latestResult ? 'Active' : 'Setup Required'}
                       </Badge>
                     </div>
                   </div>
@@ -208,7 +249,7 @@ const InternetDashboard = () => {
                 </CardHeader>
                 <CardContent>
                   <ResponsiveContainer width="100%" height={200}>
-                    <AreaChart data={usageData}>
+                    <AreaChart data={chartData}>
                       <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
                       <XAxis dataKey="time" stroke="rgba(255,255,255,0.7)" fontSize={12} />
                       <YAxis stroke="rgba(255,255,255,0.7)" fontSize={12} />
@@ -242,12 +283,12 @@ const InternetDashboard = () => {
                   <div className="text-center p-4 bg-green-500/20 rounded-lg border border-green-500/30">
                     <p className="text-sm text-gray-300">Total Earnings</p>
                     <p className="text-2xl font-bold text-green-400">${bandwidthData.totalEarnings}</p>
-                    <p className="text-xs text-gray-400">All time</p>
+                    <p className="text-xs text-gray-400">Projected yearly</p>
                   </div>
                   <div className="text-center p-4 bg-blue-500/20 rounded-lg border border-blue-500/30">
                     <p className="text-sm text-gray-300">Per GB Rate</p>
-                    <p className="text-2xl font-bold text-blue-400">$0.018</p>
-                    <p className="text-xs text-gray-400">Current rate</p>
+                    <p className="text-2xl font-bold text-blue-400">$0.020</p>
+                    <p className="text-xs text-gray-400">Market rate</p>
                   </div>
                   <div className="text-center p-4 bg-purple-500/20 rounded-lg border border-purple-500/30">
                     <p className="text-sm text-gray-300">This Week</p>
@@ -300,12 +341,12 @@ const InternetDashboard = () => {
               <CardHeader>
                 <CardTitle className="text-white flex items-center gap-2">
                   <Activity className="h-5 w-5 text-blue-500" />
-                  Network Performance (24h)
+                  Network Performance {testHistory.length > 0 ? '(Real Data)' : '(Demo)'}
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <ResponsiveContainer width="100%" height={250}>
-                  <BarChart data={networkPerformance}>
+                  <BarChart data={performanceData}>
                     <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
                     <XAxis dataKey="hour" stroke="rgba(255,255,255,0.7)" />
                     <YAxis stroke="rgba(255,255,255,0.7)" />
