@@ -38,7 +38,7 @@ export class AdminSecurityService {
 
   /**
    * Log admin actions for audit trail
-   * Note: This will work once the admin_audit_log table is recognized by TypeScript
+   * Note: This logs to console until audit logging is fully implemented
    */
   static async logAdminAction(
     action: string,
@@ -49,18 +49,14 @@ export class AdminSecurityService {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      // Use raw SQL query until TypeScript types are updated
-      const { error } = await supabase.rpc('exec_sql', {
-        sql: `
-          INSERT INTO admin_audit_log (admin_user_id, action, target_user_id, details)
-          VALUES ($1, $2, $3, $4)
-        `,
-        params: [user.id, action, targetUserId, JSON.stringify(details)]
+      // Log to console for now - implement database logging when RPC is available
+      console.log('Admin Action:', {
+        admin_user_id: user.id,
+        action,
+        target_user_id: targetUserId,
+        details,
+        timestamp: new Date().toISOString()
       });
-
-      if (error) {
-        console.error('Error logging admin action:', error);
-      }
     } catch (error) {
       console.error('Error logging admin action:', error);
     }
@@ -68,12 +64,12 @@ export class AdminSecurityService {
 
   /**
    * Get admin audit logs (admin only)
-   * Note: Returns empty array until TypeScript types are updated
+   * Note: Returns empty array until database audit logging is implemented
    */
   static async getAuditLogs(limit: number = 100): Promise<AdminAuditLog[]> {
     try {
-      // Return empty array until TypeScript types include admin_audit_log table
-      console.log('Audit logs will be available once database types are regenerated');
+      // Return empty array until audit logging is fully implemented
+      console.log('Audit logs will be available once database audit logging is implemented');
       return [];
     } catch (error) {
       console.error('Error fetching audit logs:', error);
