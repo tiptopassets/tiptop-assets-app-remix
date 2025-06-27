@@ -7,6 +7,7 @@ import { DashboardPropertyOverview } from './DashboardPropertyOverview';
 import { DashboardCharts } from './DashboardCharts';
 import { AssetsTable } from './AssetsTable';
 import DashboardHeader from './DashboardHeader';
+import { useUserAssetSelections } from '@/hooks/useUserAssetSelections';
 
 interface DashboardContentProps {
   primaryAddress?: string;
@@ -26,6 +27,7 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
   onRefresh
 }) => {
   const analysisResults = latestAnalysis?.analysis_results;
+  const { isAssetConfigured } = useUserAssetSelections();
 
   return (
     <div className="space-y-6">
@@ -76,7 +78,10 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <AssetsTable analysisResults={analysisResults} />
+              <AssetsTable 
+                analysisResults={analysisResults} 
+                isAssetConfigured={isAssetConfigured}
+              />
             </CardContent>
           </Card>
         </motion.div>

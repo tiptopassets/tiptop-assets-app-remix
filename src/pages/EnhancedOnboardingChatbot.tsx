@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
@@ -10,18 +9,22 @@ import { useToast } from '@/hooks/use-toast';
 import EnhancedChatInterface from '@/components/onboarding/EnhancedChatInterface';
 import SmartAssetDetection from '@/components/onboarding/SmartAssetDetection';
 import ConversationAnalytics from '@/components/onboarding/ConversationAnalytics';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 
 const EnhancedOnboardingChatbot = () => {
   const { user, loading: authLoading } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   
   const [detectedAssets, setDetectedAssets] = useState<string[]>([]);
   const [conversationStage, setConversationStage] = useState('greeting');
   const [conversationStartTime] = useState(Date.now());
   const [messageCount, setMessageCount] = useState(0);
   const [showAnalytics, setShowAnalytics] = useState(false);
+  
+  // Get asset from URL parameters
+  const targetAsset = searchParams.get('asset');
   
   // Simulated conversation analytics
   const [analytics, setAnalytics] = useState({
@@ -32,6 +35,18 @@ const EnhancedOnboardingChatbot = () => {
     completionProgress: 0,
     keyInsights: []
   });
+
+  // Pre-populate detected assets if coming from dashboard with specific asset
+  useEffect(() => {
+    if (targetAsset) {
+      setDetectedAssets([targetAsset]);
+      setConversationStage('asset_configuration');
+      toast({
+        title: "Asset Configuration Started",
+        description: `Let's configure your ${targetAsset.replace('_', ' ')} monetization setup.`,
+      });
+    }
+  }, [targetAsset, toast]);
 
   // Update analytics periodically
   useEffect(() => {
@@ -130,6 +145,11 @@ const EnhancedOnboardingChatbot = () => {
                 <Badge className="bg-tiptop-purple/10 text-tiptop-purple border-tiptop-purple/20">
                   Enhanced
                 </Badge>
+                {targetAsset && (
+                  <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                    {targetAsset.replace('_', ' ')} Setup
+                  </Badge>
+                )}
               </div>
             </div>
             
