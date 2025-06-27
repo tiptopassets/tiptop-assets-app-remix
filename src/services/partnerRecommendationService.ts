@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 
 export interface PartnerRecommendation {
@@ -57,7 +58,6 @@ export const generatePartnerRecommendations = async (
     const { data: providers, error: providersError } = await supabase
       .from('enhanced_service_providers')
       .select('*')
-      .eq('integration_status', 'active')
       .eq('is_active', true);
 
     if (providersError) {
@@ -110,15 +110,21 @@ export const generatePartnerRecommendations = async (
       const matchingAssets = checkAssetMatch(detectedAssets, providerAssets);
 
       if (matchingAssets.length > 0) {
+        // Use fallback values if the new columns don't exist yet
+        const priorityScore = (provider as any).priority_score || provider.priority || 5;
+        const avgEarningsLow = (provider as any).avg_earnings_low || provider.avg_monthly_earnings_low || 0;
+        const avgEarningsHigh = (provider as any).avg_earnings_high || provider.avg_monthly_earnings_high || 0;
+        const affiliateUrl = (provider as any).affiliate_base_url || provider.referral_link_template;
+
         const recommendation: PartnerRecommendation = {
           id: `${onboardingId}_${provider.name}`,
           partner_name: provider.name,
           asset_type: matchingAssets[0],
-          priority_score: provider.priority_score || 5,
-          estimated_monthly_earnings: ((provider.avg_earnings_low || 0) + (provider.avg_earnings_high || 0)) / 2,
+          priority_score: priorityScore,
+          estimated_monthly_earnings: (avgEarningsLow + avgEarningsHigh) / 2,
           setup_complexity: getSetupComplexity(providerRequirementsCount),
           recommendation_reason: `Perfect match for your ${matchingAssets.join(', ')} asset${matchingAssets.length > 1 ? 's' : ''}`,
-          referral_link: provider.affiliate_base_url || undefined
+          referral_link: affiliateUrl || undefined
         };
         recommendations.push(recommendation);
       }
