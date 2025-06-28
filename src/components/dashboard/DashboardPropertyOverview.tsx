@@ -1,7 +1,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { motion } from "framer-motion";
-import { PropertyOverviewCard } from './PropertyOverviewCard';
+import PropertyOverviewCard from './PropertyOverviewCard';
 import { useSatelliteImage } from '@/hooks/useSatelliteImage';
 
 interface DashboardPropertyOverviewProps {
