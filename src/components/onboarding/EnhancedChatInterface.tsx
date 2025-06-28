@@ -58,7 +58,13 @@ const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
   // Initialize with welcome message
   useEffect(() => {
     if (propertyData && messages.length === 0) {
-      console.log('🎬 [CHAT] Initializing with property data:', propertyData);
+      console.log('🎬 [CHAT] Initializing with property data:', {
+        analysisId: propertyData.analysisId,
+        address: propertyData.address,
+        assetsCount: propertyData.availableAssets.length,
+        totalRevenue: propertyData.totalMonthlyRevenue
+      });
+      
       const welcomeMessage: Message = {
         id: 'welcome',
         role: 'assistant',
@@ -122,7 +128,12 @@ const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
     setInputMessage('');
     setShowSuggestions(false);
     
-    console.log('📤 [CHAT] Sending message:', userMessage);
+    console.log('📤 [CHAT] Sending message with context:', {
+      message: userMessage,
+      hasPropertyData: !!propertyData,
+      analysisId: propertyData?.analysisId,
+      address: propertyData?.address
+    });
     
     // Add user message
     const newUserMessage: Message = {
@@ -134,7 +145,7 @@ const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
     
     setMessages(prev => [...prev, newUserMessage]);
     
-    // Generate intelligent response using OpenAI
+    // Generate intelligent response using OpenAI with actual property data
     try {
       const response = await generateIntelligentResponse(userMessage);
       
@@ -160,18 +171,26 @@ const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
       
       onConversationStageChange('discussion');
     } catch (error) {
-      console.error('Error handling message:', error);
+      console.error('❌ [CHAT] Error handling message:', error);
       
-      // Fallback message
+      // Fallback message using property data if available
+      const fallbackContent = propertyData 
+        ? `I'm having trouble processing your request right now. However, I can see you have ${propertyData.availableAssets.length} available assets at ${propertyData.address} with a total potential of $${propertyData.totalMonthlyRevenue}/month. Could you please try rephrasing your question?`
+        : "I'm having trouble processing your request right now. Could you please try rephrasing your question?";
+      
       const fallbackMessage: Message = {
         id: (Date.now() + 2).toString(),
         role: 'assistant',
-        content: "I'm having trouble processing your request right now. Could you please try rephrasing your question?",
+        content: fallbackContent,
         timestamp: new Date(),
-        suggestedActions: [
+        suggestedActions: propertyData ? [
           'What are my asset options?',
           'How do I get started?',
           'Tell me about requirements'
+        ] : [
+          'Try again',
+          'Contact support',
+          'Go to dashboard'
         ]
       };
       
@@ -401,7 +420,7 @@ const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
               Property analyzed: {propertyData.address}
             </span>
             <Badge variant="secondary" className="ml-auto">
-              {propertyData.availableAssets.length} assets available
+              {propertyData.availableAssets.length} assets available • ${propertyData.totalMonthlyRevenue}/month potential
             </Badge>
           </div>
         </div>
@@ -514,7 +533,7 @@ const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
               onKeyPress={handleKeyPress}
               placeholder={
                 propertyData 
-                  ? "Ask about your property assets or setup requirements..." 
+                  ? `Ask about your property at ${propertyData.address}...` 
                   : "Tell me about your property..."
               }
               disabled={isLoading}
@@ -540,7 +559,7 @@ const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
           </Button>
         </div>
 
-        {/* Smart suggestions based on property data */}
+        {/* Smart suggestions based on actual property data */}
         {showSuggestions && propertyData && propertyData.availableAssets.length > 0 && (
           <div className="mt-3 flex flex-wrap gap-2">
             <span className="text-xs text-gray-500">Try asking:</span>

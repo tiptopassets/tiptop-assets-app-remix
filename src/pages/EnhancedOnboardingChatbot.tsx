@@ -21,7 +21,11 @@ const EnhancedOnboardingChatbot = () => {
   const analysisId = searchParams.get('analysisId');
   const targetAsset = searchParams.get('asset');
   
-  console.log('🔗 [CHATBOT] URL Parameters:', { analysisId, targetAsset });
+  console.log('🔗 [CHATBOT] Initializing with URL parameters:', { 
+    analysisId, 
+    targetAsset,
+    url: window.location.href
+  });
   
   // Property analysis integration with specific analysis ID
   const { propertyData, loading: propertyLoading, hasPropertyData } = useUserPropertyAnalysis(analysisId || undefined);
@@ -38,7 +42,8 @@ const EnhancedOnboardingChatbot = () => {
       console.log('🎯 [ONBOARDING] Initializing with target asset:', {
         targetAsset,
         analysisId: propertyData.analysisId,
-        address: propertyData.address
+        address: propertyData.address,
+        availableAssets: propertyData.availableAssets.map(a => a.type)
       });
       
       const assetInfo = propertyData.availableAssets.find(a => a.type === targetAsset);
@@ -48,12 +53,18 @@ const EnhancedOnboardingChatbot = () => {
         
         toast({
           title: "Asset Setup Started",
-          description: `Let's configure your ${assetInfo.name} for $${assetInfo.monthlyRevenue}/month potential earnings.`,
+          description: `Let's configure your ${assetInfo.name} at ${propertyData.address} for $${assetInfo.monthlyRevenue}/month potential earnings.`,
         });
       } else {
         console.warn('⚠️ [ONBOARDING] Target asset not found in analysis:', {
           targetAsset,
           availableAssets: propertyData.availableAssets.map(a => a.type)
+        });
+        
+        toast({
+          title: "Asset Not Found",
+          description: `The requested asset "${targetAsset}" was not found in your property analysis.`,
+          variant: "destructive"
         });
       }
     }
@@ -128,9 +139,12 @@ const EnhancedOnboardingChatbot = () => {
             {authLoading ? 'Authenticating...' : 'Loading your property analysis...'}
           </p>
           {analysisId && (
-            <p className="text-sm text-gray-500 mt-2">
-              Analysis ID: {analysisId}
-            </p>
+            <div className="mt-2 text-sm text-gray-500">
+              <p>Analysis ID: {analysisId}</p>
+              {propertyData && (
+                <p>Address: {propertyData.address}</p>
+              )}
+            </div>
           )}
         </div>
       </div>
@@ -141,16 +155,28 @@ const EnhancedOnboardingChatbot = () => {
   if (!propertyData && !propertyLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
+        <div className="text-center max-w-md mx-auto p-6">
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">
+            Property Analysis Not Found
+          </h2>
           <p className="text-gray-600 mb-4">
             {analysisId 
               ? `No property analysis found with ID: ${analysisId}` 
               : 'No property analysis found. Please analyze a property first.'
             }
           </p>
-          <Button onClick={() => navigate('/submit-property')}>
-            Analyze Property
-          </Button>
+          <div className="space-y-2">
+            <Button onClick={() => navigate('/submit-property')} className="w-full">
+              Analyze Property
+            </Button>
+            <Button 
+              variant="outline" 
+              onClick={() => navigate('/dashboard')} 
+              className="w-full"
+            >
+              Go to Dashboard
+            </Button>
+          </div>
         </div>
       </div>
     );
