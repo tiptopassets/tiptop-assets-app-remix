@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -46,6 +47,7 @@ const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
   const [inputMessage, setInputMessage] = useState('');
   const [isVoiceRecording, setIsVoiceRecording] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(true);
+  const [isInitialized, setIsInitialized] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const {
@@ -55,19 +57,14 @@ const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
     isLoading
   } = useOpenAIConversation(propertyData);
 
-  // Initialize with enhanced welcome message using actual property data
+  // Wait for property data before initializing chat
   useEffect(() => {
-    if (propertyData && messages.length === 0) {
-      console.log('🎬 [CHAT] Initializing with actual property data:', {
+    if (propertyData && !isInitialized && messages.length === 0) {
+      console.log('🎬 [CHAT] Initializing with property data:', {
         analysisId: propertyData.analysisId,
         address: propertyData.address,
         assetsCount: propertyData.availableAssets.length,
-        totalRevenue: propertyData.totalMonthlyRevenue,
-        specificAssets: propertyData.availableAssets.map(a => ({ 
-          name: a.name, 
-          revenue: a.monthlyRevenue,
-          configured: a.isConfigured 
-        }))
+        totalRevenue: propertyData.totalMonthlyRevenue
       });
       
       const welcomeMessage: Message = {
@@ -85,9 +82,16 @@ const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
               'How can I earn money?'
             ]
       };
+      
       setMessages([welcomeMessage]);
+      setIsInitialized(true);
     }
-  }, [propertyData, generateWelcomeMessage, messages.length]);
+  }, [propertyData, generateWelcomeMessage, isInitialized, messages.length]);
+
+  // Scroll to bottom when messages change
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
 
   const generateSmartAssetData = (detectedAssets: string[]): DetectedAsset[] => {
     if (!propertyData) return [];
@@ -139,11 +143,10 @@ const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
     setInputMessage('');
     setShowSuggestions(false);
     
-    console.log('📤 [CHAT] Sending message with context:', {
+    console.log('📤 [CHAT] Sending message:', {
       message: userMessage,
       hasPropertyData: !!propertyData,
-      analysisId: propertyData?.analysisId,
-      address: propertyData?.address
+      analysisId: propertyData?.analysisId
     });
     
     // Add user message
@@ -156,7 +159,7 @@ const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
     
     setMessages(prev => [...prev, newUserMessage]);
     
-    // Generate intelligent response using OpenAI with actual property data
+    // Generate intelligent response
     try {
       const response = await generateIntelligentResponse(userMessage);
       
@@ -184,9 +187,9 @@ const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
     } catch (error) {
       console.error('❌ [CHAT] Error handling message:', error);
       
-      // Fallback message using property data if available
+      // Enhanced fallback with property data
       const fallbackContent = propertyData 
-        ? `I'm having trouble processing your request right now. However, I can see you have ${propertyData.availableAssets.length} available assets at ${propertyData.address} with a total potential of $${propertyData.totalMonthlyRevenue}/month. Could you please try rephrasing your question?`
+        ? `I'm having trouble processing your request right now. However, I can see you have ${propertyData.availableAssets.length} available assets at **${propertyData.address}** with a total potential of **$${propertyData.totalMonthlyRevenue}/month**. Could you please try rephrasing your question?`
         : "I'm having trouble processing your request right now. Could you please try rephrasing your question?";
       
       const fallbackMessage: Message = {
@@ -313,29 +316,6 @@ const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
     setIsVoiceRecording(!isVoiceRecording);
   };
 
-  const getStageIcon = () => {
-    if (propertyData?.availableAssets.length === 0) return <AlertCircle className="h-4 w-4" />;
-    return <Lightbulb className="h-4 w-4" />;
-  };
-
-  const getComplexityColor = (complexity: string) => {
-    switch (complexity) {
-      case 'low': return 'text-green-600 bg-green-50 border-green-200';
-      case 'medium': return 'text-yellow-600 bg-yellow-50 border-yellow-200';
-      case 'high': return 'text-red-600 bg-red-50 border-red-200';
-      default: return 'text-gray-600 bg-gray-50 border-gray-200';
-    }
-  };
-
-  const getOpportunityColor = (opportunity: string) => {
-    switch (opportunity) {
-      case 'high': return 'text-green-600';
-      case 'medium': return 'text-yellow-600';
-      case 'low': return 'text-red-600';
-      default: return 'text-gray-600';
-    }
-  };
-
   const renderSmartAssetDetection = (smartAssetData: DetectedAsset[]) => {
     return (
       <div className="mt-3 space-y-3">
@@ -420,36 +400,44 @@ const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
     );
   };
 
+  // Show loading state while waiting for property data
+  if (!propertyData) {
+    return (
+      <div className="flex flex-col h-full items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin text-tiptop-purple mx-auto mb-4" />
+          <p className="text-gray-600">Loading your property analysis...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col h-full">
-      {/* Enhanced Property Data Status with actual values */}
-      {propertyData && (
-        <div className="p-4 border-b bg-gradient-to-r from-tiptop-purple/5 to-purple-100">
-          <div className="flex items-center gap-2 text-sm text-tiptop-purple">
-            <CheckCircle className="h-4 w-4" />
-            <span className="font-medium">
-              Property: {propertyData.address}
-            </span>
-            <Badge variant="secondary" className="ml-auto bg-green-50 text-green-700 border-green-200">
-              {propertyData.availableAssets.length} assets • ${propertyData.totalMonthlyRevenue}/month potential
-            </Badge>
-          </div>
-          {propertyData.availableAssets.length > 0 && (
-            <div className="mt-2 flex flex-wrap gap-1">
-              {propertyData.availableAssets.slice(0, 4).map((asset) => (
-                <Badge key={asset.type} variant="outline" className="text-xs bg-white">
-                  {asset.name}: ${asset.monthlyRevenue}/mo
-                </Badge>
-              ))}
-            </div>
-          )}
+      {/* Enhanced Property Data Status */}
+      <div className="p-4 border-b bg-gradient-to-r from-tiptop-purple/5 to-purple-100">
+        <div className="flex items-center gap-2 text-sm text-tiptop-purple">
+          <CheckCircle className="h-4 w-4" />
+          <span className="font-medium">
+            Property: {propertyData.address}
+          </span>
+          <Badge variant="secondary" className="ml-auto bg-green-50 text-green-700 border-green-200">
+            {propertyData.availableAssets.length} assets • ${propertyData.totalMonthlyRevenue}/month potential
+          </Badge>
         </div>
-      )}
+        {propertyData.availableAssets.length > 0 && (
+          <div className="mt-2 flex flex-wrap gap-1">
+            {propertyData.availableAssets.slice(0, 4).map((asset) => (
+              <Badge key={asset.type} variant="outline" className="text-xs bg-white">
+                {asset.name}: ${asset.monthlyRevenue}/mo
+              </Badge>
+            ))}
+          </div>
+        )}
+      </div>
 
       {/* Messages Area */}
-      <div 
-        className="flex-1 overflow-y-auto p-4"
-      >
+      <div className="flex-1 overflow-y-auto p-4">
         <div className="space-y-4">
           <AnimatePresence>
             {messages.map((message) => (
@@ -556,11 +544,7 @@ const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
               value={inputMessage}
               onChange={(e) => setInputMessage(e.target.value)}
               onKeyPress={handleKeyPress}
-              placeholder={
-                propertyData 
-                  ? `Ask about your ${propertyData.availableAssets.length} asset${propertyData.availableAssets.length === 1 ? '' : 's'} at ${propertyData.address}...` 
-                  : "Tell me about your property..."
-              }
+              placeholder={`Ask about your ${propertyData.availableAssets.length} asset${propertyData.availableAssets.length === 1 ? '' : 's'} at ${propertyData.address}...`}
               disabled={isLoading}
               className="pr-12"
             />
@@ -585,7 +569,7 @@ const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
         </div>
 
         {/* Enhanced smart suggestions based on actual property data */}
-        {showSuggestions && propertyData && propertyData.availableAssets.length > 0 && (
+        {showSuggestions && propertyData.availableAssets.length > 0 && (
           <div className="mt-3 flex flex-wrap gap-2">
             <span className="text-xs text-gray-500">Try asking:</span>
             {propertyData.availableAssets.slice(0, 3).map((asset) => (

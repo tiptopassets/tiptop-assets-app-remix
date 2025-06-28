@@ -26,23 +26,21 @@ const DashboardPropertyOverview: React.FC<DashboardPropertyOverviewProps> = ({
     try {
       if (assetType) {
         setNavigatingAsset(assetType);
+        console.log('🚀 [DASHBOARD] Starting asset setup:', { analysisId: analysis.id, assetType });
       } else {
         setNavigatingGeneral(true);
+        console.log('🚀 [DASHBOARD] Starting general AI assistant:', { analysisId: analysis.id });
       }
 
       const chatbotUrl = navigateToChatbot(analysis.id, assetType);
-      console.log('🚀 [DASHBOARD] Navigating to chatbot:', { 
-        analysisId: analysis.id, 
-        assetType, 
-        url: chatbotUrl 
-      });
+      console.log('🔗 [DASHBOARD] Navigating to:', chatbotUrl);
       
-      // Small delay to show loading state
-      await new Promise(resolve => setTimeout(resolve, 300));
+      // Navigate immediately without delay
       navigate(chatbotUrl);
     } catch (error) {
       console.error('❌ [DASHBOARD] Navigation error:', error);
-    } finally {
+      
+      // Clear loading states on error
       setNavigatingAsset(null);
       setNavigatingGeneral(false);
     }
@@ -180,15 +178,20 @@ const DashboardPropertyOverview: React.FC<DashboardPropertyOverviewProps> = ({
                       <Button
                         size="sm"
                         onClick={() => handleStartAssetSetup(asset.type)}
-                        disabled={navigatingAsset === asset.type}
-                        className="bg-tiptop-purple hover:bg-purple-600"
+                        disabled={navigatingAsset === asset.type || navigatingGeneral}
+                        className="bg-tiptop-purple hover:bg-purple-600 disabled:opacity-50"
                       >
                         {navigatingAsset === asset.type ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
+                          <>
+                            <Loader2 className="h-4 w-4 animate-spin mr-1" />
+                            Loading...
+                          </>
                         ) : (
-                          <Zap className="h-4 w-4 mr-1" />
+                          <>
+                            <Zap className="h-4 w-4 mr-1" />
+                            Start Now
+                          </>
                         )}
-                        {navigatingAsset === asset.type ? 'Loading...' : 'Start Now'}
                       </Button>
                     </div>
                   ))}
@@ -238,8 +241,8 @@ const DashboardPropertyOverview: React.FC<DashboardPropertyOverviewProps> = ({
         <div className="pt-4 border-t mt-6">
           <Button
             onClick={() => handleStartAssetSetup()}
-            disabled={navigatingGeneral}
-            className="w-full bg-tiptop-purple hover:bg-purple-600"
+            disabled={navigatingGeneral || navigatingAsset !== null}
+            className="w-full bg-tiptop-purple hover:bg-purple-600 disabled:opacity-50"
           >
             {navigatingGeneral ? (
               <>
