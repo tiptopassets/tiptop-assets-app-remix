@@ -1,11 +1,23 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Send, Mic, MicOff, Lightbulb, TrendingUp } from 'lucide-react';
+import { Progress } from '@/components/ui/progress';
+import { Loader2, Send, Mic, MicOff, Lightbulb, TrendingUp, CheckCircle, AlertCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { PropertyAnalysisData } from '@/hooks/useUserPropertyAnalysis';
+
+interface DetectedAsset {
+  id: string;
+  name: string;
+  confidence: number;
+  estimatedRevenue: number;
+  setupComplexity: 'low' | 'medium' | 'high';
+  keyRequirements: string[];
+  marketOpportunity: 'high' | 'medium' | 'low';
+}
 
 interface Message {
   id: string;
@@ -15,8 +27,9 @@ interface Message {
   suggestedActions?: string[];
   detectedAssets?: string[];
   confidence?: number;
-  type?: 'message' | 'asset_analysis';
+  type?: 'message' | 'asset_analysis' | 'smart_asset_detection';
   assetAnalysisData?: any;
+  smartAssetData?: DetectedAsset[];
 }
 
 interface ConversationState {
@@ -51,12 +64,24 @@ const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
   const [isVoiceRecording, setIsVoiceRecording] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(true);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [shouldAutoScroll, setShouldAutoScroll] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
 
-  // Auto-scroll to bottom with improved behavior
+  // Smart auto-scroll behavior - only scroll if user is near bottom
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+    if (shouldAutoScroll && messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+      setShouldAutoScroll(false);
+    }
+  }, [messages, shouldAutoScroll]);
+
+  // Check if user is near bottom of scroll
+  const isNearBottom = () => {
+    if (!messagesContainerRef.current) return true;
+    const { scrollTop, scrollHeight, clientHeight } = messagesContainerRef.current;
+    return scrollHeight - scrollTop - clientHeight < 100;
+  };
 
   // Initial greeting message with property intelligence
   useEffect(() => {
@@ -112,34 +137,56 @@ const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
     return detected;
   };
 
-  const addAssetAnalysisMessage = (detectedAssets: string[]) => {
-    if (detectedAssets.length === 0) return;
-
-    // Generate mock analysis for detected assets
-    const analysisData = detectedAssets.map(asset => ({
+  const generateSmartAssetData = (detectedAssets: string[]): DetectedAsset[] => {
+    return detectedAssets.map((asset, index) => ({
       id: asset,
       name: asset.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()),
       confidence: 0.7 + (Math.random() * 0.3), // 70-100% confidence
       estimatedRevenue: Math.floor(Math.random() * 800) + 200, // $200-$1000
       setupComplexity: ['low', 'medium', 'high'][Math.floor(Math.random() * 3)] as 'low' | 'medium' | 'high',
+      keyRequirements: getAssetRequirements(asset),
       marketOpportunity: ['high', 'medium', 'low'][Math.floor(Math.random() * 3)] as 'high' | 'medium' | 'low'
     }));
+  };
 
-    const analysisMessage: Message = {
-      id: `analysis-${Date.now()}`,
+  const getAssetRequirements = (asset: string): string[] => {
+    const requirements: Record<string, string[]> = {
+      'rooftop': ['Structural assessment', 'Solar permits', 'Grid connection'],
+      'parking': ['Insurance coverage', 'Access management', 'Payment system'],
+      'bandwidth': ['Speed test verification', 'Router setup', 'Bandwidth allocation'],
+      'pool': ['Safety compliance', 'Insurance update', 'Booking platform'],
+      'storage': ['Security measures', 'Access control', 'Item restrictions'],
+      'garden': ['Space preparation', 'Event permits', 'Liability coverage']
+    };
+    
+    return requirements[asset] || ['Initial setup', 'Documentation', 'Service activation'];
+  };
+
+  const addSmartAssetDetectionMessage = (detectedAssets: string[]) => {
+    if (detectedAssets.length === 0) return;
+
+    const smartAssetData = generateSmartAssetData(detectedAssets);
+
+    const detectionMessage: Message = {
+      id: `smart-detection-${Date.now()}`,
       role: 'assistant',
-      content: `Great! I've analyzed your property and detected ${detectedAssets.length} monetization opportunities. Here's what I found:`,
+      content: `Great! I've analyzed your property and detected ${detectedAssets.length} monetization opportunities. Here's my AI-powered analysis:`,
       timestamp: new Date(),
-      type: 'asset_analysis',
-      assetAnalysisData: analysisData,
+      type: 'smart_asset_detection',
+      smartAssetData: smartAssetData,
       suggestedActions: [
-        `Set up ${analysisData[0]?.name}`,
-        'Tell me more about requirements',
+        `Set up ${smartAssetData[0]?.name}`,
+        'Tell me about requirements',
         'Show other opportunities'
       ]
     };
 
-    setMessages(prev => [...prev, analysisMessage]);
+    setMessages(prev => [...prev, detectionMessage]);
+    
+    // Auto-scroll if user was near bottom
+    if (isNearBottom()) {
+      setShouldAutoScroll(true);
+    }
   };
 
   const generateIntelligentResponse = (userMessage: string): { message: string; suggestedActions: string[]; detectedAssets: string[] } => {
@@ -237,6 +284,11 @@ const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
     setMessages(prev => [...prev, newUserMessage]);
     setShowSuggestions(false);
     
+    // Auto-scroll for user messages
+    if (isNearBottom()) {
+      setShouldAutoScroll(true);
+    }
+    
     // Simulate AI thinking
     setIsAnalyzing(true);
     
@@ -256,10 +308,15 @@ const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
 
       setMessages(prev => [...prev, assistantMessage]);
       
-      // Add asset analysis if assets were detected
+      // Auto-scroll for assistant messages
+      if (isNearBottom()) {
+        setShouldAutoScroll(true);
+      }
+      
+      // Add smart asset detection if assets were detected
       if (response.detectedAssets.length > 0) {
         setTimeout(() => {
-          addAssetAnalysisMessage(response.detectedAssets);
+          addSmartAssetDetectionMessage(response.detectedAssets);
         }, 1000);
       }
       
@@ -286,6 +343,11 @@ const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
     setShowSuggestions(false);
     setIsAnalyzing(true);
     
+    // Auto-scroll for suggested actions
+    if (isNearBottom()) {
+      setShouldAutoScroll(true);
+    }
+    
     // Generate response for the suggested action
     setTimeout(() => {
       const response = generateIntelligentResponse(action);
@@ -302,10 +364,15 @@ const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
 
       setMessages(prev => [...prev, assistantMessage]);
       
-      // Add asset analysis if assets were detected
+      // Auto-scroll for assistant responses
+      if (isNearBottom()) {
+        setShouldAutoScroll(true);
+      }
+      
+      // Add smart asset detection if assets were detected
       if (response.detectedAssets.length > 0) {
         setTimeout(() => {
-          addAssetAnalysisMessage(response.detectedAssets);
+          addSmartAssetDetectionMessage(response.detectedAssets);
         }, 1000);
         onAssetDetected(response.detectedAssets);
       }
@@ -313,6 +380,70 @@ const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
       onConversationStageChange('discussion');
       setIsAnalyzing(false);
     }, 1500);
+  };
+
+  const handleAssetSelect = (assetId: string) => {
+    onAssetDetected([assetId]);
+    
+    const userMessage: Message = {
+      id: Date.now().toString(),
+      role: 'user',
+      content: `I want to set up ${assetId.replace('_', ' ')}`,
+      timestamp: new Date()
+    };
+    
+    setMessages(prev => [...prev, userMessage]);
+    
+    setTimeout(() => {
+      const assistantMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        role: 'assistant',
+        content: `Excellent choice! Let's set up your ${assetId.replace('_', ' ')} for monetization. I'll guide you through the specific requirements and connect you with the best service providers.`,
+        timestamp: new Date(),
+        suggestedActions: [
+          'What are the requirements?',
+          'How much can I earn?',
+          'How long does setup take?'
+        ]
+      };
+      
+      setMessages(prev => [...prev, assistantMessage]);
+      
+      if (isNearBottom()) {
+        setShouldAutoScroll(true);
+      }
+    }, 1000);
+  };
+
+  const handleAssetDismiss = (assetId: string) => {
+    const userMessage: Message = {
+      id: Date.now().toString(),
+      role: 'user',
+      content: `I'm not interested in ${assetId.replace('_', ' ')} right now`,
+      timestamp: new Date()
+    };
+    
+    setMessages(prev => [...prev, userMessage]);
+    
+    setTimeout(() => {
+      const assistantMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        role: 'assistant',
+        content: `No problem! We can focus on other opportunities. What other assets would you like to explore?`,
+        timestamp: new Date(),
+        suggestedActions: [
+          'Show me other options',
+          'Tell me about requirements',
+          'What has the highest potential?'
+        ]
+      };
+      
+      setMessages(prev => [...prev, assistantMessage]);
+      
+      if (isNearBottom()) {
+        setShouldAutoScroll(true);
+      }
+    }, 1000);
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -330,6 +461,120 @@ const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
   const getStageIcon = () => {
     if (conversationState?.currentAsset) return <TrendingUp className="h-4 w-4" />;
     return <Lightbulb className="h-4 w-4" />;
+  };
+
+  const getComplexityColor = (complexity: string) => {
+    switch (complexity) {
+      case 'low': return 'text-green-600 bg-green-50 border-green-200';
+      case 'medium': return 'text-yellow-600 bg-yellow-50 border-yellow-200';
+      case 'high': return 'text-red-600 bg-red-50 border-red-200';
+      default: return 'text-gray-600 bg-gray-50 border-gray-200';
+    }
+  };
+
+  const getOpportunityColor = (opportunity: string) => {
+    switch (opportunity) {
+      case 'high': return 'text-green-600';
+      case 'medium': return 'text-yellow-600';
+      case 'low': return 'text-red-600';
+      default: return 'text-gray-600';
+    }
+  };
+
+  const renderSmartAssetDetection = (smartAssetData: DetectedAsset[]) => {
+    return (
+      <div className="mt-3 space-y-3">
+        <div className="text-center mb-4">
+          <h4 className="text-sm font-semibold text-tiptop-purple mb-2">
+            🔍 Smart Asset Detection Results
+          </h4>
+          <p className="text-xs text-gray-600">
+            AI-powered analysis of your property's monetization potential
+          </p>
+        </div>
+
+        {smartAssetData.map((asset, index) => (
+          <motion.div
+            key={asset.id}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: index * 0.1 }}
+            className="border border-l-4 border-l-tiptop-purple rounded-lg p-3 bg-gradient-to-r from-tiptop-purple/5 to-purple-50"
+          >
+            <div className="flex items-start justify-between mb-2">
+              <div>
+                <h5 className="font-semibold text-tiptop-purple flex items-center gap-2">
+                  {asset.name}
+                  <Badge className={`text-xs ${getComplexityColor(asset.setupComplexity)}`}>
+                    {asset.setupComplexity} setup
+                  </Badge>
+                </h5>
+                <div className="flex items-center gap-4 mt-1">
+                  <div className="text-xs text-gray-600">
+                    Confidence: {Math.round(asset.confidence * 100)}%
+                  </div>
+                  <div className="text-xs font-medium text-tiptop-purple">
+                    ${asset.estimatedRevenue}/month
+                  </div>
+                  <div className={`text-xs font-medium ${getOpportunityColor(asset.marketOpportunity)}`}>
+                    {asset.marketOpportunity} demand
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Confidence Bar */}
+            <div className="mb-3">
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-xs text-gray-600">AI Confidence</span>
+                <span className="text-xs font-medium">{Math.round(asset.confidence * 100)}%</span>
+              </div>
+              <Progress value={asset.confidence * 100} className="h-1" />
+            </div>
+
+            {/* Key Requirements */}
+            <div className="mb-3">
+              <h6 className="text-xs font-medium text-gray-900 mb-1">Key Requirements:</h6>
+              <div className="flex flex-wrap gap-1">
+                {asset.keyRequirements.map((req, reqIndex) => (
+                  <Badge key={reqIndex} variant="outline" className="text-xs">
+                    {req}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+
+            {/* Market Opportunity Indicator */}
+            <div className="flex items-center gap-2 text-xs mb-3">
+              <TrendingUp className={`h-3 w-3 ${getOpportunityColor(asset.marketOpportunity)}`} />
+              <span className="text-gray-600">Market opportunity:</span>
+              <span className={`font-medium ${getOpportunityColor(asset.marketOpportunity)}`}>
+                {asset.marketOpportunity}
+              </span>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => handleAssetDismiss(asset.id)}
+                className="text-xs"
+              >
+                Not Interested
+              </Button>
+              <Button
+                size="sm"
+                className="bg-tiptop-purple hover:bg-purple-600 text-xs"
+                onClick={() => handleAssetSelect(asset.id)}
+              >
+                Set Up Now
+              </Button>
+            </div>
+          </motion.div>
+        ))}
+      </div>
+    );
   };
 
   const renderAssetAnalysis = (analysisData: any[]) => {
@@ -388,8 +633,15 @@ const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
         </div>
       )}
 
-      {/* Messages Area - Fixed scroll implementation */}
-      <div className="flex-1 overflow-y-auto p-4 scroll-smooth" style={{ scrollBehavior: 'smooth' }}>
+      {/* Messages Area - Fixed scroll behavior */}
+      <div 
+        ref={messagesContainerRef}
+        className="flex-1 overflow-y-auto p-4"
+        style={{ 
+          scrollBehavior: 'smooth',
+          overscrollBehavior: 'contain'
+        }}
+      >
         <div className="space-y-4">
           <AnimatePresence>
             {messages.map((message) => (
@@ -407,6 +659,11 @@ const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
                   }`}>
                     <CardContent className="p-3">
                       <p className="text-sm">{message.content}</p>
+                      
+                      {/* Smart Asset Detection Data */}
+                      {message.type === 'smart_asset_detection' && message.smartAssetData && (
+                        renderSmartAssetDetection(message.smartAssetData)
+                      )}
                       
                       {/* Asset Analysis Data */}
                       {message.type === 'asset_analysis' && message.assetAnalysisData && (

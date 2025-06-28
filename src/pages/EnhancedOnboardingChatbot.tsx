@@ -8,7 +8,6 @@ import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, Bot, Settings2, TrendingUp, MessageSquare } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import EnhancedChatInterface from '@/components/onboarding/EnhancedChatInterface';
-import SmartAssetDetection from '@/components/onboarding/SmartAssetDetection';
 import ConversationAnalytics from '@/components/onboarding/ConversationAnalytics';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useUserPropertyAnalysis } from '@/hooks/useUserPropertyAnalysis';
@@ -132,15 +131,6 @@ const EnhancedOnboardingChatbot = () => {
     
     // Navigate to asset-specific setup
     navigate(`/dashboard?setup=${assetId}`);
-  };
-
-  const handleAssetDismiss = (assetId: string) => {
-    setDetectedAssets(prev => prev.filter(asset => asset !== assetId));
-    
-    toast({
-      title: "Asset Dismissed",
-      description: `${assetId.replace('_', ' ')} removed from recommendations.`,
-    });
   };
 
   // Improved loading state - prevent infinite loops
@@ -283,20 +273,6 @@ const EnhancedOnboardingChatbot = () => {
                     </div>
                   </CardContent>
                 </Card>
-              </motion.div>
-            )}
-
-            {/* Smart Asset Detection */}
-            {detectedAssets.length > 0 && (
-              <motion.div
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-              >
-                <SmartAssetDetection
-                  detectedAssets={detectedAssets}
-                  onAssetSelect={handleAssetSelect}
-                  onAssetDismiss={handleAssetDismiss}
-                />
               </motion.div>
             )}
 
