@@ -7,7 +7,7 @@ export const navigateToChatbot = (analysisId: string, assetType?: string) => {
     params.set('asset', assetType);
   }
   
-  const url = `/enhanced-onboarding-chatbot?${params.toString()}`;
+  const url = `/dashboard/onboarding?${params.toString()}`;
   console.log('🔗 [NAVIGATION] Navigating to chatbot:', { analysisId, assetType, url });
   
   return url;
