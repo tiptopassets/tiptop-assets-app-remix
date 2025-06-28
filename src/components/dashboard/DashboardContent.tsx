@@ -53,12 +53,8 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
       {/* Property Overview */}
       {latestAnalysis && (
         <DashboardPropertyOverview 
-          address={primaryAddress || "Property Address"}
-          createdAt={latestAnalysis.created_at}
-          totalOpportunities={totalOpportunities}
-          totalMonthlyRevenue={totalMonthlyRevenue}
-          satelliteImageUrl={latestAnalysis.satellite_image_url}
-          coordinates={latestAnalysis.coordinates}
+          analysis={latestAnalysis}
+          address={primaryAddress}
         />
       )}
 
