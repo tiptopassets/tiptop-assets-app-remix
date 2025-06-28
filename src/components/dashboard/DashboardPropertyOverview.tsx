@@ -1,8 +1,9 @@
-import React from 'react';
+
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { MapPin, TrendingUp, Zap, MessageSquare, Image as ImageIcon } from 'lucide-react';
+import { MapPin, TrendingUp, Zap, MessageSquare, Image as ImageIcon, Loader2 } from 'lucide-react';
 import { UserPropertyAnalysis } from '@/types/userData';
 import { navigateToChatbot } from '@/utils/navigationHelpers';
 import { useNavigate } from 'react-router-dom';
@@ -18,15 +19,33 @@ const DashboardPropertyOverview: React.FC<DashboardPropertyOverviewProps> = ({
   address
 }) => {
   const navigate = useNavigate();
+  const [navigatingAsset, setNavigatingAsset] = useState<string | null>(null);
+  const [navigatingGeneral, setNavigatingGeneral] = useState(false);
 
-  const handleStartAssetSetup = (assetType?: string) => {
-    const chatbotUrl = navigateToChatbot(analysis.id, assetType);
-    console.log('🚀 [DASHBOARD] Navigating to chatbot:', { 
-      analysisId: analysis.id, 
-      assetType, 
-      url: chatbotUrl 
-    });
-    navigate(chatbotUrl);
+  const handleStartAssetSetup = async (assetType?: string) => {
+    try {
+      if (assetType) {
+        setNavigatingAsset(assetType);
+      } else {
+        setNavigatingGeneral(true);
+      }
+
+      const chatbotUrl = navigateToChatbot(analysis.id, assetType);
+      console.log('🚀 [DASHBOARD] Navigating to chatbot:', { 
+        analysisId: analysis.id, 
+        assetType, 
+        url: chatbotUrl 
+      });
+      
+      // Small delay to show loading state
+      await new Promise(resolve => setTimeout(resolve, 300));
+      navigate(chatbotUrl);
+    } catch (error) {
+      console.error('❌ [DASHBOARD] Navigation error:', error);
+    } finally {
+      setNavigatingAsset(null);
+      setNavigatingGeneral(false);
+    }
   };
 
   const getPropertyAddress = () => {
@@ -161,10 +180,15 @@ const DashboardPropertyOverview: React.FC<DashboardPropertyOverviewProps> = ({
                       <Button
                         size="sm"
                         onClick={() => handleStartAssetSetup(asset.type)}
+                        disabled={navigatingAsset === asset.type}
                         className="bg-tiptop-purple hover:bg-purple-600"
                       >
-                        <Zap className="h-4 w-4 mr-1" />
-                        Start Now
+                        {navigatingAsset === asset.type ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Zap className="h-4 w-4 mr-1" />
+                        )}
+                        {navigatingAsset === asset.type ? 'Loading...' : 'Start Now'}
                       </Button>
                     </div>
                   ))}
@@ -214,10 +238,20 @@ const DashboardPropertyOverview: React.FC<DashboardPropertyOverviewProps> = ({
         <div className="pt-4 border-t mt-6">
           <Button
             onClick={() => handleStartAssetSetup()}
+            disabled={navigatingGeneral}
             className="w-full bg-tiptop-purple hover:bg-purple-600"
           >
-            <MessageSquare className="h-4 w-4 mr-2" />
-            Start AI Assistant
+            {navigatingGeneral ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Loading AI Assistant...
+              </>
+            ) : (
+              <>
+                <MessageSquare className="h-4 w-4 mr-2" />
+                Start AI Assistant
+              </>
+            )}
           </Button>
         </div>
       </CardContent>

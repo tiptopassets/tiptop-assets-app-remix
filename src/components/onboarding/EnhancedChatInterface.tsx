@@ -55,14 +55,19 @@ const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
     isLoading
   } = useOpenAIConversation(propertyData);
 
-  // Initialize with welcome message
+  // Initialize with enhanced welcome message using actual property data
   useEffect(() => {
     if (propertyData && messages.length === 0) {
-      console.log('🎬 [CHAT] Initializing with property data:', {
+      console.log('🎬 [CHAT] Initializing with actual property data:', {
         analysisId: propertyData.analysisId,
         address: propertyData.address,
         assetsCount: propertyData.availableAssets.length,
-        totalRevenue: propertyData.totalMonthlyRevenue
+        totalRevenue: propertyData.totalMonthlyRevenue,
+        specificAssets: propertyData.availableAssets.map(a => ({ 
+          name: a.name, 
+          revenue: a.monthlyRevenue,
+          configured: a.isConfigured 
+        }))
       });
       
       const welcomeMessage: Message = {
@@ -70,9 +75,15 @@ const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
         role: 'assistant',
         content: generateWelcomeMessage(),
         timestamp: new Date(),
-        suggestedActions: propertyData.availableAssets.slice(0, 3).map(asset => 
-          `Tell me about ${asset.name}`
-        )
+        suggestedActions: propertyData.availableAssets.length > 0 
+          ? propertyData.availableAssets.slice(0, 3).map(asset => 
+              `Tell me about ${asset.name} setup`
+            )
+          : [
+              'Tell me about your property',
+              'What services are available?',
+              'How can I earn money?'
+            ]
       };
       setMessages([welcomeMessage]);
     }
@@ -411,18 +422,27 @@ const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
 
   return (
     <div className="flex flex-col h-full">
-      {/* Property Data Status */}
+      {/* Enhanced Property Data Status with actual values */}
       {propertyData && (
         <div className="p-4 border-b bg-gradient-to-r from-tiptop-purple/5 to-purple-100">
           <div className="flex items-center gap-2 text-sm text-tiptop-purple">
             <CheckCircle className="h-4 w-4" />
-            <span>
-              Property analyzed: {propertyData.address}
+            <span className="font-medium">
+              Property: {propertyData.address}
             </span>
-            <Badge variant="secondary" className="ml-auto">
-              {propertyData.availableAssets.length} assets available • ${propertyData.totalMonthlyRevenue}/month potential
+            <Badge variant="secondary" className="ml-auto bg-green-50 text-green-700 border-green-200">
+              {propertyData.availableAssets.length} assets • ${propertyData.totalMonthlyRevenue}/month potential
             </Badge>
           </div>
+          {propertyData.availableAssets.length > 0 && (
+            <div className="mt-2 flex flex-wrap gap-1">
+              {propertyData.availableAssets.slice(0, 4).map((asset) => (
+                <Badge key={asset.type} variant="outline" className="text-xs bg-white">
+                  {asset.name}: ${asset.monthlyRevenue}/mo
+                </Badge>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
@@ -446,7 +466,12 @@ const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
                       : 'bg-white border-gray-200'
                   }`}>
                     <CardContent className="p-3">
-                      <p className="text-sm">{message.content}</p>
+                      <div 
+                        className="text-sm prose prose-sm max-w-none"
+                        dangerouslySetInnerHTML={{ 
+                          __html: message.content.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br/>') 
+                        }}
+                      />
                       
                       {/* Smart Asset Detection Data */}
                       {message.type === 'smart_asset_detection' && message.smartAssetData && (
@@ -513,7 +538,7 @@ const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
                 <CardContent className="p-3">
                   <div className="flex items-center gap-2">
                     <Loader2 className="h-4 w-4 animate-spin text-tiptop-purple" />
-                    <span className="text-sm text-gray-600">Analyzing your message with AI...</span>
+                    <span className="text-sm text-gray-600">Analyzing your message with property-specific AI...</span>
                   </div>
                 </CardContent>
               </Card>
@@ -533,7 +558,7 @@ const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
               onKeyPress={handleKeyPress}
               placeholder={
                 propertyData 
-                  ? `Ask about your property at ${propertyData.address}...` 
+                  ? `Ask about your ${propertyData.availableAssets.length} asset${propertyData.availableAssets.length === 1 ? '' : 's'} at ${propertyData.address}...` 
                   : "Tell me about your property..."
               }
               disabled={isLoading}
@@ -559,7 +584,7 @@ const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
           </Button>
         </div>
 
-        {/* Smart suggestions based on actual property data */}
+        {/* Enhanced smart suggestions based on actual property data */}
         {showSuggestions && propertyData && propertyData.availableAssets.length > 0 && (
           <div className="mt-3 flex flex-wrap gap-2">
             <span className="text-xs text-gray-500">Try asking:</span>
@@ -571,9 +596,17 @@ const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
                 className="text-xs h-7"
                 onClick={() => handleSuggestedAction(`What are the requirements for ${asset.name.toLowerCase()}?`)}
               >
-                {asset.name} requirements
+                {asset.name} setup
               </Button>
             ))}
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-xs h-7"
+              onClick={() => handleSuggestedAction(`How much can I earn from my property?`)}
+            >
+              Earning potential
+            </Button>
           </div>
         )}
       </div>
