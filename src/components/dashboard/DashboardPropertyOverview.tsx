@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -35,8 +34,9 @@ const DashboardPropertyOverview: React.FC<DashboardPropertyOverviewProps> = ({
       return address;
     }
     
-    if (analysis.property_address) {
-      return analysis.property_address;
+    // Check if analysis results contain address information
+    if (analysis.analysis_results?.address) {
+      return analysis.analysis_results.address;
     }
     
     return 'Property Address';
