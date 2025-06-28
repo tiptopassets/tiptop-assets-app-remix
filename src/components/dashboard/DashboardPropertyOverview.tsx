@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -30,13 +29,14 @@ const DashboardPropertyOverview: React.FC<DashboardPropertyOverviewProps> = ({
   };
 
   const getPropertyAddress = () => {
-    // Try to get address from analysis results first
-    if (analysis.analysis_results?.address) {
-      return analysis.analysis_results.address;
+    // Try to get address from the user_addresses table via the address relationship
+    // Since we don't have direct access to the address record here, use the provided address prop
+    if (address) {
+      return address;
     }
     
-    // Fallback to provided address
-    return address || 'Property Address';
+    // Fallback to a generic address if none provided
+    return 'Property Address';
   };
 
   const getTopAssets = () => {

@@ -3,7 +3,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { DashboardStats } from './DashboardStats';
-import { DashboardPropertyOverview } from './DashboardPropertyOverview';
+import DashboardPropertyOverview from './DashboardPropertyOverview';
 import { DashboardCharts } from './DashboardCharts';
 import { AssetsTable } from './AssetsTable';
 import DashboardHeader from './DashboardHeader';
