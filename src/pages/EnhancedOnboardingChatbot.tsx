@@ -1,20 +1,19 @@
+
 import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Bot, Settings2, TrendingUp, MessageSquare, CheckCircle } from 'lucide-react';
+import { Card } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import EnhancedChatInterface from '@/components/onboarding/EnhancedChatInterface';
-import ConversationAnalytics from '@/components/onboarding/ConversationAnalytics';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import { useUserPropertyAnalysis } from '@/hooks/useUserPropertyAnalysis';
+import EnhancedChatInterface from '@/components/onboarding/EnhancedChatInterface';
+import ChatbotLoadingState from '@/components/onboarding/ChatbotLoadingState';
+import ChatbotErrorState from '@/components/onboarding/ChatbotErrorState';
+import ChatbotHeader from '@/components/onboarding/ChatbotHeader';
+import ChatbotSidebar from '@/components/onboarding/ChatbotSidebar';
 
 const EnhancedOnboardingChatbot = () => {
   const { user, loading: authLoading } = useAuth();
   const { toast } = useToast();
-  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   
   // Get analysis ID and target asset from URL parameters
@@ -132,110 +131,29 @@ const EnhancedOnboardingChatbot = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-tiptop-purple border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">
-            {authLoading ? 'Authenticating...' : 'Loading your property analysis...'}
-          </p>
-          {analysisId && (
-            <div className="mt-2 text-sm text-gray-500">
-              <p>Analysis ID: {analysisId}</p>
-              {propertyData && (
-                <p>Address: {propertyData.address}</p>
-              )}
-            </div>
-          )}
-        </div>
-      </div>
+      <ChatbotLoadingState 
+        isAuthLoading={authLoading}
+        analysisId={analysisId}
+        propertyAddress={propertyData?.address}
+      />
     );
   }
 
   // Show error state if no property data after loading
   if (!propertyData && !propertyLoading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center max-w-md mx-auto p-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">
-            Property Analysis Not Found
-          </h2>
-          <p className="text-gray-600 mb-4">
-            {analysisId 
-              ? `No property analysis found with ID: ${analysisId}` 
-              : 'No property analysis found. Please analyze a property first.'
-            }
-          </p>
-          <div className="space-y-2">
-            <Button onClick={() => navigate('/submit-property')} className="w-full">
-              Analyze Property
-            </Button>
-            <Button 
-              variant="outline" 
-              onClick={() => navigate('/dashboard')} 
-              className="w-full"
-            >
-              Go to Dashboard
-            </Button>
-          </div>
-        </div>
-      </div>
-    );
+    return <ChatbotErrorState analysisId={analysisId} />;
   }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-purple-50">
       {/* Header */}
-      <div className="bg-white border-b shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Button 
-                variant="ghost" 
-                size="sm"
-                onClick={() => navigate('/dashboard')}
-              >
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Back to Dashboard
-              </Button>
-              <div className="flex items-center gap-2">
-                <Bot className="h-6 w-6 text-tiptop-purple" />
-                <h1 className="text-xl font-semibold text-gray-900">
-                  AI Property Assistant
-                </h1>
-                <Badge className="bg-tiptop-purple/10 text-tiptop-purple border-tiptop-purple/20">
-                  OpenAI Powered
-                </Badge>
-                {targetAsset && (
-                  <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                    {targetAsset.replace('_', ' ')} Setup
-                  </Badge>
-                )}
-                {hasPropertyData && (
-                  <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-                    <CheckCircle className="h-3 w-3 mr-1" />
-                    Analysis Complete
-                  </Badge>
-                )}
-              </div>
-            </div>
-            
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowAnalytics(!showAnalytics)}
-              >
-                <TrendingUp className="h-4 w-4 mr-2" />
-                Analytics
-              </Button>
-              <Badge variant="secondary" className="flex items-center gap-1">
-                <MessageSquare className="h-3 w-3" />
-                {conversationStage.charAt(0).toUpperCase() + conversationStage.slice(1)}
-              </Badge>
-            </div>
-          </div>
-        </div>
-      </div>
+      <ChatbotHeader
+        targetAsset={targetAsset}
+        hasPropertyData={hasPropertyData}
+        conversationStage={conversationStage}
+        showAnalytics={showAnalytics}
+        onToggleAnalytics={() => setShowAnalytics(!showAnalytics)}
+      />
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto p-4">
@@ -252,135 +170,14 @@ const EnhancedOnboardingChatbot = () => {
           </div>
 
           {/* Sidebar */}
-          <div className="lg:col-span-4 space-y-6">
-            {/* Property Summary */}
-            {hasPropertyData && (
-              <motion.div
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-              >
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg flex items-center gap-2">
-                      <Settings2 className="h-5 w-5 text-tiptop-purple" />
-                      Your Property Analysis
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-3">
-                      <div>
-                        <p className="text-sm font-medium text-gray-700">Address</p>
-                        <p className="text-sm text-gray-600">{propertyData?.address}</p>
-                      </div>
-                      {analysisId && (
-                        <div>
-                          <p className="text-sm font-medium text-gray-700">Analysis ID</p>
-                          <p className="text-xs text-gray-500 font-mono">{analysisId}</p>
-                        </div>
-                      )}
-                      <div>
-                        <p className="text-sm font-medium text-gray-700">Total Monthly Potential</p>
-                        <p className="text-lg font-bold text-green-600">${propertyData?.totalMonthlyRevenue}/month</p>
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-gray-700">Available Assets ({propertyData?.availableAssets.length})</p>
-                        <div className="flex flex-wrap gap-1 mt-1">
-                          {propertyData?.availableAssets.map((asset) => (
-                            <Badge key={asset.type} variant="outline" className="text-xs">
-                              {asset.name} (${asset.monthlyRevenue}/mo)
-                            </Badge>
-                          ))}
-                        </div>
-                      </div>
-                      {targetAsset && (
-                        <div>
-                          <p className="text-sm font-medium text-gray-700">Current Focus</p>
-                          <Badge className="bg-tiptop-purple text-white">
-                            {targetAsset.replace('_', ' ')} Setup
-                          </Badge>
-                        </div>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            )}
-
-            {/* Conversation Analytics */}
-            {showAnalytics && (
-              <motion.div
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-              >
-                <ConversationAnalytics analytics={analytics} />
-              </motion.div>
-            )}
-
-            {/* Quick Actions */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <Settings2 className="h-5 w-5 text-tiptop-purple" />
-                  Quick Actions
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                <Button
-                  variant="outline"
-                  className="w-full justify-start"
-                  onClick={() => navigate('/submit-property')}
-                >
-                  Analyze Another Property
-                </Button>
-                <Button
-                  variant="outline"
-                  className="w-full justify-start"
-                  onClick={() => navigate('/dashboard')}
-                >
-                  View My Dashboard
-                </Button>
-                <Button
-                  variant="outline"
-                  className="w-full justify-start"
-                  onClick={() => window.open('https://calendly.com/tiptop-concierge', '_blank')}
-                >
-                  Schedule Concierge Call
-                </Button>
-              </CardContent>
-            </Card>
-
-            {/* AI Assistant Info */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <Bot className="h-5 w-5 text-tiptop-purple" />
-                  AI Assistant Features
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3 text-sm">
-                  <div className="p-3 bg-tiptop-purple/5 rounded-lg">
-                    <p className="font-medium text-tiptop-purple mb-1">Intelligent Responses</p>
-                    <p className="text-gray-600">
-                      Powered by OpenAI to understand your specific questions and provide accurate answers.
-                    </p>
-                  </div>
-                  <div className="p-3 bg-green-50 rounded-lg">
-                    <p className="font-medium text-green-700 mb-1">Property-Aware</p>
-                    <p className="text-gray-600">
-                      Knows your exact property analysis and can provide specific recommendations based on your assets.
-                    </p>
-                  </div>
-                  <div className="p-3 bg-blue-50 rounded-lg">
-                    <p className="font-medium text-blue-700 mb-1">Context Memory</p>
-                    <p className="text-gray-600">
-                      Remembers our conversation to provide consistent and relevant assistance.
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+          <ChatbotSidebar
+            propertyData={propertyData}
+            analysisId={analysisId}
+            targetAsset={targetAsset}
+            hasPropertyData={hasPropertyData}
+            showAnalytics={showAnalytics}
+            analytics={analytics}
+          />
         </div>
       </div>
     </div>
