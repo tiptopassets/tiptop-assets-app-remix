@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
@@ -18,8 +17,14 @@ const EnhancedOnboardingChatbot = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   
-  // Property analysis integration
-  const { propertyData, loading: propertyLoading, hasPropertyData } = useUserPropertyAnalysis();
+  // Get analysis ID and target asset from URL parameters
+  const analysisId = searchParams.get('analysisId');
+  const targetAsset = searchParams.get('asset');
+  
+  console.log('🔗 [CHATBOT] URL Parameters:', { analysisId, targetAsset });
+  
+  // Property analysis integration with specific analysis ID
+  const { propertyData, loading: propertyLoading, hasPropertyData } = useUserPropertyAnalysis(analysisId || undefined);
   
   const [detectedAssets, setDetectedAssets] = useState<string[]>([]);
   const [conversationStage, setConversationStage] = useState('greeting');
@@ -27,13 +32,14 @@ const EnhancedOnboardingChatbot = () => {
   const [messageCount, setMessageCount] = useState(0);
   const [showAnalytics, setShowAnalytics] = useState(false);
   
-  // Get asset from URL parameters (from dashboard "Start Now" button)
-  const targetAsset = searchParams.get('asset');
-  
   // Initialize conversation with target asset if provided
   useEffect(() => {
     if (propertyData && targetAsset && !propertyLoading) {
-      console.log('🎯 [ONBOARDING] Initializing with target asset:', targetAsset);
+      console.log('🎯 [ONBOARDING] Initializing with target asset:', {
+        targetAsset,
+        analysisId: propertyData.analysisId,
+        address: propertyData.address
+      });
       
       const assetInfo = propertyData.availableAssets.find(a => a.type === targetAsset);
       if (assetInfo) {
@@ -43,6 +49,11 @@ const EnhancedOnboardingChatbot = () => {
         toast({
           title: "Asset Setup Started",
           description: `Let's configure your ${assetInfo.name} for $${assetInfo.monthlyRevenue}/month potential earnings.`,
+        });
+      } else {
+        console.warn('⚠️ [ONBOARDING] Target asset not found in analysis:', {
+          targetAsset,
+          availableAssets: propertyData.availableAssets.map(a => a.type)
         });
       }
     }
@@ -78,6 +89,9 @@ const EnhancedOnboardingChatbot = () => {
     if (propertyData) {
       insights.push(`Property analyzed: ${propertyData.address}`);
       insights.push(`Total potential: $${propertyData.totalMonthlyRevenue}/month`);
+      if (analysisId) {
+        insights.push(`Analysis ID: ${analysisId}`);
+      }
     }
     
     if (assets.length > 1) {
@@ -113,6 +127,11 @@ const EnhancedOnboardingChatbot = () => {
           <p className="text-gray-600">
             {authLoading ? 'Authenticating...' : 'Loading your property analysis...'}
           </p>
+          {analysisId && (
+            <p className="text-sm text-gray-500 mt-2">
+              Analysis ID: {analysisId}
+            </p>
+          )}
         </div>
       </div>
     );
@@ -123,7 +142,12 @@ const EnhancedOnboardingChatbot = () => {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <p className="text-gray-600 mb-4">No property analysis found. Please analyze a property first.</p>
+          <p className="text-gray-600 mb-4">
+            {analysisId 
+              ? `No property analysis found with ID: ${analysisId}` 
+              : 'No property analysis found. Please analyze a property first.'
+            }
+          </p>
           <Button onClick={() => navigate('/submit-property')}>
             Analyze Property
           </Button>
@@ -222,6 +246,12 @@ const EnhancedOnboardingChatbot = () => {
                         <p className="text-sm font-medium text-gray-700">Address</p>
                         <p className="text-sm text-gray-600">{propertyData?.address}</p>
                       </div>
+                      {analysisId && (
+                        <div>
+                          <p className="text-sm font-medium text-gray-700">Analysis ID</p>
+                          <p className="text-xs text-gray-500 font-mono">{analysisId}</p>
+                        </div>
+                      )}
                       <div>
                         <p className="text-sm font-medium text-gray-700">Total Monthly Potential</p>
                         <p className="text-lg font-bold text-green-600">${propertyData?.totalMonthlyRevenue}/month</p>

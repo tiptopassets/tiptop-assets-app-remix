@@ -5,6 +5,7 @@ import { useUserData } from '@/hooks/useUserData';
 import { AnalysisResults } from '@/types/analysis';
 
 export interface PropertyAnalysisData {
+  analysisId: string;
   address: string;
   analysisResults: AnalysisResults;
   totalMonthlyRevenue: number;
@@ -21,7 +22,7 @@ export interface AssetInfo {
   hasRevenuePotential: boolean;
 }
 
-export const useUserPropertyAnalysis = () => {
+export const useUserPropertyAnalysis = (analysisId?: string) => {
   const { user } = useAuth();
   const { analyses, assetSelections, getPrimaryAddress, loading } = useUserData();
   const [propertyData, setPropertyData] = useState<PropertyAnalysisData | null>(null);
@@ -32,95 +33,164 @@ export const useUserPropertyAnalysis = () => {
       return;
     }
 
-    const latestAnalysis = analyses[0];
-    const primaryAddress = getPrimaryAddress()?.address || 'Your Property';
+    console.log('🔍 [PROPERTY ANALYSIS] Processing analysis data:', {
+      requestedAnalysisId: analysisId,
+      availableAnalyses: analyses.length,
+      analysisIds: analyses.map(a => a.id)
+    });
+
+    // Find specific analysis by ID or use the latest one
+    const targetAnalysis = analysisId 
+      ? analyses.find(analysis => analysis.id === analysisId)
+      : analyses[0];
+
+    if (!targetAnalysis) {
+      console.warn('⚠️ [PROPERTY ANALYSIS] No matching analysis found:', {
+        requestedId: analysisId,
+        availableIds: analyses.map(a => a.id)
+      });
+      setPropertyData(null);
+      return;
+    }
+
+    console.log('✅ [PROPERTY ANALYSIS] Using analysis:', {
+      analysisId: targetAnalysis.id,
+      addressId: targetAnalysis.address_id,
+      totalRevenue: targetAnalysis.total_monthly_revenue,
+      totalOpportunities: targetAnalysis.total_opportunities
+    });
+
+    // Get address from the analysis context, not primary address
+    const analysisAddress = getAddressFromAnalysis(targetAnalysis);
     
-    // Map analysis results to asset info
+    // Map analysis results to asset info with proper filtering
     const availableAssets: AssetInfo[] = [];
     
-    // Rooftop Solar
-    if (latestAnalysis.analysis_results.rooftop?.revenue > 0) {
+    // Only include assets with actual revenue potential
+    const analysisResults = targetAnalysis.analysis_results;
+    
+    // Rooftop Solar - only if has revenue
+    if (analysisResults.rooftop?.revenue > 0) {
       availableAssets.push({
         type: 'rooftop',
         name: 'Solar Panels',
-        monthlyRevenue: latestAnalysis.analysis_results.rooftop.revenue,
-        area: `${latestAnalysis.analysis_results.rooftop.area} sq ft`,
-        isConfigured: assetSelections.some(s => s.asset_type.toLowerCase().includes('rooftop')),
+        monthlyRevenue: analysisResults.rooftop.revenue,
+        area: `${analysisResults.rooftop.area} sq ft`,
+        isConfigured: assetSelections.some(s => 
+          s.analysis_id === targetAnalysis.id && s.asset_type.toLowerCase().includes('rooftop')
+        ),
         hasRevenuePotential: true
       });
     }
 
-    // Parking
-    if (latestAnalysis.analysis_results.parking?.revenue > 0) {
+    // Parking - only if has spaces and revenue
+    if (analysisResults.parking?.spaces > 0 && analysisResults.parking?.revenue > 0) {
       availableAssets.push({
         type: 'parking',
         name: 'Parking Spaces',
-        monthlyRevenue: latestAnalysis.analysis_results.parking.revenue,
-        area: `${latestAnalysis.analysis_results.parking.spaces} spaces`,
-        isConfigured: assetSelections.some(s => s.asset_type.toLowerCase().includes('parking')),
+        monthlyRevenue: analysisResults.parking.revenue,
+        area: `${analysisResults.parking.spaces} spaces`,
+        isConfigured: assetSelections.some(s => 
+          s.analysis_id === targetAnalysis.id && s.asset_type.toLowerCase().includes('parking')
+        ),
         hasRevenuePotential: true
       });
     }
 
-    // Pool
-    if (latestAnalysis.analysis_results.pool?.present && latestAnalysis.analysis_results.pool?.revenue > 0) {
+    // Pool - only if present and has revenue
+    if (analysisResults.pool?.present && analysisResults.pool?.revenue > 0) {
       availableAssets.push({
         type: 'pool',
         name: 'Swimming Pool',
-        monthlyRevenue: latestAnalysis.analysis_results.pool.revenue,
-        area: `${latestAnalysis.analysis_results.pool.area} sq ft`,
-        isConfigured: assetSelections.some(s => s.asset_type.toLowerCase().includes('pool')),
+        monthlyRevenue: analysisResults.pool.revenue,
+        area: `${analysisResults.pool.area} sq ft`,
+        isConfigured: assetSelections.some(s => 
+          s.analysis_id === targetAnalysis.id && s.asset_type.toLowerCase().includes('pool')
+        ),
         hasRevenuePotential: true
       });
     }
 
-    // Garden
-    if (latestAnalysis.analysis_results.garden?.revenue > 0) {
+    // Garden - only if has area and revenue
+    if (analysisResults.garden?.area > 0 && analysisResults.garden?.revenue > 0) {
       availableAssets.push({
         type: 'garden',
         name: 'Garden Space',
-        monthlyRevenue: latestAnalysis.analysis_results.garden.revenue,
-        area: `${latestAnalysis.analysis_results.garden.area} sq ft`,
-        isConfigured: assetSelections.some(s => s.asset_type.toLowerCase().includes('garden')),
+        monthlyRevenue: analysisResults.garden.revenue,
+        area: `${analysisResults.garden.area} sq ft`,
+        isConfigured: assetSelections.some(s => 
+          s.analysis_id === targetAnalysis.id && s.asset_type.toLowerCase().includes('garden')
+        ),
         hasRevenuePotential: true
       });
     }
 
-    // Bandwidth
-    if (latestAnalysis.analysis_results.bandwidth?.revenue > 0) {
+    // Bandwidth - only if has revenue
+    if (analysisResults.bandwidth?.revenue > 0) {
       availableAssets.push({
         type: 'bandwidth',
         name: 'Internet Bandwidth',
-        monthlyRevenue: latestAnalysis.analysis_results.bandwidth.revenue,
-        area: `${latestAnalysis.analysis_results.bandwidth.available} Mbps`,
-        isConfigured: assetSelections.some(s => s.asset_type.toLowerCase().includes('bandwidth')),
+        monthlyRevenue: analysisResults.bandwidth.revenue,
+        area: `${analysisResults.bandwidth.available} Mbps`,
+        isConfigured: assetSelections.some(s => 
+          s.analysis_id === targetAnalysis.id && s.asset_type.toLowerCase().includes('bandwidth')
+        ),
         hasRevenuePotential: true
       });
     }
 
-    // Storage
-    if (latestAnalysis.analysis_results.storage?.revenue > 0) {
+    // Storage - only if has revenue
+    if (analysisResults.storage?.revenue > 0) {
       availableAssets.push({
         type: 'storage',
         name: 'Storage Space',
-        monthlyRevenue: latestAnalysis.analysis_results.storage.revenue,
-        isConfigured: assetSelections.some(s => s.asset_type.toLowerCase().includes('storage')),
+        monthlyRevenue: analysisResults.storage.revenue,
+        isConfigured: assetSelections.some(s => 
+          s.analysis_id === targetAnalysis.id && s.asset_type.toLowerCase().includes('storage')
+        ),
         hasRevenuePotential: true
       });
     }
 
-    // Sort by revenue potential (highest first)
+    // Sort by actual revenue potential (highest first)
     availableAssets.sort((a, b) => b.monthlyRevenue - a.monthlyRevenue);
 
+    console.log('📊 [PROPERTY ANALYSIS] Final asset data:', {
+      totalAssets: availableAssets.length,
+      assets: availableAssets.map(a => ({
+        type: a.type,
+        name: a.name,
+        revenue: a.monthlyRevenue,
+        configured: a.isConfigured
+      }))
+    });
+
     setPropertyData({
-      address: primaryAddress,
-      analysisResults: latestAnalysis.analysis_results,
-      totalMonthlyRevenue: latestAnalysis.total_monthly_revenue,
-      totalOpportunities: latestAnalysis.total_opportunities,
+      analysisId: targetAnalysis.id,
+      address: analysisAddress,
+      analysisResults: targetAnalysis.analysis_results,
+      totalMonthlyRevenue: targetAnalysis.total_monthly_revenue,
+      totalOpportunities: targetAnalysis.total_opportunities,
       availableAssets
     });
 
-  }, [user, analyses, assetSelections, loading, getPrimaryAddress]);
+  }, [user, analyses, assetSelections, loading, analysisId]);
+
+  const getAddressFromAnalysis = (analysis: any): string => {
+    // Try to get address from analysis context first
+    if (analysis.analysis_results?.address) {
+      return analysis.analysis_results.address;
+    }
+    
+    // Fallback to property address from journey data
+    if (analysis.property_address) {
+      return analysis.property_address;
+    }
+    
+    // Last resort: use primary address
+    const primaryAddress = getPrimaryAddress();
+    return primaryAddress?.address || 'Property Address';
+  };
 
   return {
     propertyData,

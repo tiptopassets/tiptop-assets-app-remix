@@ -30,15 +30,25 @@ export const useOpenAIConversation = (propertyData: PropertyAnalysisData | null)
     }
 
     const { address, totalMonthlyRevenue, availableAssets } = propertyData;
-    const topAssets = availableAssets.slice(0, 2);
     
-    if (availableAssets.length === 0) {
-      return `Hi! I've analyzed your property at ${address}, but I couldn't find any available assets for monetization. Would you like to tell me more about your property features?`;
+    // Filter assets with actual revenue potential
+    const viableAssets = availableAssets.filter(asset => asset.monthlyRevenue > 0);
+    
+    if (viableAssets.length === 0) {
+      return `Hi! I've analyzed your property at ${address}, but I couldn't find any available assets with monetization potential, or they may already be configured. Would you like to tell me more about your property features?`;
     }
 
+    console.log('🎬 [OPENAI WELCOME] Using actual property data:', {
+      address,
+      totalRevenue: totalMonthlyRevenue,
+      assetsCount: viableAssets.length,
+      topAssets: viableAssets.slice(0, 2).map(a => ({ name: a.name, revenue: a.monthlyRevenue }))
+    });
+
+    const topAssets = viableAssets.slice(0, 2);
     const assetList = topAssets.map(asset => `${asset.name} ($${asset.monthlyRevenue}/month)`).join(' and ');
     
-    return `Hi! I've analyzed your property at ${address} and found great monetization opportunities. Your top assets are ${assetList}, with a total potential of $${totalMonthlyRevenue}/month. Which asset would you like to start with?`;
+    return `Hi! I've analyzed your property at ${address} and found great monetization opportunities. Your top asset${topAssets.length > 1 ? 's are' : ' is'} ${assetList}, with a total potential of $${totalMonthlyRevenue}/month. Which asset would you like to start with?`;
   }, [propertyData]);
 
   const generateIntelligentResponse = useCallback(async (userMessage: string): Promise<{
@@ -49,12 +59,20 @@ export const useOpenAIConversation = (propertyData: PropertyAnalysisData | null)
     setIsLoading(true);
     
     try {
+      // Build context with actual property data
       const context: ConversationContext = {
         propertyData,
         selectedAssets: propertyData?.availableAssets.map(a => a.type) || [],
         journeyStage: 'asset_selection',
         conversationHistory
       };
+
+      console.log('🤖 [OPENAI REQUEST] Sending context:', {
+        hasPropertyData: !!propertyData,
+        address: propertyData?.address,
+        assetsCount: propertyData?.availableAssets.length,
+        availableAssets: propertyData?.availableAssets.map(a => ({ type: a.type, revenue: a.monthlyRevenue }))
+      });
 
       const { data, error } = await supabase.functions.invoke('analyze-conversation', {
         body: {
@@ -93,7 +111,7 @@ export const useOpenAIConversation = (propertyData: PropertyAnalysisData | null)
       if (propertyData && propertyData.availableAssets.length > 0) {
         const topAsset = propertyData.availableAssets[0];
         return {
-          response: `For ${topAsset.name}, the main requirements typically include: initial setup verification, any necessary permits or approvals, and connecting with our trusted service providers. The setup process usually takes 1-2 weeks and can generate $${topAsset.monthlyRevenue}/month.`,
+          response: `For ${topAsset.name}, the main requirements typically include: initial setup verification, any necessary permits or approvals, and connecting with our trusted service providers. The setup process usually takes 1-2 weeks and can generate $${topAsset.monthlyRevenue}/month based on your specific property analysis.`,
           suggestedActions: [
             'Tell me about setup costs',
             'How long does it take?',
@@ -108,7 +126,7 @@ export const useOpenAIConversation = (propertyData: PropertyAnalysisData | null)
       if (propertyData && propertyData.availableAssets.length > 0) {
         const topAsset = propertyData.availableAssets[0];
         return {
-          response: `Let's start with your highest earning potential: ${topAsset.name}. This could generate $${topAsset.monthlyRevenue}/month. I can connect you with our trusted partners to begin the setup process.`,
+          response: `Let's start with your highest earning potential: ${topAsset.name}. Based on your property analysis, this could generate $${topAsset.monthlyRevenue}/month. I can connect you with our trusted partners to begin the setup process.`,
           suggestedActions: [
             `Set up ${topAsset.name}`,
             'What are the requirements?',
