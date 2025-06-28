@@ -18,19 +18,8 @@ const EnhancedOnboardingChatbot = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   
-  // Get parameters from URL
-  const targetAsset = searchParams.get('asset');
-  const analysisId = searchParams.get('analysisId');
-  const addressId = searchParams.get('addressId');
-  
-  console.log('🎯 [ONBOARDING] URL params:', { targetAsset, analysisId, addressId });
-  
-  // Property analysis integration with specific parameters
-  const { propertyData, loading: propertyLoading, hasPropertyData } = useUserPropertyAnalysis({
-    analysisId: analysisId || undefined,
-    addressId: addressId || undefined,
-    forceRefresh: !!analysisId || !!addressId
-  });
+  // Property analysis integration
+  const { propertyData, loading: propertyLoading, hasPropertyData } = useUserPropertyAnalysis();
   
   const [detectedAssets, setDetectedAssets] = useState<string[]>([]);
   const [conversationStage, setConversationStage] = useState('greeting');
@@ -38,15 +27,13 @@ const EnhancedOnboardingChatbot = () => {
   const [messageCount, setMessageCount] = useState(0);
   const [showAnalytics, setShowAnalytics] = useState(false);
   
+  // Get asset from URL parameters (from dashboard "Start Now" button)
+  const targetAsset = searchParams.get('asset');
+  
   // Initialize conversation with target asset if provided
   useEffect(() => {
     if (propertyData && targetAsset && !propertyLoading) {
       console.log('🎯 [ONBOARDING] Initializing with target asset:', targetAsset);
-      console.log('🏠 [ONBOARDING] Property data:', {
-        address: propertyData.address,
-        totalRevenue: propertyData.totalMonthlyRevenue,
-        assetsCount: propertyData.availableAssets.length
-      });
       
       const assetInfo = propertyData.availableAssets.find(a => a.type === targetAsset);
       if (assetInfo) {
@@ -56,11 +43,6 @@ const EnhancedOnboardingChatbot = () => {
         toast({
           title: "Asset Setup Started",
           description: `Let's configure your ${assetInfo.name} for $${assetInfo.monthlyRevenue}/month potential earnings.`,
-        });
-      } else {
-        console.warn('⚠️ [ONBOARDING] Target asset not found in available assets:', {
-          targetAsset,
-          availableAssets: propertyData.availableAssets.map(a => a.type)
         });
       }
     }

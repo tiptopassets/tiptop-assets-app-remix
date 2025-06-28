@@ -1,119 +1,72 @@
 
-import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { useNavigate } from 'react-router-dom';
-import { 
-  Home, 
-  Calendar,
-  ArrowRight,
-  MapPin,
-  Image as ImageIcon
-} from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Loader2 } from "lucide-react";
 
-interface PropertyOverviewCardProps {
+interface PropertyOverviewProps {
   address: string;
   description: string;
   imageUrl?: string;
   loading?: boolean;
 }
 
-const PropertyOverviewCard: React.FC<PropertyOverviewCardProps> = ({ 
-  address,
-  description,
-  imageUrl,
-  loading
-}) => {
-  const navigate = useNavigate();
-
-  const handleViewAnalysis = () => {
-    console.log('🏠 [DASHBOARD] Viewing property analysis for:', address);
-    navigate('/submit-property');
-  };
-
-  const handleStartOnboarding = () => {
-    console.log('🚀 [DASHBOARD] Starting onboarding for property:', address);
-    navigate('/onboarding-chatbot');
-  };
-
+export const PropertyOverviewCard = ({ 
+  address, 
+  description, 
+  imageUrl, 
+  loading = false 
+}: PropertyOverviewProps) => {
   return (
-    <Card className="border shadow-sm hover:shadow-md transition-shadow">
-      <CardHeader className="pb-3">
-        <div className="flex items-start justify-between">
-          <div className="flex items-center gap-2">
-            <Home className="h-5 w-5 text-tiptop-purple" />
-            <CardTitle className="text-lg font-semibold">Property Overview</CardTitle>
-          </div>
-          <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-            Analyzed
-          </Badge>
-        </div>
-      </CardHeader>
+    <Card className="overflow-hidden hover:shadow-lg transition-shadow duration-300 border-0 shadow-md relative">
+      {/* Glassmorphism effect */}
+      <div className="absolute inset-0 bg-gradient-to-tr from-white/80 to-white/40 backdrop-blur-sm z-0"></div>
+      <div className="absolute inset-0 bg-white/50 z-0"></div>
       
-      <CardContent className="space-y-4">
-        {/* Property Address */}
-        <div>
-          <div className="flex items-center gap-2 mb-2">
-            <MapPin className="h-4 w-4 text-gray-500" />
-            <p className="text-sm font-medium text-gray-700">Property Address</p>
-          </div>
-          <p className="text-sm text-gray-900 ml-6">{address}</p>
-        </div>
-
-        {/* Property Image */}
-        {imageUrl && (
-          <div>
-            <div className="flex items-center gap-2 mb-2">
-              <ImageIcon className="h-4 w-4 text-gray-500" />
-              <p className="text-sm font-medium text-gray-700">Satellite View</p>
+      <div className="grid grid-cols-1 lg:grid-cols-3 relative z-10">
+        <div className="lg:col-span-1">
+          {loading ? (
+            <div className="h-full min-h-[200px] bg-gray-100 flex items-center justify-center">
+              <div className="text-center">
+                <Loader2 className="h-6 w-6 animate-spin mx-auto mb-2 text-tiptop-purple" />
+                <span className="text-sm text-gray-500">Loading satellite view...</span>
+              </div>
             </div>
-            <div className="relative ml-6">
-              {loading ? (
-                <div className="w-full h-32 bg-gray-200 rounded-lg flex items-center justify-center">
-                  <div className="w-6 h-6 border-2 border-tiptop-purple border-t-transparent rounded-full animate-spin"></div>
-                </div>
-              ) : (
-                <img 
-                  src={imageUrl} 
-                  alt="Property satellite view" 
-                  className="w-full h-32 object-cover rounded-lg border"
-                />
-              )}
+          ) : imageUrl ? (
+            <div 
+              className="h-full min-h-[200px] bg-cover bg-center bg-gray-100" 
+              style={{ backgroundImage: `url(${imageUrl})` }}
+            >
+              <img 
+                src={imageUrl} 
+                alt="Property satellite view" 
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  // Hide the image and show fallback if it fails to load
+                  (e.target as HTMLImageElement).style.display = 'none';
+                  const fallback = (e.target as HTMLImageElement).nextElementSibling;
+                  if (fallback) {
+                    (fallback as HTMLElement).style.display = 'flex';
+                  }
+                }}
+              />
+              <div className="h-full min-h-[200px] bg-gray-200 items-center justify-center hidden">
+                <span className="text-gray-400">Satellite View Unavailable</span>
+              </div>
             </div>
-          </div>
-        )}
-
-        {/* Analysis Description */}
-        <div>
-          <div className="flex items-center gap-2 mb-2">
-            <Calendar className="h-4 w-4 text-gray-500" />
-            <p className="text-sm font-medium text-gray-700">Analysis Summary</p>
-          </div>
-          <p className="text-sm text-gray-600 ml-6">{description}</p>
+          ) : (
+            <div className="h-full min-h-[200px] bg-gray-200 flex items-center justify-center">
+              <span className="text-gray-400">Satellite View Unavailable</span>
+            </div>
+          )}
         </div>
-
-        {/* Action Buttons */}
-        <div className="flex gap-2 pt-2">
-          <Button
-            onClick={handleViewAnalysis}
-            variant="outline"
-            className="flex-1"
-          >
-            <ArrowRight className="h-4 w-4 mr-2" />
-            View Full Analysis
-          </Button>
-          <Button
-            onClick={handleStartOnboarding}
-            className="flex-1 bg-tiptop-purple hover:bg-purple-600"
-          >
-            Start Setup
-            <ArrowRight className="h-4 w-4 ml-2" />
-          </Button>
+        <div className="lg:col-span-2 p-6">
+          <CardHeader className="p-0 pb-4">
+            <CardTitle className="text-xl font-bold text-gray-900">{address || "Property Address"}</CardTitle>
+          </CardHeader>
+          <CardContent className="p-0">
+            <p className="text-gray-600">{description || "No property analysis available yet."}</p>
+          </CardContent>
         </div>
-      </CardContent>
+      </div>
     </Card>
   );
 };
-
-export default PropertyOverviewCard;

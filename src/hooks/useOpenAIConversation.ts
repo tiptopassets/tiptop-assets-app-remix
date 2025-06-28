@@ -29,20 +29,13 @@ export const useOpenAIConversation = (propertyData: PropertyAnalysisData | null)
       return "Hi! I'm here to help you set up monetization for your property assets. Let me analyze your property first.";
     }
 
-    console.log('🏠 [CONVERSATION] Generating welcome for property:', {
-      address: propertyData.address,
-      totalRevenue: propertyData.totalMonthlyRevenue,
-      assetsCount: propertyData.availableAssets.length,
-      assets: propertyData.availableAssets.map(a => `${a.name}: $${a.monthlyRevenue}`)
-    });
-
     const { address, totalMonthlyRevenue, availableAssets } = propertyData;
+    const topAssets = availableAssets.slice(0, 2);
     
     if (availableAssets.length === 0) {
-      return `Hi! I've analyzed your property at ${address}, but I couldn't find any available assets for monetization with revenue potential. Would you like to tell me more about your property features?`;
+      return `Hi! I've analyzed your property at ${address}, but I couldn't find any available assets for monetization. Would you like to tell me more about your property features?`;
     }
 
-    const topAssets = availableAssets.slice(0, 2);
     const assetList = topAssets.map(asset => `${asset.name} ($${asset.monthlyRevenue}/month)`).join(' and ');
     
     return `Hi! I've analyzed your property at ${address} and found great monetization opportunities. Your top assets are ${assetList}, with a total potential of $${totalMonthlyRevenue}/month. Which asset would you like to start with?`;
@@ -56,27 +49,12 @@ export const useOpenAIConversation = (propertyData: PropertyAnalysisData | null)
     setIsLoading(true);
     
     try {
-      if (!propertyData) {
-        return {
-          response: "I need to analyze your property first to provide accurate information. Could you tell me about your property?",
-          suggestedActions: ['Analyze my property', 'Tell me about available services'],
-          detectedAssets: []
-        };
-      }
-
       const context: ConversationContext = {
         propertyData,
-        selectedAssets: propertyData.availableAssets.map(a => a.type),
+        selectedAssets: propertyData?.availableAssets.map(a => a.type) || [],
         journeyStage: 'asset_selection',
         conversationHistory
       };
-
-      console.log('🤖 [OPENAI] Sending context:', {
-        propertyAddress: propertyData.address,
-        totalRevenue: propertyData.totalMonthlyRevenue,
-        availableAssets: propertyData.availableAssets.length,
-        message: userMessage
-      });
 
       const { data, error } = await supabase.functions.invoke('analyze-conversation', {
         body: {
@@ -88,7 +66,7 @@ export const useOpenAIConversation = (propertyData: PropertyAnalysisData | null)
 
       if (error) {
         console.error('OpenAI conversation error:', error);
-        return generateContextualFallbackResponse(userMessage, propertyData);
+        return generateFallbackResponse(userMessage);
       }
 
       return {
@@ -98,67 +76,59 @@ export const useOpenAIConversation = (propertyData: PropertyAnalysisData | null)
       };
     } catch (error) {
       console.error('Error generating intelligent response:', error);
-      return generateContextualFallbackResponse(userMessage, propertyData);
+      return generateFallbackResponse(userMessage);
     } finally {
       setIsLoading(false);
     }
   }, [propertyData, conversationHistory]);
 
-  const generateContextualFallbackResponse = useCallback((userMessage: string, propData: PropertyAnalysisData): {
+  const generateFallbackResponse = useCallback((userMessage: string): {
     response: string;
     suggestedActions: string[];
     detectedAssets: string[];
   } => {
     const lowerMessage = userMessage.toLowerCase();
     
-    if (!propData || propData.availableAssets.length === 0) {
-      return {
-        response: "I don't have analysis data for your property yet. Let me help you get started with property analysis.",
-        suggestedActions: [
-          'Analyze my property',
-          'What services do you offer?',
-          'How does this work?'
-        ],
-        detectedAssets: []
-      };
-    }
-
-    const topAsset = propData.availableAssets[0];
-    
     if (lowerMessage.includes('requirement') || lowerMessage.includes('need')) {
-      return {
-        response: `For ${topAsset.name}, the main requirements typically include: initial setup verification, any necessary permits or approvals, and connecting with our trusted service providers. The setup process usually takes 1-2 weeks and can generate $${topAsset.monthlyRevenue}/month based on your property analysis.`,
-        suggestedActions: [
-          'Tell me about setup costs',
-          'How long does it take?',
-          'Connect me with providers'
-        ],
-        detectedAssets: [topAsset.type]
-      };
+      if (propertyData && propertyData.availableAssets.length > 0) {
+        const topAsset = propertyData.availableAssets[0];
+        return {
+          response: `For ${topAsset.name}, the main requirements typically include: initial setup verification, any necessary permits or approvals, and connecting with our trusted service providers. The setup process usually takes 1-2 weeks and can generate $${topAsset.monthlyRevenue}/month.`,
+          suggestedActions: [
+            'Tell me about setup costs',
+            'How long does it take?',
+            'Connect me with providers'
+          ],
+          detectedAssets: [topAsset.type]
+        };
+      }
     }
 
     if (lowerMessage.includes('start') || lowerMessage.includes('begin')) {
-      return {
-        response: `Let's start with your highest earning potential: ${topAsset.name}. Based on your property analysis, this could generate $${topAsset.monthlyRevenue}/month. I can connect you with our trusted partners to begin the setup process.`,
-        suggestedActions: [
-          `Set up ${topAsset.name}`,
-          'What are the requirements?',
-          'Show me other options'
-        ],
-        detectedAssets: [topAsset.type]
-      };
+      if (propertyData && propertyData.availableAssets.length > 0) {
+        const topAsset = propertyData.availableAssets[0];
+        return {
+          response: `Let's start with your highest earning potential: ${topAsset.name}. This could generate $${topAsset.monthlyRevenue}/month. I can connect you with our trusted partners to begin the setup process.`,
+          suggestedActions: [
+            `Set up ${topAsset.name}`,
+            'What are the requirements?',
+            'Show me other options'
+          ],
+          detectedAssets: [topAsset.type]
+        };
+      }
     }
 
     return {
-      response: `Based on your property analysis at ${propData.address}, you have ${propData.availableAssets.length} monetization opportunities. Your top asset is ${topAsset.name} with $${topAsset.monthlyRevenue}/month potential. What would you like to know about it?`,
+      response: "I understand you're looking for specific information about your property assets. Could you please be more specific about what you'd like to know?",
       suggestedActions: [
-        `What are the requirements for ${topAsset.name}?`,
+        'What are the requirements?',
         'How do I get started?',
-        'Show me all my options'
+        'Show me my options'
       ],
-      detectedAssets: [topAsset.type]
+      detectedAssets: []
     };
-  }, []);
+  }, [propertyData]);
 
   const addMessage = useCallback((message: ConversationMessage) => {
     setConversationHistory(prev => [...prev, message]);
