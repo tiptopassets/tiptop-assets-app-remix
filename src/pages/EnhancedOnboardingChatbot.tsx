@@ -5,13 +5,12 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Bot, Settings2, TrendingUp, MessageSquare } from 'lucide-react';
+import { ArrowLeft, Bot, Settings2, TrendingUp, MessageSquare, CheckCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import EnhancedChatInterface from '@/components/onboarding/EnhancedChatInterface';
 import ConversationAnalytics from '@/components/onboarding/ConversationAnalytics';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useUserPropertyAnalysis } from '@/hooks/useUserPropertyAnalysis';
-import { useIntelligentConversation } from '@/hooks/useIntelligentConversation';
 
 const EnhancedOnboardingChatbot = () => {
   const { user, loading: authLoading } = useAuth();
@@ -21,14 +20,6 @@ const EnhancedOnboardingChatbot = () => {
   
   // Property analysis integration
   const { propertyData, loading: propertyLoading, hasPropertyData } = useUserPropertyAnalysis();
-  const { 
-    conversationState, 
-    initializeConversation, 
-    generateWelcomeMessage,
-    generateAssetSuggestions,
-    selectAsset,
-    generateAssetResponse
-  } = useIntelligentConversation(propertyData);
   
   const [detectedAssets, setDetectedAssets] = useState<string[]>([]);
   const [conversationStage, setConversationStage] = useState('greeting');
@@ -39,40 +30,29 @@ const EnhancedOnboardingChatbot = () => {
   // Get asset from URL parameters (from dashboard "Start Now" button)
   const targetAsset = searchParams.get('asset');
   
-  // Initialize conversation with property data
+  // Initialize conversation with target asset if provided
   useEffect(() => {
-    if (propertyData && !propertyLoading && !conversationState?.isInitialized && user) {
-      console.log('🔄 [ONBOARDING] Initializing conversation with property data:', {
-        address: propertyData.address,
-        totalRevenue: propertyData.totalMonthlyRevenue,
-        availableAssets: propertyData.availableAssets.length,
-        targetAsset
-      });
+    if (propertyData && targetAsset && !propertyLoading) {
+      console.log('🎯 [ONBOARDING] Initializing with target asset:', targetAsset);
       
-      const userName = user?.user_metadata?.full_name?.split(' ')[0] || user?.email?.split('@')[0] || 'there';
-      initializeConversation(targetAsset || undefined, userName);
-      
-      if (targetAsset) {
+      const assetInfo = propertyData.availableAssets.find(a => a.type === targetAsset);
+      if (assetInfo) {
         setDetectedAssets([targetAsset]);
         setConversationStage('asset_configuration');
-        selectAsset(targetAsset);
         
-        const assetInfo = propertyData.availableAssets.find(a => a.type === targetAsset);
-        if (assetInfo) {
-          toast({
-            title: "Asset Configuration Started",
-            description: `Let's set up your ${assetInfo.name.toLowerCase()} for $${assetInfo.monthlyRevenue}/month potential earnings.`,
-          });
-        }
+        toast({
+          title: "Asset Setup Started",
+          description: `Let's configure your ${assetInfo.name} for $${assetInfo.monthlyRevenue}/month potential earnings.`,
+        });
       }
     }
-  }, [propertyData, propertyLoading, targetAsset, user, initializeConversation, selectAsset, toast, conversationState?.isInitialized]);
+  }, [propertyData, targetAsset, propertyLoading, toast]);
 
   const [analytics, setAnalytics] = useState({
     totalMessages: 0,
     conversationDuration: 0,
     detectedAssets: [],
-    confidenceScore: 0.8,
+    confidenceScore: 0.9,
     completionProgress: 0,
     keyInsights: []
   });
@@ -95,16 +75,17 @@ const EnhancedOnboardingChatbot = () => {
   const generateKeyInsights = (assets: string[], stage: string) => {
     const insights: string[] = [];
     
-    if (assets.length > 2) {
-      insights.push('Multiple monetization opportunities detected');
+    if (propertyData) {
+      insights.push(`Property analyzed: ${propertyData.address}`);
+      insights.push(`Total potential: $${propertyData.totalMonthlyRevenue}/month`);
     }
     
-    if (assets.includes('rooftop')) {
-      insights.push('High solar potential based on analysis');
+    if (assets.length > 1) {
+      insights.push('Multiple assets under discussion');
     }
     
-    if (stage === 'recommendation') {
-      insights.push('Ready for partner recommendations');
+    if (stage === 'asset_configuration') {
+      insights.push('Ready for asset setup');
     }
     
     return insights;
@@ -121,17 +102,6 @@ const EnhancedOnboardingChatbot = () => {
     setMessageCount(prev => prev + 1);
   };
 
-  const handleAssetSelect = (assetId: string) => {
-    selectAsset(assetId);
-    toast({
-      title: "Asset Selected",
-      description: `Setting up ${assetId.replace('_', ' ')} monetization...`,
-    });
-    
-    // Navigate to asset-specific setup
-    navigate(`/dashboard?setup=${assetId}`);
-  };
-
   // Loading state - wait for both auth and property data
   const isLoading = authLoading || (propertyLoading && !propertyData);
 
@@ -141,7 +111,7 @@ const EnhancedOnboardingChatbot = () => {
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-tiptop-purple border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
           <p className="text-gray-600">
-            {authLoading ? 'Authenticating...' : 'Loading your property data...'}
+            {authLoading ? 'Authenticating...' : 'Loading your property analysis...'}
           </p>
         </div>
       </div>
@@ -153,7 +123,7 @@ const EnhancedOnboardingChatbot = () => {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <p className="text-gray-600 mb-4">No property data found. Please analyze a property first.</p>
+          <p className="text-gray-600 mb-4">No property analysis found. Please analyze a property first.</p>
           <Button onClick={() => navigate('/submit-property')}>
             Analyze Property
           </Button>
@@ -183,7 +153,7 @@ const EnhancedOnboardingChatbot = () => {
                   AI Property Assistant
                 </h1>
                 <Badge className="bg-tiptop-purple/10 text-tiptop-purple border-tiptop-purple/20">
-                  Enhanced
+                  OpenAI Powered
                 </Badge>
                 {targetAsset && (
                   <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
@@ -192,7 +162,8 @@ const EnhancedOnboardingChatbot = () => {
                 )}
                 {hasPropertyData && (
                   <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-                    Property Analyzed
+                    <CheckCircle className="h-3 w-3 mr-1" />
+                    Analysis Complete
                   </Badge>
                 )}
               </div>
@@ -226,10 +197,6 @@ const EnhancedOnboardingChatbot = () => {
                 onAssetDetected={handleAssetDetected}
                 onConversationStageChange={handleConversationStageChange}
                 propertyData={propertyData}
-                conversationState={conversationState}
-                generateAssetResponse={generateAssetResponse}
-                generateWelcomeMessage={generateWelcomeMessage}
-                generateAssetSuggestions={generateAssetSuggestions}
               />
             </Card>
           </div>
@@ -246,7 +213,7 @@ const EnhancedOnboardingChatbot = () => {
                   <CardHeader>
                     <CardTitle className="text-lg flex items-center gap-2">
                       <Settings2 className="h-5 w-5 text-tiptop-purple" />
-                      Property Overview
+                      Your Property Analysis
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
@@ -256,19 +223,27 @@ const EnhancedOnboardingChatbot = () => {
                         <p className="text-sm text-gray-600">{propertyData?.address}</p>
                       </div>
                       <div>
-                        <p className="text-sm font-medium text-gray-700">Total Potential</p>
+                        <p className="text-sm font-medium text-gray-700">Total Monthly Potential</p>
                         <p className="text-lg font-bold text-green-600">${propertyData?.totalMonthlyRevenue}/month</p>
                       </div>
                       <div>
-                        <p className="text-sm font-medium text-gray-700">Available Assets</p>
+                        <p className="text-sm font-medium text-gray-700">Available Assets ({propertyData?.availableAssets.length})</p>
                         <div className="flex flex-wrap gap-1 mt-1">
                           {propertyData?.availableAssets.map((asset) => (
                             <Badge key={asset.type} variant="outline" className="text-xs">
-                              {asset.name}
+                              {asset.name} (${asset.monthlyRevenue}/mo)
                             </Badge>
                           ))}
                         </div>
                       </div>
+                      {targetAsset && (
+                        <div>
+                          <p className="text-sm font-medium text-gray-700">Current Focus</p>
+                          <Badge className="bg-tiptop-purple text-white">
+                            {targetAsset.replace('_', ' ')} Setup
+                          </Badge>
+                        </div>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
@@ -299,7 +274,7 @@ const EnhancedOnboardingChatbot = () => {
                   className="w-full justify-start"
                   onClick={() => navigate('/submit-property')}
                 >
-                  Submit Property Details
+                  Analyze Another Property
                 </Button>
                 <Button
                   variant="outline"
@@ -318,26 +293,32 @@ const EnhancedOnboardingChatbot = () => {
               </CardContent>
             </Card>
 
-            {/* Tips & Insights */}
+            {/* AI Assistant Info */}
             <Card>
               <CardHeader>
                 <CardTitle className="text-lg flex items-center gap-2">
-                  <MessageSquare className="h-5 w-5 text-tiptop-purple" />
-                  Pro Tips
+                  <Bot className="h-5 w-5 text-tiptop-purple" />
+                  AI Assistant Features
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3 text-sm">
                   <div className="p-3 bg-tiptop-purple/5 rounded-lg">
-                    <p className="font-medium text-tiptop-purple mb-1">Be Specific</p>
+                    <p className="font-medium text-tiptop-purple mb-1">Intelligent Responses</p>
                     <p className="text-gray-600">
-                      I already know your property details, so we can focus on specific setup questions.
+                      Powered by OpenAI to understand your specific questions and provide accurate answers.
                     </p>
                   </div>
                   <div className="p-3 bg-green-50 rounded-lg">
-                    <p className="font-medium text-green-700 mb-1">Ask Questions</p>
+                    <p className="font-medium text-green-700 mb-1">Property-Aware</p>
                     <p className="text-gray-600">
-                      Ask about setup costs, time requirements, or potential earnings for any asset.
+                      Knows your exact property analysis and can provide specific recommendations based on your assets.
+                    </p>
+                  </div>
+                  <div className="p-3 bg-blue-50 rounded-lg">
+                    <p className="font-medium text-blue-700 mb-1">Context Memory</p>
+                    <p className="text-gray-600">
+                      Remembers our conversation to provide consistent and relevant assistance.
                     </p>
                   </div>
                 </div>

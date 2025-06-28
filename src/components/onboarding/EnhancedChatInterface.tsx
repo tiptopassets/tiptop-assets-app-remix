@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,6 +7,7 @@ import { Progress } from '@/components/ui/progress';
 import { Loader2, Send, Mic, MicOff, Lightbulb, TrendingUp, CheckCircle, AlertCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { PropertyAnalysisData } from '@/hooks/useUserPropertyAnalysis';
+import { useOpenAIConversation } from '@/hooks/useOpenAIConversation';
 
 interface DetectedAsset {
   id: string;
@@ -28,258 +28,99 @@ interface Message {
   detectedAssets?: string[];
   confidence?: number;
   type?: 'message' | 'asset_analysis' | 'smart_asset_detection';
-  assetAnalysisData?: any;
   smartAssetData?: DetectedAsset[];
-}
-
-interface ConversationState {
-  currentAsset: string | null;
-  completedAssets: string[];
-  availableAssets: any[];
-  userName: string;
-  propertyAddress: string;
-  isInitialized: boolean;
 }
 
 interface EnhancedChatInterfaceProps {
   onAssetDetected: (assets: string[]) => void;
   onConversationStageChange: (stage: string) => void;
   propertyData?: PropertyAnalysisData | null;
-  conversationState?: ConversationState;
-  generateAssetResponse?: (assetType: string) => string;
-  generateWelcomeMessage?: () => string;
-  generateAssetSuggestions?: () => string[];
 }
 
 const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
   onAssetDetected,
   onConversationStageChange,
-  propertyData,
-  conversationState,
-  generateAssetResponse,
-  generateWelcomeMessage,
-  generateAssetSuggestions
+  propertyData
 }) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputMessage, setInputMessage] = useState('');
   const [isVoiceRecording, setIsVoiceRecording] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(true);
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const messagesContainerRef = useRef<HTMLDivElement>(null);
+
+  const {
+    generateWelcomeMessage,
+    generateIntelligentResponse,
+    addMessage,
+    isLoading
+  } = useOpenAIConversation(propertyData);
 
   // Initialize with welcome message
   useEffect(() => {
-    if (conversationState?.isInitialized && generateWelcomeMessage && messages.length === 0) {
-      console.log('🎬 [CHAT] Initializing with welcome message');
+    if (propertyData && messages.length === 0) {
+      console.log('🎬 [CHAT] Initializing with property data:', propertyData);
       const welcomeMessage: Message = {
         id: 'welcome',
         role: 'assistant',
         content: generateWelcomeMessage(),
         timestamp: new Date(),
-        suggestedActions: generateAssetSuggestions ? generateAssetSuggestions() : [
-          'Tell me about solar panels',
-          'How do I rent parking spaces?',
-          'What about pool sharing?'
-        ]
+        suggestedActions: propertyData.availableAssets.slice(0, 3).map(asset => 
+          `Tell me about ${asset.name}`
+        )
       };
       setMessages([welcomeMessage]);
     }
-  }, [conversationState?.isInitialized, generateWelcomeMessage, generateAssetSuggestions, messages.length]);
-
-  const analyzeUserMessage = (message: string): string[] => {
-    const assetKeywords = {
-      'rooftop': ['roof', 'rooftop', 'solar', 'panels', 'sun', 'electricity'],
-      'parking': ['parking', 'driveway', 'garage', 'car space', 'vehicle'],
-      'pool': ['pool', 'swimming', 'swim', 'water'],
-      'bandwidth': ['internet', 'bandwidth', 'wifi', 'connection', 'broadband'],
-      'storage': ['storage', 'basement', 'attic', 'space', 'store'],
-      'garden': ['garden', 'yard', 'lawn', 'outdoor space', 'backyard', 'plants']
-    };
-
-    const detected: string[] = [];
-    const lowerMessage = message.toLowerCase();
-
-    Object.entries(assetKeywords).forEach(([asset, keywords]) => {
-      if (keywords.some(keyword => lowerMessage.includes(keyword))) {
-        detected.push(asset);
-      }
-    });
-
-    return detected;
-  };
+  }, [propertyData, generateWelcomeMessage, messages.length]);
 
   const generateSmartAssetData = (detectedAssets: string[]): DetectedAsset[] => {
-    const assetMap: Record<string, Partial<DetectedAsset>> = {
-      'rooftop': {
-        name: 'Rooftop Solar',
-        confidence: 0.9,
-        estimatedRevenue: 350,
-        setupComplexity: 'medium',
-        keyRequirements: ['Structural assessment', 'Solar permits', 'Grid connection'],
-        marketOpportunity: 'high'
-      },
-      'parking': {
-        name: 'Parking Rental',
-        confidence: 0.85,
-        estimatedRevenue: 200,
-        setupComplexity: 'low',
-        keyRequirements: ['Insurance coverage', 'Access management', 'Payment system'],
-        marketOpportunity: 'high'
-      },
-      'pool': {
-        name: 'Pool Sharing',
-        confidence: 0.8,
-        estimatedRevenue: 150,
-        setupComplexity: 'low',
-        keyRequirements: ['Safety compliance', 'Insurance update', 'Booking platform'],
-        marketOpportunity: 'medium'
-      },
-      'bandwidth': {
-        name: 'Bandwidth Sharing',
-        confidence: 0.75,
-        estimatedRevenue: 50,
-        setupComplexity: 'low',
-        keyRequirements: ['Speed test verification', 'Router setup', 'Bandwidth allocation'],
-        marketOpportunity: 'medium'
-      },
-      'storage': {
-        name: 'Storage Rental',
-        confidence: 0.7,
-        estimatedRevenue: 100,
-        setupComplexity: 'low',
-        keyRequirements: ['Security measures', 'Access control', 'Item restrictions'],
-        marketOpportunity: 'medium'
-      },
-      'garden': {
-        name: 'Garden Events',
-        confidence: 0.65,
-        estimatedRevenue: 120,
-        setupComplexity: 'medium',
-        keyRequirements: ['Space preparation', 'Event permits', 'Liability coverage'],
-        marketOpportunity: 'low'
-      }
-    };
+    if (!propertyData) return [];
 
-    return detectedAssets.map((asset) => ({
-      id: asset,
-      name: assetMap[asset]?.name || asset.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()),
-      confidence: assetMap[asset]?.confidence || 0.7,
-      estimatedRevenue: assetMap[asset]?.estimatedRevenue || Math.floor(Math.random() * 300) + 100,
-      setupComplexity: assetMap[asset]?.setupComplexity || 'medium',
-      keyRequirements: assetMap[asset]?.keyRequirements || ['Initial setup', 'Documentation', 'Service activation'],
-      marketOpportunity: assetMap[asset]?.marketOpportunity || 'medium'
-    }));
-  };
-
-  const generateIntelligentResponse = (userMessage: string): { message: string; suggestedActions: string[]; detectedAssets: string[] } => {
-    const detectedAssets = analyzeUserMessage(userMessage);
-    
-    // If user mentions a specific asset and we have property data
-    if (detectedAssets.length > 0 && generateAssetResponse) {
-      const asset = detectedAssets[0];
-      const response = generateAssetResponse(asset);
+    return detectedAssets.map((assetType) => {
+      const propertyAsset = propertyData.availableAssets.find(a => a.type === assetType);
       
+      if (propertyAsset) {
+        return {
+          id: assetType,
+          name: propertyAsset.name,
+          confidence: 0.95,
+          estimatedRevenue: propertyAsset.monthlyRevenue,
+          setupComplexity: propertyAsset.monthlyRevenue > 300 ? 'medium' : 'low',
+          keyRequirements: getAssetRequirements(assetType),
+          marketOpportunity: propertyAsset.monthlyRevenue > 200 ? 'high' : 'medium'
+        };
+      }
+
       return {
-        message: response,
-        suggestedActions: [
-          'How do I get started?',
-          'What are the requirements?',
-          'Tell me about other assets'
-        ],
-        detectedAssets
+        id: assetType,
+        name: assetType.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()),
+        confidence: 0.7,
+        estimatedRevenue: 150,
+        setupComplexity: 'medium',
+        keyRequirements: ['Initial setup', 'Documentation', 'Service activation'],
+        marketOpportunity: 'medium'
       };
-    }
-
-    // Property-aware responses
-    if (propertyData && conversationState?.isInitialized) {
-      const { availableAssets } = conversationState;
-      
-      if (userMessage.toLowerCase().includes('start') || userMessage.toLowerCase().includes('begin')) {
-        if (availableAssets && availableAssets.length > 0) {
-          const topAsset = availableAssets[0];
-          return {
-            message: `Perfect! Let's start with your highest earning potential: ${topAsset.name} which could generate $${topAsset.monthlyRevenue}/month. This involves ${topAsset.area} of space. Should we proceed with this, or would you prefer to start with a different asset?`,
-            suggestedActions: [
-              `Yes, set up ${topAsset.name}`,
-              'Show me other options',
-              'What are the requirements?'
-            ],
-            detectedAssets: [topAsset.type]
-          };
-        }
-      }
-
-      if (userMessage.toLowerCase().includes('other') || userMessage.toLowerCase().includes('different')) {
-        if (availableAssets && availableAssets.length > 0) {
-          const assetOptions = availableAssets.slice(0, 3).map(asset => 
-            `${asset.name} ($${asset.monthlyRevenue}/month)`
-          );
-          
-          return {
-            message: `Here are your available monetization options: ${assetOptions.join(', ')}. Each has different setup requirements and earning potential. Which one interests you most?`,
-            suggestedActions: availableAssets.slice(0, 3).map(asset => asset.name),
-            detectedAssets: availableAssets.map(asset => asset.type)
-          };
-        }
-      }
-    }
-
-    // Default intelligent responses
-    const responses = [
-      {
-        message: "That's helpful information! Based on what you've told me, I can provide more specific guidance. What aspect would you like to focus on first?",
-        suggestedActions: [
-          'Setup requirements',
-          'Earning potential', 
-          'Time to get started'
-        ]
-      },
-      {
-        message: "I understand. Let me help you with the specific details for that asset type. What questions do you have about the setup process?",
-        suggestedActions: [
-          'How much can I earn?',
-          'What do I need to start?',
-          'How long does setup take?'
-        ]
-      }
-    ];
-
-    const randomResponse = responses[Math.floor(Math.random() * responses.length)];
-    return {
-      ...randomResponse,
-      detectedAssets
-    };
+    });
   };
 
-  const addSmartAssetDetectionMessage = (detectedAssets: string[]) => {
-    if (detectedAssets.length === 0) return;
-
-    console.log('🔍 [CHAT] Adding smart asset detection for:', detectedAssets);
-    const smartAssetData = generateSmartAssetData(detectedAssets);
-
-    const detectionMessage: Message = {
-      id: `smart-detection-${Date.now()}`,
-      role: 'assistant',
-      content: `Great! I've analyzed your message and detected ${detectedAssets.length} monetization opportunities. Here's my AI-powered analysis:`,
-      timestamp: new Date(),
-      type: 'smart_asset_detection',
-      smartAssetData: smartAssetData,
-      suggestedActions: [
-        `Set up ${smartAssetData[0]?.name}`,
-        'Tell me about requirements',
-        'Show other opportunities'
-      ]
+  const getAssetRequirements = (assetType: string): string[] => {
+    const requirements: Record<string, string[]> = {
+      'rooftop': ['Structural assessment', 'Solar permits', 'Grid connection', 'Installation crew'],
+      'parking': ['Insurance coverage', 'Access management', 'Payment system', 'Clear boundaries'],
+      'pool': ['Safety compliance', 'Insurance update', 'Booking platform', 'Cleaning schedule'],
+      'bandwidth': ['Speed verification', 'Router setup', 'Bandwidth allocation', 'Monitoring tools'],
+      'storage': ['Security measures', 'Access control', 'Item restrictions', 'Insurance coverage'],
+      'garden': ['Space preparation', 'Event permits', 'Liability coverage', 'Equipment access']
     };
-
-    setMessages(prev => [...prev, detectionMessage]);
+    
+    return requirements[assetType] || ['Initial setup', 'Documentation', 'Service activation'];
   };
 
   const handleSendMessage = async () => {
-    if (!inputMessage.trim() || isAnalyzing) return;
+    if (!inputMessage.trim() || isLoading) return;
 
     const userMessage = inputMessage.trim();
     setInputMessage('');
+    setShowSuggestions(false);
     
     console.log('📤 [CHAT] Sending message:', userMessage);
     
@@ -292,17 +133,15 @@ const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
     };
     
     setMessages(prev => [...prev, newUserMessage]);
-    setShowSuggestions(false);
-    setIsAnalyzing(true);
     
-    // Generate intelligent response
-    setTimeout(() => {
-      const response = generateIntelligentResponse(userMessage);
+    // Generate intelligent response using OpenAI
+    try {
+      const response = await generateIntelligentResponse(userMessage);
       
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: response.message,
+        content: response.response,
         timestamp: new Date(),
         suggestedActions: response.suggestedActions,
         detectedAssets: response.detectedAssets,
@@ -320,11 +159,50 @@ const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
       }
       
       onConversationStageChange('discussion');
-      setIsAnalyzing(false);
-    }, 1500);
+    } catch (error) {
+      console.error('Error handling message:', error);
+      
+      // Fallback message
+      const fallbackMessage: Message = {
+        id: (Date.now() + 2).toString(),
+        role: 'assistant',
+        content: "I'm having trouble processing your request right now. Could you please try rephrasing your question?",
+        timestamp: new Date(),
+        suggestedActions: [
+          'What are my asset options?',
+          'How do I get started?',
+          'Tell me about requirements'
+        ]
+      };
+      
+      setMessages(prev => [...prev, fallbackMessage]);
+    }
   };
 
-  const handleSuggestedAction = (action: string) => {
+  const addSmartAssetDetectionMessage = (detectedAssets: string[]) => {
+    if (detectedAssets.length === 0) return;
+
+    console.log('🔍 [CHAT] Adding smart asset detection for:', detectedAssets);
+    const smartAssetData = generateSmartAssetData(detectedAssets);
+
+    const detectionMessage: Message = {
+      id: `smart-detection-${Date.now()}`,
+      role: 'assistant',
+      content: `Based on your question, I've identified ${detectedAssets.length} relevant asset${detectedAssets.length > 1 ? 's' : ''} from your property analysis:`,
+      timestamp: new Date(),
+      type: 'smart_asset_detection',
+      smartAssetData: smartAssetData,
+      suggestedActions: [
+        `Set up ${smartAssetData[0]?.name}`,
+        'Compare all options',
+        'Show setup requirements'
+      ]
+    };
+
+    setMessages(prev => [...prev, detectionMessage]);
+  };
+
+  const handleSuggestedAction = async (action: string) => {
     console.log('💬 [CHAT] Handling suggested action:', action);
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -335,16 +213,14 @@ const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
     
     setMessages(prev => [...prev, userMessage]);
     setShowSuggestions(false);
-    setIsAnalyzing(true);
     
-    // Generate response for the suggested action
-    setTimeout(() => {
-      const response = generateIntelligentResponse(action);
+    try {
+      const response = await generateIntelligentResponse(action);
       
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: response.message,
+        content: response.response,
         timestamp: new Date(),
         suggestedActions: response.suggestedActions,
         detectedAssets: response.detectedAssets,
@@ -353,7 +229,6 @@ const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
 
       setMessages(prev => [...prev, assistantMessage]);
       
-      // Add smart asset detection if assets were detected
       if (response.detectedAssets.length > 0) {
         setTimeout(() => {
           addSmartAssetDetectionMessage(response.detectedAssets);
@@ -362,8 +237,9 @@ const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
       }
       
       onConversationStageChange('discussion');
-      setIsAnalyzing(false);
-    }, 1500);
+    } catch (error) {
+      console.error('Error handling suggested action:', error);
+    }
   };
 
   const handleAssetSelect = (assetId: string) => {
@@ -396,34 +272,6 @@ const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
     }, 1000);
   };
 
-  const handleAssetDismiss = (assetId: string) => {
-    console.log('❌ [CHAT] Asset dismissed:', assetId);
-    const userMessage: Message = {
-      id: Date.now().toString(),
-      role: 'user',
-      content: `I'm not interested in ${assetId.replace('_', ' ')} right now`,
-      timestamp: new Date()
-    };
-    
-    setMessages(prev => [...prev, userMessage]);
-    
-    setTimeout(() => {
-      const assistantMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        role: 'assistant',
-        content: `No problem! We can focus on other opportunities. What other assets would you like to explore?`,
-        timestamp: new Date(),
-        suggestedActions: [
-          'Show me other options',
-          'Tell me about requirements',
-          'What has the highest potential?'
-        ]
-      };
-      
-      setMessages(prev => [...prev, assistantMessage]);
-    }, 1000);
-  };
-
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
@@ -436,7 +284,7 @@ const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
   };
 
   const getStageIcon = () => {
-    if (conversationState?.currentAsset) return <TrendingUp className="h-4 w-4" />;
+    if (propertyData?.availableAssets.length === 0) return <AlertCircle className="h-4 w-4" />;
     return <Lightbulb className="h-4 w-4" />;
   };
 
@@ -463,10 +311,10 @@ const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
       <div className="mt-3 space-y-3">
         <div className="text-center mb-4">
           <h4 className="text-sm font-semibold text-tiptop-purple mb-2">
-            🔍 Smart Asset Detection Results
+            🎯 Your Property Assets
           </h4>
           <p className="text-xs text-gray-600">
-            AI-powered analysis of your property's monetization potential
+            Based on your official property analysis
           </p>
         </div>
 
@@ -482,18 +330,15 @@ const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
               <div>
                 <h5 className="font-semibold text-tiptop-purple flex items-center gap-2">
                   {asset.name}
-                  <Badge className={`text-xs ${getComplexityColor(asset.setupComplexity)}`}>
+                  <Badge className="text-xs bg-green-50 text-green-700 border-green-200">
                     {asset.setupComplexity} setup
                   </Badge>
                 </h5>
                 <div className="flex items-center gap-4 mt-1">
-                  <div className="text-xs text-gray-600">
-                    Confidence: {Math.round(asset.confidence * 100)}%
-                  </div>
                   <div className="text-xs font-medium text-tiptop-purple">
                     ${asset.estimatedRevenue}/month
                   </div>
-                  <div className={`text-xs font-medium ${getOpportunityColor(asset.marketOpportunity)}`}>
+                  <div className="text-xs font-medium text-green-600">
                     {asset.marketOpportunity} demand
                   </div>
                 </div>
@@ -503,7 +348,7 @@ const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
             {/* Confidence Bar */}
             <div className="mb-3">
               <div className="flex items-center justify-between mb-1">
-                <span className="text-xs text-gray-600">AI Confidence</span>
+                <span className="text-xs text-gray-600">Analysis Confidence</span>
                 <span className="text-xs font-medium">{Math.round(asset.confidence * 100)}%</span>
               </div>
               <Progress value={asset.confidence * 100} className="h-1" />
@@ -511,7 +356,7 @@ const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
 
             {/* Key Requirements */}
             <div className="mb-3">
-              <h6 className="text-xs font-medium text-gray-900 mb-1">Key Requirements:</h6>
+              <h6 className="text-xs font-medium text-gray-900 mb-1">Setup Requirements:</h6>
               <div className="flex flex-wrap gap-1">
                 {asset.keyRequirements.map((req, reqIndex) => (
                   <Badge key={reqIndex} variant="outline" className="text-xs">
@@ -521,31 +366,22 @@ const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
               </div>
             </div>
 
-            {/* Market Opportunity Indicator */}
-            <div className="flex items-center gap-2 text-xs mb-3">
-              <TrendingUp className={`h-3 w-3 ${getOpportunityColor(asset.marketOpportunity)}`} />
-              <span className="text-gray-600">Market opportunity:</span>
-              <span className={`font-medium ${getOpportunityColor(asset.marketOpportunity)}`}>
-                {asset.marketOpportunity}
-              </span>
-            </div>
-
             {/* Action Buttons */}
             <div className="flex gap-2">
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => handleAssetDismiss(asset.id)}
-                className="text-xs"
-              >
-                Not Interested
-              </Button>
               <Button
                 size="sm"
                 className="bg-tiptop-purple hover:bg-purple-600 text-xs"
                 onClick={() => handleAssetSelect(asset.id)}
               >
-                Set Up Now
+                Get Started
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="text-xs"
+                onClick={() => handleSuggestedAction(`Tell me more about ${asset.name} requirements`)}
+              >
+                Learn More
               </Button>
             </div>
           </motion.div>
@@ -556,29 +392,23 @@ const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
 
   return (
     <div className="flex flex-col h-full">
-      {/* Conversation Stage Indicator */}
+      {/* Property Data Status */}
       {propertyData && (
         <div className="p-4 border-b bg-gradient-to-r from-tiptop-purple/5 to-purple-100">
           <div className="flex items-center gap-2 text-sm text-tiptop-purple">
-            {getStageIcon()}
-            <span className="capitalize">
-              {conversationState?.currentAsset ? 
-                `Setting up ${conversationState.currentAsset.replace('_', ' ')}` : 
-                'Property Analysis Available'
-              }
+            <CheckCircle className="h-4 w-4" />
+            <span>
+              Property analyzed: {propertyData.address}
             </span>
-            {propertyData.availableAssets.length > 0 && (
-              <Badge variant="secondary" className="ml-auto">
-                {propertyData.availableAssets.length} assets available
-              </Badge>
-            )}
+            <Badge variant="secondary" className="ml-auto">
+              {propertyData.availableAssets.length} assets available
+            </Badge>
           </div>
         </div>
       )}
 
       {/* Messages Area */}
       <div 
-        ref={messagesContainerRef}
         className="flex-1 overflow-y-auto p-4"
       >
         <div className="space-y-4">
@@ -607,7 +437,7 @@ const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
                       {/* Confidence indicator for AI messages */}
                       {message.role === 'assistant' && message.confidence && (
                         <div className="mt-2 text-xs text-gray-500">
-                          Confidence: {Math.round(message.confidence * 100)}%
+                          AI Confidence: {Math.round(message.confidence * 100)}%
                         </div>
                       )}
                       
@@ -654,7 +484,7 @@ const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
             ))}
           </AnimatePresence>
           
-          {isAnalyzing && (
+          {isLoading && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -664,7 +494,7 @@ const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
                 <CardContent className="p-3">
                   <div className="flex items-center gap-2">
                     <Loader2 className="h-4 w-4 animate-spin text-tiptop-purple" />
-                    <span className="text-sm text-gray-600">Analyzing your message...</span>
+                    <span className="text-sm text-gray-600">Analyzing your message with AI...</span>
                   </div>
                 </CardContent>
               </Card>
@@ -684,10 +514,10 @@ const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
               onKeyPress={handleKeyPress}
               placeholder={
                 propertyData 
-                  ? "Ask about your property assets or setup process..." 
-                  : "Describe your property or ask about monetization..."
+                  ? "Ask about your property assets or setup requirements..." 
+                  : "Tell me about your property..."
               }
-              disabled={isAnalyzing}
+              disabled={isLoading}
               className="pr-12"
             />
             <Button
@@ -703,7 +533,7 @@ const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
           </div>
           <Button
             onClick={handleSendMessage}
-            disabled={!inputMessage.trim() || isAnalyzing}
+            disabled={!inputMessage.trim() || isLoading}
             className="bg-tiptop-purple hover:bg-purple-600"
           >
             <Send className="h-4 w-4" />
@@ -711,7 +541,7 @@ const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
         </div>
 
         {/* Smart suggestions based on property data */}
-        {showSuggestions && propertyData && (
+        {showSuggestions && propertyData && propertyData.availableAssets.length > 0 && (
           <div className="mt-3 flex flex-wrap gap-2">
             <span className="text-xs text-gray-500">Try asking:</span>
             {propertyData.availableAssets.slice(0, 3).map((asset) => (
@@ -720,9 +550,9 @@ const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
                 variant="outline"
                 size="sm"
                 className="text-xs h-7"
-                onClick={() => handleSuggestedAction(`Tell me about ${asset.name.toLowerCase()}`)}
+                onClick={() => handleSuggestedAction(`What are the requirements for ${asset.name.toLowerCase()}?`)}
               >
-                {asset.name} (${asset.monthlyRevenue}/mo)
+                {asset.name} requirements
               </Button>
             ))}
           </div>
