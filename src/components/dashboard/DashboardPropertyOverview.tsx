@@ -34,11 +34,7 @@ const DashboardPropertyOverview: React.FC<DashboardPropertyOverviewProps> = ({
       return address;
     }
     
-    // Check if analysis results contain address information
-    if (analysis.analysis_results?.address) {
-      return analysis.analysis_results.address;
-    }
-    
+    // Fallback to a generic address since AnalysisResults doesn't contain address
     return 'Property Address';
   };
 
