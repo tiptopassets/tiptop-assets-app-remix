@@ -8,6 +8,7 @@ interface ConversationState {
   availableAssets: AssetInfo[];
   userName: string;
   propertyAddress: string;
+  isInitialized: boolean;
 }
 
 export const useIntelligentConversation = (propertyData: PropertyAnalysisData | null) => {
@@ -16,11 +17,21 @@ export const useIntelligentConversation = (propertyData: PropertyAnalysisData | 
     completedAssets: [],
     availableAssets: [],
     userName: '',
-    propertyAddress: ''
+    propertyAddress: '',
+    isInitialized: false
   });
 
   const initializeConversation = useCallback((targetAsset?: string, userName?: string) => {
-    if (!propertyData) return;
+    if (!propertyData) {
+      console.log('⚠️ [CONVERSATION] No property data available for initialization');
+      return;
+    }
+
+    console.log('🔄 [CONVERSATION] Initializing conversation with:', {
+      targetAsset,
+      userName,
+      propertyData: propertyData.address
+    });
 
     const unconfiguredAssets = propertyData.availableAssets.filter(asset => 
       !asset.isConfigured && asset.hasRevenuePotential
@@ -33,13 +44,18 @@ export const useIntelligentConversation = (propertyData: PropertyAnalysisData | 
         .map(asset => asset.type),
       availableAssets: unconfiguredAssets,
       userName: userName || 'there',
-      propertyAddress: propertyData.address
+      propertyAddress: propertyData.address,
+      isInitialized: true
     });
   }, [propertyData]);
 
   const generateWelcomeMessage = useCallback(() => {
+    if (!conversationState.isInitialized) {
+      return "Hi! I'm here to help you set up monetization for your property assets. Let me analyze your property first.";
+    }
+
     if (!propertyData || conversationState.availableAssets.length === 0) {
-      return "Hi! I'm here to help you set up monetization for your property assets.";
+      return `Hi ${conversationState.userName}! I've analyzed your property but couldn't find any available assets for monetization. Would you like to tell me more about your property?`;
     }
 
     const { userName, propertyAddress, availableAssets, currentAsset } = conversationState;
@@ -48,7 +64,7 @@ export const useIntelligentConversation = (propertyData: PropertyAnalysisData | 
     if (currentAsset) {
       const asset = availableAssets.find(a => a.type === currentAsset);
       if (asset) {
-        return `Hi ${userName}! I see you want to set up your ${asset.name.toLowerCase()} for monetization. Based on your property analysis, this could generate $${asset.monthlyRevenue}/month. Let's get started with the configuration!`;
+        return `Hi ${userName}! I see you want to set up your ${asset.name.toLowerCase()} for monetization. Based on your property analysis at ${propertyAddress}, this could generate $${asset.monthlyRevenue}/month. Let's get started with the configuration!`;
       }
     }
 
@@ -62,14 +78,21 @@ export const useIntelligentConversation = (propertyData: PropertyAnalysisData | 
   }, [propertyData, conversationState]);
 
   const generateAssetSuggestions = useCallback(() => {
-    if (conversationState.availableAssets.length === 0) return [];
+    if (!conversationState.isInitialized || conversationState.availableAssets.length === 0) {
+      return [
+        'Tell me about your rooftop',
+        'Do you have parking spaces?',
+        'What about high-speed internet?'
+      ];
+    }
 
     return conversationState.availableAssets.slice(0, 3).map(asset => 
       `Start with ${asset.name} ($${asset.monthlyRevenue}/month)`
     );
-  }, [conversationState.availableAssets]);
+  }, [conversationState]);
 
   const selectAsset = useCallback((assetType: string) => {
+    console.log('🎯 [CONVERSATION] Selecting asset:', assetType);
     setConversationState(prev => ({
       ...prev,
       currentAsset: assetType
@@ -82,30 +105,26 @@ export const useIntelligentConversation = (propertyData: PropertyAnalysisData | 
 
   const generateAssetResponse = useCallback((assetType: string) => {
     const asset = getAssetInfo(assetType);
-    if (!asset) return "I don't have information about that asset.";
-
-    switch (assetType) {
-      case 'rooftop':
-        return `Great choice! Your rooftop has ${asset.area} of space and could generate $${asset.monthlyRevenue}/month with solar panels. I'll help you connect with solar installation partners who can handle the setup and paperwork.`;
-      
-      case 'parking':
-        return `Perfect! You have ${asset.area} that could earn $${asset.monthlyRevenue}/month through parking rentals. I can connect you with platforms like SpotHero and ParkWhiz to list your spaces.`;
-      
-      case 'pool':
-        return `Excellent! Your ${asset.area} pool could generate $${asset.monthlyRevenue}/month through hourly rentals. I'll help you set up with Swimply and other pool-sharing platforms.`;
-      
-      case 'bandwidth':
-        return `Smart choice! Your ${asset.area} internet connection could earn $${asset.monthlyRevenue}/month by sharing unused bandwidth. I can help you set up with Honeygain and similar services.`;
-      
-      case 'garden':
-        return `Great idea! Your ${asset.area} garden space could generate $${asset.monthlyRevenue}/month through community gardening or event hosting. Let me connect you with the right platforms.`;
-      
-      case 'storage':
-        return `Perfect! Your storage space could earn $${asset.monthlyRevenue}/month through peer-to-peer storage rentals. I'll help you get started with Neighbor and similar platforms.`;
-      
-      default:
-        return `I can help you set up your ${asset.name.toLowerCase()} to generate $${asset.monthlyRevenue}/month. Let me connect you with the right service providers.`;
+    if (!asset) {
+      return `I don't have specific information about ${assetType} for your property. Let me help you explore other options or you can tell me more about this asset.`;
     }
+
+    const responses = {
+      'rooftop': `Great choice! Your rooftop has ${asset.area} of space and could generate $${asset.monthlyRevenue}/month with solar panels. The setup typically takes 2-6 weeks and I can connect you with trusted solar installation partners who handle all the paperwork and permitting.`,
+      
+      'parking': `Perfect! You have ${asset.area} that could earn $${asset.monthlyRevenue}/month through parking rentals. This is one of the easiest assets to monetize - you can start earning within days. I can connect you with platforms like SpotHero and ParkWhiz to list your spaces.`,
+      
+      'pool': `Excellent! Your ${asset.area} pool could generate $${asset.monthlyRevenue}/month through hourly rentals. Pool sharing is very popular and you maintain full control of your schedule. I'll help you set up with Swimply and other pool-sharing platforms.`,
+      
+      'bandwidth': `Smart choice! Your ${asset.area} internet connection could earn $${asset.monthlyRevenue}/month by sharing unused bandwidth. This is completely passive income that runs in the background. I can help you set up with Honeygain and similar services.`,
+      
+      'garden': `Great idea! Your ${asset.area} garden space could generate $${asset.monthlyRevenue}/month through community gardening or private event hosting. This creates beautiful community connections while earning income. Let me connect you with the right platforms.`,
+      
+      'storage': `Perfect! Your storage space could earn $${asset.monthlyRevenue}/month through peer-to-peer storage rentals. People always need secure storage and you can set your own rates and availability. I'll help you get started with Neighbor and similar platforms.`
+    };
+
+    return responses[assetType as keyof typeof responses] || 
+           `I can help you set up your ${asset.name.toLowerCase()} to generate $${asset.monthlyRevenue}/month. This asset has good earning potential and I'll connect you with the right service providers to get started.`;
   }, [getAssetInfo]);
 
   return {

@@ -35,14 +35,13 @@ const EnhancedOnboardingChatbot = () => {
   const [conversationStartTime] = useState(Date.now());
   const [messageCount, setMessageCount] = useState(0);
   const [showAnalytics, setShowAnalytics] = useState(false);
-  const [isInitialized, setIsInitialized] = useState(false);
   
   // Get asset from URL parameters (from dashboard "Start Now" button)
   const targetAsset = searchParams.get('asset');
   
-  // Initialize conversation with property data - fix loading loop
+  // Initialize conversation with property data
   useEffect(() => {
-    if (propertyData && !propertyLoading && !isInitialized && user) {
+    if (propertyData && !propertyLoading && !conversationState?.isInitialized && user) {
       console.log('🔄 [ONBOARDING] Initializing conversation with property data:', {
         address: propertyData.address,
         totalRevenue: propertyData.totalMonthlyRevenue,
@@ -66,10 +65,8 @@ const EnhancedOnboardingChatbot = () => {
           });
         }
       }
-      
-      setIsInitialized(true);
     }
-  }, [propertyData, propertyLoading, targetAsset, user, initializeConversation, selectAsset, toast, isInitialized]);
+  }, [propertyData, propertyLoading, targetAsset, user, initializeConversation, selectAsset, toast, conversationState?.isInitialized]);
 
   const [analytics, setAnalytics] = useState({
     totalMessages: 0,
@@ -114,10 +111,12 @@ const EnhancedOnboardingChatbot = () => {
   };
 
   const handleAssetDetected = (assets: string[]) => {
+    console.log('🎯 [ONBOARDING] Assets detected:', assets);
     setDetectedAssets(assets);
   };
 
   const handleConversationStageChange = (stage: string) => {
+    console.log('📊 [ONBOARDING] Stage change:', stage);
     setConversationStage(stage);
     setMessageCount(prev => prev + 1);
   };
@@ -133,8 +132,8 @@ const EnhancedOnboardingChatbot = () => {
     navigate(`/dashboard?setup=${assetId}`);
   };
 
-  // Improved loading state - prevent infinite loops
-  const isLoading = authLoading || (propertyLoading && !propertyData) || !isInitialized;
+  // Loading state - wait for both auth and property data
+  const isLoading = authLoading || (propertyLoading && !propertyData);
 
   if (isLoading) {
     return (
