@@ -102,9 +102,9 @@ const Index = () => {
             {!analysisComplete && !isAnalyzing && <AssetIcons />}
           </div>
 
-          {/* Analysis results positioned based on whether form is showing */}
+          {/* Analysis results positioned much closer to the map center */}
           {analysisComplete && analysisResults && (
-            <div className={`w-full ${showingFormSection ? 'mt-0' : 'mt-[60vh] sm:mt-[65vh] md:mt-[70vh] lg:mt-[75vh]'}`}>
+            <div className={`w-full ${showingFormSection ? 'mt-0' : 'mt-8 sm:mt-12 md:mt-16 lg:mt-20'}`}>
               <AssetResultList 
                 analysisResults={analysisResults} 
                 onFormSectionToggle={setShowingFormSection}
