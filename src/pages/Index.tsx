@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import SearchBar from '@/components/SearchBar';
@@ -101,9 +102,9 @@ const Index = () => {
             {!analysisComplete && !isAnalyzing && <AssetIcons />}
           </div>
 
-          {/* Analysis results positioned very far down */}
+          {/* Analysis results positioned extremely far down */}
           {analysisComplete && analysisResults && (
-            <div className={`w-full ${showingFormSection ? 'mt-0' : 'mt-48 sm:mt-56 md:mt-64 lg:mt-72'}`}>
+            <div className={`w-full ${showingFormSection ? 'mt-0' : 'mt-64 sm:mt-72 md:mt-80 lg:mt-96'}`}>
               <AssetResultList 
                 analysisResults={analysisResults} 
                 onFormSectionToggle={setShowingFormSection}
