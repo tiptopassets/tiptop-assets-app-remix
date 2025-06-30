@@ -102,9 +102,9 @@ const Index = () => {
             {!analysisComplete && !isAnalyzing && <AssetIcons />}
           </div>
 
-          {/* Analysis results positioned lower */}
+          {/* Analysis results positioned much lower */}
           {analysisComplete && analysisResults && (
-            <div className={`w-full ${showingFormSection ? 'mt-0' : 'mt-20 sm:mt-24 md:mt-32 lg:mt-40'}`}>
+            <div className={`w-full ${showingFormSection ? 'mt-0' : 'mt-32 sm:mt-40 md:mt-48 lg:mt-56'}`}>
               <AssetResultList 
                 analysisResults={analysisResults} 
                 onFormSectionToggle={setShowingFormSection}
