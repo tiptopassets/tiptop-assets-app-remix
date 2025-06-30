@@ -1,248 +1,170 @@
 
-import { useEffect, useState } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
+import { cn } from '@/lib/utils';
 import { 
   Home, 
+  BarChart3, 
   Sun, 
+  Zap, 
   Wifi, 
-  Battery, 
-  Plus, 
-  LogOut, 
-  UserCircle, 
-  Settings, 
-  Menu, 
-  X, 
-  Lock,
-  DollarSign,
-  MessageSquare
+  Car,
+  Settings,
+  LogOut,
+  User
 } from 'lucide-react';
-import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { useAdmin } from '@/hooks/useAdmin';
+import { Separator } from '@/components/ui/separator';
+import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
-import { toast } from '@/hooks/use-toast';
-import { cn } from '@/lib/utils';
-import { useIsMobile } from '@/hooks/use-mobile';
-
-const navItems = [
-  { path: '/dashboard', icon: <Home className="h-5 w-5 mr-3" />, label: 'Dashboard' },
-  { 
-    path: '/dashboard/rooftop', 
-    icon: <Sun className="h-5 w-5 mr-3" />, 
-    label: 'Rooftop Solar'
-  },
-  { 
-    path: '/dashboard/internet', 
-    icon: <Wifi className="h-5 w-5 mr-3" />, 
-    label: 'Internet Bandwidth'
-  },
-  { 
-    path: '/dashboard/ev-charging', 
-    icon: <Battery className="h-5 w-5 mr-3" />, 
-    label: 'EV Charging'
-  },
-  {
-    path: '/dashboard/affiliate',
-    icon: <DollarSign className="h-5 w-5 mr-3" />,
-    label: 'Affiliate Earnings'
-  },
-  { 
-    path: '/dashboard/add-asset', 
-    icon: <Plus className="h-5 w-5 mr-3" />, 
-    label: 'Add Asset'
-  },
-  {
-    path: '/dashboard/onboarding',
-    icon: <MessageSquare className="h-5 w-5 mr-3" />,
-    label: 'Asset Onboarding'
-  }
-];
+import { useDashboardJourneyData } from '@/hooks/useDashboardJourneyData';
 
 const DashboardSidebar = () => {
   const location = useLocation();
-  const navigate = useNavigate();
-  const { user, signOut } = useAuth();
-  const { isAdmin } = useAdmin();
-  const isMobile = useIsMobile();
-  const [isOpen, setIsOpen] = useState(!isMobile);
+  const { signOut } = useAuth();
+  const { journeyData } = useDashboardJourneyData();
 
-  useEffect(() => {
-    // Close sidebar on mobile when route changes
-    if (isMobile) {
-      setIsOpen(false);
-    } else {
-      setIsOpen(true);
+  // Check if property has solar potential
+  const hasSolarPotential = journeyData?.analysisResults?.rooftop?.solarPotential;
+
+  const navigationItems = [
+    {
+      name: 'Overview',
+      href: '/dashboard',
+      icon: Home,
+      description: 'Dashboard overview'
+    },
+    {
+      name: 'Analytics',
+      href: '/dashboard/analytics',
+      icon: BarChart3,
+      description: 'Revenue analytics'
+    },
+    // Conditionally include solar dashboard
+    ...(hasSolarPotential ? [{
+      name: 'Solar System',
+      href: '/dashboard/rooftop',
+      icon: Sun,
+      description: 'Solar panel monitoring',
+      badge: journeyData?.analysisResults?.rooftop?.usingRealSolarData ? 'Real Data' : 'Estimated'
+    }] : []),
+    {
+      name: 'EV Charging',
+      href: '/dashboard/ev-charging',
+      icon: Zap,
+      description: 'EV charging stations'
+    },
+    {
+      name: 'Internet Sharing',
+      href: '/dashboard/internet',
+      icon: Wifi,
+      description: 'Bandwidth monetization'
+    },
+    {
+      name: 'Parking',
+      href: '/dashboard/parking',
+      icon: Car,
+      description: 'Parking space rental'
     }
-  }, [location.pathname, isMobile]);
+  ];
 
-  const handleLogout = async () => {
+  const handleSignOut = async () => {
     try {
       await signOut();
-      navigate('/');
-      toast({
-        title: 'Logged Out',
-        description: 'You have been successfully logged out.',
-      });
     } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to log out. Please try again.',
-        variant: 'destructive',
-      });
+      console.error('Error signing out:', error);
     }
-  };
-
-  const sidebarVariants = {
-    open: {
-      x: 0,
-      opacity: 1,
-      transition: { type: 'spring', stiffness: 300, damping: 24 }
-    },
-    closed: {
-      x: '-100%',
-      opacity: 0,
-      transition: { type: 'spring', stiffness: 300, damping: 24 }
-    }
-  };
-  
-  const navItemVariants = {
-    open: { opacity: 1, x: 0 },
-    closed: { opacity: 0, x: -20 }
-  };
-  
-  const overlayVariants = {
-    open: { opacity: 0.5 },
-    closed: { opacity: 0 }
   };
 
   return (
-    <>
-      {/* Mobile Overlay */}
-      {isMobile && isOpen && (
-        <motion.div 
-          className="fixed inset-0 bg-black z-40"
-          initial="closed"
-          animate={isOpen ? "open" : "closed"}
-          variants={overlayVariants}
-          onClick={() => setIsOpen(false)}
-        />
-      )}
+    <div className="w-64 bg-gray-900 text-white h-full flex flex-col">
+      {/* Header */}
+      <div className="p-6 border-b border-gray-800">
+        <Link to="/" className="text-2xl font-bold text-tiptop-purple hover:scale-105 transition-transform">
+          tiptop
+        </Link>
+        <p className="text-gray-400 text-sm mt-1">Property Dashboard</p>
+      </div>
 
-      {/* Mobile Toggle Button */}
-      {isMobile && (
-        <Button 
-          variant="outline" 
-          size="icon" 
-          className="fixed top-4 left-4 z-50 rounded-full"
-          onClick={() => setIsOpen(!isOpen)}
-        >
-          {isOpen ? <X /> : <Menu />}
-        </Button>
-      )}
-
-      {/* Sidebar */}
-      <motion.aside 
-        className={cn(
-          "fixed h-screen w-64 bg-gray-800 text-white z-50",
-          isMobile ? "shadow-xl" : ""
-        )}
-        initial={isMobile ? "closed" : "open"}
-        animate={isOpen ? "open" : "closed"}
-        variants={sidebarVariants}
-      >
-        <div className="flex flex-col h-full p-5">
-          {/* Logo */}
-          <div className="mb-8 mt-4 flex justify-center">
-            <Link to="/" className="text-2xl font-bold text-tiptop-purple">tiptop</Link>
+      {/* Property Info */}
+      {journeyData && (
+        <div className="p-4 border-b border-gray-800">
+          <div className="text-sm text-gray-400 mb-1">Current Property</div>
+          <div className="text-white font-medium text-sm truncate" title={journeyData.propertyAddress}>
+            {journeyData.propertyAddress}
           </div>
-          
-          {/* Navigation */}
-          <nav className="flex-1">
-            <ul className="space-y-2">
-              {navItems.map((item, index) => (
-                <motion.li key={item.path} variants={navItemVariants}>
-                  <Link 
-                    to={item.path}
-                    className={`flex items-center px-4 py-3 rounded-md transition-colors ${
-                      location.pathname === item.path 
-                        ? 'bg-gray-700 text-tiptop-purple'
-                        : 'hover:bg-gray-700'
-                    }`}
-                  >
-                    {item.icon}
-                    <span>{item.label}</span>
-                  </Link>
-                </motion.li>
-              ))}
-              
-              {/* Admin Dashboard Link (conditionally rendered) */}
-              {isAdmin && (
-                <motion.li variants={navItemVariants}>
-                  <Link 
-                    to="/dashboard/admin"
-                    className={`flex items-center px-4 py-3 rounded-md transition-colors ${
-                      location.pathname === '/dashboard/admin' 
-                        ? 'bg-gray-700 text-tiptop-purple'
-                        : 'hover:bg-gray-700'
-                    }`}
-                  >
-                    <Lock className="h-5 w-5 mr-3" />
-                    <span>Admin Panel</span>
-                  </Link>
-                </motion.li>
-              )}
-            </ul>
-          </nav>
-          
-          {/* User Actions */}
-          <div className="mt-auto space-y-2">
-            <Link 
-              to="/dashboard/account"
-              className={`flex items-center px-4 py-3 rounded-md transition-colors ${
-                location.pathname === '/dashboard/account' 
-                  ? 'bg-gray-700 text-tiptop-purple'
-                  : 'hover:bg-gray-700'
-              }`}
-            >
-              <UserCircle className="h-5 w-5 mr-3" />
-              <span>Account</span>
-            </Link>
-            <Link 
-              to="/options"
-              className={`flex items-center px-4 py-3 rounded-md transition-colors ${
-                location.pathname === '/options' 
-                  ? 'bg-gray-700 text-tiptop-purple'
-                  : 'hover:bg-gray-700'
-              }`}
-            >
-              <Settings className="h-5 w-5 mr-3" />
-              <span>Settings</span>
-            </Link>
-            <button
-              onClick={handleLogout}
-              className="flex w-full items-center px-4 py-3 rounded-md text-red-400 hover:bg-gray-700 transition-colors"
-            >
-              <LogOut className="h-5 w-5 mr-3" />
-              <span>Logout</span>
-            </button>
-          </div>
-          
-          {/* User Info */}
-          <div className="mt-4 border-t border-gray-700 pt-4">
-            <div className="flex items-center px-4">
-              <div className="w-8 h-8 rounded-full bg-tiptop-purple/20 flex items-center justify-center">
-                {user?.user_metadata?.full_name?.charAt(0) || 
-                 user?.email?.charAt(0) || 'U'}
-              </div>
-              <div className="ml-3 truncate">
-                <p className="text-sm">{user?.user_metadata?.full_name || 'User'}</p>
-                <p className="text-xs text-gray-400 truncate">{user?.email}</p>
-              </div>
-            </div>
+          <div className="flex items-center gap-2 mt-2">
+            <Badge variant="outline" className="text-xs text-green-400 border-green-400/50">
+              ${journeyData.totalMonthlyRevenue}/mo potential
+            </Badge>
           </div>
         </div>
-      </motion.aside>
-    </>
+      )}
+
+      {/* Navigation */}
+      <nav className="flex-1 p-4 space-y-2">
+        {navigationItems.map((item) => {
+          const isActive = location.pathname === item.href;
+          return (
+            <Link
+              key={item.name}
+              to={item.href}
+              className={cn(
+                'flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors group',
+                isActive 
+                  ? 'bg-tiptop-purple text-white' 
+                  : 'text-gray-300 hover:bg-gray-800 hover:text-white'
+              )}
+            >
+              <item.icon size={18} />
+              <div className="flex-1">
+                <div className="font-medium">{item.name}</div>
+                {item.description && (
+                  <div className="text-xs text-gray-500 group-hover:text-gray-400">
+                    {item.description}
+                  </div>
+                )}
+              </div>
+              {item.badge && (
+                <Badge variant="secondary" className="text-xs">
+                  {item.badge}
+                </Badge>
+              )}
+            </Link>
+          );
+        })}
+      </nav>
+
+      <Separator className="bg-gray-800" />
+
+      {/* Bottom section */}
+      <div className="p-4 space-y-2">
+        <Link
+          to="/dashboard/settings"
+          className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-300 hover:bg-gray-800 hover:text-white transition-colors"
+        >
+          <Settings size={18} />
+          <span>Settings</span>
+        </Link>
+        
+        <Link
+          to="/account"
+          className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-300 hover:bg-gray-800 hover:text-white transition-colors"
+        >
+          <User size={18} />
+          <span>Account</span>
+        </Link>
+
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={handleSignOut}
+          className="w-full justify-start gap-3 px-3 py-2 text-gray-300 hover:bg-gray-800 hover:text-white"
+        >
+          <LogOut size={18} />
+          <span>Sign Out</span>
+        </Button>
+      </div>
+    </div>
   );
 };
 
