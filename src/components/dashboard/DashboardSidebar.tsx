@@ -1,3 +1,4 @@
+
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { 
@@ -10,18 +11,21 @@ import {
   Settings,
   LogOut,
   User,
-  DollarSign
+  DollarSign,
+  Shield
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
 import { useDashboardJourneyData } from '@/hooks/useDashboardJourneyData';
+import { useAdmin } from '@/hooks/useAdmin';
 
 const DashboardSidebar = () => {
   const location = useLocation();
   const { signOut } = useAuth();
   const { journeyData } = useDashboardJourneyData();
+  const { isAdmin } = useAdmin();
 
   // Check if property has solar potential
   const hasSolarPotential = journeyData?.analysisResults?.rooftop?.solarPotential;
@@ -209,11 +213,23 @@ const DashboardSidebar = () => {
           <span>Account</span>
         </Link>
 
+        {/* Admin Dashboard - Only show for admin users */}
+        {isAdmin && (
+          <Link
+            to="/dashboard/admin"
+            className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-300 hover:bg-gray-800 hover:text-white transition-colors"
+          >
+            <Shield size={18} />
+            <span>Admin Dashboard</span>
+          </Link>
+        )}
+
+        {/* Logout Button - Red styling */}
         <Button
           variant="ghost"
           size="sm"
           onClick={handleSignOut}
-          className="w-full justify-start gap-3 px-3 py-2 text-gray-300 hover:bg-gray-800 hover:text-white"
+          className="w-full justify-start gap-3 px-3 py-2 text-red-400 hover:bg-red-900/20 hover:text-red-300 transition-colors"
         >
           <LogOut size={18} />
           <span>Sign Out</span>
