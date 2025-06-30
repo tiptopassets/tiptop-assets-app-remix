@@ -13,9 +13,11 @@ import ErrorBoundary from "@/components/ErrorBoundary";
 // Pages
 import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
+import AnalyticsDashboard from "./pages/AnalyticsDashboard";
 import RooftopDashboard from "./pages/RooftopDashboard";
 import InternetDashboard from "./pages/InternetDashboard";
 import EVChargingDashboard from "./pages/EVChargingDashboard";
+import ParkingDashboard from "./pages/ParkingDashboard";
 import SubmitProperty from "./pages/SubmitProperty";
 import AddAsset from "./pages/AddAsset";
 import AccountPage from "./pages/AccountPage";
@@ -25,6 +27,7 @@ import OnboardingChatbot from "./pages/OnboardingChatbot";
 import EnhancedOnboardingChatbot from "./pages/EnhancedOnboardingChatbot";
 import ModelViewer from "./pages/ModelViewer";
 import Options from "./pages/Options";
+import SettingsPage from "./pages/SettingsPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -44,11 +47,14 @@ function App() {
                     <Routes>
                       <Route path="/" element={<Index />} />
                       <Route path="/dashboard" element={<Dashboard />} />
+                      <Route path="/dashboard/analytics" element={<AnalyticsDashboard />} />
                       <Route path="/dashboard/rooftop" element={<RooftopDashboard />} />
                       <Route path="/dashboard/internet" element={<InternetDashboard />} />
                       <Route path="/dashboard/ev-charging" element={<EVChargingDashboard />} />
+                      <Route path="/dashboard/parking" element={<ParkingDashboard />} />
                       <Route path="/dashboard/add-asset" element={<AddAsset />} />
                       <Route path="/dashboard/affiliate" element={<AffiliateEarningsDashboard />} />
+                      <Route path="/dashboard/settings" element={<SettingsPage />} />
                       <Route path="/dashboard/account" element={<AccountPage />} />
                       <Route path="/dashboard/admin" element={<AdminDashboard />} />
                       <Route path="/dashboard/onboarding" element={<EnhancedOnboardingChatbot />} />

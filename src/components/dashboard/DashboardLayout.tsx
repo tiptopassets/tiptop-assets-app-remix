@@ -25,9 +25,9 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   }
 
   return (
-    <div className="flex min-h-screen">
+    <div className="flex min-h-screen bg-gray-50">
       <DashboardSidebar />
-      <main className={`flex-1 bg-gray-50 overflow-auto ${!isMobile ? 'ml-64' : ''}`}>
+      <main className="flex-1 ml-64 overflow-auto">
         <div className="p-6 max-w-7xl mx-auto">
           {children}
         </div>

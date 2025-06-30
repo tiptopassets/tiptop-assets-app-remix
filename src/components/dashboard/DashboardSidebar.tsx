@@ -1,4 +1,3 @@
-
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { 
@@ -10,7 +9,8 @@ import {
   Car,
   Settings,
   LogOut,
-  User
+  User,
+  DollarSign
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
@@ -67,6 +67,27 @@ const DashboardSidebar = () => {
     }
   ];
 
+  const toolsItems = [
+    {
+      name: 'Add Asset',
+      href: '/dashboard/add-asset',
+      icon: Settings,
+      description: 'Add new revenue streams'
+    },
+    {
+      name: 'AI Assistant',
+      href: '/dashboard/onboarding',
+      icon: User,
+      description: 'Get personalized help'
+    },
+    {
+      name: 'Affiliate Program',
+      href: '/dashboard/affiliate',
+      icon: DollarSign,
+      description: 'Earn referral rewards'
+    }
+  ];
+
   const handleSignOut = async () => {
     try {
       await signOut();
@@ -76,7 +97,7 @@ const DashboardSidebar = () => {
   };
 
   return (
-    <div className="w-64 bg-gray-900 text-white h-full flex flex-col">
+    <div className="w-64 bg-gray-900 text-white min-h-screen flex flex-col fixed left-0 top-0 z-40">
       {/* Header */}
       <div className="p-6 border-b border-gray-800">
         <Link to="/" className="text-2xl font-bold text-tiptop-purple hover:scale-105 transition-transform">
@@ -101,37 +122,71 @@ const DashboardSidebar = () => {
       )}
 
       {/* Navigation */}
-      <nav className="flex-1 p-4 space-y-2">
-        {navigationItems.map((item) => {
-          const isActive = location.pathname === item.href;
-          return (
-            <Link
-              key={item.name}
-              to={item.href}
-              className={cn(
-                'flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors group',
-                isActive 
-                  ? 'bg-tiptop-purple text-white' 
-                  : 'text-gray-300 hover:bg-gray-800 hover:text-white'
-              )}
-            >
-              <item.icon size={18} />
-              <div className="flex-1">
-                <div className="font-medium">{item.name}</div>
-                {item.description && (
-                  <div className="text-xs text-gray-500 group-hover:text-gray-400">
-                    {item.description}
-                  </div>
+      <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
+        {/* Main Assets Section */}
+        <div className="mb-6">
+          <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Assets</h3>
+          {navigationItems.map((item) => {
+            const isActive = location.pathname === item.href;
+            return (
+              <Link
+                key={item.name}
+                to={item.href}
+                className={cn(
+                  'flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors group mb-1',
+                  isActive 
+                    ? 'bg-tiptop-purple text-white' 
+                    : 'text-gray-300 hover:bg-gray-800 hover:text-white'
                 )}
-              </div>
-              {item.badge && (
-                <Badge variant="secondary" className="text-xs">
-                  {item.badge}
-                </Badge>
-              )}
-            </Link>
-          );
-        })}
+              >
+                <item.icon size={18} />
+                <div className="flex-1">
+                  <div className="font-medium">{item.name}</div>
+                  {item.description && (
+                    <div className="text-xs text-gray-500 group-hover:text-gray-400">
+                      {item.description}
+                    </div>
+                  )}
+                </div>
+                {item.badge && (
+                  <Badge variant="secondary" className="text-xs">
+                    {item.badge}
+                  </Badge>
+                )}
+              </Link>
+            );
+          })}
+        </div>
+
+        {/* Tools Section */}
+        <div className="mb-6">
+          <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Tools</h3>
+          {toolsItems.map((item) => {
+            const isActive = location.pathname === item.href;
+            return (
+              <Link
+                key={item.name}
+                to={item.href}
+                className={cn(
+                  'flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors group mb-1',
+                  isActive 
+                    ? 'bg-tiptop-purple text-white' 
+                    : 'text-gray-300 hover:bg-gray-800 hover:text-white'
+                )}
+              >
+                <item.icon size={18} />
+                <div className="flex-1">
+                  <div className="font-medium">{item.name}</div>
+                  {item.description && (
+                    <div className="text-xs text-gray-500 group-hover:text-gray-400">
+                      {item.description}
+                    </div>
+                  )}
+                </div>
+              </Link>
+            );
+          })}
+        </div>
       </nav>
 
       <Separator className="bg-gray-800" />
