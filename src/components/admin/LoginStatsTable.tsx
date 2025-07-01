@@ -23,61 +23,90 @@ type LoginStats = {
   last_user_agent: string | null;
   last_ip: string | null;
   user_email?: string;
+  user_display_name?: string;
 };
 
 export const LoginStatsTable = () => {
   const [loginStats, setLoginStats] = useState<LoginStats[]>([]);
   const [loading, setLoading] = useState(true);
-  const [page, setPage] = useState(0);
-  const [rowsPerPage] = useState(50); // Increased to show more users
-  const [totalCount, setTotalCount] = useState(0);
 
   useEffect(() => {
     const fetchLoginStats = async () => {
       try {
         console.log('📊 [LOGIN-STATS] Fetching all login statistics...');
         
-        // Get all user login statistics (no pagination initially)
-        const { data: loginData, error, count } = await supabase
+        // Get all user login statistics
+        const { data: loginData, error } = await supabase
           .from('user_login_stats')
-          .select('*', { count: 'exact' })
+          .select('*')
           .order('last_login_at', { ascending: false });
 
         if (error) throw error;
 
-        console.log('📊 [LOGIN-STATS] Fetched login data:', loginData?.length, 'users');
-        setTotalCount(count || 0);
+        console.log('📊 [LOGIN-STATS] Raw login data:', loginData);
 
-        // Get user profile information from journey data
-        const userIds = loginData?.map(stat => stat.user_id) || [];
-        
-        let userProfiles: any[] = [];
+        if (!loginData || loginData.length === 0) {
+          console.log('📊 [LOGIN-STATS] No login data found');
+          setLoginStats([]);
+          setLoading(false);
+          return;
+        }
+
+        // Get user IDs for fetching additional info
+        const userIds = loginData.map(stat => stat.user_id);
+        console.log('📊 [LOGIN-STATS] User IDs:', userIds);
+
+        // Try to get user emails from auth.users (this might not work due to RLS)
+        let userEmails: any[] = [];
+        try {
+          const { data: authUsers } = await supabase.auth.admin.listUsers();
+          userEmails = authUsers?.users || [];
+          console.log('📊 [LOGIN-STATS] Auth users found:', userEmails.length);
+        } catch (authError) {
+          console.warn('📊 [LOGIN-STATS] Could not fetch auth users:', authError);
+        }
+
+        // Get additional user info from journey data as fallback
+        let journeyData: any[] = [];
         if (userIds.length > 0) {
-          try {
-            // Try to get user emails from journey data first
-            const { data: journeyProfiles } = await supabase
-              .from('user_journey_complete')
-              .select('user_id, property_address')
-              .in('user_id', userIds)
-              .not('user_id', 'is', null);
-            
-            userProfiles = journeyProfiles || [];
-            console.log('👥 [LOGIN-STATS] Found journey profiles:', userProfiles.length);
-          } catch (profileError) {
-            console.warn('Could not fetch user journey profiles:', profileError);
-          }
+          const { data: journeyUsers } = await supabase
+            .from('user_journey_complete')
+            .select('user_id, property_address, created_at')
+            .in('user_id', userIds)
+            .not('user_id', 'is', null);
+          
+          journeyData = journeyUsers || [];
+          console.log('📊 [LOGIN-STATS] Journey data found:', journeyData.length);
         }
 
         // Combine login stats with user info
-        const statsWithUserDetails = loginData?.map((stat, index) => {
-          const profile = userProfiles.find(p => p.user_id === stat.user_id);
+        const statsWithUserDetails = loginData.map((stat, index) => {
+          // Try to find user email from auth data
+          const authUser = userEmails.find(u => u.id === stat.user_id);
+          const userEmail = authUser?.email;
+
+          // Try to find property address from journey data
+          const journeyInfo = journeyData.find(j => j.user_id === stat.user_id);
+          const propertyAddress = journeyInfo?.property_address;
+
+          // Create display name
+          let displayName = '';
+          if (userEmail) {
+            displayName = userEmail;
+          } else if (propertyAddress) {
+            displayName = `Property: ${propertyAddress.substring(0, 30)}...`;
+          } else {
+            displayName = `User ${index + 1} (ID: ${stat.user_id.substring(0, 8)}...)`;
+          }
+
           return {
             ...stat,
-            user_email: profile?.property_address || `User ${index + 1} (${stat.user_id.slice(0, 8)}...)` || 'Unknown User'
+            user_email: userEmail || 'Unknown Email',
+            user_display_name: displayName
           };
-        }) || [];
+        });
 
-        console.log('✅ [LOGIN-STATS] Final stats with user details:', statsWithUserDetails.length);
+        console.log('✅ [LOGIN-STATS] Final stats with user details:', statsWithUserDetails);
         setLoginStats(statsWithUserDetails);
       } catch (error) {
         console.error('❌ [LOGIN-STATS] Error fetching login stats:', error);
@@ -93,7 +122,7 @@ export const LoginStatsTable = () => {
 
     fetchLoginStats();
 
-    // Subscribe to real-time updates for user_login_stats table
+    // Subscribe to real-time updates
     const channel = supabase
       .channel('login-stats-changes')
       .on(
@@ -128,22 +157,39 @@ export const LoginStatsTable = () => {
     return 'Other Browser';
   };
 
-  // Generate skeleton loading rows
-  const skeletonRows = Array(5).fill(0).map((_, index) => (
-    <TableRow key={`skeleton-${index}`}>
-      <TableCell><Skeleton className="h-4 w-[250px]" /></TableCell>
-      <TableCell><Skeleton className="h-4 w-10" /></TableCell>
-      <TableCell><Skeleton className="h-4 w-[120px]" /></TableCell>
-      <TableCell><Skeleton className="h-4 w-[120px]" /></TableCell>
-      <TableCell><Skeleton className="h-4 w-[80px]" /></TableCell>
-    </TableRow>
-  ));
-
-  // Display all users without pagination for now
-  const displayedStats = loginStats;
+  if (loading) {
+    return (
+      <div className="space-y-4">
+        <div className="rounded-md border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>User</TableHead>
+                <TableHead>Logins</TableHead>
+                <TableHead>First Login</TableHead>
+                <TableHead>Last Login</TableHead>
+                <TableHead>Browser</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {Array(5).fill(0).map((_, index) => (
+                <TableRow key={`skeleton-${index}`}>
+                  <TableCell><Skeleton className="h-4 w-[250px]" /></TableCell>
+                  <TableCell><Skeleton className="h-4 w-10" /></TableCell>
+                  <TableCell><Skeleton className="h-4 w-[120px]" /></TableCell>
+                  <TableCell><Skeleton className="h-4 w-[120px]" /></TableCell>
+                  <TableCell><Skeleton className="h-4 w-[80px]" /></TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div>
+    <div className="space-y-4">
       <div className="rounded-md border">
         <Table>
           <TableHeader>
@@ -156,13 +202,26 @@ export const LoginStatsTable = () => {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {loading ? (
-              skeletonRows
-            ) : displayedStats.length > 0 ? (
-              displayedStats.map((stat) => (
+            {loginStats.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                  No login statistics found
+                </TableCell>
+              </TableRow>
+            ) : (
+              loginStats.map((stat) => (
                 <TableRow key={stat.id}>
-                  <TableCell className="font-medium">{stat.user_email}</TableCell>
-                  <TableCell>{stat.login_count}</TableCell>
+                  <TableCell className="font-medium max-w-xs">
+                    <div>
+                      <div className="font-medium">{stat.user_display_name}</div>
+                      {stat.user_email !== 'Unknown Email' && (
+                        <div className="text-sm text-muted-foreground">{stat.user_email}</div>
+                      )}
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <span className="font-semibold">{stat.login_count}</span>
+                  </TableCell>
                   <TableCell>
                     {format(new Date(stat.first_login_at), 'MMM d, yyyy HH:mm')}
                   </TableCell>
@@ -172,41 +231,13 @@ export const LoginStatsTable = () => {
                   <TableCell>{formatUserAgent(stat.last_user_agent)}</TableCell>
                 </TableRow>
               ))
-            ) : (
-              <TableRow>
-                <TableCell colSpan={5} className="text-center py-4">
-                  No login statistics found
-                </TableCell>
-              </TableRow>
             )}
           </TableBody>
         </Table>
       </div>
       
-      <div className="flex items-center justify-between mt-4">
-        <div className="text-sm text-gray-500">
-          Showing {displayedStats.length} of {totalCount} users
-        </div>
-        {totalCount > rowsPerPage && (
-          <div className="flex items-center space-x-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setPage((prev) => Math.max(0, prev - 1))}
-              disabled={page === 0}
-            >
-              Previous
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setPage((prev) => prev + 1)}
-              disabled={displayedStats.length < rowsPerPage}
-            >
-              Next
-            </Button>
-          </div>
-        )}
+      <div className="text-sm text-gray-500">
+        Showing {loginStats.length} users with login activity
       </div>
     </div>
   );

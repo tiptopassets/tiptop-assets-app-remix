@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -22,7 +21,6 @@ import {
   Eye, 
   Trash2, 
   Download,
-  Filter,
   TrendingUp
 } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -69,31 +67,36 @@ const PropertyManagement = () => {
 
       if (allError) throw allError;
 
-      console.log('🏠 [PROPERTY-MGMT] Found properties:', allProperties?.length);
+      console.log('🏠 [PROPERTY-MGMT] Raw properties data:', allProperties);
+
+      if (!allProperties || allProperties.length === 0) {
+        console.log('🏠 [PROPERTY-MGMT] No properties found');
+        setProperties([]);
+        setLoading(false);
+        return;
+      }
 
       // Get linked addresses for properties that have address_id
+      const addressIds = allProperties
+        .map(p => p.address_id)
+        .filter(id => id);
+      
       let linkedAddresses: any[] = [];
-      if (allProperties && allProperties.length > 0) {
-        const addressIds = allProperties
-          .map(p => p.address_id)
-          .filter(id => id);
+      if (addressIds.length > 0) {
+        const { data: addresses } = await supabase
+          .from('user_addresses')
+          .select('id, address')
+          .in('id', addressIds);
         
-        if (addressIds.length > 0) {
-          const { data: addresses } = await supabase
-            .from('user_addresses')
-            .select('id, address')
-            .in('id', addressIds);
-          
-          linkedAddresses = addresses || [];
-          console.log('🏠 [PROPERTY-MGMT] Found linked addresses:', linkedAddresses.length);
-        }
+        linkedAddresses = addresses || [];
+        console.log('🏠 [PROPERTY-MGMT] Found linked addresses:', linkedAddresses.length);
       }
 
       // Get user journey data to find addresses stored there
+      const userIds = [...new Set(allProperties.map(p => p.user_id))];
       let journeyAddresses: any[] = [];
-      if (allProperties && allProperties.length > 0) {
-        const userIds = allProperties.map(p => p.user_id);
-        
+      
+      if (userIds.length > 0) {
         const { data: journeys } = await supabase
           .from('user_journey_complete')
           .select('user_id, property_address')
@@ -105,28 +108,35 @@ const PropertyManagement = () => {
       }
 
       // Transform the data to handle multiple address sources
-      const transformedData = allProperties?.map((item: any) => {
+      const transformedData = allProperties.map((item: any, index: number) => {
         // Try to get address from multiple sources
-        let propertyAddress = 'Unknown Address';
+        let propertyAddress = '';
         
-        // 1. Check linked address table
-        const linkedAddress = linkedAddresses.find(addr => addr.id === item.address_id);
-        if (linkedAddress?.address) {
-          propertyAddress = linkedAddress.address;
-        }
-        // 2. Check analysis results
-        else if (item.analysis_results?.propertyAddress) {
+        // 1. Check analysis results first (most reliable)
+        if (item.analysis_results?.propertyAddress) {
           propertyAddress = item.analysis_results.propertyAddress;
         }
         else if (item.analysis_results?.address) {
           propertyAddress = item.analysis_results.address;
         }
-        // 3. Check journey data
-        else {
+        // 2. Check linked address table
+        else if (item.address_id) {
+          const linkedAddress = linkedAddresses.find(addr => addr.id === item.address_id);
+          if (linkedAddress?.address) {
+            propertyAddress = linkedAddress.address;
+          }
+        }
+        // 3. Check journey data as fallback
+        if (!propertyAddress) {
           const journeyData = journeyAddresses.find(j => j.user_id === item.user_id);
           if (journeyData?.property_address) {
             propertyAddress = journeyData.property_address;
           }
+        }
+        
+        // 4. Final fallback
+        if (!propertyAddress) {
+          propertyAddress = `Property ${index + 1} (ID: ${item.id.substring(0, 8)}...)`;
         }
 
         return {
@@ -142,9 +152,11 @@ const PropertyManagement = () => {
           coordinates: item.coordinates,
           analysis_results: item.analysis_results
         };
-      }) || [];
+      });
 
       console.log('✅ [PROPERTY-MGMT] Transformed properties:', transformedData.length);
+      console.log('✅ [PROPERTY-MGMT] Sample property addresses:', transformedData.slice(0, 3).map(p => p.property_address));
+      
       setProperties(transformedData);
     } catch (error) {
       console.error('❌ [PROPERTY-MGMT] Error fetching properties:', error);
@@ -323,14 +335,16 @@ const PropertyManagement = () => {
                 {filteredProperties.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
-                      No properties found
+                      {properties.length === 0 ? 'No properties found' : 'No properties match your search'}
                     </TableCell>
                   </TableRow>
                 ) : (
                   filteredProperties.map((property) => (
                     <TableRow key={property.id}>
-                      <TableCell className="font-medium max-w-xs truncate">
-                        {property.property_address}
+                      <TableCell className="font-medium max-w-xs">
+                        <div className="truncate" title={property.property_address}>
+                          {property.property_address}
+                        </div>
                       </TableCell>
                       <TableCell>
                         <Badge variant="outline">
