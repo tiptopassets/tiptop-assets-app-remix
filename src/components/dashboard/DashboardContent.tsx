@@ -68,7 +68,7 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
         >
           <Card>
             <CardHeader>
-              <CardTitle>Asset Analysis</CardTitle>
+              <CardTitle>Potential Assets Analysis</CardTitle>
               <CardDescription>
                 Detailed breakdown of your property's monetization potential
               </CardDescription>

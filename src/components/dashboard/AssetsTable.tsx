@@ -104,7 +104,6 @@ export const AssetsTable = ({ analysisResults, isAssetConfigured }: AssetsTableP
         <TableBody>
           {assets.map((asset, index) => {
             const isConfigured = isAssetConfigured ? isAssetConfigured(asset.type) : false;
-            const hasRevenuePotential = asset.potential && parseFloat(asset.monthlyRevenue.replace('$', '')) > 0;
             
             return (
               <TableRow key={index}>
@@ -118,7 +117,7 @@ export const AssetsTable = ({ analysisResults, isAssetConfigured }: AssetsTableP
                 <TableCell>{asset.monthlyRevenue}</TableCell>
                 <TableCell>{asset.setupCost}</TableCell>
                 <TableCell>
-                  {!hasRevenuePotential ? (
+                  {!asset.potential ? (
                     <Badge variant="secondary">Not Available</Badge>
                   ) : isConfigured ? (
                     <Badge className="bg-green-100 text-green-800 border-green-200">
