@@ -138,6 +138,25 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  // Helper function to safely extract property address from analysis results
+  const extractPropertyAddress = (analysisResults: any): string => {
+    if (!analysisResults || typeof analysisResults !== 'object') {
+      return '';
+    }
+
+    // Check for propertyAddress field
+    if (typeof analysisResults.propertyAddress === 'string') {
+      return analysisResults.propertyAddress;
+    }
+
+    // Check for address field
+    if (typeof analysisResults.address === 'string') {
+      return analysisResults.address;
+    }
+
+    return '';
+  };
+
   // New function to ensure data consistency across tables
   const ensureDataConsistency = async (userId: string) => {
     try {
@@ -159,13 +178,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         let addressNeedsUpdate = false;
         let addressFromAnalysis = '';
 
-        // Extract address from analysis results
+        // Extract address from analysis results using the safe helper function
         if (analysis.analysis_results) {
-          if (analysis.analysis_results.propertyAddress) {
-            addressFromAnalysis = analysis.analysis_results.propertyAddress;
-          } else if (analysis.analysis_results.address) {
-            addressFromAnalysis = analysis.analysis_results.address;
-          }
+          addressFromAnalysis = extractPropertyAddress(analysis.analysis_results);
         }
 
         // If we have an address from analysis but no address_id, create the address record
