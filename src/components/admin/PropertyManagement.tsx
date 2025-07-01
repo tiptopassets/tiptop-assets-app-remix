@@ -59,26 +59,9 @@ const PropertyManagement = () => {
   const fetchProperties = async () => {
     try {
       setLoading(true);
+      console.log('🏠 [PROPERTY-MGMT] Fetching all properties...');
       
-      // First try to get properties with linked addresses
-      const { data: propertiesWithAddresses, error: addressError } = await supabase
-        .from('user_property_analyses')
-        .select(`
-          id,
-          user_id,
-          address_id,
-          total_monthly_revenue,
-          total_opportunities,
-          property_type,
-          created_at,
-          updated_at,
-          coordinates,
-          analysis_results,
-          user_addresses!inner(address)
-        `)
-        .order('created_at', { ascending: false });
-
-      // Also get properties that might store addresses directly in analysis_results
+      // Get ALL properties from user_property_analyses
       const { data: allProperties, error: allError } = await supabase
         .from('user_property_analyses')
         .select('*')
@@ -86,21 +69,64 @@ const PropertyManagement = () => {
 
       if (allError) throw allError;
 
-      // Transform the data to handle both scenarios
-      const transformedData = allProperties?.map((item: any) => {
-        // Try to get address from linked table first
-        const linkedAddress = propertiesWithAddresses?.find(p => p.id === item.id)?.user_addresses?.address;
+      console.log('🏠 [PROPERTY-MGMT] Found properties:', allProperties?.length);
+
+      // Get linked addresses for properties that have address_id
+      let linkedAddresses: any[] = [];
+      if (allProperties && allProperties.length > 0) {
+        const addressIds = allProperties
+          .map(p => p.address_id)
+          .filter(id => id);
         
-        // Fallback to analysis results or direct storage
-        let propertyAddress = linkedAddress;
-        if (!propertyAddress && item.analysis_results) {
-          // Check if address is stored in analysis results
-          propertyAddress = item.analysis_results.propertyAddress || 
-                          item.analysis_results.address ||
-                          'Unknown Address';
+        if (addressIds.length > 0) {
+          const { data: addresses } = await supabase
+            .from('user_addresses')
+            .select('id, address')
+            .in('id', addressIds);
+          
+          linkedAddresses = addresses || [];
+          console.log('🏠 [PROPERTY-MGMT] Found linked addresses:', linkedAddresses.length);
         }
-        if (!propertyAddress) {
-          propertyAddress = 'Unknown Address';
+      }
+
+      // Get user journey data to find addresses stored there
+      let journeyAddresses: any[] = [];
+      if (allProperties && allProperties.length > 0) {
+        const userIds = allProperties.map(p => p.user_id);
+        
+        const { data: journeys } = await supabase
+          .from('user_journey_complete')
+          .select('user_id, property_address')
+          .in('user_id', userIds)
+          .not('property_address', 'is', null);
+        
+        journeyAddresses = journeys || [];
+        console.log('🏠 [PROPERTY-MGMT] Found journey addresses:', journeyAddresses.length);
+      }
+
+      // Transform the data to handle multiple address sources
+      const transformedData = allProperties?.map((item: any) => {
+        // Try to get address from multiple sources
+        let propertyAddress = 'Unknown Address';
+        
+        // 1. Check linked address table
+        const linkedAddress = linkedAddresses.find(addr => addr.id === item.address_id);
+        if (linkedAddress?.address) {
+          propertyAddress = linkedAddress.address;
+        }
+        // 2. Check analysis results
+        else if (item.analysis_results?.propertyAddress) {
+          propertyAddress = item.analysis_results.propertyAddress;
+        }
+        else if (item.analysis_results?.address) {
+          propertyAddress = item.analysis_results.address;
+        }
+        // 3. Check journey data
+        else {
+          const journeyData = journeyAddresses.find(j => j.user_id === item.user_id);
+          if (journeyData?.property_address) {
+            propertyAddress = journeyData.property_address;
+          }
         }
 
         return {
@@ -118,10 +144,10 @@ const PropertyManagement = () => {
         };
       }) || [];
 
-      console.log('Fetched properties:', transformedData.length, transformedData);
+      console.log('✅ [PROPERTY-MGMT] Transformed properties:', transformedData.length);
       setProperties(transformedData);
     } catch (error) {
-      console.error('Error fetching properties:', error);
+      console.error('❌ [PROPERTY-MGMT] Error fetching properties:', error);
       toast({
         title: "Error",
         description: "Failed to fetch property data",
@@ -275,13 +301,6 @@ const PropertyManagement = () => {
                 onClick={() => setFilterType('active')}
               >
                 Active
-              </Button>
-              <Button
-                variant={filterType === 'inactive' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setFilterType('inactive')}
-              >
-                Inactive
               </Button>
             </div>
           </div>

@@ -29,58 +29,58 @@ export const LoginStatsTable = () => {
   const [loginStats, setLoginStats] = useState<LoginStats[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [rowsPerPage] = useState(50); // Increased to show more users
   const [totalCount, setTotalCount] = useState(0);
 
   useEffect(() => {
     const fetchLoginStats = async () => {
       try {
-        // First get the total count
-        const { count, error: countError } = await supabase
+        console.log('📊 [LOGIN-STATS] Fetching all login statistics...');
+        
+        // Get all user login statistics (no pagination initially)
+        const { data: loginData, error, count } = await supabase
           .from('user_login_stats')
-          .select('*', { count: 'exact', head: true });
-
-        if (countError) throw countError;
-        setTotalCount(count || 0);
-
-        // Fetch user login statistics
-        const { data: loginData, error } = await supabase
-          .from('user_login_stats')
-          .select('*')
-          .range(page * rowsPerPage, (page + 1) * rowsPerPage - 1)
+          .select('*', { count: 'exact' })
           .order('last_login_at', { ascending: false });
 
         if (error) throw error;
 
-        // Get user emails from a separate query to avoid auth admin issues
-        // We'll create a profiles table or use existing user data
+        console.log('📊 [LOGIN-STATS] Fetched login data:', loginData?.length, 'users');
+        setTotalCount(count || 0);
+
+        // Get user profile information from journey data
         const userIds = loginData?.map(stat => stat.user_id) || [];
         
-        // Try to get user profile data or use fallback
         let userProfiles: any[] = [];
-        try {
-          const { data: profiles } = await supabase
-            .from('user_journey_complete')
-            .select('user_id, property_address')
-            .in('user_id', userIds)
-            .not('user_id', 'is', null);
-          
-          userProfiles = profiles || [];
-        } catch (profileError) {
-          console.warn('Could not fetch user profiles:', profileError);
+        if (userIds.length > 0) {
+          try {
+            // Try to get user emails from journey data first
+            const { data: journeyProfiles } = await supabase
+              .from('user_journey_complete')
+              .select('user_id, property_address')
+              .in('user_id', userIds)
+              .not('user_id', 'is', null);
+            
+            userProfiles = journeyProfiles || [];
+            console.log('👥 [LOGIN-STATS] Found journey profiles:', userProfiles.length);
+          } catch (profileError) {
+            console.warn('Could not fetch user journey profiles:', profileError);
+          }
         }
 
-        const statsWithUserDetails = loginData?.map(stat => {
+        // Combine login stats with user info
+        const statsWithUserDetails = loginData?.map((stat, index) => {
           const profile = userProfiles.find(p => p.user_id === stat.user_id);
           return {
             ...stat,
-            user_email: profile?.property_address || `User ${stat.user_id.slice(0, 8)}` || 'Unknown User'
+            user_email: profile?.property_address || `User ${index + 1} (${stat.user_id.slice(0, 8)}...)` || 'Unknown User'
           };
         }) || [];
 
+        console.log('✅ [LOGIN-STATS] Final stats with user details:', statsWithUserDetails.length);
         setLoginStats(statsWithUserDetails);
       } catch (error) {
-        console.error('Error fetching login stats:', error);
+        console.error('❌ [LOGIN-STATS] Error fetching login stats:', error);
         toast({
           title: 'Error',
           description: 'Failed to load login statistics.',
@@ -104,7 +104,7 @@ export const LoginStatsTable = () => {
           table: 'user_login_stats',
         },
         () => {
-          // Refresh data when changes happen
+          console.log('🔄 [LOGIN-STATS] Real-time update detected, refreshing...');
           fetchLoginStats();
         }
       )
@@ -113,13 +113,12 @@ export const LoginStatsTable = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [page, rowsPerPage]);
+  }, []);
 
   // Format the user agent into a more readable format
   const formatUserAgent = (userAgent: string | null) => {
     if (!userAgent) return 'Unknown';
     
-    // Simple parsing - in a real app you might use a library
     if (userAgent.includes('Chrome')) return 'Chrome';
     if (userAgent.includes('Firefox')) return 'Firefox';
     if (userAgent.includes('Safari') && !userAgent.includes('Chrome')) return 'Safari';
@@ -130,7 +129,7 @@ export const LoginStatsTable = () => {
   };
 
   // Generate skeleton loading rows
-  const skeletonRows = Array(rowsPerPage).fill(0).map((_, index) => (
+  const skeletonRows = Array(5).fill(0).map((_, index) => (
     <TableRow key={`skeleton-${index}`}>
       <TableCell><Skeleton className="h-4 w-[250px]" /></TableCell>
       <TableCell><Skeleton className="h-4 w-10" /></TableCell>
@@ -139,6 +138,9 @@ export const LoginStatsTable = () => {
       <TableCell><Skeleton className="h-4 w-[80px]" /></TableCell>
     </TableRow>
   ));
+
+  // Display all users without pagination for now
+  const displayedStats = loginStats;
 
   return (
     <div>
@@ -156,8 +158,8 @@ export const LoginStatsTable = () => {
           <TableBody>
             {loading ? (
               skeletonRows
-            ) : loginStats.length > 0 ? (
-              loginStats.map((stat) => (
+            ) : displayedStats.length > 0 ? (
+              displayedStats.map((stat) => (
                 <TableRow key={stat.id}>
                   <TableCell className="font-medium">{stat.user_email}</TableCell>
                   <TableCell>{stat.login_count}</TableCell>
@@ -183,26 +185,28 @@ export const LoginStatsTable = () => {
       
       <div className="flex items-center justify-between mt-4">
         <div className="text-sm text-gray-500">
-          Showing {loginStats.length > 0 ? page * rowsPerPage + 1 : 0} to {page * rowsPerPage + loginStats.length} of {totalCount} entries
+          Showing {displayedStats.length} of {totalCount} users
         </div>
-        <div className="flex items-center space-x-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setPage((prev) => Math.max(0, prev - 1))}
-            disabled={page === 0}
-          >
-            Previous
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setPage((prev) => prev + 1)}
-            disabled={loginStats.length < rowsPerPage}
-          >
-            Next
-          </Button>
-        </div>
+        {totalCount > rowsPerPage && (
+          <div className="flex items-center space-x-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setPage((prev) => Math.max(0, prev - 1))}
+              disabled={page === 0}
+            >
+              Previous
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setPage((prev) => prev + 1)}
+              disabled={displayedStats.length < rowsPerPage}
+            >
+              Next
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   );

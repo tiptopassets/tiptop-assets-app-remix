@@ -1,3 +1,4 @@
+
 import { createContext, useState, useEffect, useContext, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Session, User } from '@supabase/supabase-js';
@@ -22,13 +23,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [lastLoginCountUpdate, setLastLoginCountUpdate] = useState<string>('');
   const navigate = useNavigate();
   const { toast } = useToast();
 
   // Function to update login statistics in the database
-  const updateLoginStats = async (userId: string) => {
+  const updateLoginStats = async (userId: string, isActualLogin: boolean = false) => {
     try {
-      console.log('📊 [AUTH] Updating login stats for user:', userId);
+      console.log('📊 [AUTH] Checking login stats for user:', userId, 'isActualLogin:', isActualLogin);
+      
+      // Prevent multiple updates for the same user within 5 minutes unless it's an actual login
+      const currentTime = new Date().toISOString();
+      const lastUpdateKey = `${userId}-${currentTime.slice(0, 16)}`; // 5-minute window
+      
+      if (!isActualLogin && lastLoginCountUpdate === lastUpdateKey) {
+        console.log('⏩ [AUTH] Skipping duplicate login stats update');
+        return;
+      }
+      
       // Get user agent and IP information
       const userAgent = navigator.userAgent;
       
@@ -40,16 +52,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         .maybeSingle();
         
       if (existingStats) {
-        // Update existing user's login stats
+        // Only update login count for actual logins, but always update last_login_at
+        const updateData: any = {
+          last_login_at: new Date().toISOString(),
+          last_user_agent: userAgent,
+        };
+        
+        // Only increment login count for actual sign-in events
+        if (isActualLogin) {
+          updateData.login_count = (existingStats.login_count || 0) + 1;
+          console.log('✅ [AUTH] Incrementing login count to:', updateData.login_count);
+        }
+        
         await supabase
           .from('user_login_stats')
-          .update({
-            login_count: (existingStats.login_count || 0) + 1,
-            last_login_at: new Date().toISOString(),
-            last_user_agent: userAgent,
-          })
+          .update(updateData)
           .eq('user_id', userId);
-        console.log('✅ [AUTH] Updated existing login stats');
+        
+        console.log('✅ [AUTH] Updated login stats:', updateData);
       } else {
         // First time login - create new record
         await supabase
@@ -63,6 +83,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           });
         console.log('✅ [AUTH] Created new login stats record');
       }
+      
+      setLastLoginCountUpdate(lastUpdateKey);
     } catch (error) {
       console.error('❌ [AUTH] Error updating login stats:', error);
       // Don't block authentication if this fails
@@ -135,7 +157,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               // Use setTimeout to prevent deadlocking in the auth state change handler
               setTimeout(() => {
                 if (mounted) {
-                  updateLoginStats(currentSession.user.id);
+                  // Only count as actual login for SIGNED_IN events
+                  updateLoginStats(currentSession.user.id, true);
                   
                   // Trigger analysis recovery
                   handleAnalysisRecovery(currentSession.user.id);
@@ -145,6 +168,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                   navigate('/dashboard');
                 }
               }, 100); // Small delay to ensure state is updated
+            }
+            
+            // For other events like TOKEN_REFRESHED, don't count as login
+            if (event === 'TOKEN_REFRESHED' && currentSession?.user) {
+              console.log('🔄 [AUTH] Token refreshed, updating last activity only');
+              setTimeout(() => {
+                if (mounted) {
+                  updateLoginStats(currentSession.user.id, false);
+                }
+              }, 100);
             }
             
             // Redirect to homepage if user logs out
@@ -176,12 +209,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           setSession(currentSession);
           setUser(currentSession?.user ?? null);
           
-          // If user was already signed in on page load, update login stats and recover analyses
+          // If user was already signed in on page load, DON'T count as login
           if (currentSession?.user) {
-            console.log('👤 [AUTH] User already signed in on page load, processing tasks...');
+            console.log('👤 [AUTH] User already signed in on page load, updating activity only');
             setTimeout(() => {
               if (mounted) {
-                updateLoginStats(currentSession.user.id);
+                updateLoginStats(currentSession.user.id, false);
                 handleAnalysisRecovery(currentSession.user.id);
               }
             }, 100);
