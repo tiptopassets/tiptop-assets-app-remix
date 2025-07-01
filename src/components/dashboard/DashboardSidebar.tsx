@@ -1,5 +1,4 @@
 
-
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { 
@@ -18,6 +17,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useAuth } from '@/contexts/AuthContext';
 import { useDashboardJourneyData } from '@/hooks/useDashboardJourneyData';
 import { useAdmin } from '@/hooks/useAdmin';
@@ -196,46 +196,72 @@ const DashboardSidebar = () => {
         </nav>
       </div>
 
-      {/* Bottom section - Always visible */}
+      {/* Bottom section - Compact icon-only navigation */}
       <div className="flex-shrink-0 border-t border-gray-800">
-        <div className="p-4 space-y-2">
-          <Link
-            to="/dashboard/settings"
-            className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-300 hover:bg-gray-800 hover:text-white transition-colors"
-          >
-            <Settings size={18} />
-            <span>Settings</span>
-          </Link>
+        <div className="p-3 flex items-center justify-center gap-1">
+          {/* Settings */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Link
+                to="/dashboard/settings"
+                className="p-2 rounded-lg text-gray-300 hover:bg-gray-800 hover:text-white transition-colors"
+              >
+                <Settings size={16} />
+              </Link>
+            </TooltipTrigger>
+            <TooltipContent side="top">
+              <p>Settings</p>
+            </TooltipContent>
+          </Tooltip>
           
-          <Link
-            to="/account"
-            className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-300 hover:bg-gray-800 hover:text-white transition-colors"
-          >
-            <User size={18} />
-            <span>Account</span>
-          </Link>
+          {/* Account */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Link
+                to="/account"
+                className="p-2 rounded-lg text-gray-300 hover:bg-gray-800 hover:text-white transition-colors"
+              >
+                <User size={16} />
+              </Link>
+            </TooltipTrigger>
+            <TooltipContent side="top">
+              <p>Account</p>
+            </TooltipContent>
+          </Tooltip>
 
           {/* Admin Dashboard - Only show for admin users */}
           {isAdmin && (
-            <Link
-              to="/dashboard/admin"
-              className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-300 hover:bg-gray-800 hover:text-white transition-colors"
-            >
-              <Shield size={18} />
-              <span>Admin Dashboard</span>
-            </Link>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Link
+                  to="/dashboard/admin"
+                  className="p-2 rounded-lg text-gray-300 hover:bg-gray-800 hover:text-white transition-colors"
+                >
+                  <Shield size={16} />
+                </Link>
+              </TooltipTrigger>
+              <TooltipContent side="top">
+                <p>Admin Dashboard</p>
+              </TooltipContent>
+            </Tooltip>
           )}
 
-          {/* Logout Button - Red styling */}
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleSignOut}
-            className="w-full justify-start gap-3 px-3 py-2 text-red-400 hover:bg-red-900/20 hover:text-red-300 transition-colors"
-          >
-            <LogOut size={18} />
-            <span>Sign Out</span>
-          </Button>
+          {/* Logout Button */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleSignOut}
+                className="p-2 h-auto text-red-400 hover:bg-red-900/20 hover:text-red-300 transition-colors"
+              >
+                <LogOut size={16} />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="top">
+              <p>Sign Out</p>
+            </TooltipContent>
+          </Tooltip>
         </div>
       </div>
     </div>
@@ -243,4 +269,3 @@ const DashboardSidebar = () => {
 };
 
 export default DashboardSidebar;
-
