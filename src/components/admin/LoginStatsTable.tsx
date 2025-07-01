@@ -30,12 +30,21 @@ export const LoginStatsTable = () => {
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [totalCount, setTotalCount] = useState(0);
 
   useEffect(() => {
     const fetchLoginStats = async () => {
       try {
-        // Fetch user login statistics with user emails
-        const { data, error } = await supabase
+        // First get the total count
+        const { count, error: countError } = await supabase
+          .from('user_login_stats')
+          .select('*', { count: 'exact', head: true });
+
+        if (countError) throw countError;
+        setTotalCount(count || 0);
+
+        // Fetch user login statistics
+        const { data: loginData, error } = await supabase
           .from('user_login_stats')
           .select('*')
           .range(page * rowsPerPage, (page + 1) * rowsPerPage - 1)
@@ -43,19 +52,31 @@ export const LoginStatsTable = () => {
 
         if (error) throw error;
 
-        // For each login stat, fetch the user email
-        const statsWithUserDetails = await Promise.all(
-          data.map(async (stat) => {
-            // Get user details from auth.users (using admin API or retrieve from profiles table)
-            // Note: In a real app, you might need to create a profiles table or use a function
-            const { data: userData, error: userError } = await supabase.auth.admin.getUserById(stat.user_id);
-            
-            return {
-              ...stat,
-              user_email: userData?.user?.email || 'Unknown Email'
-            };
-          })
-        );
+        // Get user emails from a separate query to avoid auth admin issues
+        // We'll create a profiles table or use existing user data
+        const userIds = loginData?.map(stat => stat.user_id) || [];
+        
+        // Try to get user profile data or use fallback
+        let userProfiles: any[] = [];
+        try {
+          const { data: profiles } = await supabase
+            .from('user_journey_complete')
+            .select('user_id, property_address')
+            .in('user_id', userIds)
+            .not('user_id', 'is', null);
+          
+          userProfiles = profiles || [];
+        } catch (profileError) {
+          console.warn('Could not fetch user profiles:', profileError);
+        }
+
+        const statsWithUserDetails = loginData?.map(stat => {
+          const profile = userProfiles.find(p => p.user_id === stat.user_id);
+          return {
+            ...stat,
+            user_email: profile?.property_address || `User ${stat.user_id.slice(0, 8)}` || 'Unknown User'
+          };
+        }) || [];
 
         setLoginStats(statsWithUserDetails);
       } catch (error) {
@@ -125,7 +146,7 @@ export const LoginStatsTable = () => {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>User Email</TableHead>
+              <TableHead>User</TableHead>
               <TableHead>Logins</TableHead>
               <TableHead>First Login</TableHead>
               <TableHead>Last Login</TableHead>
@@ -162,7 +183,7 @@ export const LoginStatsTable = () => {
       
       <div className="flex items-center justify-between mt-4">
         <div className="text-sm text-gray-500">
-          Showing {loginStats.length > 0 ? page * rowsPerPage + 1 : 0} to {page * rowsPerPage + loginStats.length} of many entries
+          Showing {loginStats.length > 0 ? page * rowsPerPage + 1 : 0} to {page * rowsPerPage + loginStats.length} of {totalCount} entries
         </div>
         <div className="flex items-center space-x-2">
           <Button

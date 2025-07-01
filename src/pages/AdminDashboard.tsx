@@ -23,6 +23,7 @@ interface AdminStats {
   activeUsersToday: number;
   totalProperties: number;
   monthlyGrowth: number;
+  totalLogins: number;
 }
 
 const AdminDashboard = () => {
@@ -35,7 +36,8 @@ const AdminDashboard = () => {
     totalAffiliateEarnings: 0,
     activeUsersToday: 0,
     totalProperties: 0,
-    monthlyGrowth: 0
+    monthlyGrowth: 0,
+    totalLogins: 0
   });
   const { toast } = useToast();
 
@@ -60,16 +62,22 @@ const AdminDashboard = () => {
         // Fetch total users from user_login_stats
         const { data: users, error: usersError } = await supabase
           .from('user_login_stats')
-          .select('user_id');
+          .select('user_id, login_count');
         
         if (usersError) throw usersError;
+
+        // Calculate total logins
+        const totalLogins = users?.reduce((sum, user) => sum + (user.login_count || 0), 0) || 0;
 
         // Fetch total analyses
         const { data: analyses, error: analysesError } = await supabase
           .from('user_property_analyses')
-          .select('id');
+          .select('id, total_monthly_revenue');
         
         if (analysesError) throw analysesError;
+
+        // Calculate total revenue from all analyses
+        const totalRevenue = analyses?.reduce((sum, analysis) => sum + (analysis.total_monthly_revenue || 0), 0) || 0;
 
         // Fetch affiliate earnings
         const { data: earnings, error: earningsError } = await supabase
@@ -89,7 +97,7 @@ const AdminDashboard = () => {
 
         // Fetch total properties (unique addresses)
         const { data: properties, error: propertiesError } = await supabase
-          .from('user_addresses')
+          .from('user_property_analyses')
           .select('id');
         
         if (propertiesError) throw propertiesError;
@@ -120,7 +128,15 @@ const AdminDashboard = () => {
           totalAffiliateEarnings: earnings?.reduce((sum, e) => sum + (Number(e.earnings_amount) || 0), 0) || 0,
           activeUsersToday: todayUsers?.length || 0,
           totalProperties: properties?.length || 0,
-          monthlyGrowth: Math.round(growth)
+          monthlyGrowth: Math.round(growth),
+          totalLogins: totalLogins
+        });
+
+        console.log('Admin stats fetched:', {
+          totalUsers: users?.length || 0,
+          totalLogins: totalLogins,
+          totalProperties: properties?.length || 0,
+          totalRevenue: totalRevenue
         });
 
       } catch (error) {
@@ -197,6 +213,19 @@ const AdminDashboard = () => {
 
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Total Logins</CardTitle>
+                  <BarChart3 className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{adminStats.totalLogins.toLocaleString()}</div>
+                  <p className="text-xs text-muted-foreground">
+                    Across all users
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">Property Analyses</CardTitle>
                   <BarChart3 className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
@@ -204,19 +233,6 @@ const AdminDashboard = () => {
                   <div className="text-2xl font-bold">{adminStats.totalAnalyses.toLocaleString()}</div>
                   <p className="text-xs text-muted-foreground">
                     {adminStats.totalProperties} unique properties
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Affiliate Earnings</CardTitle>
-                  <DollarSign className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">${adminStats.totalAffiliateEarnings.toFixed(2)}</div>
-                  <p className="text-xs text-muted-foreground">
-                    Total commission earned
                   </p>
                 </CardContent>
               </Card>
@@ -249,6 +265,10 @@ const AdminDashboard = () => {
                     <span className="font-medium">{adminStats.totalUsers}</span>
                   </div>
                   <div className="flex justify-between items-center">
+                    <span className="text-sm text-muted-foreground">Total User Logins</span>
+                    <span className="font-medium">{adminStats.totalLogins}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
                     <span className="text-sm text-muted-foreground">Properties Analyzed</span>
                     <span className="font-medium">{adminStats.totalAnalyses}</span>
                   </div>
@@ -278,8 +298,8 @@ const AdminDashboard = () => {
                       <span className="text-sm font-medium text-green-600">+{Math.floor(adminStats.totalAnalyses * 0.15)} this week</span>
                     </div>
                     <div className="flex items-center justify-between p-2 bg-muted/50 rounded">
-                      <span className="text-sm">Affiliate commissions</span>
-                      <span className="text-sm font-medium text-purple-600">${(adminStats.totalAffiliateEarnings * 0.2).toFixed(2)} this week</span>
+                      <span className="text-sm">Total login sessions</span>
+                      <span className="text-sm font-medium text-purple-600">{adminStats.totalLogins.toLocaleString()}</span>
                     </div>
                   </div>
                 </CardContent>

@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -58,11 +59,14 @@ const PropertyManagement = () => {
   const fetchProperties = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
+      
+      // First try to get properties with linked addresses
+      const { data: propertiesWithAddresses, error: addressError } = await supabase
         .from('user_property_analyses')
         .select(`
           id,
           user_id,
+          address_id,
           total_monthly_revenue,
           total_opportunities,
           property_type,
@@ -74,23 +78,47 @@ const PropertyManagement = () => {
         `)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      
-      // Transform the data to match the PropertyAnalysis interface
-      const transformedData = data?.map((item: any) => ({
-        id: item.id,
-        property_address: item.user_addresses?.address || 'Unknown Address',
-        user_id: item.user_id,
-        total_monthly_revenue: item.total_monthly_revenue || 0,
-        total_opportunities: item.total_opportunities || 0,
-        property_type: item.property_type || 'Unknown',
-        created_at: item.created_at,
-        updated_at: item.updated_at,
-        is_active: true, // Default to active for user analyses
-        coordinates: item.coordinates,
-        analysis_results: item.analysis_results
-      })) || [];
+      // Also get properties that might store addresses directly in analysis_results
+      const { data: allProperties, error: allError } = await supabase
+        .from('user_property_analyses')
+        .select('*')
+        .order('created_at', { ascending: false });
 
+      if (allError) throw allError;
+
+      // Transform the data to handle both scenarios
+      const transformedData = allProperties?.map((item: any) => {
+        // Try to get address from linked table first
+        const linkedAddress = propertiesWithAddresses?.find(p => p.id === item.id)?.user_addresses?.address;
+        
+        // Fallback to analysis results or direct storage
+        let propertyAddress = linkedAddress;
+        if (!propertyAddress && item.analysis_results) {
+          // Check if address is stored in analysis results
+          propertyAddress = item.analysis_results.propertyAddress || 
+                          item.analysis_results.address ||
+                          'Unknown Address';
+        }
+        if (!propertyAddress) {
+          propertyAddress = 'Unknown Address';
+        }
+
+        return {
+          id: item.id,
+          property_address: propertyAddress,
+          user_id: item.user_id,
+          total_monthly_revenue: item.total_monthly_revenue || 0,
+          total_opportunities: item.total_opportunities || 0,
+          property_type: item.property_type || 'Unknown',
+          created_at: item.created_at,
+          updated_at: item.updated_at,
+          is_active: true, // Default to active for user analyses
+          coordinates: item.coordinates,
+          analysis_results: item.analysis_results
+        };
+      }) || [];
+
+      console.log('Fetched properties:', transformedData.length, transformedData);
       setProperties(transformedData);
     } catch (error) {
       console.error('Error fetching properties:', error);
@@ -209,7 +237,7 @@ const PropertyManagement = () => {
             <div>
               <CardTitle className="flex items-center gap-2">
                 <MapPin className="h-5 w-5" />
-                Property Management
+                Property Management ({properties.length} total)
               </CardTitle>
               <CardDescription>
                 Manage all property analyses and user data
