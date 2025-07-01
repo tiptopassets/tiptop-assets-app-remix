@@ -54,7 +54,7 @@ export const LoginStatsTable = () => {
 
         // Get user IDs for fetching additional info
         const userIds = loginData.map(stat => stat.user_id);
-        console.log('📊 [LOGIN-STATS] User IDs:', userIds);
+        console.log('📊 [LOGIN-STATS] User IDs to process:', userIds.length);
 
         // Try to get user emails from auth.users (this might not work due to RLS)
         let userEmails: any[] = [];
@@ -79,6 +79,18 @@ export const LoginStatsTable = () => {
           console.log('📊 [LOGIN-STATS] Journey data found:', journeyData.length);
         }
 
+        // Get property analysis data for additional context
+        let analysisData: any[] = [];
+        if (userIds.length > 0) {
+          const { data: propertyAnalyses } = await supabase
+            .from('user_property_analyses')
+            .select('user_id, analysis_results, created_at')
+            .in('user_id', userIds);
+          
+          analysisData = propertyAnalyses || [];
+          console.log('📊 [LOGIN-STATS] Property analysis data found:', analysisData.length);
+        }
+
         // Combine login stats with user info
         const statsWithUserDetails = loginData.map((stat, index) => {
           // Try to find user email from auth data
@@ -87,17 +99,33 @@ export const LoginStatsTable = () => {
 
           // Try to find property address from journey data
           const journeyInfo = journeyData.find(j => j.user_id === stat.user_id);
-          const propertyAddress = journeyInfo?.property_address;
+          let propertyAddress = journeyInfo?.property_address;
 
-          // Create display name
+          // Try to find property address from analysis data if not found in journey
+          if (!propertyAddress) {
+            const analysisInfo = analysisData.find(a => a.user_id === stat.user_id);
+            if (analysisInfo?.analysis_results?.propertyAddress) {
+              propertyAddress = analysisInfo.analysis_results.propertyAddress;
+            } else if (analysisInfo?.analysis_results?.address) {
+              propertyAddress = analysisInfo.analysis_results.address;
+            }
+          }
+
+          // Create display name with multiple fallbacks
           let displayName = '';
           if (userEmail) {
             displayName = userEmail;
           } else if (propertyAddress) {
-            displayName = `Property: ${propertyAddress.substring(0, 30)}...`;
+            // Truncate long addresses for display
+            const truncatedAddress = propertyAddress.length > 40 
+              ? `${propertyAddress.substring(0, 40)}...` 
+              : propertyAddress;
+            displayName = `Property: ${truncatedAddress}`;
           } else {
             displayName = `User ${index + 1} (ID: ${stat.user_id.substring(0, 8)}...)`;
           }
+
+          console.log(`📊 [LOGIN-STATS] User ${index + 1}: ${displayName} (${stat.login_count} logins)`);
 
           return {
             ...stat,
@@ -106,7 +134,7 @@ export const LoginStatsTable = () => {
           };
         });
 
-        console.log('✅ [LOGIN-STATS] Final stats with user details:', statsWithUserDetails);
+        console.log('✅ [LOGIN-STATS] Final stats with user details:', statsWithUserDetails.length);
         setLoginStats(statsWithUserDetails);
       } catch (error) {
         console.error('❌ [LOGIN-STATS] Error fetching login stats:', error);
@@ -191,49 +219,56 @@ export const LoginStatsTable = () => {
   return (
     <div className="space-y-4">
       <div className="rounded-md border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>User</TableHead>
-              <TableHead>Logins</TableHead>
-              <TableHead>First Login</TableHead>
-              <TableHead>Last Login</TableHead>
-              <TableHead>Browser</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {loginStats.length === 0 ? (
+        {/* Make the table container scrollable with a max height */}
+        <div className="max-h-[500px] overflow-auto">
+          <Table>
+            <TableHeader className="sticky top-0 bg-background">
               <TableRow>
-                <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
-                  No login statistics found
-                </TableCell>
+                <TableHead>User</TableHead>
+                <TableHead>Logins</TableHead>
+                <TableHead>First Login</TableHead>
+                <TableHead>Last Login</TableHead>
+                <TableHead>Browser</TableHead>
               </TableRow>
-            ) : (
-              loginStats.map((stat) => (
-                <TableRow key={stat.id}>
-                  <TableCell className="font-medium max-w-xs">
-                    <div>
-                      <div className="font-medium">{stat.user_display_name}</div>
-                      {stat.user_email !== 'Unknown Email' && (
-                        <div className="text-sm text-muted-foreground">{stat.user_email}</div>
-                      )}
-                    </div>
+            </TableHeader>
+            <TableBody>
+              {loginStats.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                    No login statistics found
                   </TableCell>
-                  <TableCell>
-                    <span className="font-semibold">{stat.login_count}</span>
-                  </TableCell>
-                  <TableCell>
-                    {format(new Date(stat.first_login_at), 'MMM d, yyyy HH:mm')}
-                  </TableCell>
-                  <TableCell>
-                    {format(new Date(stat.last_login_at), 'MMM d, yyyy HH:mm')}
-                  </TableCell>
-                  <TableCell>{formatUserAgent(stat.last_user_agent)}</TableCell>
                 </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
+              ) : (
+                loginStats.map((stat) => (
+                  <TableRow key={stat.id}>
+                    <TableCell className="font-medium max-w-xs">
+                      <div>
+                        <div className="font-medium truncate" title={stat.user_display_name}>
+                          {stat.user_display_name}
+                        </div>
+                        {stat.user_email !== 'Unknown Email' && (
+                          <div className="text-sm text-muted-foreground truncate" title={stat.user_email}>
+                            {stat.user_email}
+                          </div>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <span className="font-semibold">{stat.login_count}</span>
+                    </TableCell>
+                    <TableCell>
+                      {format(new Date(stat.first_login_at), 'MMM d, yyyy HH:mm')}
+                    </TableCell>
+                    <TableCell>
+                      {format(new Date(stat.last_login_at), 'MMM d, yyyy HH:mm')}
+                    </TableCell>
+                    <TableCell>{formatUserAgent(stat.last_user_agent)}</TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
       </div>
       
       <div className="text-sm text-gray-500">

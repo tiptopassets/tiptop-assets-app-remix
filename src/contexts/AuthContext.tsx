@@ -1,4 +1,3 @@
-
 import { createContext, useState, useEffect, useContext, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Session, User } from '@supabase/supabase-js';
@@ -94,7 +93,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  // Function to handle analysis recovery after sign-in
+  // Enhanced function to handle analysis recovery after sign-in with better data consistency
   const handleAnalysisRecovery = async (userId: string) => {
     try {
       console.log('🔍 [AUTH] Checking for analyses to recover for user:', userId);
@@ -111,6 +110,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       
       if (result.recovered > 0) {
         console.log('✅ [AUTH] Successfully recovered analyses:', result.recovered);
+        
+        // Ensure data consistency by updating related tables
+        await ensureDataConsistency(userId);
+        
         toast({
           title: "Analysis Recovered",
           description: `Successfully recovered ${result.recovered} property analysis${result.recovered > 1 ? 'es' : ''} to your dashboard`,
@@ -132,6 +135,83 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         description: "Failed to recover previous analysis. Please try analyzing your property again.",
         variant: "destructive"
       });
+    }
+  };
+
+  // New function to ensure data consistency across tables
+  const ensureDataConsistency = async (userId: string) => {
+    try {
+      console.log('🔄 [AUTH] Ensuring data consistency for user:', userId);
+      
+      // Get all property analyses for this user
+      const { data: analyses } = await supabase
+        .from('user_property_analyses')
+        .select('*')
+        .eq('user_id', userId);
+
+      if (!analyses || analyses.length === 0) {
+        console.log('ℹ️ [AUTH] No analyses found for consistency check');
+        return;
+      }
+
+      // Check and update missing addresses
+      for (const analysis of analyses) {
+        let addressNeedsUpdate = false;
+        let addressFromAnalysis = '';
+
+        // Extract address from analysis results
+        if (analysis.analysis_results) {
+          if (analysis.analysis_results.propertyAddress) {
+            addressFromAnalysis = analysis.analysis_results.propertyAddress;
+          } else if (analysis.analysis_results.address) {
+            addressFromAnalysis = analysis.analysis_results.address;
+          }
+        }
+
+        // If we have an address from analysis but no address_id, create the address record
+        if (addressFromAnalysis && !analysis.address_id) {
+          try {
+            const { data: existingAddress } = await supabase
+              .from('user_addresses')
+              .select('id')
+              .eq('user_id', userId)
+              .eq('address', addressFromAnalysis)
+              .maybeSingle();
+
+            let addressId = existingAddress?.id;
+
+            if (!addressId) {
+              const { data: newAddress } = await supabase
+                .from('user_addresses')
+                .insert({
+                  user_id: userId,
+                  address: addressFromAnalysis,
+                  formatted_address: addressFromAnalysis,
+                  is_primary: analyses.length === 1 // Make primary if it's the only one
+                })
+                .select('id')
+                .single();
+
+              addressId = newAddress?.id;
+            }
+
+            if (addressId) {
+              await supabase
+                .from('user_property_analyses')
+                .update({ address_id: addressId })
+                .eq('id', analysis.id);
+              
+              console.log('✅ [AUTH] Updated analysis with address_id:', addressId);
+            }
+          } catch (error) {
+            console.error('❌ [AUTH] Error creating/linking address:', error);
+          }
+        }
+      }
+
+      console.log('✅ [AUTH] Data consistency check completed');
+    } catch (error) {
+      console.error('❌ [AUTH] Error ensuring data consistency:', error);
     }
   };
 
@@ -163,7 +243,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                   // Count as actual login for SIGNED_IN events
                   updateLoginStats(currentSession.user.id, true);
                   
-                  // Trigger analysis recovery
+                  // Trigger analysis recovery with enhanced data consistency
                   handleAnalysisRecovery(currentSession.user.id);
                   
                   // Always redirect to dashboard when user signs in
@@ -207,13 +287,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           setSession(currentSession);
           setUser(currentSession?.user ?? null);
           
-          // If user was already signed in on page load, DON'T count as login but do recovery
+          // If user was already signed in on page load, DON'T count as login but do recovery and consistency check
           if (currentSession?.user) {
-            console.log('👤 [AUTH] User already signed in on page load, not counting as new login');
+            console.log('👤 [AUTH] User already signed in on page load, running consistency check');
             setTimeout(() => {
               if (mounted) {
                 // Don't update login stats for existing sessions
                 handleAnalysisRecovery(currentSession.user.id);
+                // Also run consistency check for existing users
+                ensureDataConsistency(currentSession.user.id);
               }
             }, 100);
           }

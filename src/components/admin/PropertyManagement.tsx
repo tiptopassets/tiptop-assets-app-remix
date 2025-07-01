@@ -52,12 +52,33 @@ const PropertyManagement = () => {
 
   useEffect(() => {
     fetchProperties();
+
+    // Set up real-time subscription for property updates
+    const channel = supabase
+      .channel('property-management-updates')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'user_property_analyses',
+        },
+        () => {
+          console.log('🔄 [PROPERTY-MGMT] Real-time update detected, refreshing properties...');
+          fetchProperties();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const fetchProperties = async () => {
     try {
       setLoading(true);
-      console.log('🏠 [PROPERTY-MGMT] Fetching all properties...');
+      console.log('🏠 [PROPERTY-MGMT] Fetching all properties with enhanced extraction...');
       
       // Get ALL properties from user_property_analyses
       const { data: allProperties, error: allError } = await supabase
@@ -76,86 +97,112 @@ const PropertyManagement = () => {
         return;
       }
 
-      // Get linked addresses for properties that have address_id
-      const addressIds = allProperties
-        .map(p => p.address_id)
-        .filter(id => id);
-      
-      let linkedAddresses: any[] = [];
-      if (addressIds.length > 0) {
-        const { data: addresses } = await supabase
-          .from('user_addresses')
-          .select('id, address')
-          .in('id', addressIds);
-        
-        linkedAddresses = addresses || [];
-        console.log('🏠 [PROPERTY-MGMT] Found linked addresses:', linkedAddresses.length);
-      }
-
-      // Get user journey data to find addresses stored there
+      // Get all possible user IDs to fetch journey data
       const userIds = [...new Set(allProperties.map(p => p.user_id))];
-      let journeyAddresses: any[] = [];
       
+      // Get user journey data for additional context
+      let journeyData: any[] = [];
       if (userIds.length > 0) {
         const { data: journeys } = await supabase
           .from('user_journey_complete')
-          .select('user_id, property_address')
+          .select('user_id, property_address, analysis_results')
           .in('user_id', userIds)
           .not('property_address', 'is', null);
         
-        journeyAddresses = journeys || [];
-        console.log('🏠 [PROPERTY-MGMT] Found journey addresses:', journeyAddresses.length);
+        journeyData = journeys || [];
+        console.log('🏠 [PROPERTY-MGMT] Found journey data:', journeyData.length);
       }
 
-      // Transform the data to handle multiple address sources
+      // Get user addresses as well
+      const { data: userAddresses } = await supabase
+        .from('user_addresses')
+        .select('*')
+        .in('user_id', userIds);
+
+      const addressData = userAddresses || [];
+      console.log('🏠 [PROPERTY-MGMT] Found user addresses:', addressData.length);
+
+      // Enhanced property extraction with multiple fallback sources
       const transformedData = allProperties.map((item: any, index: number) => {
-        // Try to get address from multiple sources
         let propertyAddress = '';
-        
-        // 1. Check analysis results first (most reliable)
-        if (item.analysis_results?.propertyAddress) {
-          propertyAddress = item.analysis_results.propertyAddress;
-        }
-        else if (item.analysis_results?.address) {
-          propertyAddress = item.analysis_results.address;
-        }
-        // 2. Check linked address table
-        else if (item.address_id) {
-          const linkedAddress = linkedAddresses.find(addr => addr.id === item.address_id);
-          if (linkedAddress?.address) {
-            propertyAddress = linkedAddress.address;
+        let propertyType = item.property_type || 'Unknown';
+        let totalRevenue = item.total_monthly_revenue || 0;
+        let totalOpportunities = item.total_opportunities || 0;
+
+        // Priority 1: Check analysis_results for property address
+        if (item.analysis_results) {
+          // Check multiple possible locations for address in analysis_results
+          if (item.analysis_results.propertyAddress) {
+            propertyAddress = item.analysis_results.propertyAddress;
+          } else if (item.analysis_results.address) {
+            propertyAddress = item.analysis_results.address;
+          } else if (item.analysis_results.property_address) {
+            propertyAddress = item.analysis_results.property_address;
+          }
+
+          // Extract additional data from analysis results if missing
+          if (!totalRevenue && item.analysis_results.topOpportunities) {
+            totalRevenue = item.analysis_results.topOpportunities.reduce((sum: number, opp: any) => 
+              sum + (opp.monthlyRevenue || 0), 0);
+          }
+
+          if (!totalOpportunities && item.analysis_results.topOpportunities) {
+            totalOpportunities = item.analysis_results.topOpportunities.length;
+          }
+
+          if (propertyType === 'Unknown' && item.analysis_results.propertyType) {
+            propertyType = item.analysis_results.propertyType;
           }
         }
-        // 3. Check journey data as fallback
-        if (!propertyAddress) {
-          const journeyData = journeyAddresses.find(j => j.user_id === item.user_id);
-          if (journeyData?.property_address) {
-            propertyAddress = journeyData.property_address;
+
+        // Priority 2: Check linked user address
+        if (!propertyAddress && item.address_id) {
+          const linkedAddress = addressData.find(addr => addr.id === item.address_id);
+          if (linkedAddress) {
+            propertyAddress = linkedAddress.formatted_address || linkedAddress.address;
           }
         }
-        
-        // 4. Final fallback
+
+        // Priority 3: Check journey data
         if (!propertyAddress) {
-          propertyAddress = `Property ${index + 1} (ID: ${item.id.substring(0, 8)}...)`;
+          const journeyMatch = journeyData.find(j => j.user_id === item.user_id);
+          if (journeyMatch) {
+            propertyAddress = journeyMatch.property_address;
+            
+            // Also try to extract from journey analysis results
+            if (!propertyAddress && journeyMatch.analysis_results?.propertyAddress) {
+              propertyAddress = journeyMatch.analysis_results.propertyAddress;
+            }
+          }
         }
+
+        // Priority 4: Final fallback with better identification
+        if (!propertyAddress) {
+          const userJourneyCount = journeyData.filter(j => j.user_id === item.user_id).length;
+          const userPropertyCount = allProperties.filter(p => p.user_id === item.user_id).length;
+          
+          propertyAddress = `Property Analysis ${index + 1} (User: ${item.user_id.substring(0, 8)}..., ${userPropertyCount} analyses, ${userJourneyCount} journeys)`;
+        }
+
+        console.log(`🏠 [PROPERTY-MGMT] Property ${index + 1}: "${propertyAddress}" (Revenue: $${totalRevenue}, Opportunities: ${totalOpportunities})`);
 
         return {
           id: item.id,
           property_address: propertyAddress,
           user_id: item.user_id,
-          total_monthly_revenue: item.total_monthly_revenue || 0,
-          total_opportunities: item.total_opportunities || 0,
-          property_type: item.property_type || 'Unknown',
+          total_monthly_revenue: totalRevenue,
+          total_opportunities: totalOpportunities,
+          property_type: propertyType,
           created_at: item.created_at,
           updated_at: item.updated_at,
-          is_active: true, // Default to active for user analyses
+          is_active: true,
           coordinates: item.coordinates,
           analysis_results: item.analysis_results
         };
       });
 
-      console.log('✅ [PROPERTY-MGMT] Transformed properties:', transformedData.length);
-      console.log('✅ [PROPERTY-MGMT] Sample property addresses:', transformedData.slice(0, 3).map(p => p.property_address));
+      console.log('✅ [PROPERTY-MGMT] Successfully transformed properties:', transformedData.length);
+      console.log('✅ [PROPERTY-MGMT] Address samples:', transformedData.slice(0, 5).map(p => p.property_address));
       
       setProperties(transformedData);
     } catch (error) {
@@ -318,9 +365,9 @@ const PropertyManagement = () => {
           </div>
 
           {/* Properties Table */}
-          <div className="rounded-md border">
+          <div className="rounded-md border max-h-[600px] overflow-auto">
             <Table>
-              <TableHeader>
+              <TableHeader className="sticky top-0 bg-background">
                 <TableRow>
                   <TableHead>Property Address</TableHead>
                   <TableHead>Type</TableHead>
