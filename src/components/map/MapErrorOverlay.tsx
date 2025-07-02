@@ -9,7 +9,7 @@ interface MapErrorOverlayProps {
 }
 
 const MapErrorOverlay = ({ errorMessage }: MapErrorOverlayProps) => {
-  const { setUseLocalAnalysis, setAnalysisError, generatePropertyAnalysis, address } = useGoogleMap();
+  const { setUseLocalAnalysis } = useGoogleMap();
   
   if (!errorMessage) return null;
 
@@ -19,15 +19,11 @@ const MapErrorOverlay = ({ errorMessage }: MapErrorOverlayProps) => {
                     errorMessage.includes('API key');
   
   const handleSwitchToDemo = () => {
-    setAnalysisError(null);
     setUseLocalAnalysis(true);
   };
 
   const handleRetry = () => {
-    setAnalysisError(null);
-    if (address) {
-      generatePropertyAnalysis(address);
-    }
+    window.location.reload();
   };
 
   return (
@@ -40,21 +36,34 @@ const MapErrorOverlay = ({ errorMessage }: MapErrorOverlayProps) => {
         <p className="text-white/90 mb-4">{errorMessage}</p>
         
         <div className="space-y-2">
-          <Button 
-            onClick={handleRetry} 
-            variant="secondary"
-            className="w-full"
-          >
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Try Again
-          </Button>
-          <Button 
-            onClick={handleSwitchToDemo} 
-            variant="outline"
-            className="w-full border-white/20 text-white hover:bg-white/10"
-          >
-            Try Demo Mode
-          </Button>
+          {isMapError && (
+            <>
+              <Button 
+                onClick={handleRetry} 
+                variant="secondary"
+                className="w-full"
+              >
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Retry
+              </Button>
+              <Button 
+                onClick={handleSwitchToDemo} 
+                variant="outline"
+                className="w-full border-white/20 text-white hover:bg-white/10"
+              >
+                Switch to Demo Mode
+              </Button>
+            </>
+          )}
+          {!isMapError && (
+            <Button 
+              onClick={handleSwitchToDemo} 
+              variant="secondary"
+              className="w-full"
+            >
+              Try Demo Mode
+            </Button>
+          )}
         </div>
       </div>
     </div>
