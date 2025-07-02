@@ -1194,17 +1194,9 @@ export type Database = {
           analysis_version: string | null
           coordinates: Json | null
           created_at: string | null
-          earnings_breakdown: Json | null
           id: string
-          last_solar_update: string | null
-          property_images: Json | null
-          property_insights: Json | null
           property_type: string | null
-          satellite_image_base64: string | null
           satellite_image_url: string | null
-          solar_api_data: Json | null
-          street_view_image_url: string | null
-          supplier_info: Json | null
           total_monthly_revenue: number | null
           total_opportunities: number | null
           updated_at: string | null
@@ -1217,17 +1209,9 @@ export type Database = {
           analysis_version?: string | null
           coordinates?: Json | null
           created_at?: string | null
-          earnings_breakdown?: Json | null
           id?: string
-          last_solar_update?: string | null
-          property_images?: Json | null
-          property_insights?: Json | null
           property_type?: string | null
-          satellite_image_base64?: string | null
           satellite_image_url?: string | null
-          solar_api_data?: Json | null
-          street_view_image_url?: string | null
-          supplier_info?: Json | null
           total_monthly_revenue?: number | null
           total_opportunities?: number | null
           updated_at?: string | null
@@ -1240,17 +1224,9 @@ export type Database = {
           analysis_version?: string | null
           coordinates?: Json | null
           created_at?: string | null
-          earnings_breakdown?: Json | null
           id?: string
-          last_solar_update?: string | null
-          property_images?: Json | null
-          property_insights?: Json | null
           property_type?: string | null
-          satellite_image_base64?: string | null
           satellite_image_url?: string | null
-          solar_api_data?: Json | null
-          street_view_image_url?: string | null
-          supplier_info?: Json | null
           total_monthly_revenue?: number | null
           total_opportunities?: number | null
           updated_at?: string | null
