@@ -115,15 +115,23 @@ serve(async (req) => {
     // Step 4: Get Street View imagery
     const streetViewImageUrl = `https://maps.googleapis.com/maps/api/streetview?size=640x640&location=${location.lat},${location.lng}&key=${googleMapsKey}`;
 
-    // Step 5: Get Google Solar API data (only if rooftop access available)
+    // Step 5: Get Google Solar API data via unified solar-api function
     let googleSolarData = null;
     if (buildingTypeInfo.hasRooftopAccess) {
       try {
-        const solarResponse = await fetch(
-          `https://solar.googleapis.com/v1/buildingInsights:findClosest?location.latitude=${location.lat}&location.longitude=${location.lng}&key=${googleMapsKey}`
-        );
-        if (solarResponse.ok) {
-          googleSolarData = await solarResponse.json();
+        console.log('☀️ Calling unified solar-api function...');
+        const { data: solarResponse, error: solarError } = await supabase.functions.invoke('solar-api', {
+          body: { 
+            address: address,
+            coordinates: location
+          }
+        });
+        
+        if (solarError) {
+          console.log('Solar API error (expected for some buildings):', solarError);
+        } else if (solarResponse?.success && solarResponse?.solarData) {
+          googleSolarData = solarResponse.solarData;
+          console.log('✅ Received solar data from unified API');
         }
       } catch (error) {
         console.log('Solar API not available (expected for restricted buildings):', error);
