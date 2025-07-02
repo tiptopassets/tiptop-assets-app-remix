@@ -127,13 +127,13 @@ Deno.serve(async (req: Request) => {
 
       if (cachedData) {
         console.log('Returning cached solar data');
-        return new Response(
-          JSON.stringify({
-            success: true,
-            solarData: cachedData.formatted_data,
-            coordinates: locationCoordinates,
-            cached: true
-          }),
+          return new Response(
+            JSON.stringify({
+              success: true,
+              solarData: cachedData.solar_data,
+              coordinates: locationCoordinates,
+              cached: true
+            }),
           {
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
             status: 200
@@ -219,10 +219,9 @@ Deno.serve(async (req: Request) => {
             .from('solar_api_cache')
             .upsert({
               coordinates: `POINT(${locationCoordinates.lng} ${locationCoordinates.lat})`,
-              raw_response: solarResult.rawResponse,
-              formatted_data: solarResult.solarData,
-              cached_at: new Date().toISOString(),
-              api_success: true
+              solar_data: solarResult.solarData,
+              property_address: address || `${locationCoordinates.lat},${locationCoordinates.lng}`,
+              cached_at: new Date().toISOString()
             })
             .select();
           console.log('Solar data cached successfully');
