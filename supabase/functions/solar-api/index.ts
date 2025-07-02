@@ -113,27 +113,42 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    // Check cache first
-    const cacheKey = `${locationCoordinates.lat},${locationCoordinates.lng}`;
+    // Check cache first using proximity-based lookup for better cache hits
+    console.log('🔍 Checking cache for coordinates:', locationCoordinates);
     try {
+      // Use proximity-based cache lookup with a small tolerance (about 10 meters)
+      const tolerance = 0.0001; // ~10 meters
       const { data: cachedData } = await supabase
         .from('solar_api_cache')
         .select('*')
-        .eq('coordinates', `POINT(${locationCoordinates.lng} ${locationCoordinates.lat})`)
         .gte('cached_at', new Date(Date.now() - CACHE_DURATION_HOURS * 60 * 60 * 1000).toISOString())
         .order('cached_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
+        .limit(10) // Get multiple to find closest match
+        .then(({ data, error }) => {
+          if (error || !data) return { data: null, error };
+          
+          // Find closest coordinate match within tolerance
+          const closest = data.find(cache => {
+            if (!cache.coordinates || typeof cache.coordinates !== 'object') return false;
+            const coords = cache.coordinates as any;
+            const latDiff = Math.abs(coords.lat - locationCoordinates.lat);
+            const lngDiff = Math.abs(coords.lng - locationCoordinates.lng);
+            return latDiff <= tolerance && lngDiff <= tolerance;
+          });
+          
+          return { data: closest || null, error: null };
+        });
 
       if (cachedData) {
-        console.log('Returning cached solar data');
-          return new Response(
-            JSON.stringify({
-              success: true,
-              solarData: cachedData.solar_data,
-              coordinates: locationCoordinates,
-              cached: true
-            }),
+        console.log('✅ Returning cached solar data for coordinates:', cachedData.coordinates);
+        return new Response(
+          JSON.stringify({
+            success: true,
+            solarData: cachedData.solar_data,
+            coordinates: locationCoordinates,
+            cached: true,
+            cacheHit: true
+          }),
           {
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
             status: 200
@@ -141,7 +156,7 @@ Deno.serve(async (req: Request) => {
         );
       }
     } catch (cacheError) {
-      console.log('Cache lookup failed, proceeding with API call:', cacheError);
+      console.error('❌ Cache lookup failed, proceeding with API call:', cacheError);
     }
 
     // Call Google Solar API with coordinates
@@ -212,21 +227,25 @@ Deno.serve(async (req: Request) => {
         );
       }
 
-      // Store the API response in the cache for future reference
+      // Store the API response in the cache for future reference with proper JSONB coordinates
       if (locationCoordinates && solarResult.solarData) {
         try {
+          const propertyAddress = address || `${locationCoordinates.lat},${locationCoordinates.lng}`;
+          console.log('💾 Caching solar data for:', propertyAddress, 'at coordinates:', locationCoordinates);
+          
           await supabase
             .from('solar_api_cache')
             .upsert({
-              coordinates: `POINT(${locationCoordinates.lng} ${locationCoordinates.lat})`,
+              // Store coordinates as proper JSONB object instead of POINT string
+              coordinates: locationCoordinates,
               solar_data: solarResult.solarData,
-              property_address: address || `${locationCoordinates.lat},${locationCoordinates.lng}`,
+              property_address: propertyAddress,
               cached_at: new Date().toISOString()
             })
             .select();
-          console.log('Solar data cached successfully');
+          console.log('✅ Solar data cached successfully with JSONB coordinates');
         } catch (dbError) {
-          console.log('Database storage error (non-critical):', dbError);
+          console.error('❌ Database storage error (non-critical):', dbError);
           // Continue execution even if database storage fails
         }
       }
@@ -267,12 +286,34 @@ Deno.serve(async (req: Request) => {
       );
     }
   } catch (error) {
-    console.error('Error in solar-api function:', error);
+    console.error('❌ Critical error in solar-api function:', error);
+    
+    // Enhanced error handling with fallback data
+    const fallbackSolarData = locationCoordinates ? 
+      generateEstimatedSolarData(locationCoordinates, 1500, '') : null;
+    
+    if (fallbackSolarData) {
+      console.log('🔄 Returning fallback solar data due to error');
+      return new Response(
+        JSON.stringify({
+          success: true,
+          solarData: fallbackSolarData,
+          coordinates: locationCoordinates,
+          fallbackUsed: true,
+          error: error.message || 'An error occurred, using estimated data'
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 200
+        }
+      );
+    }
+    
     return new Response(
       JSON.stringify({
         success: false,
         error: error.message || 'An unknown error occurred',
-        fallbackAvailable: true
+        fallbackAvailable: false
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
