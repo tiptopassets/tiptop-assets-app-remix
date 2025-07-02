@@ -317,57 +317,6 @@ export type Database = {
         }
         Relationships: []
       }
-      enhanced_solar_cache: {
-        Row: {
-          annual_savings: number | null
-          coordinates: Json | null
-          created_at: string | null
-          expires_at: string | null
-          formatted_solar_data: Json | null
-          id: string
-          panel_count: number | null
-          property_address: string
-          raw_solar_response: Json | null
-          roof_area_sqft: number | null
-          setup_cost: number | null
-          solar_potential_kwh: number | null
-          updated_at: string | null
-          using_real_data: boolean | null
-        }
-        Insert: {
-          annual_savings?: number | null
-          coordinates?: Json | null
-          created_at?: string | null
-          expires_at?: string | null
-          formatted_solar_data?: Json | null
-          id?: string
-          panel_count?: number | null
-          property_address: string
-          raw_solar_response?: Json | null
-          roof_area_sqft?: number | null
-          setup_cost?: number | null
-          solar_potential_kwh?: number | null
-          updated_at?: string | null
-          using_real_data?: boolean | null
-        }
-        Update: {
-          annual_savings?: number | null
-          coordinates?: Json | null
-          created_at?: string | null
-          expires_at?: string | null
-          formatted_solar_data?: Json | null
-          id?: string
-          panel_count?: number | null
-          property_address?: string
-          raw_solar_response?: Json | null
-          roof_area_sqft?: number | null
-          setup_cost?: number | null
-          solar_potential_kwh?: number | null
-          updated_at?: string | null
-          using_real_data?: boolean | null
-        }
-        Relationships: []
-      }
       journey_analytics: {
         Row: {
           address_conversion_rate: number | null
@@ -1194,17 +1143,10 @@ export type Database = {
           analysis_version: string | null
           coordinates: Json | null
           created_at: string | null
-          earnings_breakdown: Json | null
           id: string
-          last_solar_update: string | null
-          property_images: Json | null
-          property_insights: Json | null
           property_type: string | null
-          satellite_image_base64: string | null
           satellite_image_url: string | null
-          solar_api_data: Json | null
           street_view_image_url: string | null
-          supplier_info: Json | null
           total_monthly_revenue: number | null
           total_opportunities: number | null
           updated_at: string | null
@@ -1217,17 +1159,10 @@ export type Database = {
           analysis_version?: string | null
           coordinates?: Json | null
           created_at?: string | null
-          earnings_breakdown?: Json | null
           id?: string
-          last_solar_update?: string | null
-          property_images?: Json | null
-          property_insights?: Json | null
           property_type?: string | null
-          satellite_image_base64?: string | null
           satellite_image_url?: string | null
-          solar_api_data?: Json | null
           street_view_image_url?: string | null
-          supplier_info?: Json | null
           total_monthly_revenue?: number | null
           total_opportunities?: number | null
           updated_at?: string | null
@@ -1240,17 +1175,10 @@ export type Database = {
           analysis_version?: string | null
           coordinates?: Json | null
           created_at?: string | null
-          earnings_breakdown?: Json | null
           id?: string
-          last_solar_update?: string | null
-          property_images?: Json | null
-          property_insights?: Json | null
           property_type?: string | null
-          satellite_image_base64?: string | null
           satellite_image_url?: string | null
-          solar_api_data?: Json | null
           street_view_image_url?: string | null
-          supplier_info?: Json | null
           total_monthly_revenue?: number | null
           total_opportunities?: number | null
           updated_at?: string | null
@@ -1263,50 +1191,6 @@ export type Database = {
             columns: ["address_id"]
             isOneToOne: false
             referencedRelation: "user_addresses"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      user_property_images: {
-        Row: {
-          analysis_id: string | null
-          created_at: string | null
-          id: string
-          image_base64: string | null
-          image_metadata: Json | null
-          image_type: string
-          image_url: string | null
-          updated_at: string | null
-          user_id: string
-        }
-        Insert: {
-          analysis_id?: string | null
-          created_at?: string | null
-          id?: string
-          image_base64?: string | null
-          image_metadata?: Json | null
-          image_type: string
-          image_url?: string | null
-          updated_at?: string | null
-          user_id: string
-        }
-        Update: {
-          analysis_id?: string | null
-          created_at?: string | null
-          id?: string
-          image_base64?: string | null
-          image_metadata?: Json | null
-          image_type?: string
-          image_url?: string | null
-          updated_at?: string | null
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "user_property_images_analysis_id_fkey"
-            columns: ["analysis_id"]
-            isOneToOne: false
-            referencedRelation: "user_property_analyses"
             referencedColumns: ["id"]
           },
         ]
@@ -1376,62 +1260,6 @@ export type Database = {
             columns: ["journey_id"]
             isOneToOne: false
             referencedRelation: "user_journey_progress"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      user_supplier_connections: {
-        Row: {
-          analysis_id: string | null
-          asset_type: string
-          connection_status: string | null
-          created_at: string | null
-          estimated_revenue: number | null
-          id: string
-          notes: string | null
-          referral_link: string | null
-          setup_cost: number | null
-          supplier_data: Json | null
-          supplier_name: string
-          updated_at: string | null
-          user_id: string
-        }
-        Insert: {
-          analysis_id?: string | null
-          asset_type: string
-          connection_status?: string | null
-          created_at?: string | null
-          estimated_revenue?: number | null
-          id?: string
-          notes?: string | null
-          referral_link?: string | null
-          setup_cost?: number | null
-          supplier_data?: Json | null
-          supplier_name: string
-          updated_at?: string | null
-          user_id: string
-        }
-        Update: {
-          analysis_id?: string | null
-          asset_type?: string
-          connection_status?: string | null
-          created_at?: string | null
-          estimated_revenue?: number | null
-          id?: string
-          notes?: string | null
-          referral_link?: string | null
-          setup_cost?: number | null
-          supplier_data?: Json | null
-          supplier_name?: string
-          updated_at?: string | null
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "user_supplier_connections_analysis_id_fkey"
-            columns: ["analysis_id"]
-            isOneToOne: false
-            referencedRelation: "user_property_analyses"
             referencedColumns: ["id"]
           },
         ]

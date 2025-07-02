@@ -2,16 +2,13 @@
 import { supabase } from '@/integrations/supabase/client';
 import { AnalysisResults } from '@/contexts/GoogleMapContext/types';
 import { UserPropertyAnalysis } from '@/types/userData';
-import { saveComprehensiveAnalysis, ComprehensiveAnalysisData } from './comprehensiveUserDataService';
 
 export const savePropertyAnalysis = async (
   userId: string,
   addressId: string,
   analysisResults: AnalysisResults,
   coordinates?: any,
-  satelliteImageUrl?: string,
-  propertyImages?: any[],
-  solarApiData?: any
+  satelliteImageUrl?: string
 ): Promise<string | null> => {
   try {
     console.log('💾 [ANALYSIS SAVE] Starting property analysis save:', { 
@@ -67,40 +64,42 @@ export const savePropertyAnalysis = async (
       using_real_solar_data: analysisResults.rooftop?.usingRealSolarData || false
     };
 
-    // Use the new comprehensive analysis service
-    console.log('📤 [ANALYSIS SAVE] Using comprehensive analysis service...');
-    
-    const comprehensiveData: ComprehensiveAnalysisData = {
-      userId,
-      addressId,
-      analysisResults,
-      coordinates,
-      propertyImages: propertyImages ? propertyImages.map(img => ({
-        type: img.type || 'satellite',
-        url: img.url || satelliteImageUrl,
-        base64: img.base64,
-        metadata: img.metadata || {}
-      })) : [],
-      solarApiData: solarApiData ? {
-        solarPotentialKwh: solarApiData.solarPotentialKwh,
-        panelCount: solarApiData.panelCount,
-        roofAreaSqft: solarApiData.roofAreaSqft,
-        annualSavings: solarApiData.annualSavings,
-        setupCost: solarApiData.setupCost,
-        usingRealData: solarApiData.usingRealData || false,
-        rawApiResponse: solarApiData.rawApiResponse,
-        formattedData: solarApiData.formattedData
-      } : undefined,
-      earningsBreakdown: {
-        monthly: totalRevenue,
-        opportunities: analysisResults.topOpportunities
-      }
-    };
+    console.log('📤 [ANALYSIS SAVE] Inserting into user_property_analyses table...');
 
-    const analysisId = await saveComprehensiveAnalysis(comprehensiveData);
+    const { data, error } = await supabase
+      .from('user_property_analyses')
+      .insert(insertData)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('❌ [ANALYSIS SAVE] Database insert failed:', {
+        error: error.message,
+        code: error.code,
+        details: error.details,
+        hint: error.hint,
+        insertData: {
+          userId,
+          addressId,
+          totalRevenue,
+          totalOpportunities: analysisResults.topOpportunities.length,
+          propertyType: analysisResults.propertyType
+        }
+      });
+      throw error;
+    }
     
-    console.log('✅ [ANALYSIS SAVE] Comprehensive analysis saved successfully:', analysisId);
-    return analysisId;
+    console.log('✅ [ANALYSIS SAVE] Analysis saved successfully:', {
+      analysisId: data.id,
+      userId: data.user_id,
+      addressId: data.address_id,
+      totalRevenue: data.total_monthly_revenue,
+      totalOpportunities: data.total_opportunities,
+      propertyType: data.property_type,
+      createdAt: data.created_at
+    });
+    
+    return data.id;
   } catch (err) {
     console.error('❌ [ANALYSIS SAVE] Critical error saving property analysis:', {
       error: err instanceof Error ? err.message : 'Unknown error',
