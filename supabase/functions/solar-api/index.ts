@@ -120,8 +120,8 @@ Deno.serve(async (req: Request) => {
         .from('solar_api_cache')
         .select('*')
         .eq('coordinates', `POINT(${locationCoordinates.lng} ${locationCoordinates.lat})`)
-        .gte('requested_at', new Date(Date.now() - CACHE_DURATION_HOURS * 60 * 60 * 1000).toISOString())
-        .order('requested_at', { ascending: false })
+        .gte('cached_at', new Date(Date.now() - CACHE_DURATION_HOURS * 60 * 60 * 1000).toISOString())
+        .order('cached_at', { ascending: false })
         .limit(1)
         .maybeSingle();
 
@@ -221,7 +221,7 @@ Deno.serve(async (req: Request) => {
               coordinates: `POINT(${locationCoordinates.lng} ${locationCoordinates.lat})`,
               raw_response: solarResult.rawResponse,
               formatted_data: solarResult.solarData,
-              requested_at: new Date().toISOString(),
+              cached_at: new Date().toISOString(),
               api_success: true
             })
             .select();
