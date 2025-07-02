@@ -1,9 +1,10 @@
+
 import React from 'react';
 import { AnalysisResults } from '@/types/analysis';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Check, X, ExternalLink, Plus } from 'lucide-react';
+import { Check, X, ExternalLink } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 export interface AssetsTableProps {
@@ -17,10 +18,6 @@ export const AssetsTable = ({ analysisResults, isAssetConfigured }: AssetsTableP
   const handleStartConfiguration = (assetType: string) => {
     // Navigate to the Enhanced Onboarding Chatbot with asset-specific context
     navigate(`/dashboard/onboarding?asset=${encodeURIComponent(assetType.toLowerCase())}`);
-  };
-
-  const handleExploreMoreAssets = () => {
-    navigate('/dashboard/add-asset');
   };
 
   const assets = [
@@ -144,17 +141,6 @@ export const AssetsTable = ({ analysisResults, isAssetConfigured }: AssetsTableP
             <TableCell colSpan={4} className="font-bold text-right">Total Monthly Potential</TableCell>
             <TableCell className="font-bold text-green-600">${totalMonthlyRevenue}</TableCell>
             <TableCell></TableCell>
-          </TableRow>
-          <TableRow className="border-t-2 border-gray-200">
-            <TableCell colSpan={6} className="text-center py-4">
-              <Button
-                onClick={handleExploreMoreAssets}
-                className="bg-tiptop-purple hover:bg-purple-600 text-white px-6 py-2"
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Explore More Assets
-              </Button>
-            </TableCell>
           </TableRow>
         </TableBody>
       </Table>
