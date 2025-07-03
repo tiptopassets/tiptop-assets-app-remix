@@ -74,17 +74,18 @@ const AdminDashboard = () => {
             .from('user_login_stats')
             .select('user_id, login_count, first_login_at, last_login_at'),
           
-          // Get all property analyses with addresses
-          supabase
-            .from('user_property_analyses')
-            .select(`
-              id, 
-              user_id,
-              total_monthly_revenue, 
-              created_at,
-              address_id
-            `)
-            .order('created_at', { ascending: false }),
+           // Get all property analyses with addresses
+           supabase
+             .from('user_property_analyses')
+             .select(`
+               id, 
+               user_id,
+               total_monthly_revenue, 
+               created_at,
+               address_id,
+               analysis_results
+             `)
+             .order('created_at', { ascending: false }),
             
           // Get all user addresses separately
           supabase
@@ -144,14 +145,28 @@ const AdminDashboard = () => {
         
         // Calculate unique properties (by address)
         // Create a map of address_id to address for quick lookup
-        const addressMap = new Map(addresses.map(addr => [addr.id, addr.address]));
+        const addressMap = new Map(addresses.map(addr => [addr.id, addr.formatted_address || addr.address]));
         
-        // Get unique addresses from analyses using the address map
-        const uniqueAddresses = new Set(
-          analyses
-            .map(a => a.address_id ? addressMap.get(a.address_id) : null)
-            .filter(Boolean)
-        ).size;
+        // Get addresses from both analyses with address_id and from analysis_results
+        const addressesFromAnalyses = new Set();
+        
+        analyses.forEach(analysis => {
+          // Try to get address from linked user_addresses table
+          if (analysis.address_id && addressMap.has(analysis.address_id)) {
+            addressesFromAnalyses.add(addressMap.get(analysis.address_id));
+          }
+          // Also try to extract from analysis_results as fallback
+          else if (analysis.analysis_results && typeof analysis.analysis_results === 'object') {
+            const results = analysis.analysis_results as any;
+            if (results.propertyAddress && typeof results.propertyAddress === 'string') {
+              addressesFromAnalyses.add(results.propertyAddress);
+            } else if (results.address && typeof results.address === 'string') {
+              addressesFromAnalyses.add(results.address);
+            }
+          }
+        });
+        
+        const uniqueAddresses = addressesFromAnalyses.size;
         
         // Calculate monthly growth
         const monthlyGrowth = lastMonthUsers.length > 0 
