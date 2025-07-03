@@ -197,10 +197,20 @@ const AssetResultList: React.FC<AssetResultListProps> = ({
 
   const handleFormComplete = useCallback(async () => {
     console.log('✅ Form completed');
+    console.log('🔍 Debug info:', {
+      userExists: !!user,
+      userId: user?.id,
+      selectedAssetsCount: selectedAssetsData.length,
+      hasAddress: !!address,
+      address: address,
+      addressCoordinates: addressCoordinates,
+      selectedAssets: selectedAssetsData
+    });
     
     // Save asset selections to database if user is logged in
     if (user && selectedAssetsData.length > 0 && address) {
       try {
+        console.log('🚀 Starting database save process...');
         const { saveAddress } = await import('@/services/userAddressService');
         const { loadUserAnalyses } = await import('@/services/userAnalysisService');
         const { saveAssetSelection } = await import('@/services/userAssetService');
@@ -208,6 +218,7 @@ const AssetResultList: React.FC<AssetResultListProps> = ({
         console.log('💾 Saving asset selections to database...');
         
         // Get or create address
+        console.log('📍 Creating/finding address...');
         const addressId = await saveAddress(
           user.id,
           address,
@@ -215,16 +226,31 @@ const AssetResultList: React.FC<AssetResultListProps> = ({
           address,
           false
         );
+        console.log('📍 Address ID:', addressId);
         
         if (addressId) {
           // Get the latest analysis for this address
+          console.log('🔍 Loading user analyses...');
           const userAnalyses = await loadUserAnalyses(user.id);
+          console.log('📊 User analyses:', userAnalyses);
           const latestAnalysis = userAnalyses[0]; // Most recent first
+          console.log('📊 Latest analysis:', latestAnalysis);
           
           if (latestAnalysis) {
+            console.log('💰 Starting asset saves...');
             // Save each selected asset
-            const savePromises = selectedAssetsData.map(asset => 
-              saveAssetSelection(
+            const savePromises = selectedAssetsData.map((asset, index) => {
+              console.log(`💰 Saving asset ${index + 1}:`, {
+                userId: user.id,
+                analysisId: latestAnalysis.id,
+                assetTitle: asset.title,
+                formData: asset.formData,
+                monthlyRevenue: asset.monthlyRevenue,
+                setupCost: asset.setupCost,
+                roi: asset.roi
+              });
+              
+              return saveAssetSelection(
                 user.id,
                 latestAnalysis.id,
                 asset.title,
@@ -232,10 +258,11 @@ const AssetResultList: React.FC<AssetResultListProps> = ({
                 asset.monthlyRevenue,
                 asset.setupCost,
                 asset.roi
-              )
-            );
+              );
+            });
             
-            await Promise.all(savePromises);
+            const results = await Promise.all(savePromises);
+            console.log('💰 Save results:', results);
             
             console.log('✅ Successfully saved all asset selections');
             toast({
@@ -247,17 +274,37 @@ const AssetResultList: React.FC<AssetResultListProps> = ({
             setTimeout(() => {
               window.location.href = '/options';
             }, 1000);
+          } else {
+            console.error('❌ No analysis found for user');
+            toast({
+              title: "Save Error",
+              description: "No property analysis found. Please analyze your property first.",
+              variant: "destructive"
+            });
           }
+        } else {
+          console.error('❌ Failed to create/find address');
+          toast({
+            title: "Save Error", 
+            description: "Failed to save address information",
+            variant: "destructive"
+          });
         }
       } catch (error) {
         console.error('❌ Failed to save asset selections:', error);
         toast({
           title: "Save Error",
-          description: "Failed to save asset selections, but your local data is preserved",
+          description: `Failed to save asset selections: ${error.message}`,
           variant: "destructive"
         });
       }
     } else {
+      console.log('⚠️ Skipping save - missing requirements:', {
+        hasUser: !!user,
+        hasAssets: selectedAssetsData.length > 0,
+        hasAddress: !!address
+      });
+      
       // If no user, still navigate to options for auth flow
       setTimeout(() => {
         window.location.href = '/options';

@@ -12,25 +12,46 @@ export const saveAssetSelection = async (
   roiMonths?: number
 ): Promise<string | null> => {
   try {
+    console.log('🔄 saveAssetSelection called with:', {
+      userId,
+      analysisId,
+      assetType,
+      assetData,
+      monthlyRevenue,
+      setupCost,
+      roiMonths
+    });
+
+    const insertData = {
+      user_id: userId,
+      analysis_id: analysisId,
+      asset_type: assetType,
+      asset_data: assetData,
+      monthly_revenue: monthlyRevenue,
+      setup_cost: setupCost,
+      roi_months: roiMonths,
+      status: 'selected'
+    };
+
+    console.log('🔄 Inserting data:', insertData);
+
     const { data, error } = await supabase
       .from('user_asset_selections')
-      .insert({
-        user_id: userId,
-        analysis_id: analysisId,
-        asset_type: assetType,
-        asset_data: assetData,
-        monthly_revenue: monthlyRevenue,
-        setup_cost: setupCost,
-        roi_months: roiMonths,
-        status: 'selected'
-      })
+      .insert(insertData)
       .select()
       .single();
 
-    if (error) throw error;
+    console.log('🔄 Supabase response:', { data, error });
+
+    if (error) {
+      console.error('🚨 Supabase error:', error);
+      throw error;
+    }
+    
+    console.log('✅ Asset selection saved successfully:', data);
     return data.id;
   } catch (err) {
-    console.error('Error saving asset selection:', err);
+    console.error('❌ Error saving asset selection:', err);
     throw err;
   }
 };
