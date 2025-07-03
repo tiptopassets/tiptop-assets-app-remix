@@ -1556,6 +1556,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: number
       }
+      sync_analysis_addresses: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       update_journey_step: {
         Args: { p_session_id: string; p_step: string; p_data?: Json }
         Returns: string
