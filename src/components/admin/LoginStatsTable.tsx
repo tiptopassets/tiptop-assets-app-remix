@@ -117,26 +117,27 @@ export const LoginStatsTable = () => {
         const statsWithUserDetails = loginData.map((stat, index) => {
           // Try to find user email from auth data
           const authUser = userEmails.find(u => u.id === stat.user_id);
-          let userEmail = authUser?.email;
+          let userEmail = authUser?.email || 'Unknown Email';
           let userName = '';
 
           // Try to extract email and name from journey extra_form_data
           const journeyInfo = journeyData.find(j => j.user_id === stat.user_id);
           if (journeyInfo?.extra_form_data) {
-            if (journeyInfo.extra_form_data.email && !userEmail) {
-              userEmail = journeyInfo.extra_form_data.email;
+            const formData = journeyInfo.extra_form_data;
+            if (formData.email && userEmail === 'Unknown Email') {
+              userEmail = formData.email;
             }
-            if (journeyInfo.extra_form_data.name) {
-              userName = journeyInfo.extra_form_data.name;
-            } else if (journeyInfo.extra_form_data.firstName && journeyInfo.extra_form_data.lastName) {
-              userName = `${journeyInfo.extra_form_data.firstName} ${journeyInfo.extra_form_data.lastName}`;
-            } else if (journeyInfo.extra_form_data.firstName) {
-              userName = journeyInfo.extra_form_data.firstName;
+            if (formData.name) {
+              userName = formData.name;
+            } else if (formData.firstName && formData.lastName) {
+              userName = `${formData.firstName} ${formData.lastName}`;
+            } else if (formData.firstName) {
+              userName = formData.firstName;
             }
           }
 
           // Try to find property address
-          let propertyAddress = journeyInfo?.property_address;
+          let propertyAddress = journeyInfo?.property_address || '';
           
           // Get the user's primary address from user_addresses
           if (!propertyAddress) {
@@ -149,10 +150,13 @@ export const LoginStatsTable = () => {
           // Try to find property address from analysis data if not found elsewhere
           if (!propertyAddress) {
             const analysisInfo = analysisData.find(a => a.user_id === stat.user_id);
-            if (analysisInfo?.analysis_results?.propertyAddress) {
-              propertyAddress = analysisInfo.analysis_results.propertyAddress;
-            } else if (analysisInfo?.analysis_results?.address) {
-              propertyAddress = analysisInfo.analysis_results.address;
+            if (analysisInfo?.analysis_results && typeof analysisInfo.analysis_results === 'object') {
+              const results = analysisInfo.analysis_results as any;
+              if (results.propertyAddress) {
+                propertyAddress = results.propertyAddress;
+              } else if (results.address) {
+                propertyAddress = results.address;
+              }
             }
           }
 
@@ -160,8 +164,8 @@ export const LoginStatsTable = () => {
           let displayName = '';
           if (userName) {
             displayName = userName;
-          } else if (userEmail) {
-            displayName = userEmail;
+          } else if (userEmail && userEmail !== 'Unknown Email') {
+            displayName = userEmail.split('@')[0]; // Use part before @ as display name
           } else if (propertyAddress) {
             // Truncate long addresses for display
             const truncatedAddress = propertyAddress.length > 40 
@@ -176,7 +180,7 @@ export const LoginStatsTable = () => {
 
           return {
             ...stat,
-            user_email: userEmail || 'Unknown Email',
+            user_email: userEmail,
             user_display_name: displayName,
             user_name: userName || '',
             property_address: propertyAddress || ''

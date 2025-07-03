@@ -31,19 +31,27 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       console.log('📊 [AUTH] Checking login stats for user:', userId, 'isActualLogin:', isActualLogin);
       
-      // Create a unique key for this session to prevent duplicate counting
-      const sessionKey = `${userId}-${Date.now()}`;
-      const hourKey = `${userId}-${Math.floor(Date.now() / (1000 * 60 * 60))}`; // Hour-based key
+      // Only process actual sign-in events to prevent inflated counts
+      if (!isActualLogin) {
+        console.log('⏩ [AUTH] Skipping login count update - not an actual sign-in event');
+        return;
+      }
       
-      // For actual logins, prevent duplicate counting within the same hour
-      if (isActualLogin) {
-        if (loginTracker.has(hourKey)) {
+      // Create a unique session key to prevent duplicate counting
+      const sessionKey = `login-${userId}-${Date.now()}`;
+      const existingKey = localStorage.getItem('lastLoginTracked');
+      
+      // Prevent duplicate counting within the same session/hour
+      if (existingKey && existingKey.includes(userId)) {
+        const timestamp = existingKey.split('-').pop();
+        const hourAgo = Date.now() - (60 * 60 * 1000);
+        if (timestamp && parseInt(timestamp) > hourAgo) {
           console.log('⏩ [AUTH] Skipping duplicate login count within the same hour');
           return;
         }
-        loginTracker.add(hourKey);
-        setLoginTracker(new Set(loginTracker));
       }
+      
+      localStorage.setItem('lastLoginTracked', sessionKey);
       
       // Get user agent and IP information
       const userAgent = navigator.userAgent;
@@ -61,18 +69,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           last_user_agent: userAgent,
         };
         
-      // Only increment login count for actual sign-in events (not every session check)
-        // Check if this is a new login (last login was more than 1 hour ago)
+        // Only increment login count for ACTUAL sign-in events, with better validation
+        // Check if this is a genuinely new login (last login was more than 30 minutes ago)
         const lastLogin = new Date(existingStats.last_login_at || 0);
-        const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
-        const isNewLogin = lastLogin < oneHourAgo;
+        const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000);
+        const isGenuineNewLogin = lastLogin < thirtyMinutesAgo;
         
-        if (isActualLogin && isNewLogin) {
-          const newCount = Math.min((existingStats.login_count || 0) + 1, 1000); // Cap at 1000 to prevent runaway inflation
+        if (isActualLogin && isGenuineNewLogin) {
+          const newCount = (existingStats.login_count || 0) + 1;
           updateData.login_count = newCount;
           console.log('✅ [AUTH] Incrementing login count to:', newCount, '(last login was', lastLogin.toLocaleString(), ')');
         } else if (isActualLogin) {
-          console.log('📋 [AUTH] Not incrementing login count - recent login detected');
+          console.log('📋 [AUTH] Not incrementing login count - recent login detected (within 30 minutes)');
+        } else {
+          console.log('📋 [AUTH] Not incrementing login count - not an actual sign-in event');
         }
         
         await supabase
