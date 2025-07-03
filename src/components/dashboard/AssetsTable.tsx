@@ -5,6 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Check, X, ExternalLink, Plus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { MobileAssetsCards } from './MobileAssetsCards';
 
 export interface AssetsTableProps {
   analysisResults: AnalysisResults;
@@ -13,6 +15,7 @@ export interface AssetsTableProps {
 
 export const AssetsTable = ({ analysisResults, isAssetConfigured }: AssetsTableProps) => {
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
 
   const handleStartConfiguration = (assetType: string) => {
     // Navigate to the Enhanced Onboarding Chatbot with asset-specific context
@@ -91,8 +94,13 @@ export const AssetsTable = ({ analysisResults, isAssetConfigured }: AssetsTableP
     return sum + revenue;
   }, 0);
 
+  // Use mobile cards on small screens
+  if (isMobile) {
+    return <MobileAssetsCards analysisResults={analysisResults} isAssetConfigured={isAssetConfigured} />;
+  }
+
   return (
-    <div>
+    <div className="overflow-x-auto">
       <Table>
         <TableHeader>
           <TableRow>

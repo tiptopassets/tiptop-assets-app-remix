@@ -29,6 +29,8 @@ import {
 } from "lucide-react";
 import { ServiceIntegration } from "@/hooks/useServiceIntegrations";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { useIsMobile } from '@/hooks/use-mobile';
+import MobileServiceIntegrationsCards from './MobileServiceIntegrationsCards';
 
 interface ServiceIntegrationsTableProps {
   integrations: ServiceIntegration[];
@@ -41,6 +43,7 @@ const ServiceIntegrationsTable = ({
   loading, 
   onUpdateStatus 
 }: ServiceIntegrationsTableProps) => {
+  const isMobile = useIsMobile();
   const [selectedIntegration, setSelectedIntegration] = useState<ServiceIntegration | null>(null);
   const [showDetails, setShowDetails] = useState(false);
 
@@ -78,9 +81,15 @@ const ServiceIntegrationsTable = ({
     setShowDetails(true);
   };
 
+  // Use mobile cards on small screens
+  if (isMobile) {
+    return <MobileServiceIntegrationsCards integrations={integrations} loading={loading} onUpdateStatus={onUpdateStatus} />;
+  }
+
   return (
     <>
-      <Table>
+      <div className="overflow-x-auto">
+        <Table>
         <TableHeader>
           <TableRow>
             <TableHead>Name</TableHead>
@@ -158,7 +167,8 @@ const ServiceIntegrationsTable = ({
             ))
           )}
         </TableBody>
-      </Table>
+        </Table>
+      </div>
 
       {/* Integration Details Dialog */}
       <Dialog open={showDetails} onOpenChange={setShowDetails}>

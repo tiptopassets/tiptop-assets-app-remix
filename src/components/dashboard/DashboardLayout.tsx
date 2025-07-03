@@ -24,6 +24,19 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
     );
   }
 
+  if (isMobile) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <DashboardSidebar />
+        <main className="w-full overflow-auto">
+          <div className="p-4">
+            {children}
+          </div>
+        </main>
+      </div>
+    );
+  }
+
   return (
     <div className="flex min-h-screen bg-gray-50">
       <DashboardSidebar />
