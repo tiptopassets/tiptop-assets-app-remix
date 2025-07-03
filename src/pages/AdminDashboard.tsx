@@ -59,84 +59,105 @@ const AdminDashboard = () => {
       if (!isAdmin) return;
 
       try {
-        // Fetch total users from user_login_stats
-        const { data: users, error: usersError } = await supabase
-          .from('user_login_stats')
-          .select('user_id, login_count');
+        // Batch all queries for efficiency
+        const [
+          usersResult,
+          analysesResult,
+          earningsResult,
+          todayActiveResult,
+          thisMonthUsersResult,
+          lastMonthUsersResult
+        ] = await Promise.all([
+          // Get total users and login counts
+          supabase
+            .from('user_login_stats')
+            .select('user_id, login_count, first_login_at, last_login_at'),
+          
+          // Get all property analyses with revenue
+          supabase
+            .from('user_property_analyses')
+            .select(`
+              id, 
+              total_monthly_revenue, 
+              created_at,
+              user_addresses!inner(address)
+            `)
+            .order('created_at', { ascending: false }),
+          
+          // Get affiliate earnings
+          supabase
+            .from('affiliate_earnings')
+            .select('earnings_amount, created_at'),
+          
+          // Get today's active users
+          supabase
+            .from('user_login_stats')
+            .select('user_id')
+            .gte('last_login_at', new Date().toISOString().split('T')[0]),
+          
+          // Get this month's new users
+          supabase
+            .from('user_login_stats')
+            .select('user_id, first_login_at')
+            .gte('first_login_at', new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString()),
+          
+          // Get last month's new users
+          supabase
+            .from('user_login_stats')
+            .select('user_id, first_login_at')
+            .gte('first_login_at', new Date(new Date().getFullYear(), new Date().getMonth() - 1, 1).toISOString())
+            .lt('first_login_at', new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString())
+        ]);
+
+        // Handle any errors
+        if (usersResult.error) throw usersResult.error;
+        if (analysesResult.error) throw analysesResult.error;
+        if (earningsResult.error) throw earningsResult.error;
+        if (todayActiveResult.error) throw todayActiveResult.error;
+        if (thisMonthUsersResult.error) throw thisMonthUsersResult.error;
+        if (lastMonthUsersResult.error) throw lastMonthUsersResult.error;
+
+        const users = usersResult.data || [];
+        const analyses = analysesResult.data || [];
+        const earnings = earningsResult.data || [];
+        const todayActive = todayActiveResult.data || [];
+        const thisMonthUsers = thisMonthUsersResult.data || [];
+        const lastMonthUsers = lastMonthUsersResult.data || [];
+
+        // Calculate totals
+        const totalUsers = users.length;
+        const totalLogins = users.reduce((sum, user) => sum + (user.login_count || 0), 0);
+        const totalAnalyses = analyses.length;
+        const totalRevenue = analyses.reduce((sum, analysis) => sum + (analysis.total_monthly_revenue || 0), 0);
+        const totalAffiliateEarnings = earnings.reduce((sum, earning) => sum + (Number(earning.earnings_amount) || 0), 0);
+        const activeUsersToday = todayActive.length;
         
-        if (usersError) throw usersError;
-
-        // Calculate total logins
-        const totalLogins = users?.reduce((sum, user) => sum + (user.login_count || 0), 0) || 0;
-
-        // Fetch total analyses
-        const { data: analyses, error: analysesError } = await supabase
-          .from('user_property_analyses')
-          .select('id, total_monthly_revenue');
+        // Calculate unique properties (by address)
+        const uniqueAddresses = new Set(analyses.map(a => a.user_addresses?.address).filter(Boolean)).size;
         
-        if (analysesError) throw analysesError;
-
-        // Calculate total revenue from all analyses
-        const totalRevenue = analyses?.reduce((sum, analysis) => sum + (analysis.total_monthly_revenue || 0), 0) || 0;
-
-        // Fetch affiliate earnings
-        const { data: earnings, error: earningsError } = await supabase
-          .from('affiliate_earnings')
-          .select('earnings_amount');
-        
-        if (earningsError) throw earningsError;
-
-        // Fetch today's active users (users who logged in today)
-        const today = new Date().toISOString().split('T')[0];
-        const { data: todayUsers, error: todayError } = await supabase
-          .from('user_login_stats')
-          .select('user_id')
-          .gte('last_login_at', today);
-        
-        if (todayError) throw todayError;
-
-        // Fetch total properties (unique addresses)
-        const { data: properties, error: propertiesError } = await supabase
-          .from('user_property_analyses')
-          .select('id');
-        
-        if (propertiesError) throw propertiesError;
-
-        // Calculate monthly growth (simplified - comparing this month vs last month users)
-        const thisMonth = new Date();
-        const lastMonth = new Date();
-        lastMonth.setMonth(lastMonth.getMonth() - 1);
-
-        const { data: thisMonthUsers, error: thisMonthError } = await supabase
-          .from('user_login_stats')
-          .select('user_id')
-          .gte('first_login_at', thisMonth.toISOString().split('T')[0]);
-
-        const { data: lastMonthUsers, error: lastMonthError } = await supabase
-          .from('user_login_stats')
-          .select('user_id')
-          .gte('first_login_at', lastMonth.toISOString().split('T')[0])
-          .lt('first_login_at', thisMonth.toISOString().split('T')[0]);
-
-        const growth = lastMonthUsers && lastMonthUsers.length > 0 
-          ? ((thisMonthUsers?.length || 0) - lastMonthUsers.length) / lastMonthUsers.length * 100
-          : 0;
+        // Calculate monthly growth
+        const monthlyGrowth = lastMonthUsers.length > 0 
+          ? Math.round(((thisMonthUsers.length - lastMonthUsers.length) / lastMonthUsers.length) * 100)
+          : thisMonthUsers.length > 0 ? 100 : 0;
 
         setAdminStats({
-          totalUsers: users?.length || 0,
-          totalAnalyses: analyses?.length || 0,
-          totalAffiliateEarnings: earnings?.reduce((sum, e) => sum + (Number(e.earnings_amount) || 0), 0) || 0,
-          activeUsersToday: todayUsers?.length || 0,
-          totalProperties: properties?.length || 0,
-          monthlyGrowth: Math.round(growth),
-          totalLogins: totalLogins
+          totalUsers,
+          totalAnalyses,
+          totalAffiliateEarnings,
+          activeUsersToday,
+          totalProperties: uniqueAddresses,
+          monthlyGrowth,
+          totalLogins
         });
 
-        console.log('Admin stats fetched:', {
-          totalUsers: users?.length || 0,
-          totalLogins: totalLogins,
-          totalProperties: properties?.length || 0,
-          totalRevenue: totalRevenue
+        console.log('Admin stats updated:', {
+          totalUsers,
+          totalLogins,
+          totalAnalyses,
+          totalProperties: uniqueAddresses,
+          totalRevenue,
+          activeUsersToday,
+          monthlyGrowth
         });
 
       } catch (error) {
@@ -150,6 +171,11 @@ const AdminDashboard = () => {
     };
 
     fetchAdminStats();
+    
+    // Set up real-time updates
+    const interval = setInterval(fetchAdminStats, 30000); // Refresh every 30 seconds
+    
+    return () => clearInterval(interval);
   }, [isAdmin, toast]);
 
   if (loading) {
