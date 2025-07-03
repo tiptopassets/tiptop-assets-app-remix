@@ -115,7 +115,6 @@ const DashboardSidebarNavigation = () => {
       <nav className="p-4 space-y-2">
         {/* Main Navigation Section - Always Visible */}
         <div className="mb-6">
-          <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Main</h3>
           {mainNavigationItems.map((item) => {
             const isActive = location.pathname === item.href;
             return (
@@ -132,11 +131,6 @@ const DashboardSidebarNavigation = () => {
                 <item.icon size={18} />
                 <div className="flex-1">
                   <div className="font-medium">{item.name}</div>
-                  {item.description && (
-                    <div className="text-xs text-gray-500 group-hover:text-gray-400">
-                      {item.description}
-                    </div>
-                  )}
                 </div>
               </Link>
             );
@@ -177,11 +171,6 @@ const DashboardSidebarNavigation = () => {
                     <item.icon size={18} />
                     <div className="flex-1">
                       <div className="font-medium">{item.name}</div>
-                      {item.description && (
-                        <div className="text-xs text-gray-500 group-hover:text-gray-400">
-                          {item.description}
-                        </div>
-                      )}
                     </div>
                     {item.badge && (
                       <Badge variant="secondary" className="text-xs">
