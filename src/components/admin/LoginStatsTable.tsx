@@ -58,18 +58,19 @@ export const LoginStatsTable = () => {
         const userIds = loginData.map(stat => stat.user_id);
         console.log('📊 [LOGIN-STATS] User IDs to process:', userIds.length);
 
-        // Try to get user emails from auth.users (admin only)
+        // Get user emails and names from auth.users via Edge Function
         let userEmails: any[] = [];
         try {
-          // Use a server function to get user emails since admin.listUsers() doesn't work in browser
-          const { data: authData, error: authError } = await supabase
-            .from('user_login_stats')
-            .select('user_id')
-            .limit(1);
-          
-          if (!authError) {
-            // For now, we'll get emails from user metadata in journey data
-            console.log('📊 [LOGIN-STATS] Will extract emails from journey/analysis data');
+          const { data: session } = await supabase.auth.getSession();
+          if (session?.session) {
+            const response = await supabase.functions.invoke('get-user-details', {
+              body: { userIds }
+            });
+            
+            if (response.data?.users) {
+              userEmails = response.data.users;
+              console.log('📊 [LOGIN-STATS] Fetched user details:', userEmails.length);
+            }
           }
         } catch (authError) {
           console.warn('📊 [LOGIN-STATS] Could not fetch auth users:', authError);
@@ -115,10 +116,10 @@ export const LoginStatsTable = () => {
 
         // Combine login stats with user info
         const statsWithUserDetails = loginData.map((stat, index) => {
-          // Try to find user email from auth data
+          // Try to find user email and name from auth data
           const authUser = userEmails.find(u => u.id === stat.user_id);
           let userEmail = authUser?.email || 'Unknown Email';
-          let userName = '';
+          let userName = authUser?.name || authUser?.first_name || '';
 
           // Try to extract email and name from journey extra_form_data
           const journeyInfo = journeyData.find(j => j.user_id === stat.user_id);

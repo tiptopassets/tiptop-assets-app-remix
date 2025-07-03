@@ -143,30 +143,29 @@ const AdminDashboard = () => {
         const totalAffiliateEarnings = earnings.reduce((sum, earning) => sum + (Number(earning.earnings_amount) || 0), 0);
         const activeUsersToday = todayActive.length;
         
-        // Calculate unique properties (by address)
-        // Create a map of address_id to address for quick lookup
-        const addressMap = new Map(addresses.map(addr => [addr.id, addr.formatted_address || addr.address]));
+        // Calculate unique properties by collecting all addresses from multiple sources
+        const allPropertyAddresses = new Set();
         
-        // Get addresses from both analyses with address_id and from analysis_results
-        const addressesFromAnalyses = new Set();
-        
-        analyses.forEach(analysis => {
-          // Try to get address from linked user_addresses table
-          if (analysis.address_id && addressMap.has(analysis.address_id)) {
-            addressesFromAnalyses.add(addressMap.get(analysis.address_id));
+        // Add addresses from user_addresses table
+        addresses.forEach(addr => {
+          if (addr.formatted_address || addr.address) {
+            allPropertyAddresses.add(addr.formatted_address || addr.address);
           }
-          // Also try to extract from analysis_results as fallback
-          else if (analysis.analysis_results && typeof analysis.analysis_results === 'object') {
+        });
+        
+        // Add addresses from property analyses
+        analyses.forEach(analysis => {
+          if (analysis.analysis_results && typeof analysis.analysis_results === 'object') {
             const results = analysis.analysis_results as any;
             if (results.propertyAddress && typeof results.propertyAddress === 'string') {
-              addressesFromAnalyses.add(results.propertyAddress);
+              allPropertyAddresses.add(results.propertyAddress);
             } else if (results.address && typeof results.address === 'string') {
-              addressesFromAnalyses.add(results.address);
+              allPropertyAddresses.add(results.address);
             }
           }
         });
         
-        const uniqueAddresses = addressesFromAnalyses.size;
+        const uniqueAddresses = allPropertyAddresses.size;
         
         // Calculate monthly growth
         const monthlyGrowth = lastMonthUsers.length > 0 
