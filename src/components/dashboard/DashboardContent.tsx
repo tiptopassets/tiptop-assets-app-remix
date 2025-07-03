@@ -27,7 +27,16 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
   onRefresh
 }) => {
   const analysisResults = latestAnalysis?.analysis_results;
-  const { isAssetConfigured } = useUserAssetSelections();
+  const { assetSelections, isAssetConfigured } = useUserAssetSelections();
+  
+  // Calculate actual totals based on user selections
+  const actualTotalRevenue = assetSelections.length > 0 
+    ? assetSelections.reduce((sum, selection) => sum + (selection.monthly_revenue || 0), 0)
+    : totalMonthlyRevenue;
+  
+  const actualTotalOpportunities = assetSelections.length > 0 
+    ? assetSelections.length 
+    : totalOpportunities;
 
   return (
     <div className="space-y-6">
@@ -44,8 +53,8 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
 
         {/* Stats Cards */}
         <DashboardStats 
-          totalMonthlyRevenue={totalMonthlyRevenue}
-          totalOpportunities={totalOpportunities}
+          totalMonthlyRevenue={actualTotalRevenue}
+          totalOpportunities={actualTotalOpportunities}
           analysesCount={analysesCount}
         />
       </motion.div>
@@ -87,7 +96,7 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
       {analysisResults && (
         <DashboardCharts 
           analysisResults={analysisResults}
-          totalMonthlyRevenue={totalMonthlyRevenue}
+          totalMonthlyRevenue={actualTotalRevenue}
         />
       )}
     </div>

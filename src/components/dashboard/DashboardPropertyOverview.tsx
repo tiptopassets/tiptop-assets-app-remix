@@ -8,6 +8,7 @@ import { UserPropertyAnalysis } from '@/types/userData';
 import { navigateToChatbot } from '@/utils/navigationHelpers';
 import { useNavigate } from 'react-router-dom';
 import { useSatelliteImage } from '@/hooks/useSatelliteImage';
+import { useUserAssetSelections } from '@/hooks/useUserAssetSelections';
 
 interface DashboardPropertyOverviewProps {
   analysis: UserPropertyAnalysis;
@@ -21,6 +22,7 @@ const DashboardPropertyOverview: React.FC<DashboardPropertyOverviewProps> = ({
   const navigate = useNavigate();
   const [navigatingAsset, setNavigatingAsset] = useState<string | null>(null);
   const [navigatingGeneral, setNavigatingGeneral] = useState(false);
+  const { assetSelections, loading: selectionsLoading } = useUserAssetSelections();
 
   const handleStartAssetSetup = async (assetType?: string) => {
     try {
@@ -58,71 +60,45 @@ const DashboardPropertyOverview: React.FC<DashboardPropertyOverviewProps> = ({
   const propertyAddress = getPropertyAddress();
   const { imageUrl: satelliteImageUrl, loading: imageLoading } = useSatelliteImage(propertyAddress);
 
-  const getTopAssets = () => {
-    const results = analysis.analysis_results;
-    if (!results) return [];
+  const getSelectedAssets = () => {
+    if (!assetSelections.length) return [];
 
-    const assets = [];
+    // Map asset selections to display format
+    const assets = assetSelections.map(selection => {
+      const assetType = selection.asset_type.toLowerCase();
+      
+      // Determine display name based on asset type
+      let name = selection.asset_type;
+      if (assetType.includes('internet') || assetType.includes('bandwidth')) {
+        name = 'Internet Bandwidth Sharing';
+      } else if (assetType.includes('storage')) {
+        name = 'Personal Storage Rental';
+      } else if (assetType.includes('pool') || assetType.includes('swimming')) {
+        name = 'Swimming Pool';
+      } else if (assetType.includes('solar') || assetType.includes('rooftop')) {
+        name = 'Solar Panels';
+      } else if (assetType.includes('parking')) {
+        name = 'Parking Spaces';
+      } else if (assetType.includes('garden')) {
+        name = 'Garden Space';
+      }
 
-    // Add assets with actual revenue potential
-    if (results.rooftop?.revenue > 0) {
-      assets.push({
-        type: 'rooftop',
-        name: 'Solar Panels',
-        revenue: results.rooftop.revenue,
-        area: results.rooftop.area
-      });
-    }
-
-    if (results.parking?.spaces > 0 && results.parking?.revenue > 0) {
-      assets.push({
-        type: 'parking',
-        name: 'Parking Spaces',
-        revenue: results.parking.revenue,
-        spaces: results.parking.spaces
-      });
-    }
-
-    if (results.pool?.present && results.pool?.revenue > 0) {
-      assets.push({
-        type: 'pool',
-        name: 'Swimming Pool',
-        revenue: results.pool.revenue,
-        area: results.pool.area
-      });
-    }
-
-    if (results.garden?.area > 0 && results.garden?.revenue > 0) {
-      assets.push({
-        type: 'garden',
-        name: 'Garden Space',
-        revenue: results.garden.revenue,
-        area: results.garden.area
-      });
-    }
-
-    if (results.bandwidth?.revenue > 0) {
-      assets.push({
-        type: 'bandwidth',
-        name: 'Internet Bandwidth',
-        revenue: results.bandwidth.revenue,
-        available: results.bandwidth.available
-      });
-    }
-
-    if (results.storage?.revenue > 0) {
-      assets.push({
-        type: 'storage',
-        name: 'Storage Space',
-        revenue: results.storage.revenue
-      });
-    }
+      return {
+        type: assetType,
+        name,
+        revenue: selection.monthly_revenue || 0,
+        setupCost: selection.setup_cost || 0,
+        data: selection.asset_data
+      };
+    });
 
     // Sort by revenue (highest first)
     return assets.sort((a, b) => b.revenue - a.revenue);
   };
 
-  const topAssets = getTopAssets();
+  const selectedAssets = getSelectedAssets();
+  const totalSelectedRevenue = selectedAssets.reduce((sum, asset) => sum + asset.revenue, 0);
+  const totalSelectedCount = selectedAssets.length;
 
   return (
     <Card className="mb-6">
@@ -147,32 +123,30 @@ const DashboardPropertyOverview: React.FC<DashboardPropertyOverviewProps> = ({
                   Monthly Revenue Potential
                 </p>
                 <p className="text-2xl font-bold text-green-600">
-                  ${analysis.total_monthly_revenue}/month
+                  ${totalSelectedRevenue > 0 ? totalSelectedRevenue : analysis.total_monthly_revenue}/month
                 </p>
               </div>
               <div>
                 <p className="text-sm font-medium text-gray-700 mb-1">
-                  Total Opportunities
+                  Selected Assets
                 </p>
                 <p className="text-2xl font-bold text-tiptop-purple">
-                  {analysis.total_opportunities}
+                  {totalSelectedCount > 0 ? totalSelectedCount : analysis.total_opportunities}
                 </p>
               </div>
             </div>
 
-            {topAssets.length > 0 && (
+            {selectedAssets.length > 0 && (
               <div>
-                <p className="text-sm font-medium text-gray-700 mb-2">Top Assets</p>
+                <p className="text-sm font-medium text-gray-700 mb-2">Selected Assets</p>
                 <div className="space-y-2">
-                  {topAssets.slice(0, 3).map((asset) => (
+                  {selectedAssets.slice(0, 3).map((asset) => (
                     <div key={asset.type} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                       <div>
                         <p className="font-medium text-gray-900">{asset.name}</p>
                         <p className="text-sm text-gray-600">
                           ${asset.revenue}/month
-                          {asset.area && ` • ${asset.area} sq ft`}
-                          {asset.spaces && ` • ${asset.spaces} spaces`}
-                          {asset.available && ` • ${asset.available} Mbps`}
+                          {asset.setupCost > 0 && ` • Setup: $${asset.setupCost}`}
                         </p>
                       </div>
                       <Button
@@ -189,7 +163,7 @@ const DashboardPropertyOverview: React.FC<DashboardPropertyOverviewProps> = ({
                         ) : (
                           <>
                             <Zap className="h-4 w-4 mr-1" />
-                            Start Now
+                            Manage
                           </>
                         )}
                       </Button>
