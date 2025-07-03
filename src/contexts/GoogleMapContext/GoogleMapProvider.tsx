@@ -59,6 +59,8 @@ const GoogleMapProvider = ({ children }: { children: React.ReactNode }) => {
   const [analysisError, setAnalysisError] = useState(initialState.analysisError);
   const [useLocalAnalysis, setUseLocalAnalysis] = useState(initialState.useLocalAnalysis);
   const [zoomLevel, setZoomLevel] = useState(initialState.zoomLevel);
+  const [currentAnalysisId, setCurrentAnalysisId] = useState(initialState.currentAnalysisId);
+  const [currentAddressId, setCurrentAddressId] = useState(initialState.currentAddressId);
   const [isGoogleMapsLoaded, setIsGoogleMapsLoaded] = useState(false);
   const [googleMapsLoadError, setGoogleMapsLoadError] = useState<string | null>(null);
 
@@ -184,7 +186,10 @@ const GoogleMapProvider = ({ children }: { children: React.ReactNode }) => {
         saveAddress: user ? saveAddress : null,
         savePropertyAnalysis: user ? savePropertyAnalysis : null,
         refreshUserData: user ? refreshUserData : null,
-        userId: user?.id
+        userId: user?.id,
+        // Pass context setters for tracking IDs
+        setCurrentAnalysisId,
+        setCurrentAddressId
       });
 
       return analysis;
@@ -231,6 +236,10 @@ const GoogleMapProvider = ({ children }: { children: React.ReactNode }) => {
     setUseLocalAnalysis,
     zoomLevel,
     setZoomLevel,
+    currentAnalysisId,
+    setCurrentAnalysisId,
+    currentAddressId,
+    setCurrentAddressId,
   };
 
   // Only render children when Google Maps is loaded or when using local analysis

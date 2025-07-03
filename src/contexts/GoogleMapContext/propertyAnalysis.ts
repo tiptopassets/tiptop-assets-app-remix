@@ -23,6 +23,9 @@ interface AnalysisParams {
   savePropertyAnalysis?: ((addressId: string, analysisResults: AnalysisResults, coordinates?: any) => Promise<string | null>) | null;
   refreshUserData?: (() => Promise<void>) | null;
   userId?: string;
+  // Context state setters for tracking IDs
+  setCurrentAnalysisId?: (id: string | null) => void;
+  setCurrentAddressId?: (id: string | null) => void;
 }
 
 export const generatePropertyAnalysis = async ({
@@ -39,7 +42,9 @@ export const generatePropertyAnalysis = async ({
   saveAddress,
   savePropertyAnalysis,
   refreshUserData,
-  userId
+  userId,
+  setCurrentAnalysisId,
+  setCurrentAddressId
 }: AnalysisParams): Promise<void> => {
   if (!propertyAddress) {
     toast({
@@ -84,7 +89,9 @@ export const generatePropertyAnalysis = async ({
           saveAddress,
           savePropertyAnalysis,
           refreshUserData,
-          userId
+          userId,
+          setCurrentAnalysisId,
+          setCurrentAddressId
         );
         
         toast({
@@ -175,7 +182,9 @@ export const generatePropertyAnalysis = async ({
         saveAddress,
         savePropertyAnalysis,
         refreshUserData,
-        userId
+        userId,
+        setCurrentAnalysisId,
+        setCurrentAddressId
       );
       
       // Show toast with validation summary
@@ -251,7 +260,9 @@ async function saveToDatabaseIfAuthenticated(
   saveAddress: ((address: string, coordinates?: any, formattedAddress?: string) => Promise<string | null>) | null | undefined,
   savePropertyAnalysis: ((addressId: string, analysisResults: AnalysisResults, coordinates?: any) => Promise<string | null>) | null | undefined,
   refreshUserData: (() => Promise<void>) | null | undefined,
-  userId?: string
+  userId?: string,
+  setCurrentAnalysisId?: (id: string | null) => void,
+  setCurrentAddressId?: (id: string | null) => void
 ) {
   if (!userId || !saveAddress || !savePropertyAnalysis) {
     console.log('📝 User not authenticated or save functions not available, skipping database save');
@@ -270,10 +281,20 @@ async function saveToDatabaseIfAuthenticated(
     
     console.log('✅ Address saved with ID:', addressId);
     
+    // Store the address ID in context for asset saving
+    if (setCurrentAddressId) {
+      setCurrentAddressId(addressId);
+    }
+    
     // Then save the analysis results
     const analysisId = await savePropertyAnalysis(addressId, analysisResults, coordinates);
     if (analysisId) {
       console.log('✅ Analysis saved to database with ID:', analysisId);
+      
+      // Store the analysis ID in context for asset saving
+      if (setCurrentAnalysisId) {
+        setCurrentAnalysisId(analysisId);
+      }
       
       // Refresh user data to update dashboard
       if (refreshUserData) {

@@ -25,7 +25,7 @@ const AssetResultList: React.FC<AssetResultListProps> = ({
   const [selectedAssets, setSelectedAssets] = useState<string[]>([]);
   const [selectedAssetsData, setSelectedAssetsData] = useState<SelectedAsset[]>([]);
   const [showAssetForm, setShowAssetForm] = useState(false);
-  const { analysisComplete, address, addressCoordinates } = useGoogleMap();
+  const { analysisComplete, address, addressCoordinates, currentAnalysisId, currentAddressId } = useGoogleMap();
   const { user } = useAuth();
   const { toast } = useToast();
 
@@ -204,92 +204,56 @@ const AssetResultList: React.FC<AssetResultListProps> = ({
       hasAddress: !!address,
       address: address,
       addressCoordinates: addressCoordinates,
-      selectedAssets: selectedAssetsData
+      selectedAssets: selectedAssetsData,
+      currentAnalysisId,
+      currentAddressId
     });
     
     // Save asset selections to database if user is logged in
-    if (user && selectedAssetsData.length > 0 && address) {
+    if (user && selectedAssetsData.length > 0 && currentAnalysisId) {
       try {
         console.log('🚀 Starting database save process...');
-        const { saveAddress } = await import('@/services/userAddressService');
-        const { loadUserAnalyses } = await import('@/services/userAnalysisService');
         const { saveAssetSelection } = await import('@/services/userAssetService');
         
         console.log('💾 Saving asset selections to database...');
+        console.log('🎯 Using current analysis ID from context:', currentAnalysisId);
         
-        // Get or create address
-        console.log('📍 Creating/finding address...');
-        const addressId = await saveAddress(
-          user.id,
-          address,
-          addressCoordinates,
-          address,
-          false
-        );
-        console.log('📍 Address ID:', addressId);
-        
-        if (addressId) {
-          // Get the latest analysis for this address
-          console.log('🔍 Loading user analyses...');
-          const userAnalyses = await loadUserAnalyses(user.id);
-          console.log('📊 User analyses:', userAnalyses);
-          const latestAnalysis = userAnalyses[0]; // Most recent first
-          console.log('📊 Latest analysis:', latestAnalysis);
-          
-          if (latestAnalysis) {
-            console.log('💰 Starting asset saves...');
-            // Save each selected asset
-            const savePromises = selectedAssetsData.map((asset, index) => {
-              console.log(`💰 Saving asset ${index + 1}:`, {
-                userId: user.id,
-                analysisId: latestAnalysis.id,
-                assetTitle: asset.title,
-                formData: asset.formData,
-                monthlyRevenue: asset.monthlyRevenue,
-                setupCost: asset.setupCost,
-                roi: asset.roi
-              });
-              
-              return saveAssetSelection(
-                user.id,
-                latestAnalysis.id,
-                asset.title,
-                asset.formData,
-                asset.monthlyRevenue,
-                asset.setupCost,
-                asset.roi
-              );
-            });
-            
-            const results = await Promise.all(savePromises);
-            console.log('💰 Save results:', results);
-            
-            console.log('✅ Successfully saved all asset selections');
-            toast({
-              title: "Assets Saved",
-              description: `${selectedAssetsData.length} asset selections saved to your dashboard`,
-            });
-            
-            // Navigate to options page after successful save
-            setTimeout(() => {
-              window.location.href = '/options';
-            }, 1000);
-          } else {
-            console.error('❌ No analysis found for user');
-            toast({
-              title: "Save Error",
-              description: "No property analysis found. Please analyze your property first.",
-              variant: "destructive"
-            });
-          }
-        } else {
-          console.error('❌ Failed to create/find address');
-          toast({
-            title: "Save Error", 
-            description: "Failed to save address information",
-            variant: "destructive"
+        // Save each selected asset using the current analysis ID from context
+        const savePromises = selectedAssetsData.map((asset, index) => {
+          console.log(`💰 Saving asset ${index + 1}:`, {
+            userId: user.id,
+            analysisId: currentAnalysisId,
+            assetTitle: asset.title,
+            formData: asset.formData,
+            monthlyRevenue: asset.monthlyRevenue,
+            setupCost: asset.setupCost,
+            roi: asset.roi
           });
-        }
+          
+          return saveAssetSelection(
+            user.id,
+            currentAnalysisId,
+            asset.title,
+            asset.formData,
+            asset.monthlyRevenue,
+            asset.setupCost,
+            asset.roi
+          );
+        });
+        
+        const results = await Promise.all(savePromises);
+        console.log('💰 Save results:', results);
+        
+        console.log('✅ Successfully saved all asset selections');
+        toast({
+          title: "Assets Saved",
+          description: `${selectedAssetsData.length} asset selections saved to your dashboard`,
+        });
+        
+        // Navigate to options page after successful save
+        setTimeout(() => {
+          window.location.href = '/options';
+        }, 1000);
       } catch (error) {
         console.error('❌ Failed to save asset selections:', error);
         toast({
@@ -302,8 +266,17 @@ const AssetResultList: React.FC<AssetResultListProps> = ({
       console.log('⚠️ Skipping save - missing requirements:', {
         hasUser: !!user,
         hasAssets: selectedAssetsData.length > 0,
-        hasAddress: !!address
+        hasAddress: !!address,
+        hasAnalysisId: !!currentAnalysisId
       });
+      
+      if (!currentAnalysisId) {
+        toast({
+          title: "Save Error",
+          description: "No analysis ID found. Please analyze your property first.",
+          variant: "destructive"
+        });
+      }
       
       // If no user, still navigate to options for auth flow
       setTimeout(() => {
@@ -312,7 +285,7 @@ const AssetResultList: React.FC<AssetResultListProps> = ({
     }
     
     setShowAssetForm(false);
-  }, [user, selectedAssetsData, address, addressCoordinates, toast]);
+  }, [user, selectedAssetsData, address, addressCoordinates, currentAnalysisId, toast]);
 
   // Memoize calculations to prevent unnecessary re-computation
   const { totalSelectedRevenue, totalSetupCost, analysisRevenue, totalMonthlyIncome } = useMemo(() => {

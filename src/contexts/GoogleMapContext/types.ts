@@ -129,4 +129,8 @@ export interface GoogleMapContextProps extends GoogleMapContextType {
   resetMapContext: () => void;
   isGeneratingAnalysis: boolean;
   setIsGeneratingAnalysis: React.Dispatch<React.SetStateAction<boolean>>;
+  currentAnalysisId: string | null;
+  setCurrentAnalysisId: React.Dispatch<React.SetStateAction<string | null>>;
+  currentAddressId: string | null;
+  setCurrentAddressId: React.Dispatch<React.SetStateAction<string | null>>;
 }

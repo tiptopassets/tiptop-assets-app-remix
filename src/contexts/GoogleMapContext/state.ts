@@ -18,6 +18,8 @@ export interface GoogleMapState {
   analysisError: string | null;
   useLocalAnalysis: boolean;
   zoomLevel: number;
+  currentAnalysisId: string | null;
+  currentAddressId: string | null;
 }
 
 export const createInitialState = (): GoogleMapState => ({
@@ -37,4 +39,6 @@ export const createInitialState = (): GoogleMapState => ({
   analysisError: null,
   useLocalAnalysis: false,
   zoomLevel: 12,
+  currentAnalysisId: null,
+  currentAddressId: null,
 });
