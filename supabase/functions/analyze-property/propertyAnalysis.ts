@@ -349,9 +349,12 @@ function generateBuildingTypeAwareOpportunities(
   // For apartments, focus only on available opportunities and ensure both are included
   if (buildingTypeInfo.type === 'apartment') {
     console.log('🏢 Generating apartment-specific opportunities');
+    console.log('🏢 Results data:', { bandwidth: results.bandwidth, storage: results.storage });
+    console.log('🏢 Analysis data:', { internet: analysisData.internet, storage: analysisData.storage });
     
     // Internet bandwidth sharing - always available for apartments
     if (results.bandwidth.revenue > 0) {
+      console.log('🏢 Adding Internet opportunity:', results.bandwidth.revenue);
       opportunities.push({
         title: 'Internet Bandwidth Sharing',
         icon: 'wifi',
@@ -364,6 +367,7 @@ function generateBuildingTypeAwareOpportunities(
 
     // Personal storage rental - available for apartments
     if (results.storage.revenue > 0) {
+      console.log('🏢 Adding Storage opportunity from results:', results.storage.revenue);
       opportunities.push({
         title: 'Personal Storage Rental',
         icon: 'storage',
@@ -374,33 +378,38 @@ function generateBuildingTypeAwareOpportunities(
       });
     }
 
-    // Ensure we have both opportunities even if one wasn't generated properly
-    const hasInternet = opportunities.some(opp => opp.title.includes('Internet'));
-    const hasStorage = opportunities.some(opp => opp.title.includes('Storage'));
-    
-    if (!hasInternet && analysisData.internet?.monthlyRevenue > 0) {
-      opportunities.push({
-        title: 'Internet Bandwidth Sharing',
-        icon: 'wifi',
-        monthlyRevenue: analysisData.internet.monthlyRevenue,
-        description: 'Share unused internet bandwidth for passive income',
-        setupCost: 0,
-        roi: 0
-      });
+    // Fallback: check analysisData if results don't have it
+    if (analysisData.internet?.monthlyRevenue > 0) {
+      const hasInternet = opportunities.some(opp => opp.title.includes('Internet'));
+      if (!hasInternet) {
+        console.log('🏢 Adding Internet opportunity from analysisData:', analysisData.internet.monthlyRevenue);
+        opportunities.push({
+          title: 'Internet Bandwidth Sharing',
+          icon: 'wifi',
+          monthlyRevenue: analysisData.internet.monthlyRevenue,
+          description: 'Share unused internet bandwidth for passive income',
+          setupCost: 0,
+          roi: 0
+        });
+      }
     }
     
-    if (!hasStorage && analysisData.storage?.monthlyRevenue > 0) {
-      opportunities.push({
-        title: 'Unit Storage Rental',
-        icon: 'storage',
-        monthlyRevenue: analysisData.storage.monthlyRevenue,
-        description: 'Rent out available storage space within the unit',
-        setupCost: 0,
-        roi: 0
-      });
+    if (analysisData.storage?.monthlyRevenue > 0) {
+      const hasStorage = opportunities.some(opp => opp.title.includes('Storage'));
+      if (!hasStorage) {
+        console.log('🏢 Adding Storage opportunity from analysisData:', analysisData.storage.monthlyRevenue);
+        opportunities.push({
+          title: 'Unit Storage Rental',
+          icon: 'storage',
+          monthlyRevenue: analysisData.storage.monthlyRevenue,
+          description: 'Rent out available storage space within the unit',
+          setupCost: 0,
+          roi: 0
+        });
+      }
     }
 
-    console.log('🏢 Generated apartment opportunities:', opportunities);
+    console.log('🏢 Final apartment opportunities:', opportunities);
   } else {
     // For single family homes, include all applicable opportunities
     if (results.rooftop.revenue > 0 && buildingTypeInfo.hasRooftopAccess) {

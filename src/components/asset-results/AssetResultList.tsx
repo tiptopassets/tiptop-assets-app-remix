@@ -58,10 +58,12 @@ const AssetResultList: React.FC<AssetResultListProps> = ({
       propertyType: analysisResults.propertyType,
       isApartment,
       rawOpportunities: analysisResults.topOpportunities,
-      totalMonthlyRevenue: analysisResults.totalMonthlyRevenue
+      totalMonthlyRevenue: analysisResults.totalMonthlyRevenue,
+      bandwidthRevenue: analysisResults.bandwidth?.revenue,
+      storageRevenue: analysisResults.storage?.revenue
     });
 
-    // For apartments, use existing opportunities but ensure apartment-friendly ones are included
+    // For apartments, ensure we include ALL available opportunities
     if (isApartment) {
       let apartmentOpportunities = [];
 
@@ -72,36 +74,45 @@ const AssetResultList: React.FC<AssetResultListProps> = ({
                title.includes('bandwidth') || 
                title.includes('storage') ||
                title.includes('unit') ||
+               title.includes('rental') ||
                opp.monthlyRevenue > 0;
       });
 
       console.log('🏢 Found existing apartment opportunities:', existingOpportunities);
+      apartmentOpportunities = [...existingOpportunities];
 
-      if (existingOpportunities.length > 0) {
-        apartmentOpportunities = existingOpportunities;
-      } else {
-        // Generate apartment opportunities from analysis data if none exist
-        if (analysisResults.bandwidth?.revenue > 0) {
-          apartmentOpportunities.push({
-            title: 'Internet Bandwidth Sharing',
-            icon: 'wifi',
-            monthlyRevenue: analysisResults.bandwidth.revenue,
-            description: `Share ${analysisResults.bandwidth.available || 100} GB unused bandwidth for passive income`,
-            setupCost: 0,
-            roi: 0
-          });
-        }
+      // Always ensure Internet opportunity is included if there's bandwidth revenue
+      const hasInternet = apartmentOpportunities.some(opp => 
+        opp.title.toLowerCase().includes('internet') || opp.title.toLowerCase().includes('bandwidth')
+      );
+      
+      if (!hasInternet && analysisResults.bandwidth?.revenue > 0) {
+        console.log('🏢 Adding missing Internet opportunity:', analysisResults.bandwidth.revenue);
+        apartmentOpportunities.push({
+          title: 'Internet Bandwidth Sharing',
+          icon: 'wifi',
+          monthlyRevenue: analysisResults.bandwidth.revenue,
+          description: `Share ${analysisResults.bandwidth.available || 100} GB unused bandwidth for passive income`,
+          setupCost: 0,
+          roi: 0
+        });
+      }
 
-        if (analysisResults.storage?.revenue > 0) {
-          apartmentOpportunities.push({
-            title: 'Personal Storage Rental',
-            icon: 'storage', 
-            monthlyRevenue: analysisResults.storage.revenue,
-            description: 'Rent out personal storage space within your unit',
-            setupCost: 0,
-            roi: 0
-          });
-        }
+      // Always ensure Storage opportunity is included if there's storage revenue
+      const hasStorage = apartmentOpportunities.some(opp => 
+        opp.title.toLowerCase().includes('storage') || opp.title.toLowerCase().includes('unit')
+      );
+      
+      if (!hasStorage && analysisResults.storage?.revenue > 0) {
+        console.log('🏢 Adding missing Storage opportunity:', analysisResults.storage.revenue);
+        apartmentOpportunities.push({
+          title: 'Personal Storage Rental',
+          icon: 'storage', 
+          monthlyRevenue: analysisResults.storage.revenue,
+          description: 'Rent out personal storage space within your unit',
+          setupCost: 0,
+          roi: 0
+        });
       }
 
       console.log('🏢 Final apartment opportunities:', apartmentOpportunities);
