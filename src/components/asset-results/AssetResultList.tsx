@@ -11,6 +11,7 @@ import RestrictionsCard from './RestrictionsCard';
 import { useGoogleMap } from '@/contexts/GoogleMapContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { useJourneyTracking } from '@/hooks/useJourneyTracking';
 
 interface AssetResultListProps {
   analysisResults: any;
@@ -28,6 +29,7 @@ const AssetResultList: React.FC<AssetResultListProps> = ({
   const { analysisComplete, address, addressCoordinates, currentAnalysisId, currentAddressId } = useGoogleMap();
   const { user } = useAuth();
   const { toast } = useToast();
+  const { trackOption } = useJourneyTracking();
 
   console.log('🏠 AssetResultList render:', {
     analysisComplete,
@@ -209,79 +211,121 @@ const AssetResultList: React.FC<AssetResultListProps> = ({
       currentAddressId
     });
     
-    // Save asset selections to database if user is logged in
-    if (user && selectedAssetsData.length > 0 && currentAnalysisId) {
-      try {
-        console.log('🚀 Starting database save process...');
-        const { saveAssetSelection } = await import('@/services/userAssetService');
-        
-        console.log('💾 Saving asset selections to database...');
-        console.log('🎯 Using current analysis ID from context:', currentAnalysisId);
-        
-        // Save each selected asset using the current analysis ID from context
-        const savePromises = selectedAssetsData.map((asset, index) => {
-          console.log(`💰 Saving asset ${index + 1}:`, {
-            userId: user.id,
-            analysisId: currentAnalysisId,
-            assetTitle: asset.title,
-            formData: asset.formData,
-            monthlyRevenue: asset.monthlyRevenue,
-            setupCost: asset.setupCost,
-            roi: asset.roi
-          });
-          
-          return saveAssetSelection(
-            user.id,
-            currentAnalysisId,
-            asset.title,
-            asset.formData,
-            asset.monthlyRevenue,
-            asset.setupCost,
-            asset.roi
-          );
-        });
-        
-        const results = await Promise.all(savePromises);
-        console.log('💰 Save results:', results);
-        
-        console.log('✅ Successfully saved all asset selections');
-        toast({
-          title: "Assets Saved",
-          description: `${selectedAssetsData.length} asset selections saved to your dashboard`,
-        });
-        
-        // Navigate to options page after successful save
-        setTimeout(() => {
-          window.location.href = '/options';
-        }, 1000);
-      } catch (error) {
-        console.error('❌ Failed to save asset selections:', error);
-        toast({
-          title: "Save Error",
-          description: `Failed to save asset selections: ${error.message}`,
-          variant: "destructive"
-        });
-      }
-    } else {
-      console.log('⚠️ Skipping save - missing requirements:', {
-        hasUser: !!user,
-        hasAssets: selectedAssetsData.length > 0,
-        hasAddress: !!address,
-        hasAnalysisId: !!currentAnalysisId
+    // Validate we have all required data
+    if (!user) {
+      console.log('❌ No user authenticated, navigating to options');
+      toast({
+        title: "Authentication Required",
+        description: "Please sign in to save your asset selections",
+        variant: "destructive"
       });
-      
-      if (!currentAnalysisId) {
-        toast({
-          title: "Save Error",
-          description: "No analysis ID found. Please analyze your property first.",
-          variant: "destructive"
-        });
-      }
-      
-      // If no user, still navigate to options for auth flow
       setTimeout(() => {
         window.location.href = '/options';
       }, 500);
+      setShowAssetForm(false);
+      return;
+    }
+
+    if (selectedAssetsData.length === 0) {
+      console.log('❌ No assets selected');
+      toast({
+        title: "No Assets Selected",
+        description: "Please select at least one asset to continue",
+        variant: "destructive"
+      });
+      setShowAssetForm(false);
+      return;
+    }
+
+    if (!currentAnalysisId) {
+      console.log('❌ No current analysis ID found');
+      toast({
+        title: "Analysis Missing",
+        description: "No analysis found. Please analyze your property first.",
+        variant: "destructive"
+      });
+      setTimeout(() => {
+        window.location.href = '/';
+      }, 500);
+      setShowAssetForm(false);
+      return;
+    }
+    
+    // Save asset selections to database
+    try {
+      console.log('🚀 Starting database save process...');
+      const { saveAssetSelection } = await import('@/services/userAssetService');
+      
+      console.log('💾 Saving asset selections to database...');
+      console.log('🎯 Using current analysis ID from context:', currentAnalysisId);
+      
+      // Save each selected asset using the current analysis ID from context
+      const savePromises = selectedAssetsData.map(async (asset, index) => {
+        console.log(`💰 Saving asset ${index + 1}/${selectedAssetsData.length}:`, {
+          userId: user.id,
+          analysisId: currentAnalysisId,
+          assetTitle: asset.title,
+          formData: asset.formData,
+          monthlyRevenue: asset.monthlyRevenue,
+          setupCost: asset.setupCost,
+          roi: asset.roi
+        });
+        
+        try {
+          const result = await saveAssetSelection(
+            user.id,
+            currentAnalysisId,
+            asset.title,
+            asset.formData || {},
+            asset.monthlyRevenue,
+            asset.setupCost || 0,
+            asset.roi
+          );
+          console.log(`✅ Asset ${index + 1} saved with ID:`, result);
+          return result;
+        } catch (err) {
+          console.error(`❌ Failed to save asset ${index + 1}:`, err);
+          throw err;
+        }
+      });
+      
+      const results = await Promise.all(savePromises);
+      console.log('💰 All save results:', results);
+      
+      // Check if all saves were successful
+      const successfulSaves = results.filter(r => r !== null).length;
+      
+      if (successfulSaves === selectedAssetsData.length) {
+        console.log('✅ Successfully saved all asset selections');
+        
+        // Track asset selection completion
+        await trackOption('manual');
+        
+        toast({
+          title: "Assets Saved Successfully",
+          description: `${selectedAssetsData.length} asset selection${selectedAssetsData.length > 1 ? 's' : ''} saved to your dashboard`,
+        });
+      } else {
+        console.warn('⚠️ Some saves failed');
+        toast({
+          title: "Partial Save",
+          description: `${successfulSaves} of ${selectedAssetsData.length} assets saved successfully`,
+          variant: "destructive"
+        });
+      }
+      
+      // Navigate to dashboard to see saved assets
+      setTimeout(() => {
+        window.location.href = '/dashboard';
+      }, 1500);
+      
+    } catch (error) {
+      console.error('❌ Failed to save asset selections:', error);
+      toast({
+        title: "Save Failed",
+        description: `Failed to save asset selections: ${error.message || 'Unknown error'}`,
+        variant: "destructive"
+      });
     }
     
     setShowAssetForm(false);

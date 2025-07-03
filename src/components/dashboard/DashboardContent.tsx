@@ -7,6 +7,7 @@ import DashboardPropertyOverview from './DashboardPropertyOverview';
 import { DashboardCharts } from './DashboardCharts';
 import { AssetsTable } from './AssetsTable';
 import DashboardHeader from './DashboardHeader';
+import SavedAssetSelections from './SavedAssetSelections';
 import { useUserAssetSelections } from '@/hooks/useUserAssetSelections';
 
 interface DashboardContentProps {
@@ -92,6 +93,15 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
           </Card>
         </motion.div>
       )}
+
+      {/* Saved Asset Selections */}
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.3 }}
+      >
+        <SavedAssetSelections />
+      </motion.div>
 
       {/* Revenue Charts */}
       {analysisResults && (
