@@ -61,7 +61,7 @@ const DashboardPropertyOverview: React.FC<DashboardPropertyOverviewProps> = ({
   const { imageUrl: satelliteImageUrl, loading: imageLoading } = useSatelliteImage(propertyAddress);
 
   const getSelectedAssets = () => {
-    if (!assetSelections.length) return [];
+    if (!assetSelections.length) return null;
 
     // Map asset selections to display format
     const assets = assetSelections.map(selection => {
@@ -97,8 +97,9 @@ const DashboardPropertyOverview: React.FC<DashboardPropertyOverviewProps> = ({
   };
 
   const selectedAssets = getSelectedAssets();
-  const totalSelectedRevenue = selectedAssets.reduce((sum, asset) => sum + asset.revenue, 0);
-  const totalSelectedCount = selectedAssets.length;
+  const totalSelectedRevenue = selectedAssets ? selectedAssets.reduce((sum, asset) => sum + asset.revenue, 0) : 0;
+  const totalSelectedCount = selectedAssets ? selectedAssets.length : 0;
+  const hasSelectedAssets = selectedAssets && selectedAssets.length > 0;
 
   return (
     <Card className="mb-6">
@@ -123,20 +124,20 @@ const DashboardPropertyOverview: React.FC<DashboardPropertyOverviewProps> = ({
                   Monthly Revenue Potential
                 </p>
                 <p className="text-2xl font-bold text-green-600">
-                  ${totalSelectedRevenue > 0 ? totalSelectedRevenue : analysis.total_monthly_revenue}/month
+                  ${hasSelectedAssets ? totalSelectedRevenue : analysis.total_monthly_revenue}/month
                 </p>
               </div>
               <div>
                 <p className="text-sm font-medium text-gray-700 mb-1">
-                  Selected Assets
+                  {hasSelectedAssets ? 'Selected Assets' : 'Available Opportunities'}
                 </p>
                 <p className="text-2xl font-bold text-tiptop-purple">
-                  {totalSelectedCount > 0 ? totalSelectedCount : analysis.total_opportunities}
+                  {hasSelectedAssets ? totalSelectedCount : analysis.total_opportunities}
                 </p>
               </div>
             </div>
 
-            {selectedAssets.length > 0 && (
+            {hasSelectedAssets ? (
               <div>
                 <p className="text-sm font-medium text-gray-700 mb-2">Selected Assets</p>
                 <div className="space-y-2">
@@ -170,6 +171,22 @@ const DashboardPropertyOverview: React.FC<DashboardPropertyOverviewProps> = ({
                     </div>
                   ))}
                 </div>
+              </div>
+            ) : (
+              <div className="p-4 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
+                <p className="text-sm font-medium text-gray-700 mb-2">No Assets Selected Yet</p>
+                <p className="text-sm text-gray-600 mb-3">
+                  You have {analysis.total_opportunities} potential opportunities worth ${analysis.total_monthly_revenue}/month. 
+                  Complete your property analysis to select and configure your assets.
+                </p>
+                <Button
+                  size="sm"
+                  onClick={() => window.location.href = '/'}
+                  className="bg-tiptop-purple hover:bg-purple-600"
+                >
+                  <TrendingUp className="h-4 w-4 mr-1" />
+                  Select Assets
+                </Button>
               </div>
             )}
           </div>

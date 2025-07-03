@@ -30,11 +30,12 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
   const { assetSelections, isAssetConfigured } = useUserAssetSelections();
   
   // Calculate actual totals based on user selections
-  const actualTotalRevenue = assetSelections.length > 0 
+  const hasUserSelections = assetSelections.length > 0;
+  const actualTotalRevenue = hasUserSelections 
     ? assetSelections.reduce((sum, selection) => sum + (selection.monthly_revenue || 0), 0)
     : totalMonthlyRevenue;
   
-  const actualTotalOpportunities = assetSelections.length > 0 
+  const actualTotalOpportunities = hasUserSelections 
     ? assetSelections.length 
     : totalOpportunities;
 
