@@ -82,10 +82,10 @@ const AssetFormSection = ({
         description: "Your asset information has been saved successfully."
       });
       
-      // Navigate to options page after a short delay
+      // Call onComplete to save to database and handle navigation
       setTimeout(() => {
         setIsSubmitting(false);
-        navigate('/options');
+        onComplete();
       }, 500);
     } catch (error) {
       console.error('❌ Error submitting form:', error);

@@ -242,6 +242,11 @@ const AssetResultList: React.FC<AssetResultListProps> = ({
               title: "Assets Saved",
               description: `${selectedAssetsData.length} asset selections saved to your dashboard`,
             });
+            
+            // Navigate to options page after successful save
+            setTimeout(() => {
+              window.location.href = '/options';
+            }, 1000);
           }
         }
       } catch (error) {
@@ -252,10 +257,14 @@ const AssetResultList: React.FC<AssetResultListProps> = ({
           variant: "destructive"
         });
       }
+    } else {
+      // If no user, still navigate to options for auth flow
+      setTimeout(() => {
+        window.location.href = '/options';
+      }, 500);
     }
     
     setShowAssetForm(false);
-    // Here you could navigate to dashboard or next step
   }, [user, selectedAssetsData, address, addressCoordinates, toast]);
 
   // Memoize calculations to prevent unnecessary re-computation
