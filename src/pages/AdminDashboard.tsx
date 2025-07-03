@@ -63,6 +63,7 @@ const AdminDashboard = () => {
         const [
           usersResult,
           analysesResult,
+          addressesResult,
           earningsResult,
           todayActiveResult,
           thisMonthUsersResult,
@@ -73,15 +74,22 @@ const AdminDashboard = () => {
             .from('user_login_stats')
             .select('user_id, login_count, first_login_at, last_login_at'),
           
-          // Get all property analyses with revenue
+          // Get all property analyses with addresses
           supabase
             .from('user_property_analyses')
             .select(`
               id, 
+              user_id,
               total_monthly_revenue, 
               created_at,
-              user_addresses!inner(address)
+              address_id
             `)
+            .order('created_at', { ascending: false }),
+            
+          // Get all user addresses separately
+          supabase
+            .from('user_addresses')
+            .select('*')
             .order('created_at', { ascending: false }),
           
           // Get affiliate earnings
@@ -112,6 +120,7 @@ const AdminDashboard = () => {
         // Handle any errors
         if (usersResult.error) throw usersResult.error;
         if (analysesResult.error) throw analysesResult.error;
+        if (addressesResult.error) throw addressesResult.error;
         if (earningsResult.error) throw earningsResult.error;
         if (todayActiveResult.error) throw todayActiveResult.error;
         if (thisMonthUsersResult.error) throw thisMonthUsersResult.error;
@@ -119,6 +128,7 @@ const AdminDashboard = () => {
 
         const users = usersResult.data || [];
         const analyses = analysesResult.data || [];
+        const addresses = addressesResult.data || [];
         const earnings = earningsResult.data || [];
         const todayActive = todayActiveResult.data || [];
         const thisMonthUsers = thisMonthUsersResult.data || [];
@@ -133,7 +143,15 @@ const AdminDashboard = () => {
         const activeUsersToday = todayActive.length;
         
         // Calculate unique properties (by address)
-        const uniqueAddresses = new Set(analyses.map(a => a.user_addresses?.address).filter(Boolean)).size;
+        // Create a map of address_id to address for quick lookup
+        const addressMap = new Map(addresses.map(addr => [addr.id, addr.address]));
+        
+        // Get unique addresses from analyses using the address map
+        const uniqueAddresses = new Set(
+          analyses
+            .map(a => a.address_id ? addressMap.get(a.address_id) : null)
+            .filter(Boolean)
+        ).size;
         
         // Calculate monthly growth
         const monthlyGrowth = lastMonthUsers.length > 0 

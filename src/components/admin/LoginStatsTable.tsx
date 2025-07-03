@@ -24,6 +24,8 @@ type LoginStats = {
   last_ip: string | null;
   user_email?: string;
   user_display_name?: string;
+  user_name?: string;
+  property_address?: string;
 };
 
 export const LoginStatsTable = () => {
@@ -56,14 +58,34 @@ export const LoginStatsTable = () => {
         const userIds = loginData.map(stat => stat.user_id);
         console.log('📊 [LOGIN-STATS] User IDs to process:', userIds.length);
 
-        // Try to get user emails from auth.users (this might not work due to RLS)
+        // Try to get user emails from auth.users (admin only)
         let userEmails: any[] = [];
         try {
-          const { data: authUsers } = await supabase.auth.admin.listUsers();
-          userEmails = authUsers?.users || [];
-          console.log('📊 [LOGIN-STATS] Auth users found:', userEmails.length);
+          // Use a server function to get user emails since admin.listUsers() doesn't work in browser
+          const { data: authData, error: authError } = await supabase
+            .from('user_login_stats')
+            .select('user_id')
+            .limit(1);
+          
+          if (!authError) {
+            // For now, we'll get emails from user metadata in journey data
+            console.log('📊 [LOGIN-STATS] Will extract emails from journey/analysis data');
+          }
         } catch (authError) {
           console.warn('📊 [LOGIN-STATS] Could not fetch auth users:', authError);
+        }
+
+        // Get user addresses for better identification
+        let userAddresses: any[] = [];
+        if (userIds.length > 0) {
+          const { data: addresses } = await supabase
+            .from('user_addresses')
+            .select('user_id, address, formatted_address, created_at')
+            .in('user_id', userIds)
+            .order('created_at', { ascending: false });
+          
+          userAddresses = addresses || [];
+          console.log('📊 [LOGIN-STATS] User addresses found:', userAddresses.length);
         }
 
         // Get additional user info from journey data as fallback
@@ -71,7 +93,7 @@ export const LoginStatsTable = () => {
         if (userIds.length > 0) {
           const { data: journeyUsers } = await supabase
             .from('user_journey_complete')
-            .select('user_id, property_address, created_at')
+            .select('user_id, property_address, extra_form_data, created_at')
             .in('user_id', userIds)
             .not('user_id', 'is', null);
           
@@ -95,13 +117,36 @@ export const LoginStatsTable = () => {
         const statsWithUserDetails = loginData.map((stat, index) => {
           // Try to find user email from auth data
           const authUser = userEmails.find(u => u.id === stat.user_id);
-          const userEmail = authUser?.email;
+          let userEmail = authUser?.email;
+          let userName = '';
 
-          // Try to find property address from journey data
+          // Try to extract email and name from journey extra_form_data
           const journeyInfo = journeyData.find(j => j.user_id === stat.user_id);
-          let propertyAddress = journeyInfo?.property_address;
+          if (journeyInfo?.extra_form_data) {
+            if (journeyInfo.extra_form_data.email && !userEmail) {
+              userEmail = journeyInfo.extra_form_data.email;
+            }
+            if (journeyInfo.extra_form_data.name) {
+              userName = journeyInfo.extra_form_data.name;
+            } else if (journeyInfo.extra_form_data.firstName && journeyInfo.extra_form_data.lastName) {
+              userName = `${journeyInfo.extra_form_data.firstName} ${journeyInfo.extra_form_data.lastName}`;
+            } else if (journeyInfo.extra_form_data.firstName) {
+              userName = journeyInfo.extra_form_data.firstName;
+            }
+          }
 
-          // Try to find property address from analysis data if not found in journey
+          // Try to find property address
+          let propertyAddress = journeyInfo?.property_address;
+          
+          // Get the user's primary address from user_addresses
+          if (!propertyAddress) {
+            const userAddress = userAddresses.find(a => a.user_id === stat.user_id);
+            if (userAddress) {
+              propertyAddress = userAddress.formatted_address || userAddress.address;
+            }
+          }
+
+          // Try to find property address from analysis data if not found elsewhere
           if (!propertyAddress) {
             const analysisInfo = analysisData.find(a => a.user_id === stat.user_id);
             if (analysisInfo?.analysis_results?.propertyAddress) {
@@ -113,7 +158,9 @@ export const LoginStatsTable = () => {
 
           // Create display name with multiple fallbacks
           let displayName = '';
-          if (userEmail) {
+          if (userName) {
+            displayName = userName;
+          } else if (userEmail) {
             displayName = userEmail;
           } else if (propertyAddress) {
             // Truncate long addresses for display
@@ -130,7 +177,9 @@ export const LoginStatsTable = () => {
           return {
             ...stat,
             user_email: userEmail || 'Unknown Email',
-            user_display_name: displayName
+            user_display_name: displayName,
+            user_name: userName || '',
+            property_address: propertyAddress || ''
           };
         });
 

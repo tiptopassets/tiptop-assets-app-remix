@@ -61,11 +61,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           last_user_agent: userAgent,
         };
         
-        // Only increment login count for actual sign-in events, and limit to reasonable numbers
-        if (isActualLogin) {
+      // Only increment login count for actual sign-in events (not every session check)
+        // Check if this is a new login (last login was more than 1 hour ago)
+        const lastLogin = new Date(existingStats.last_login_at || 0);
+        const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
+        const isNewLogin = lastLogin < oneHourAgo;
+        
+        if (isActualLogin && isNewLogin) {
           const newCount = Math.min((existingStats.login_count || 0) + 1, 1000); // Cap at 1000 to prevent runaway inflation
           updateData.login_count = newCount;
-          console.log('✅ [AUTH] Incrementing login count to:', newCount);
+          console.log('✅ [AUTH] Incrementing login count to:', newCount, '(last login was', lastLogin.toLocaleString(), ')');
+        } else if (isActualLogin) {
+          console.log('📋 [AUTH] Not incrementing login count - recent login detected');
         }
         
         await supabase
