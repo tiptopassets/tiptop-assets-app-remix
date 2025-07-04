@@ -88,6 +88,7 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
               <AssetsTable 
                 analysisResults={analysisResults} 
                 isAssetConfigured={isAssetConfigured}
+                analysisId={latestAnalysis?.id}
               />
             </CardContent>
           </Card>

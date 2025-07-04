@@ -70,7 +70,19 @@ const ChatbotSidebar: React.FC<ChatbotSidebarProps> = ({
                   <p className="text-sm font-medium text-gray-700">Available Assets ({propertyData?.availableAssets.length})</p>
                   <div className="flex flex-wrap gap-1 mt-1">
                     {propertyData?.availableAssets.map((asset) => (
-                      <Badge key={asset.type} variant="outline" className="text-xs">
+                      <Badge 
+                        key={asset.type} 
+                        variant="outline" 
+                        className="text-xs cursor-pointer hover:bg-tiptop-purple hover:text-white transition-colors" 
+                        onClick={() => {
+                          const params = new URLSearchParams();
+                          if (analysisId) {
+                            params.set('analysisId', analysisId);
+                          }
+                          params.set('asset', asset.type);
+                          window.location.href = `/dashboard/onboarding?${params.toString()}`;
+                        }}
+                      >
                         {asset.name} (${asset.monthlyRevenue}/mo)
                       </Badge>
                     ))}

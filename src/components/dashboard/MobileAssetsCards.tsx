@@ -9,13 +9,20 @@ import { useNavigate } from 'react-router-dom';
 export interface MobileAssetsCardsProps {
   analysisResults: AnalysisResults;
   isAssetConfigured?: (assetType: string) => boolean;
+  analysisId?: string;
 }
 
-export const MobileAssetsCards = ({ analysisResults, isAssetConfigured }: MobileAssetsCardsProps) => {
+export const MobileAssetsCards = ({ analysisResults, isAssetConfigured, analysisId }: MobileAssetsCardsProps) => {
   const navigate = useNavigate();
 
   const handleStartConfiguration = (assetType: string) => {
-    navigate(`/dashboard/onboarding?asset=${encodeURIComponent(assetType.toLowerCase())}`);
+    // Navigate to the Enhanced Onboarding Chatbot with both analysis ID and asset-specific context
+    const params = new URLSearchParams();
+    if (analysisId) {
+      params.set('analysisId', analysisId);
+    }
+    params.set('asset', assetType.toLowerCase());
+    navigate(`/dashboard/onboarding?${params.toString()}`);
   };
 
   const handleExploreMoreAssets = () => {

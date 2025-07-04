@@ -11,15 +11,21 @@ import { MobileAssetsCards } from './MobileAssetsCards';
 export interface AssetsTableProps {
   analysisResults: AnalysisResults;
   isAssetConfigured?: (assetType: string) => boolean;
+  analysisId?: string;
 }
 
-export const AssetsTable = ({ analysisResults, isAssetConfigured }: AssetsTableProps) => {
+export const AssetsTable = ({ analysisResults, isAssetConfigured, analysisId }: AssetsTableProps) => {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
 
   const handleStartConfiguration = (assetType: string) => {
-    // Navigate to the Enhanced Onboarding Chatbot with asset-specific context
-    navigate(`/dashboard/onboarding?asset=${encodeURIComponent(assetType.toLowerCase())}`);
+    // Navigate to the Enhanced Onboarding Chatbot with both analysis ID and asset-specific context
+    const params = new URLSearchParams();
+    if (analysisId) {
+      params.set('analysisId', analysisId);
+    }
+    params.set('asset', assetType.toLowerCase());
+    navigate(`/dashboard/onboarding?${params.toString()}`);
   };
 
   const handleExploreMoreAssets = () => {
@@ -96,7 +102,7 @@ export const AssetsTable = ({ analysisResults, isAssetConfigured }: AssetsTableP
 
   // Use mobile cards on small screens
   if (isMobile) {
-    return <MobileAssetsCards analysisResults={analysisResults} isAssetConfigured={isAssetConfigured} />;
+    return <MobileAssetsCards analysisResults={analysisResults} isAssetConfigured={isAssetConfigured} analysisId={analysisId} />;
   }
 
   return (

@@ -36,7 +36,7 @@ const EnhancedChatInterface = ({
 
   // Initialize assistant when component mounts
   useEffect(() => {
-    if (!isInitialized && !aiLoading) {
+    if (!isInitialized && !aiLoading && !isProcessing) {
       const initAsync = async () => {
         try {
           await initializeAssistant();
@@ -49,7 +49,7 @@ const EnhancedChatInterface = ({
       
       initAsync();
     }
-  }, [isInitialized, aiLoading, initializeAssistant]);
+  }, [isInitialized, aiLoading, isProcessing, initializeAssistant]);
 
   // Scroll to bottom when messages change
   useEffect(() => {
@@ -244,18 +244,18 @@ const EnhancedChatInterface = ({
               className="space-y-3"
             >
               <div className="text-center">
-                <p className="text-sm text-gray-600 mb-3">Quick start with your property:</p>
+                <p className="text-sm text-gray-600 mb-3">Click to start asset setup:</p>
                 <div className="grid gap-2">
-                  {propertyData.availableAssets.slice(0, 3).map((asset) => (
+                  {propertyData.availableAssets.filter(a => a.hasRevenuePotential).slice(0, 3).map((asset) => (
                     <Button
                       key={asset.type}
                       variant="outline"
-                      className="h-auto p-3 justify-start"
-                      onClick={() => handleSuggestedAction(`What are the requirements for ${asset.name.toLowerCase()}?`)}
+                      className="h-auto p-3 justify-start hover:bg-tiptop-purple hover:text-white transition-colors"
+                      onClick={() => handleSuggestedAction(`I want to set up ${asset.name.toLowerCase()} at my property. What do I need to get started?`)}
                     >
                       <div className="text-left">
                         <div className="font-medium">{asset.name}</div>
-                        <div className="text-xs text-gray-500">${asset.monthlyRevenue}/month potential</div>
+                        <div className="text-xs opacity-70">${asset.monthlyRevenue}/month potential</div>
                       </div>
                     </Button>
                   ))}

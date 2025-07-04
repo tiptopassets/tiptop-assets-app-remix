@@ -104,19 +104,19 @@ export const useOpenAIAssistant = (propertyData: PropertyAnalysisData | null) =>
     }
 
     const { address, totalMonthlyRevenue, availableAssets } = propertyData;
-    const topAssets = availableAssets.filter(a => a.hasRevenuePotential).slice(0, 2);
+    const topAssets = availableAssets.filter(a => a.hasRevenuePotential).slice(0, 3);
 
     if (topAssets.length === 0) {
       return `Hi! I've reviewed your property at **${address}**. While I don't see immediate monetization opportunities in our current analysis, I'm here to help you explore other options. What specific areas of your property are you most interested in monetizing?`;
     }
 
-    const assetList = topAssets.map(asset => `**${asset.name}** ($${asset.monthlyRevenue}/month)`).join(' and ');
+    const assetList = topAssets.map(asset => `**${asset.name}** ($${asset.monthlyRevenue}/month)`).join(', ');
     
     return `Hi! I'm your AI assistant and I've analyzed your property at **${address}**! 🏠
 
-I found great monetization opportunities with ${assetList}. Your total earning potential is **$${totalMonthlyRevenue}/month**.
+I found great monetization opportunities including: ${assetList}. Your total earning potential is **$${totalMonthlyRevenue}/month**.
 
-I'm here to guide you through setting up these assets step-by-step. Which asset would you like to start with, or do you have any questions about the monetization process?`;
+I'm here to guide you through setting up these assets step-by-step. You can click on any asset badge in the sidebar to start its specific setup, or ask me any questions about the monetization process!`;
   }, [propertyData]);
 
   const sendMessage = useCallback(async (message: string) => {
