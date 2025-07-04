@@ -145,37 +145,6 @@ const ChatbotSidebar: React.FC<ChatbotSidebarProps> = ({
         </CardContent>
       </Card>
 
-      {/* AI Assistant Info */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg flex items-center gap-2">
-            <Bot className="h-5 w-5 text-tiptop-purple" />
-            AI Assistant Features
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3 text-sm">
-            <div className="p-3 bg-tiptop-purple/5 rounded-lg">
-              <p className="font-medium text-tiptop-purple mb-1">Intelligent Responses</p>
-              <p className="text-gray-600">
-                Powered by OpenAI to understand your specific questions and provide accurate answers.
-              </p>
-            </div>
-            <div className="p-3 bg-green-50 rounded-lg">
-              <p className="font-medium text-green-700 mb-1">Property-Aware</p>
-              <p className="text-gray-600">
-                Knows your exact property analysis and can provide specific recommendations based on your assets.
-              </p>
-            </div>
-            <div className="p-3 bg-blue-50 rounded-lg">
-              <p className="font-medium text-blue-700 mb-1">Context Memory</p>
-              <p className="text-gray-600">
-                Remembers our conversation to provide consistent and relevant assistance.
-              </p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 };
