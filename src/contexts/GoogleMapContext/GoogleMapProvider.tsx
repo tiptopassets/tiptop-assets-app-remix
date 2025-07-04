@@ -188,15 +188,27 @@ const GoogleMapProvider = ({ children }: { children: React.ReactNode }) => {
         refreshUserData: user ? refreshUserData : null,
         userId: user?.id,
         // Pass context setters for tracking IDs
-        setCurrentAnalysisId,
-        setCurrentAddressId
+        setCurrentAnalysisId: (id: string) => {
+          console.log('💾 Storing analysis ID in context and localStorage:', id);
+          setCurrentAnalysisId(id);
+          localStorage.setItem('currentAnalysisId', id);
+        },
+        setCurrentAddressId: (id: string) => {
+          console.log('💾 Storing address ID in context and localStorage:', id);
+          setCurrentAddressId(id);
+          localStorage.setItem('currentAddressId', id);
+        }
       });
 
       // Debug context IDs after analysis
       console.log('🔍 Context IDs after analysis:', {
         currentAnalysisId,
         currentAddressId,
-        userId: user?.id
+        userId: user?.id,
+        localStorage: {
+          analysisId: localStorage.getItem('currentAnalysisId'),
+          addressId: localStorage.getItem('currentAddressId')
+        }
       });
 
       return analysis;

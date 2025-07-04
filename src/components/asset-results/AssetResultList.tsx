@@ -200,6 +200,11 @@ const AssetResultList: React.FC<AssetResultListProps> = ({
   const handleFormComplete = useCallback(async () => {
     console.log('🚀🚀🚀 ATTEMPTING TO SAVE ASSET SELECTION 🚀🚀🚀');
     console.log('✅ Form completed');
+    
+    // Get analysis ID from context or localStorage as fallback
+    let analysisId = currentAnalysisId || localStorage.getItem('currentAnalysisId');
+    let addressId = currentAddressId || localStorage.getItem('currentAddressId');
+    
     console.log('🔍 Debug info:', {
       userExists: !!user,
       userId: user?.id,
@@ -209,10 +214,12 @@ const AssetResultList: React.FC<AssetResultListProps> = ({
       address: address,
       addressCoordinates: addressCoordinates,
       selectedAssets: selectedAssetsData,
-      currentAnalysisId,
-      currentAddressId,
-      analysisIdType: typeof currentAnalysisId,
-      addressIdType: typeof currentAddressId
+      contextAnalysisId: currentAnalysisId,
+      contextAddressId: currentAddressId,
+      storageAnalysisId: localStorage.getItem('currentAnalysisId'),
+      storageAddressId: localStorage.getItem('currentAddressId'),
+      finalAnalysisId: analysisId,
+      finalAddressId: addressId
     });
     
     // Validate we have all required data
@@ -241,24 +248,51 @@ const AssetResultList: React.FC<AssetResultListProps> = ({
       return;
     }
 
-    if (!currentAnalysisId) {
-      console.log('❌ No current analysis ID found');
-      console.log('🔍 Context debug:', {
-        currentAnalysisId,
-        currentAddressId,
-        analysisComplete,
-        analysisResults: !!analysisResults
-      });
-      toast({
-        title: "Analysis Missing",
-        description: "No analysis found. Please analyze your property first.",
-        variant: "destructive"
-      });
-      setTimeout(() => {
-        window.location.href = '/';
-      }, 500);
-      setShowAssetForm(false);
-      return;
+    // If no analysis ID, try to find the latest one for this user
+    if (!analysisId) {
+      console.log('❌ No analysis ID found, attempting to find latest analysis for user');
+      try {
+        const { supabase } = await import('@/integrations/supabase/client');
+        const { data: latestAnalysis, error } = await supabase
+          .from('user_property_analyses')
+          .select('id, address_id')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .single();
+
+        if (error || !latestAnalysis) {
+          console.log('❌ No analysis found for user:', error);
+          toast({
+            title: "Analysis Missing",
+            description: "No property analysis found. Please analyze your property first.",
+            variant: "destructive"
+          });
+          setTimeout(() => {
+            window.location.href = '/';
+          }, 500);
+          setShowAssetForm(false);
+          return;
+        }
+
+        analysisId = latestAnalysis.id;
+        addressId = latestAnalysis.address_id;
+        console.log('✅ Found latest analysis:', { analysisId, addressId });
+        
+        // Store in localStorage for future use
+        localStorage.setItem('currentAnalysisId', analysisId);
+        if (addressId) localStorage.setItem('currentAddressId', addressId);
+        
+      } catch (error) {
+        console.error('❌ Error finding latest analysis:', error);
+        toast({
+          title: "Analysis Lookup Failed",
+          description: "Unable to find your property analysis. Please try again.",
+          variant: "destructive"
+        });
+        setShowAssetForm(false);
+        return;
+      }
     }
     
     // Save asset selections to database
@@ -285,7 +319,7 @@ const AssetResultList: React.FC<AssetResultListProps> = ({
           console.log(`🚀 CALLING saveAssetSelection for asset ${index + 1}`);
           const result = await saveAssetSelection(
             user.id,
-            currentAnalysisId,
+            analysisId,
             asset.title,
             asset.formData || {},
             asset.monthlyRevenue,

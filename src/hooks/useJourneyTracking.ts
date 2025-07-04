@@ -54,6 +54,7 @@ export const useJourneyTracking = () => {
     results: AnalysisResults, 
     coordinates?: any
   ) => {
+    console.log('📊 Tracking analysis completion for journey');
     return await trackAnalysisCompleted(address, results, coordinates);
   }, []);
 
@@ -63,7 +64,9 @@ export const useJourneyTracking = () => {
 
   const trackOption = useCallback(async (option: 'manual' | 'concierge') => {
     console.log('📊 Tracking option selection:', option);
-    return await trackOptionSelected(option);
+    const result = await trackOptionSelected(option);
+    console.log('📊 Option selection tracked, result:', result);
+    return result;
   }, []);
 
   const trackDashboard = useCallback(async () => {
