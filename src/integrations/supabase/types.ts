@@ -927,6 +927,7 @@ export type Database = {
         Row: {
           address_entered_at: string | null
           analysis_completed_at: string | null
+          analysis_id: string | null
           analysis_results: Json | null
           auth_completed_at: string | null
           conversion_type: string | null
@@ -964,6 +965,7 @@ export type Database = {
         Insert: {
           address_entered_at?: string | null
           analysis_completed_at?: string | null
+          analysis_id?: string | null
           analysis_results?: Json | null
           auth_completed_at?: string | null
           conversion_type?: string | null
@@ -1001,6 +1003,7 @@ export type Database = {
         Update: {
           address_entered_at?: string | null
           analysis_completed_at?: string | null
+          analysis_id?: string | null
           analysis_results?: Json | null
           auth_completed_at?: string | null
           conversion_type?: string | null
@@ -1035,7 +1038,15 @@ export type Database = {
           utm_medium?: string | null
           utm_source?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "user_journey_complete_analysis_id_fkey"
+            columns: ["analysis_id"]
+            isOneToOne: false
+            referencedRelation: "user_property_analyses"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_journey_progress: {
         Row: {
@@ -1527,6 +1538,7 @@ export type Database = {
           journey_id: string
           property_address: string
           analysis_results: Json
+          analysis_id: string
           total_monthly_revenue: number
           total_opportunities: number
           selected_services: Json

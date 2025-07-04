@@ -52,10 +52,11 @@ export const useJourneyTracking = () => {
   const trackAnalysis = useCallback(async (
     address: string, 
     results: AnalysisResults, 
-    coordinates?: any
+    coordinates?: any,
+    analysisId?: string
   ) => {
     console.log('📊 Tracking analysis completion for journey');
-    return await trackAnalysisCompleted(address, results, coordinates);
+    return await trackAnalysisCompleted(address, results, coordinates, analysisId);
   }, []);
 
   const trackServices = useCallback(async (services: string[]) => {

@@ -75,12 +75,14 @@ export const trackAddressEntered = async (address: string, coordinates?: any) =>
 export const trackAnalysisCompleted = async (
   address: string,
   analysisResults: AnalysisResults,
-  coordinates?: any
+  coordinates?: any,
+  analysisId?: string
 ) => {
   const sessionId = getSessionId();
   
   console.log('📊 Tracking analysis completion for:', address);
   console.log('📈 Analysis results:', analysisResults);
+  console.log('🔍 Analysis ID:', analysisId);
   
   // Calculate totals from analysis results
   let totalMonthlyRevenue = 0;
@@ -128,6 +130,7 @@ export const trackAnalysisCompleted = async (
         property_address: propertyAddress,
         property_coordinates: coordinates,
         analysis_results: analysisResults as any,
+        analysis_id: analysisId,
         total_monthly_revenue: totalMonthlyRevenue,
         total_opportunities: totalOpportunities
       }
@@ -142,6 +145,7 @@ export const trackAnalysisCompleted = async (
         address: propertyAddress,
         analysisResults,
         coordinates,
+        analysisId,
         totalMonthlyRevenue,
         totalOpportunities,
         timestamp: new Date().toISOString()
@@ -158,6 +162,7 @@ export const trackAnalysisCompleted = async (
     console.log('✅ Analysis completion tracked for:', propertyAddress);
     console.log('💰 Revenue tracked:', totalMonthlyRevenue);
     console.log('🎯 Opportunities tracked:', totalOpportunities);
+    console.log('🆔 Analysis ID tracked:', analysisId);
     return data;
   } catch (error) {
     console.error('❌ Error in trackAnalysisCompleted:', error);
@@ -224,7 +229,11 @@ export const trackAuthCompleted = async (userId: string) => {
   try {
     console.log('🔐 Starting auth completion tracking for user:', userId);
     
-    // First, link the journey to the authenticated user
+    // Run auto-recovery first
+    const { autoRecoverUserData } = await import('./dataRecoveryService');
+    await autoRecoverUserData(userId);
+    
+    // Then, link the journey to the authenticated user
     const { error: linkError } = await supabase.rpc('link_journey_to_user', {
       p_session_id: sessionId,
       p_user_id: userId
@@ -266,6 +275,7 @@ export const trackAuthCompleted = async (userId: string) => {
               property_address: backup.address,
               property_coordinates: backup.coordinates,
               analysis_results: backup.analysisResults,
+              analysis_id: backup.analysisId,
               total_monthly_revenue: backup.totalMonthlyRevenue,
               total_opportunities: backup.totalOpportunities
             }
@@ -392,6 +402,7 @@ export const getUserDashboardData = async (userId: string) => {
 const formatJourneyData = (journey: any) => {
   return {
     journey_id: journey.id,
+    analysis_id: journey.analysis_id || null,
     property_address: journey.property_address,
     analysis_results: journey.analysis_results,
     total_monthly_revenue: journey.total_monthly_revenue || 0,

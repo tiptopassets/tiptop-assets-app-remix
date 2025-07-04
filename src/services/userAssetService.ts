@@ -38,6 +38,13 @@ export const saveAssetSelection = async (
       throw new Error('Asset type is required but was: ' + assetType);
     }
 
+    // Validate analysisId is a valid UUID format
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(analysisId)) {
+      console.error('❌ Invalid analysis ID format:', analysisId);
+      throw new Error(`Analysis ID must be a valid UUID, got: ${analysisId}`);
+    }
+
     const insertData = {
       user_id: userId,
       analysis_id: analysisId,

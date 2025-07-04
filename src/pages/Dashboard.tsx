@@ -109,7 +109,7 @@ const Dashboard = () => {
 
   // Convert journey data to the format expected by DashboardContent
   const mockLatestAnalysis = {
-    id: journeyData.journeyId,
+    id: journeyData.analysisId || journeyData.journeyId, // Use analysis_id if available, fallback to journey_id
     analysis_results: journeyData.analysisResults,
     total_monthly_revenue: journeyData.totalMonthlyRevenue,
     total_opportunities: journeyData.totalOpportunities,

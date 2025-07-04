@@ -5,6 +5,7 @@ import { useJourneyTracking } from '@/hooks/useJourneyTracking';
 
 interface DashboardJourneyData {
   journeyId: string;
+  analysisId: string | null;
   propertyAddress: string;
   analysisResults: any;
   totalMonthlyRevenue: number;
@@ -158,6 +159,7 @@ export const useDashboardJourneyData = () => {
 
       const transformedData: DashboardJourneyData = {
         journeyId: data.journey_id,
+        analysisId: data.analysis_id || null,
         propertyAddress,
         analysisResults,
         totalMonthlyRevenue: totalRevenue,

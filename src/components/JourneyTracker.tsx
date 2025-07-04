@@ -7,7 +7,7 @@ import { useGoogleMap } from '@/contexts/GoogleMapContext';
 const JourneyTracker = () => {
   const location = useLocation();
   const { trackAddress, trackAnalysis, trackServices, trackDashboard } = useJourneyTracking();
-  const { address, analysisResults, addressCoordinates, analysisComplete } = useGoogleMap();
+  const { address, analysisResults, addressCoordinates, analysisComplete, currentAnalysisId } = useGoogleMap();
 
   // Track dashboard access
   useEffect(() => {
@@ -26,9 +26,9 @@ const JourneyTracker = () => {
   // Track analysis completion
   useEffect(() => {
     if (analysisComplete && analysisResults && address) {
-      trackAnalysis(address, analysisResults, addressCoordinates);
+      trackAnalysis(address, analysisResults, addressCoordinates, currentAnalysisId || undefined);
     }
-  }, [analysisComplete, analysisResults, address, addressCoordinates, trackAnalysis]);
+  }, [analysisComplete, analysisResults, address, addressCoordinates, currentAnalysisId, trackAnalysis]);
 
   // Track services viewed when user sees analysis results
   useEffect(() => {
