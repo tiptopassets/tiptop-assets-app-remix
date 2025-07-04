@@ -34,30 +34,53 @@ export const useDashboardJourneyData = () => {
     let totalOpportunities = 0;
 
     if (analysisResults && typeof analysisResults === 'object') {
-      // Extract address - try multiple possible locations
+      // Enhanced address extraction - try multiple possible locations
       propertyAddress = analysisResults.propertyAddress || 
                        analysisResults.address || 
-                       analysisResults.property_address || 
+                       analysisResults.property_address ||
+                       analysisResults.formattedAddress ||
                        '';
 
-      // Extract revenue from topOpportunities
+      // Enhanced revenue calculation from topOpportunities
       if (analysisResults.topOpportunities && Array.isArray(analysisResults.topOpportunities)) {
         totalRevenue = analysisResults.topOpportunities.reduce(
-          (sum: number, opp: any) => sum + (opp.monthlyRevenue || 0), 0
+          (sum: number, opp: any) => sum + (opp.monthlyRevenue || opp.revenue || 0), 0
         );
         totalOpportunities = analysisResults.topOpportunities.length;
+      } else {
+        // Enhanced fallback: calculate from individual asset types
+        const assetRevenues = [
+          analysisResults.rooftop?.revenue || 0,
+          analysisResults.parking?.revenue || 0,
+          analysisResults.garden?.revenue || 0,
+          analysisResults.pool?.revenue || 0,
+          analysisResults.storage?.revenue || 0,
+          analysisResults.bandwidth?.revenue || 0,
+          analysisResults.internet?.monthlyRevenue || analysisResults.internet?.revenue || 0,
+          analysisResults.solar?.monthlyRevenue || analysisResults.solar?.revenue || 0,
+          analysisResults.ev?.monthlyRevenue || analysisResults.ev?.revenue || 0
+        ];
+        
+        totalRevenue = assetRevenues.reduce((sum, revenue) => sum + revenue, 0);
+        totalOpportunities = assetRevenues.filter(revenue => revenue > 0).length;
       }
 
-      // Fallback: use totalMonthlyRevenue if available
+      // Use pre-calculated totals if available and higher
       if (analysisResults.totalMonthlyRevenue && analysisResults.totalMonthlyRevenue > totalRevenue) {
         totalRevenue = analysisResults.totalMonthlyRevenue;
+      }
+      
+      // Additional fallback for total revenue
+      if (totalRevenue === 0 && analysisResults.totalRevenue) {
+        totalRevenue = analysisResults.totalRevenue;
       }
 
       console.log('📊 Extracted from analysis results:', {
         propertyAddress,
         totalRevenue,
         totalOpportunities,
-        hasTopOpportunities: !!analysisResults.topOpportunities
+        hasTopOpportunities: !!analysisResults.topOpportunities,
+        hasIndividualAssets: !!(analysisResults.rooftop || analysisResults.parking || analysisResults.garden)
       });
     }
 

@@ -84,40 +84,50 @@ export const trackAnalysisCompleted = async (
   console.log('📈 Analysis results:', analysisResults);
   console.log('🔍 Analysis ID:', analysisId);
   
-  // Calculate totals from analysis results
+  // Enhanced data extraction from nested analysis results
   let totalMonthlyRevenue = 0;
   let totalOpportunities = 0;
 
-  // Extract address from analysis results
+  // More robust property address extraction
   const propertyAddress = (analysisResults as any).propertyAddress || 
                          (analysisResults as any).address || 
+                         (analysisResults as any).property_address ||
                          address;
 
-  // Check if we have topOpportunities and calculate from there
+  // Enhanced calculation logic - try multiple data sources
   if (analysisResults.topOpportunities && Array.isArray(analysisResults.topOpportunities)) {
+    console.log('📊 Calculating from topOpportunities:', analysisResults.topOpportunities);
     totalMonthlyRevenue = analysisResults.topOpportunities.reduce(
-      (sum, opp) => sum + (opp.monthlyRevenue || 0), 0
+      (sum, opp) => sum + (opp.monthlyRevenue || (opp as any).revenue || 0), 0
     );
     totalOpportunities = analysisResults.topOpportunities.length;
   } else {
-    // Fallback: calculate from individual asset types
+    console.log('📊 Fallback calculation from individual assets');
+    // Enhanced fallback: calculate from all possible asset types and structures
     const assetRevenues = [
-      analysisResults.rooftop?.revenue || 0,
-      analysisResults.parking?.revenue || 0,
-      analysisResults.garden?.revenue || 0,
-      analysisResults.pool?.revenue || 0,
-      analysisResults.storage?.revenue || 0,
-      analysisResults.bandwidth?.revenue || 0,
-      (analysisResults as any).internet?.monthlyRevenue || 0
+      analysisResults.rooftop?.revenue || (analysisResults.rooftop as any)?.monthlyRevenue || 0,
+      analysisResults.parking?.revenue || (analysisResults.parking as any)?.monthlyRevenue || 0,
+      analysisResults.garden?.revenue || (analysisResults.garden as any)?.monthlyRevenue || 0,
+      analysisResults.pool?.revenue || (analysisResults.pool as any)?.monthlyRevenue || 0,
+      analysisResults.storage?.revenue || (analysisResults.storage as any)?.monthlyRevenue || 0,
+      analysisResults.bandwidth?.revenue || (analysisResults.bandwidth as any)?.monthlyRevenue || 0,
+      (analysisResults as any).internet?.monthlyRevenue || (analysisResults as any).internet?.revenue || 0,
+      (analysisResults as any).solar?.monthlyRevenue || (analysisResults as any).solar?.revenue || 0,
+      (analysisResults as any).ev?.monthlyRevenue || (analysisResults as any).ev?.revenue || 0
     ];
     
     totalMonthlyRevenue = assetRevenues.reduce((sum, revenue) => sum + revenue, 0);
     totalOpportunities = assetRevenues.filter(revenue => revenue > 0).length;
   }
 
-  // Use the totalMonthlyRevenue from analysisResults if available
+  // Use pre-calculated totals if available and higher
   if ((analysisResults as any).totalMonthlyRevenue && (analysisResults as any).totalMonthlyRevenue > totalMonthlyRevenue) {
     totalMonthlyRevenue = (analysisResults as any).totalMonthlyRevenue;
+  }
+  
+  // Ensure we have meaningful totals
+  if (totalMonthlyRevenue === 0 && (analysisResults as any).totalRevenue) {
+    totalMonthlyRevenue = (analysisResults as any).totalRevenue;
   }
 
   console.log('💰 Calculated totals:', { totalMonthlyRevenue, totalOpportunities });
@@ -229,9 +239,10 @@ export const trackAuthCompleted = async (userId: string) => {
   try {
     console.log('🔐 Starting auth completion tracking for user:', userId);
     
-    // Run auto-recovery first
-    const { autoRecoverUserData } = await import('./dataRecoveryService');
+    // Run comprehensive auto-recovery first
+    const { autoRecoverUserData, repairJourneySummaryData } = await import('./dataRecoveryService');
     await autoRecoverUserData(userId);
+    await repairJourneySummaryData(userId);
     
     // Then, link the journey to the authenticated user
     const { error: linkError } = await supabase.rpc('link_journey_to_user', {

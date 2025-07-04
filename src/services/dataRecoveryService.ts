@@ -55,6 +55,9 @@ export const recoverUserData = async (userId: string): Promise<void> => {
       }
     }
 
+    // Strategy 2: Repair journeys with missing summary data
+    await repairJourneySummaryData(userId);
+
     // Strategy 2: Find existing analyses without journey links
     const { data: unlinkedAnalyses, error: analysisError } = await supabase
       .from('user_property_analyses')
@@ -83,6 +86,109 @@ export const recoverUserData = async (userId: string): Promise<void> => {
     console.log('✅ Data recovery completed for user:', userId);
   } catch (error) {
     console.error('❌ Error in data recovery:', error);
+  }
+};
+
+// Repair journey summary data that's missing but can be extracted from analysis results
+export const repairJourneySummaryData = async (userId: string): Promise<void> => {
+  try {
+    console.log('🔧 Repairing journey summary data for user:', userId);
+
+    // Find journeys with analysis results but missing summary data
+    const { data: journeysToRepair, error } = await supabase
+      .from('user_journey_complete')
+      .select('*')
+      .eq('user_id', userId)
+      .not('analysis_results', 'is', null)
+      .or('total_monthly_revenue.is.null,total_opportunities.is.null,property_address.is.null');
+
+    if (error) {
+      console.error('❌ Error fetching journeys to repair:', error);
+      return;
+    }
+
+    console.log('🔧 Found journeys needing repair:', journeysToRepair?.length || 0);
+
+    if (journeysToRepair && journeysToRepair.length > 0) {
+      for (const journey of journeysToRepair) {
+        try {
+          const analysisResults = journey.analysis_results as any;
+          
+          // Extract missing data
+          let propertyAddress = journey.property_address;
+          let totalMonthlyRevenue = journey.total_monthly_revenue || 0;
+          let totalOpportunities = journey.total_opportunities || 0;
+
+          // Fix property address if missing
+          if (!propertyAddress && analysisResults) {
+            propertyAddress = analysisResults.propertyAddress || 
+                            analysisResults.address || 
+                            analysisResults.property_address || 
+                            'Unknown Address';
+          }
+
+          // Fix revenue and opportunities if missing or zero
+          if ((totalMonthlyRevenue === 0 || totalOpportunities === 0) && analysisResults) {
+            if (analysisResults.topOpportunities && Array.isArray(analysisResults.topOpportunities)) {
+              totalMonthlyRevenue = analysisResults.topOpportunities.reduce(
+                (sum: number, opp: any) => sum + (opp.monthlyRevenue || opp.revenue || 0), 0
+              );
+              totalOpportunities = analysisResults.topOpportunities.length;
+            } else {
+              // Fallback calculation
+              const assetRevenues = [
+                analysisResults.rooftop?.revenue || 0,
+                analysisResults.parking?.revenue || 0,
+                analysisResults.garden?.revenue || 0,
+                analysisResults.pool?.revenue || 0,
+                analysisResults.storage?.revenue || 0,
+                analysisResults.bandwidth?.revenue || 0,
+                analysisResults.internet?.monthlyRevenue || analysisResults.internet?.revenue || 0
+              ];
+              
+              totalMonthlyRevenue = assetRevenues.reduce((sum, revenue) => sum + revenue, 0);
+              totalOpportunities = assetRevenues.filter(revenue => revenue > 0).length;
+            }
+
+            // Use pre-calculated totals if available
+            if (analysisResults.totalMonthlyRevenue && analysisResults.totalMonthlyRevenue > totalMonthlyRevenue) {
+              totalMonthlyRevenue = analysisResults.totalMonthlyRevenue;
+            }
+          }
+
+          // Update the journey with repaired data
+          if (propertyAddress !== journey.property_address || 
+              totalMonthlyRevenue !== journey.total_monthly_revenue || 
+              totalOpportunities !== journey.total_opportunities) {
+            
+            const { error: updateError } = await supabase
+              .from('user_journey_complete')
+              .update({
+                property_address: propertyAddress,
+                total_monthly_revenue: totalMonthlyRevenue,
+                total_opportunities: totalOpportunities
+              })
+              .eq('id', journey.id);
+
+            if (updateError) {
+              console.error('❌ Error updating journey:', updateError);
+            } else {
+              console.log('✅ Repaired journey summary data:', {
+                journeyId: journey.id,
+                address: propertyAddress,
+                revenue: totalMonthlyRevenue,
+                opportunities: totalOpportunities
+              });
+            }
+          }
+        } catch (error) {
+          console.error('❌ Error repairing journey:', journey.id, error);
+          continue;
+        }
+      }
+    }
+  } catch (error) {
+    console.error('❌ Error in repairJourneySummaryData:', error);
   }
 };
 

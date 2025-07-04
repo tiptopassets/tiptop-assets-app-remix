@@ -27,17 +27,21 @@ export const useJourneyTracking = () => {
     initJourney();
   }, []);
 
-  // Enhanced authentication completion tracking
+  // Enhanced authentication completion tracking with comprehensive data repair
   useEffect(() => {
     if (user) {
       const handleAuthCompletion = async () => {
         console.log('🔐 User authenticated, linking journey data:', user.id);
         await trackAuthCompleted(user.id);
         
-        // Small delay to ensure the linking is processed
+        // Trigger comprehensive data repair
+        const { repairJourneySummaryData } = await import('@/services/dataRecoveryService');
+        await repairJourneySummaryData(user.id);
+        
+        // Small delay to ensure all processing is complete
         setTimeout(() => {
-          console.log('🔄 Auth completion processed, journey should be linked');
-        }, 1000);
+          console.log('🔄 Auth completion and data repair processed');
+        }, 2000);
       };
       
       handleAuthCompletion();

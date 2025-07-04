@@ -5,6 +5,7 @@ import { Card } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { useSearchParams } from 'react-router-dom';
 import { useUserPropertyAnalysis } from '@/hooks/useUserPropertyAnalysis';
+import { useJourneyTracking } from '@/hooks/useJourneyTracking';
 import EnhancedChatInterface from '@/components/onboarding/EnhancedChatInterface';
 import ChatbotLoadingState from '@/components/onboarding/ChatbotLoadingState';
 import ChatbotErrorState from '@/components/onboarding/ChatbotErrorState';
@@ -26,8 +27,11 @@ const EnhancedOnboardingChatbot = () => {
     url: window.location.href
   });
   
-  // Property analysis integration with specific analysis ID
+  // Enhanced property analysis integration with fallback to journey data
   const { propertyData, loading: propertyLoading, hasPropertyData } = useUserPropertyAnalysis(analysisId || undefined);
+  
+  // Use journey tracking to get dashboard data as fallback
+  const { getDashboardData } = useJourneyTracking();
   
   const [detectedAssets, setDetectedAssets] = useState<string[]>([]);
   const [conversationStage, setConversationStage] = useState('greeting');
