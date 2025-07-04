@@ -192,6 +192,13 @@ const GoogleMapProvider = ({ children }: { children: React.ReactNode }) => {
         setCurrentAddressId
       });
 
+      // Debug context IDs after analysis
+      console.log('🔍 Context IDs after analysis:', {
+        currentAnalysisId,
+        currentAddressId,
+        userId: user?.id
+      });
+
       return analysis;
     } catch (error) {
       console.error('❌ Property analysis failed:', error);

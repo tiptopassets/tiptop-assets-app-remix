@@ -62,6 +62,7 @@ export const useJourneyTracking = () => {
   }, []);
 
   const trackOption = useCallback(async (option: 'manual' | 'concierge') => {
+    console.log('📊 Tracking option selection:', option);
     return await trackOptionSelected(option);
   }, []);
 

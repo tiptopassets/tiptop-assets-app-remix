@@ -74,7 +74,7 @@ const AssetFormSection = ({
     setIsSubmitting(true);
     
     try {
-      console.log('📤 Form data submitted:', formData);
+      console.log('📤🚀 FORM SUBMIT TRIGGERED - Form data submitted:', formData);
       
       // Show success toast
       toast({
@@ -85,6 +85,7 @@ const AssetFormSection = ({
       // Call onComplete to save to database and handle navigation
       setTimeout(() => {
         setIsSubmitting(false);
+        console.log('📤🚀 CALLING onComplete() to trigger database save');
         onComplete();
       }, 500);
     } catch (error) {

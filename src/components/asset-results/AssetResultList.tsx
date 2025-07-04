@@ -198,17 +198,21 @@ const AssetResultList: React.FC<AssetResultListProps> = ({
   }, [selectedAssets.length, selectedAssetsData]);
 
   const handleFormComplete = useCallback(async () => {
+    console.log('🚀🚀🚀 ATTEMPTING TO SAVE ASSET SELECTION 🚀🚀🚀');
     console.log('✅ Form completed');
     console.log('🔍 Debug info:', {
       userExists: !!user,
       userId: user?.id,
+      userIdType: typeof user?.id,
       selectedAssetsCount: selectedAssetsData.length,
       hasAddress: !!address,
       address: address,
       addressCoordinates: addressCoordinates,
       selectedAssets: selectedAssetsData,
       currentAnalysisId,
-      currentAddressId
+      currentAddressId,
+      analysisIdType: typeof currentAnalysisId,
+      addressIdType: typeof currentAddressId
     });
     
     // Validate we have all required data
@@ -239,6 +243,12 @@ const AssetResultList: React.FC<AssetResultListProps> = ({
 
     if (!currentAnalysisId) {
       console.log('❌ No current analysis ID found');
+      console.log('🔍 Context debug:', {
+        currentAnalysisId,
+        currentAddressId,
+        analysisComplete,
+        analysisResults: !!analysisResults
+      });
       toast({
         title: "Analysis Missing",
         description: "No analysis found. Please analyze your property first.",
@@ -272,6 +282,7 @@ const AssetResultList: React.FC<AssetResultListProps> = ({
         });
         
         try {
+          console.log(`🚀 CALLING saveAssetSelection for asset ${index + 1}`);
           const result = await saveAssetSelection(
             user.id,
             currentAnalysisId,
@@ -329,7 +340,7 @@ const AssetResultList: React.FC<AssetResultListProps> = ({
     }
     
     setShowAssetForm(false);
-  }, [user, selectedAssetsData, address, addressCoordinates, currentAnalysisId, toast]);
+  }, [user, selectedAssetsData, address, addressCoordinates, currentAnalysisId, analysisComplete, analysisResults, toast, trackOption]);
 
   // Memoize calculations to prevent unnecessary re-computation
   const { totalSelectedRevenue, totalSetupCost, analysisRevenue, totalMonthlyIncome } = useMemo(() => {
