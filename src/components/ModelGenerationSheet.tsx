@@ -25,17 +25,11 @@ const ModelGenerationSheet = () => {
   
   const { analysisResults } = useGoogleMap();
   
-  const [isVisible, setIsVisible] = useState(false);
   const [showErrorDialog, setShowErrorDialog] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
   useEffect(() => {
-    // Show the banner when status changes from idle to any active state
-    if (status !== 'idle') {
-      setIsVisible(true);
-    }
-
     // Show the error dialog when status is error and the error is about missing satellite image
     if (status === 'error' && errorMessage?.toLowerCase().includes('no satellite image')) {
       setShowErrorDialog(true);
@@ -44,7 +38,7 @@ const ModelGenerationSheet = () => {
 
   // Handle view insights button click
   const handleViewInsights = () => {
-    setIsVisible(false);
+    // Banner will be hidden by parent component logic
   };
 
   // Handle retry button click for error state
@@ -55,7 +49,6 @@ const ModelGenerationSheet = () => {
 
   // Handle close button click
   const handleClose = () => {
-    setIsVisible(false);
     setShowErrorDialog(false);
     resetGeneration();
   };
@@ -100,141 +93,124 @@ const ModelGenerationSheet = () => {
 
   return (
     <>
-      {/* Overlay and Banner positioned above the analysis card */}
-      <AnimatePresence>
-        {isVisible && (
-          <>
-            {/* Background overlay with blur effect */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.3 }}
-              className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40"
+      {/* Main banner content */}
+      <motion.div
+        initial={{ opacity: 0, y: -20, scale: 0.95 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        exit={{ opacity: 0, y: -20, scale: 0.95 }}
+        transition={{ duration: 0.4, ease: "easeOut" }}
+        className="w-full max-w-4xl mx-auto"
+      >
+        <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-2xl p-4 md:p-6">
+          {/* Header */}
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3 flex-1 min-w-0">
+              <StatusIndicator status={status} />
+              <div className="min-w-0 flex-1">
+                <h3 className="font-semibold text-lg md:text-xl truncate">{title}</h3>
+                <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400 truncate">{description}</p>
+              </div>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={handleClose}
-            />
-
-            {/* Centered banner above the analysis card */}
-            <motion.div
-              initial={{ opacity: 0, y: -100, scale: 0.95 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: -100, scale: 0.95 }}
-              transition={{ duration: 0.4, ease: "easeOut" }}
-              className="fixed top-24 left-1/2 transform -translate-x-1/2 z-50 w-[95%] max-w-4xl mx-auto"
+              className="text-gray-500 hover:text-gray-700 h-8 w-8 p-0 flex-shrink-0 ml-2"
             >
-              <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-2xl p-4 md:p-6">
-                {/* Header */}
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-3 flex-1 min-w-0">
-                    <StatusIndicator status={status} />
-                    <div className="min-w-0 flex-1">
-                      <h3 className="font-semibold text-lg md:text-xl truncate">{title}</h3>
-                      <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400 truncate">{description}</p>
-                    </div>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleClose}
-                    className="text-gray-500 hover:text-gray-700 h-8 w-8 p-0 flex-shrink-0 ml-2"
-                  >
-                    ✕
-                  </Button>
-                </div>
+              ✕
+            </Button>
+          </div>
 
-                {/* Progress indicator */}
-                {(status === 'capturing' || status === 'generating') && (
-                  <div className="mb-4">
-                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 md:h-3">
-                      <div 
-                        className="bg-tiptop-purple h-2 md:h-3 rounded-full transition-all duration-300"
-                        style={{ width: `${progress}%` }}
-                      />
-                    </div>
-                    <p className="text-xs text-right mt-1 text-gray-500">{progress}%</p>
+          {/* Progress indicator */}
+          {(status === 'capturing' || status === 'generating') && (
+            <div className="mb-4">
+              <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 md:h-3">
+                <div 
+                  className="bg-tiptop-purple h-2 md:h-3 rounded-full transition-all duration-300"
+                  style={{ width: `${progress}%` }}
+                />
+              </div>
+              <p className="text-xs text-right mt-1 text-gray-500">{progress}%</p>
+            </div>
+          )}
+
+          {/* Content - Responsive Layout */}
+          <div className="flex flex-col md:flex-row items-center gap-4 md:gap-6">
+            {/* Property images */}
+            {status !== 'error' && (propertyImages.satellite || propertyImages.streetView) && (
+              <div className="flex gap-2 md:gap-3 flex-shrink-0 order-1 md:order-none">
+                {propertyImages.satellite && (
+                  <div className="relative">
+                    <img 
+                      src={propertyImages.satellite} 
+                      alt="Satellite view" 
+                      className="w-16 h-16 md:w-20 md:h-20 object-cover rounded-lg border-2 border-gray-200"
+                    />
+                    <span className="absolute -bottom-1 -right-1 bg-blue-500 text-white text-[10px] px-1 py-0.5 rounded">
+                      Satellite
+                    </span>
                   </div>
                 )}
+                {propertyImages.streetView && (
+                  <div className="relative">
+                    <img 
+                      src={propertyImages.streetView} 
+                      alt="Street view" 
+                      className="w-16 h-16 md:w-20 md:h-20 object-cover rounded-lg border-2 border-gray-200"
+                    />
+                    <span className="absolute -bottom-1 -right-1 bg-green-500 text-white text-[10px] px-1 py-0.5 rounded">
+                      Street
+                    </span>
+                  </div>
+                )}
+              </div>
+            )}
 
-                {/* Content - Responsive Layout */}
-                <div className="flex flex-col md:flex-row items-center gap-4 md:gap-6">
-                  {/* Property images */}
-                  {status !== 'error' && (propertyImages.satellite || propertyImages.streetView) && (
-                    <div className="flex gap-2 md:gap-3 flex-shrink-0 order-1 md:order-none">
-                      {propertyImages.satellite && (
-                        <div className="relative">
-                          <img 
-                            src={propertyImages.satellite} 
-                            alt="Satellite view" 
-                            className="w-16 h-16 md:w-20 md:h-20 object-cover rounded-lg border-2 border-gray-200"
-                          />
-                          <span className="absolute -bottom-1 -right-1 bg-blue-500 text-white text-[10px] px-1 py-0.5 rounded">
-                            Satellite
-                          </span>
-                        </div>
-                      )}
-                      {propertyImages.streetView && (
-                        <div className="relative">
-                          <img 
-                            src={propertyImages.streetView} 
-                            alt="Street view" 
-                            className="w-16 h-16 md:w-20 md:h-20 object-cover rounded-lg border-2 border-gray-200"
-                          />
-                          <span className="absolute -bottom-1 -right-1 bg-green-500 text-white text-[10px] px-1 py-0.5 rounded">
-                            Street
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Analysis Results Summary (when complete) */}
-                  {status === 'completed' && analysisResults && (
-                    <div className="flex-grow order-2 md:order-none">
-                      <div className="flex items-center justify-center gap-6 md:gap-8">
-                        <div className="text-center">
-                          <p className="text-xs text-gray-500 mb-1">Monthly Revenue</p>
-                          <p className="text-xl md:text-2xl font-bold text-green-600">
-                            ${analysisResults.topOpportunities.reduce((sum, opp) => sum + opp.monthlyRevenue, 0)}
-                          </p>
-                        </div>
-                        <div className="text-center">
-                          <p className="text-xs text-gray-500 mb-1">Opportunities</p>
-                          <p className="text-xl md:text-2xl font-bold text-tiptop-purple">{analysisResults.topOpportunities.length}</p>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Action Button */}
-                  {status === 'completed' && (
-                    <Button 
-                      onClick={handleViewInsights} 
-                      className="bg-tiptop-purple hover:bg-tiptop-purple/80 text-white px-4 md:px-6 py-2 md:py-3 text-sm md:text-base font-medium flex-shrink-0 order-3 md:order-none w-full md:w-auto"
-                    >
-                      View Analysis
-                    </Button>
-                  )}
-
-                  {/* Error state content */}
-                  {status === 'error' && !errorMessage?.toLowerCase().includes('no satellite image') && (
-                    <div className="flex-grow flex flex-col items-center justify-center gap-3 order-2 md:order-none">
-                      <p className="text-red-600 text-sm text-center">{errorMessage}</p>
-                      <div className="flex flex-col md:flex-row gap-3 w-full md:w-auto">
-                        <Button variant="outline" size="sm" onClick={handleRetry} className="w-full md:w-auto">
-                          Retry
-                        </Button>
-                        <Button variant="ghost" size="sm" onClick={handleClose} className="w-full md:w-auto">
-                          Close
-                        </Button>
-                      </div>
-                    </div>
-                  )}
+            {/* Analysis Results Summary (when complete) */}
+            {status === 'completed' && analysisResults && (
+              <div className="flex-grow order-2 md:order-none">
+                <div className="flex items-center justify-center gap-6 md:gap-8">
+                  <div className="text-center">
+                    <p className="text-xs text-gray-500 mb-1">Monthly Revenue</p>
+                    <p className="text-xl md:text-2xl font-bold text-green-600">
+                      ${analysisResults.topOpportunities.reduce((sum, opp) => sum + opp.monthlyRevenue, 0)}
+                    </p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-xs text-gray-500 mb-1">Opportunities</p>
+                    <p className="text-xl md:text-2xl font-bold text-tiptop-purple">{analysisResults.topOpportunities.length}</p>
+                  </div>
                 </div>
               </div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
+            )}
+
+            {/* Action Button */}
+            {status === 'completed' && (
+              <Button 
+                onClick={handleViewInsights} 
+                className="bg-tiptop-purple hover:bg-tiptop-purple/80 text-white px-4 md:px-6 py-2 md:py-3 text-sm md:text-base font-medium flex-shrink-0 order-3 md:order-none w-full md:w-auto"
+              >
+                View Analysis
+              </Button>
+            )}
+
+            {/* Error state content */}
+            {status === 'error' && !errorMessage?.toLowerCase().includes('no satellite image') && (
+              <div className="flex-grow flex flex-col items-center justify-center gap-3 order-2 md:order-none">
+                <p className="text-red-600 text-sm text-center">{errorMessage}</p>
+                <div className="flex flex-col md:flex-row gap-3 w-full md:w-auto">
+                  <Button variant="outline" size="sm" onClick={handleRetry} className="w-full md:w-auto">
+                    Retry
+                  </Button>
+                  <Button variant="ghost" size="sm" onClick={handleClose} className="w-full md:w-auto">
+                    Close
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </motion.div>
       
       {/* No Satellite Image Error Dialog */}
       <NoSatelliteErrorDialog 

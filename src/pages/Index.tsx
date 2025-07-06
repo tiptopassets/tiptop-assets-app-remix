@@ -11,6 +11,7 @@ import HomeModelViewer from '@/components/home-model-viewer';
 import DataSyncNotification from '@/components/DataSyncNotification';
 import JourneyTracker from '@/components/JourneyTracker';
 import { useGoogleMap } from '@/contexts/GoogleMapContext';
+import { useModelGeneration } from '@/contexts/ModelGeneration';
 import { Settings } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import FooterCarousel from '@/components/FooterCarousel';
@@ -20,6 +21,7 @@ import { useAdmin } from '@/hooks/useAdmin';
 
 const Index = () => {
   const { isAnalyzing, analysisComplete, address, analysisResults } = useGoogleMap();
+  const { status } = useModelGeneration();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [showingFormSection, setShowingFormSection] = useState(false);
   const isMobile = useIsMobile();
@@ -43,6 +45,9 @@ const Index = () => {
       </div>
     );
   }
+
+  // Check if we should show the banner
+  const showBanner = status !== 'idle' && (status === 'capturing' || status === 'generating' || status === 'completed' || status === 'error');
 
   return (
     <div className="min-h-screen relative overflow-hidden flex flex-col bg-gradient-to-b from-gray-900 to-black">
@@ -102,6 +107,19 @@ const Index = () => {
             {!analysisComplete && !isAnalyzing && <AssetIcons />}
           </div>
 
+          {/* Model Generation Banner - positioned above HomeModelViewer */}
+          {showBanner && (
+            <div className="relative w-full max-w-7xl mx-auto mb-4">
+              {/* Background overlay */}
+              <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40" />
+              
+              {/* Centered banner */}
+              <div className="relative z-50 w-full px-4">
+                <ModelGenerationSheet />
+              </div>
+            </div>
+          )}
+
           {/* Analysis results positioned extremely far down */}
           {analysisComplete && analysisResults && (
             <div className={`w-full ${showingFormSection ? 'mt-0' : 'mt-64 sm:mt-72 md:mt-80 lg:mt-96'}`}>
@@ -136,9 +154,6 @@ const Index = () => {
           © 2025 Tiptop by Kolonia. All rights reserved.
         </p>
       </motion.div>
-
-      {/* Model Generation Progress Sheet */}
-      <ModelGenerationSheet />
     </div>
   );
 };
