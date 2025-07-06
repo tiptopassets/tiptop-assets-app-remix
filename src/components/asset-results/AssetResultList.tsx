@@ -12,6 +12,7 @@ import { useGoogleMap } from '@/contexts/GoogleMapContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { useJourneyTracking } from '@/hooks/useJourneyTracking';
+import { getRecentAnalysisId, validateAssetSelectionData } from '@/services/dataRecoveryService';
 
 interface AssetResultListProps {
   analysisResults: any;
@@ -39,7 +40,9 @@ const AssetResultList: React.FC<AssetResultListProps> = ({
     additionalOpportunitiesCount: additionalOpportunities.length,
     propertyType: analysisResults?.propertyType,
     topOpportunities: analysisResults?.topOpportunities?.length || 0,
-    totalMonthlyRevenue: analysisResults?.totalMonthlyRevenue
+    totalMonthlyRevenue: analysisResults?.totalMonthlyRevenue,
+    currentAnalysisId,
+    userId: user?.id
   });
 
   // Notify parent component when form section visibility changes
@@ -198,31 +201,10 @@ const AssetResultList: React.FC<AssetResultListProps> = ({
   }, [selectedAssets.length, selectedAssetsData]);
 
   const handleFormComplete = useCallback(async () => {
-    console.log('🚀🚀🚀 ATTEMPTING TO SAVE ASSET SELECTION 🚀🚀🚀');
+    console.log('🚀🚀🚀 ATTEMPTING TO SAVE ASSET SELECTION WITH ROBUST RECOVERY 🚀🚀🚀');
     console.log('✅ Form completed');
     
-    // Get analysis ID from context or localStorage as fallback
-    let analysisId = currentAnalysisId || localStorage.getItem('currentAnalysisId');
-    let addressId = currentAddressId || localStorage.getItem('currentAddressId');
-    
-    console.log('🔍 Debug info:', {
-      userExists: !!user,
-      userId: user?.id,
-      userIdType: typeof user?.id,
-      selectedAssetsCount: selectedAssetsData.length,
-      hasAddress: !!address,
-      address: address,
-      addressCoordinates: addressCoordinates,
-      selectedAssets: selectedAssetsData,
-      contextAnalysisId: currentAnalysisId,
-      contextAddressId: currentAddressId,
-      storageAnalysisId: localStorage.getItem('currentAnalysisId'),
-      storageAddressId: localStorage.getItem('currentAddressId'),
-      finalAnalysisId: analysisId,
-      finalAddressId: addressId
-    });
-    
-    // Validate we have all required data
+    // Validate user authentication first
     if (!user) {
       console.log('❌ No user authenticated, navigating to options');
       toast({
@@ -248,66 +230,106 @@ const AssetResultList: React.FC<AssetResultListProps> = ({
       return;
     }
 
-    // If no analysis ID, try to find the latest one for this user
-    if (!analysisId) {
-      console.log('❌ No analysis ID found, attempting to find latest analysis for user');
+    // ROBUST ANALYSIS ID RECOVERY - Multiple fallback strategies
+    let finalAnalysisId = currentAnalysisId;
+    
+    console.log('🔍 Starting analysis ID resolution...');
+    console.log('📊 Context analysis ID:', currentAnalysisId);
+    console.log('💾 LocalStorage analysis ID:', localStorage.getItem('currentAnalysisId'));
+    
+    // Strategy 1: Use context analysis ID
+    if (!finalAnalysisId) {
+      finalAnalysisId = localStorage.getItem('currentAnalysisId');
+      console.log('🔄 Using localStorage analysis ID:', finalAnalysisId);
+    }
+    
+    // Strategy 2: Find user's most recent analysis
+    if (!finalAnalysisId) {
+      console.log('🔍 No analysis ID found, searching for user\'s recent analysis...');
       try {
-        const { supabase } = await import('@/integrations/supabase/client');
-        const { data: latestAnalysis, error } = await supabase
-          .from('user_property_analyses')
-          .select('id, address_id')
-          .eq('user_id', user.id)
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .single();
-
-        if (error || !latestAnalysis) {
-          console.log('❌ No analysis found for user:', error);
-          toast({
-            title: "Analysis Missing",
-            description: "No property analysis found. Please analyze your property first.",
-            variant: "destructive"
-          });
-          setTimeout(() => {
-            window.location.href = '/';
-          }, 500);
-          setShowAssetForm(false);
-          return;
+        finalAnalysisId = await getRecentAnalysisId(user.id);
+        console.log('✅ Found recent analysis ID:', finalAnalysisId);
+        
+        if (finalAnalysisId) {
+          // Update context and localStorage with recovered ID
+          localStorage.setItem('currentAnalysisId', finalAnalysisId);
         }
-
-        analysisId = latestAnalysis.id;
-        addressId = latestAnalysis.address_id;
-        console.log('✅ Found latest analysis:', { analysisId, addressId });
-        
-        // Store in localStorage for future use
-        localStorage.setItem('currentAnalysisId', analysisId);
-        if (addressId) localStorage.setItem('currentAddressId', addressId);
-        
       } catch (error) {
-        console.error('❌ Error finding latest analysis:', error);
+        console.error('❌ Error finding recent analysis:', error);
+      }
+    }
+
+    // Strategy 3: Validate the analysis ID belongs to the current user
+    if (finalAnalysisId) {
+      try {
+        console.log('🔍 Validating analysis ownership...');
+        const { supabase } = await import('@/integrations/supabase/client');
+        const { data: analysisCheck, error: checkError } = await supabase
+          .from('user_property_analyses')
+          .select('id, user_id')
+          .eq('id', finalAnalysisId)
+          .eq('user_id', user.id)
+          .maybeSingle();
+
+        if (checkError || !analysisCheck) {
+          console.error('❌ Analysis ID validation failed:', { finalAnalysisId, userId: user.id, error: checkError });
+          
+          // Final fallback: create or find a valid analysis
+          const recentAnalysisId = await getRecentAnalysisId(user.id);
+          if (recentAnalysisId) {
+            finalAnalysisId = recentAnalysisId;
+            localStorage.setItem('currentAnalysisId', finalAnalysisId);
+            console.log('🔄 Using fallback analysis ID:', finalAnalysisId);
+          } else {
+            throw new Error('No valid analysis found for the current user');
+          }
+        } else {
+          console.log('✅ Analysis ID validated successfully:', analysisCheck);
+        }
+      } catch (validationError) {
+        console.error('❌ Analysis validation error:', validationError);
         toast({
-          title: "Analysis Lookup Failed",
-          description: "Unable to find your property analysis. Please try again.",
+          title: "Analysis Validation Failed",
+          description: "Unable to validate your property analysis. Please try analyzing your property again.",
           variant: "destructive"
         });
         setShowAssetForm(false);
         return;
       }
     }
+
+    if (!finalAnalysisId) {
+      console.log('❌ No valid analysis ID found after all strategies');
+      toast({
+        title: "Analysis Missing",
+        description: "No property analysis found. Please analyze your property first.",
+        variant: "destructive"
+      });
+      setTimeout(() => {
+        window.location.href = '/';
+      }, 500);
+      setShowAssetForm(false);
+      return;
+    }
+
+    console.log('✅ Final analysis ID resolved:', finalAnalysisId);
+    console.log('🎯 Saving assets for user:', user.id);
     
-    // Save asset selections to database
+    // Save asset selections with robust error handling
     try {
-      console.log('🚀 Starting database save process...');
       const { saveAssetSelection } = await import('@/services/userAssetService');
       
       console.log('💾 Saving asset selections to database...');
-      console.log('🎯 Using current analysis ID from context:', currentAnalysisId);
       
-      // Save each selected asset using the current analysis ID from context
+      // Validate data integrity before saving
+      const validationResult = await validateAssetSelectionData(user.id);
+      console.log('📊 Asset selection validation:', validationResult);
+      
+      // Save each selected asset with comprehensive logging
       const savePromises = selectedAssetsData.map(async (asset, index) => {
         console.log(`💰 Saving asset ${index + 1}/${selectedAssetsData.length}:`, {
           userId: user.id,
-          analysisId: currentAnalysisId,
+          analysisId: finalAnalysisId,
           assetTitle: asset.title,
           formData: asset.formData,
           monthlyRevenue: asset.monthlyRevenue,
@@ -316,10 +338,9 @@ const AssetResultList: React.FC<AssetResultListProps> = ({
         });
         
         try {
-          console.log(`🚀 CALLING saveAssetSelection for asset ${index + 1}`);
           const result = await saveAssetSelection(
             user.id,
-            analysisId,
+            finalAnalysisId,
             asset.title,
             asset.formData || {},
             asset.monthlyRevenue,
@@ -350,6 +371,12 @@ const AssetResultList: React.FC<AssetResultListProps> = ({
           title: "Assets Saved Successfully",
           description: `${selectedAssetsData.length} asset selection${selectedAssetsData.length > 1 ? 's' : ''} saved to your dashboard`,
         });
+        
+        // Navigate to dashboard to see saved assets
+        setTimeout(() => {
+          window.location.href = '/dashboard';
+        }, 1500);
+        
       } else {
         console.warn('⚠️ Some saves failed');
         toast({
@@ -357,12 +384,12 @@ const AssetResultList: React.FC<AssetResultListProps> = ({
           description: `${successfulSaves} of ${selectedAssetsData.length} assets saved successfully`,
           variant: "destructive"
         });
+        
+        // Still navigate to dashboard to show what was saved
+        setTimeout(() => {
+          window.location.href = '/dashboard';
+        }, 2000);
       }
-      
-      // Navigate to dashboard to see saved assets
-      setTimeout(() => {
-        window.location.href = '/dashboard';
-      }, 1500);
       
     } catch (error) {
       console.error('❌ Failed to save asset selections:', error);

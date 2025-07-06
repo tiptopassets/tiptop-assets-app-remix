@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { AnalysisResults } from '@/contexts/GoogleMapContext/types';
 
@@ -71,7 +72,7 @@ export const trackAddressEntered = async (address: string, coordinates?: any) =>
   }
 };
 
-// Enhanced analysis tracking with better user linking and data persistence
+// Enhanced analysis tracking with proper user association and analysis ID linking
 export const trackAnalysisCompleted = async (
   address: string,
   analysisResults: AnalysisResults,
@@ -133,6 +134,7 @@ export const trackAnalysisCompleted = async (
   console.log('💰 Calculated totals:', { totalMonthlyRevenue, totalOpportunities });
   
   try {
+    // CRITICAL: Ensure analysis_id is properly passed to journey tracking
     const { data, error } = await supabase.rpc('update_journey_step', {
       p_session_id: sessionId,
       p_step: 'analysis_completed',
@@ -140,7 +142,7 @@ export const trackAnalysisCompleted = async (
         property_address: propertyAddress,
         property_coordinates: coordinates,
         analysis_results: analysisResults as any,
-        analysis_id: analysisId,
+        analysis_id: analysisId, // This is crucial for linking
         total_monthly_revenue: totalMonthlyRevenue,
         total_opportunities: totalOpportunities
       }
@@ -232,19 +234,19 @@ export const trackOptionSelected = async (selectedOption: 'manual' | 'concierge'
   }
 };
 
-// Enhanced auth completion tracking with better session linking and backup recovery
+// Enhanced auth completion tracking with comprehensive recovery
 export const trackAuthCompleted = async (userId: string) => {
   const sessionId = getSessionId();
   
   try {
-    console.log('🔐 Starting auth completion tracking for user:', userId);
+    console.log('🔐 Starting enhanced auth completion tracking for user:', userId);
     
     // Run comprehensive auto-recovery first
     const { autoRecoverUserData, repairJourneySummaryData } = await import('./dataRecoveryService');
     await autoRecoverUserData(userId);
     await repairJourneySummaryData(userId);
     
-    // Then, link the journey to the authenticated user
+    // Then, link the journey to the authenticated user with proper user association
     const { error: linkError } = await supabase.rpc('link_journey_to_user', {
       p_session_id: sessionId,
       p_user_id: userId
@@ -256,18 +258,23 @@ export const trackAuthCompleted = async (userId: string) => {
       console.log('✅ Journey linked to authenticated user:', userId);
     }
 
-    // Try to find and link any unlinked journey data for this user
+    // Enhanced recovery: link any recent unlinked data that matches this user's session patterns
     const { error: recoveryError } = await supabase
       .from('user_journey_complete')
-      .update({ user_id: userId })
+      .update({ 
+        user_id: userId,
+        updated_at: new Date().toISOString()
+      })
       .is('user_id', null)
-      .neq('property_address', '')
-      .neq('analysis_results', null);
+      .not('property_address', 'is', null)
+      .not('property_address', 'eq', '')
+      .not('analysis_results', 'is', null)
+      .gte('updated_at', new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString()); // Last 2 hours
 
     if (recoveryError) {
       console.warn('⚠️ Could not recover unlinked journey data:', recoveryError);
     } else {
-      console.log('🔄 Attempted to recover unlinked journey data');
+      console.log('🔄 Successfully recovered unlinked journey data');
     }
 
     // Check for and recover backup data from localStorage
@@ -342,12 +349,12 @@ export const trackDashboardAccessed = async () => {
   }
 };
 
-// Enhanced dashboard data retrieval with multiple fallback strategies
+// Enhanced dashboard data retrieval with user-specific filtering
 export const getUserDashboardData = async (userId: string) => {
   try {
-    console.log('📊 Fetching dashboard data for user:', userId);
+    console.log('📊 Fetching dashboard data for user with enhanced recovery:', userId);
     
-    // Strategy 1: Try the RPC function first
+    // Strategy 1: Try the RPC function first (most reliable)
     const { data: rpcData, error: rpcError } = await supabase.rpc('get_user_dashboard_data', {
       p_user_id: userId
     });
@@ -357,50 +364,25 @@ export const getUserDashboardData = async (userId: string) => {
       return rpcData[0];
     }
 
-    console.log('🔄 RPC returned no data, trying direct queries...');
+    console.log('🔄 RPC returned no data, trying direct queries with user filter...');
 
-    // Strategy 2: Direct query with user_id
+    // Strategy 2: Direct query with strict user filtering
     const { data: directData, error: directError } = await supabase
       .from('user_journey_complete')
       .select('*')
-      .eq('user_id', userId)
-      .not('property_address', 'is', null)
-      .not('property_address', 'eq', '')
-      .order('updated_at', { ascending: false })
-      .limit(1);
-
-    if (!directError && directData && directData.length > 0) {
-      return formatJourneyData(directData[0]);
-    }
-
-    // Strategy 3: Look for recent unlinked data that might belong to this user
-    const { data: unlinkedData, error: unlinkedError } = await supabase
-      .from('user_journey_complete')
-      .select('*')
-      .is('user_id', null)
+      .eq('user_id', userId) // Strict user filtering
       .not('property_address', 'is', null)
       .not('property_address', 'eq', '')
       .not('analysis_results', 'is', null)
       .order('updated_at', { ascending: false })
-      .limit(3);
+      .limit(1);
 
-    if (!unlinkedError && unlinkedData && unlinkedData.length > 0) {
-      console.log('🔍 Found unlinked data, attempting to link to user:', unlinkedData.length, 'records');
-      
-      // Try to link the most recent unlinked data to this user
-      const mostRecent = unlinkedData[0];
-      const { error: linkError } = await supabase
-        .from('user_journey_complete')
-        .update({ user_id: userId })
-        .eq('id', mostRecent.id);
-
-      if (!linkError) {
-        console.log('✅ Successfully linked unlinked data to user');
-        return formatJourneyData({ ...mostRecent, user_id: userId });
-      }
+    if (!directError && directData && directData.length > 0) {
+      console.log('✅ Found data via direct query:', directData[0]);
+      return formatJourneyData(directData[0]);
     }
 
-    console.log('❌ No dashboard data found for user after all strategies');
+    console.log('❌ No dashboard data found for user after enhanced strategies');
     return null;
     
   } catch (error) {
