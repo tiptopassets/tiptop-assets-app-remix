@@ -1,15 +1,14 @@
-
 import React, { createContext, useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useUserData } from '@/hooks/useUserData';
-import { GoogleMapContextProps } from './types';
+import { GoogleMapContextType } from './types';
 import { useToast } from "@/hooks/use-toast";
 import { generatePropertyAnalysis } from './propertyAnalysis';
 import { createInitialState } from './state';
 import { syncAnalysisToDatabase, generateAnalysis } from './utils';
 import { loadGoogleMaps } from '@/utils/googleMapsLoader';
 
-export const GoogleMapContext = createContext<GoogleMapContextProps | undefined>(
+export const GoogleMapContext = createContext<GoogleMapContextType | undefined>(
   undefined
 );
 
@@ -166,7 +165,6 @@ const GoogleMapProvider = ({ children }: { children: React.ReactNode }) => {
     }
   }, [user?.id, refreshUserData, toast]);
 
-  // Enhanced wrapper function with integrated database saving
   const generatePropertyAnalysisWrapper = async (propertyAddress: string) => {
     console.log('🏠 Starting property analysis with database integration:', { propertyAddress, userId: user?.id });
     
@@ -182,12 +180,10 @@ const GoogleMapProvider = ({ children }: { children: React.ReactNode }) => {
         setUseLocalAnalysis,
         setAnalysisError,
         toast,
-        // Pass database save functions
         saveAddress: user ? saveAddress : null,
         savePropertyAnalysis: user ? savePropertyAnalysis : null,
         refreshUserData: user ? refreshUserData : null,
         userId: user?.id,
-        // Pass context setters for tracking IDs
         setCurrentAnalysisId: (id: string) => {
           console.log('💾 Storing analysis ID in context and localStorage:', id);
           setCurrentAnalysisId(id);
@@ -200,7 +196,6 @@ const GoogleMapProvider = ({ children }: { children: React.ReactNode }) => {
         }
       });
 
-      // Debug context IDs after analysis
       console.log('🔍 Context IDs after analysis:', {
         currentAnalysisId,
         currentAddressId,
@@ -218,7 +213,7 @@ const GoogleMapProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
-  const value: GoogleMapContextProps = {
+  const value: GoogleMapContextType = {
     address,
     setAddress,
     addressCoordinates,

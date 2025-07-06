@@ -1,9 +1,9 @@
 
 import { useContext } from 'react';
 import { GoogleMapContext } from './GoogleMapProvider';
-import { GoogleMapContextProps } from './types';
+import { GoogleMapContextType } from './types';
 
-export const useGoogleMap = (): GoogleMapContextProps => {
+export const useGoogleMap = (): GoogleMapContextType => {
   const context = useContext(GoogleMapContext);
   if (!context) {
     throw new Error('useGoogleMap must be used within a GoogleMapProvider');
