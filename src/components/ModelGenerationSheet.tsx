@@ -38,7 +38,8 @@ const ModelGenerationSheet = () => {
 
   // Handle view insights button click
   const handleViewInsights = () => {
-    // Banner will be hidden by parent component logic
+    // Close the banner by resetting the generation status
+    resetGeneration();
   };
 
   // Handle retry button click for error state
