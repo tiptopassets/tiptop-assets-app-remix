@@ -52,16 +52,46 @@ export const useDashboardJourneyData = () => {
           journeyId: data.journey_id,
           analysisId: data.analysis_id,
           address: data.property_address,
-          revenue: data.total_monthly_revenue
+          revenue: data.total_monthly_revenue,
+          analysisResults: !!data.analysis_results
         });
+        
+        // Extract data from analysis_results if journey-level fields are empty
+        let propertyAddress = data.property_address;
+        let totalRevenue = data.total_monthly_revenue || 0;
+        let totalOpportunities = data.total_opportunities || 0;
+        
+        if (data.analysis_results && typeof data.analysis_results === 'object' && !Array.isArray(data.analysis_results)) {
+          const analysisResults = data.analysis_results as any; // Cast to any for property access
+          
+          // Extract property address from analysis_results if not set at journey level
+          if (!propertyAddress && analysisResults.propertyAddress) {
+            propertyAddress = analysisResults.propertyAddress;
+            console.log('📍 [DASHBOARD] Using address from analysis_results:', propertyAddress);
+          }
+          
+          // Extract revenue from topOpportunities if not set at journey level
+          if (totalRevenue === 0 && analysisResults.topOpportunities && Array.isArray(analysisResults.topOpportunities)) {
+            totalRevenue = analysisResults.topOpportunities.reduce((sum: number, opp: any) => {
+              return sum + (opp.monthlyRevenue || 0);
+            }, 0);
+            console.log('💰 [DASHBOARD] Calculated revenue from opportunities:', totalRevenue);
+          }
+          
+          // Extract opportunities count from topOpportunities if not set at journey level
+          if (totalOpportunities === 0 && analysisResults.topOpportunities && Array.isArray(analysisResults.topOpportunities)) {
+            totalOpportunities = analysisResults.topOpportunities.length;
+            console.log('🎯 [DASHBOARD] Counted opportunities:', totalOpportunities);
+          }
+        }
         
         setJourneyData({
           journeyId: data.journey_id,
           analysisId: data.analysis_id,
-          propertyAddress: data.property_address,
+          propertyAddress: propertyAddress || 'Unknown Address',
           analysisResults: data.analysis_results,
-          totalMonthlyRevenue: data.total_monthly_revenue || 0,
-          totalOpportunities: data.total_opportunities || 0,
+          totalMonthlyRevenue: totalRevenue,
+          totalOpportunities: totalOpportunities,
           selectedServices: data.selected_services || [],
           selectedOption: data.selected_option || 'manual',
           journeyProgress: typeof data.journey_progress === 'object' && data.journey_progress !== null 
@@ -108,15 +138,50 @@ export const useDashboardJourneyData = () => {
           .single();
 
         if (!analysisError && analysisData) {
-          console.log('✅ [DASHBOARD] Created fallback journey data from analysis');
+          console.log('✅ [DASHBOARD] Created fallback journey data from analysis', {
+            analysisId: analysisData.id,
+            address: analysisData.user_addresses?.formatted_address || analysisData.user_addresses?.address,
+            revenue: analysisData.total_monthly_revenue,
+            opportunities: analysisData.total_opportunities,
+            hasAnalysisResults: !!analysisData.analysis_results
+          });
+          
+          // Extract data from analysis_results if direct fields are empty
+          let propertyAddress = analysisData.user_addresses?.formatted_address || analysisData.user_addresses?.address;
+          let totalRevenue = analysisData.total_monthly_revenue || 0;
+          let totalOpportunities = analysisData.total_opportunities || 0;
+          
+          if (analysisData.analysis_results && typeof analysisData.analysis_results === 'object' && !Array.isArray(analysisData.analysis_results)) {
+            const analysisResults = analysisData.analysis_results as any; // Cast to any for property access
+            
+            // Extract property address from analysis_results if not available from user_addresses
+            if (!propertyAddress && analysisResults.propertyAddress) {
+              propertyAddress = analysisResults.propertyAddress;
+              console.log('📍 [DASHBOARD] Using address from analysis_results in fallback:', propertyAddress);
+            }
+            
+            // Extract revenue from topOpportunities if not set at analysis level
+            if (totalRevenue === 0 && analysisResults.topOpportunities && Array.isArray(analysisResults.topOpportunities)) {
+              totalRevenue = analysisResults.topOpportunities.reduce((sum: number, opp: any) => {
+                return sum + (opp.monthlyRevenue || 0);
+              }, 0);
+              console.log('💰 [DASHBOARD] Calculated revenue from opportunities in fallback:', totalRevenue);
+            }
+            
+            // Extract opportunities count from topOpportunities if not set at analysis level
+            if (totalOpportunities === 0 && analysisResults.topOpportunities && Array.isArray(analysisResults.topOpportunities)) {
+              totalOpportunities = analysisResults.topOpportunities.length;
+              console.log('🎯 [DASHBOARD] Counted opportunities in fallback:', totalOpportunities);
+            }
+          }
           
           const fallbackJourneyData: DashboardJourneyData = {
             journeyId: `fallback_${recentAnalysisId}`,
             analysisId: analysisData.id,
-            propertyAddress: analysisData.user_addresses?.formatted_address || analysisData.user_addresses?.address || 'Unknown Address',
+            propertyAddress: propertyAddress || 'Unknown Address',
             analysisResults: analysisData.analysis_results,
-            totalMonthlyRevenue: analysisData.total_monthly_revenue || 0,
-            totalOpportunities: analysisData.total_opportunities || 0,
+            totalMonthlyRevenue: totalRevenue,
+            totalOpportunities: totalOpportunities,
             selectedServices: [],
             selectedOption: 'manual',
             journeyProgress: {
