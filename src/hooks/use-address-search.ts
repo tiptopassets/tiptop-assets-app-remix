@@ -19,10 +19,13 @@ export const useAddressSearch = () => {
   
   const searchInputRef = useRef<HTMLInputElement>(null);
   const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
+  const retryCountRef = useRef(0);
   const { toast } = useToast();
   const [hasSelectedAddress, setHasSelectedAddress] = useState(false);
+  const [isRetrying, setIsRetrying] = useState(false);
   const { capturePropertyImages } = useModelGeneration();
   const userData = useUserData();
+  const maxRetries = 3;
 
   // Start analysis function
   const startAnalysis = useCallback((addressToAnalyze: string) => {
@@ -35,7 +38,7 @@ export const useAddressSearch = () => {
     generatePropertyAnalysis(addressToAnalyze);
   }, [generatePropertyAnalysis, analysisError, setAnalysisError]);
 
-  // Place change handler with database sync
+  // Place change handler with automatic retry logic
   const handlePlaceChanged = useCallback(async () => {
     if (!autocompleteRef.current || !mapInstance) return;
     
@@ -43,8 +46,28 @@ export const useAddressSearch = () => {
       const place = autocompleteRef.current.getPlace();
       console.log('handlePlaceChanged: Place data received:', place);
       
+      // Check if place data is incomplete
       if (!place.place_id || !place.geometry?.location || !place.formatted_address) {
-        console.warn('handlePlaceChanged: Incomplete place data, showing error');
+        console.warn('handlePlaceChanged: Incomplete place data, attempting automatic retry...');
+        
+        // If we haven't exceeded max retries, automatically retry
+        if (retryCountRef.current < maxRetries) {
+          retryCountRef.current++;
+          setIsRetrying(true);
+          
+          console.log(`Auto-retry attempt ${retryCountRef.current}/${maxRetries} in 150ms...`);
+          
+          // Retry after a short delay to let Google's autocomplete settle
+          setTimeout(() => {
+            handlePlaceChanged();
+          }, 150);
+          return;
+        }
+        
+        // Exceeded max retries, show error and reset
+        console.error('handlePlaceChanged: Max retries exceeded, showing error');
+        setIsRetrying(false);
+        retryCountRef.current = 0;
         toast({
           title: "Invalid Address",
           description: "Please select a valid address from the dropdown.",
@@ -52,6 +75,11 @@ export const useAddressSearch = () => {
         });
         return;
       }
+
+      // Success! Reset retry counter and state
+      console.log('handlePlaceChanged: Place data complete, proceeding...');
+      retryCountRef.current = 0;
+      setIsRetrying(false);
 
       const formattedAddress = place.formatted_address;
       const lat = place.geometry.location.lat();
@@ -94,13 +122,15 @@ export const useAddressSearch = () => {
       
     } catch (error) {
       console.error('handlePlaceChanged: Error processing place:', error);
+      setIsRetrying(false);
+      retryCountRef.current = 0;
       toast({
         title: "Address Selection Error",
         description: "There was an issue selecting the address. Please try again.",
         variant: "destructive"
       });
     }
-  }, [mapInstance, setAddress, setAddressCoordinates, capturePropertyImages, startAnalysis, toast, setHasSelectedAddress, userData]);
+  }, [mapInstance, setAddress, setAddressCoordinates, capturePropertyImages, startAnalysis, toast, setHasSelectedAddress, userData, isRetrying]);
 
   // Initialize Google Places Autocomplete
   useEffect(() => {
@@ -149,6 +179,7 @@ export const useAddressSearch = () => {
     setHasSelectedAddress,
     analysisError,
     setAnalysisError,
-    startAnalysis
+    startAnalysis,
+    isRetrying
   };
 };
