@@ -84,42 +84,46 @@ export interface FormField {
   options?: string[];
 }
 
-export interface GoogleMapState {
-  address: string;
-  addressCoordinates: google.maps.LatLngLiteral | null;
-  formattedAddress: string;
-  isAnalyzing: boolean;
-  analysisComplete: boolean;
-  analysisResults: AnalysisResults | null;
-  error: string | null;
-  currentAnalysisId: string | null;
-  currentAddressId: string | null;
-}
-
-export type GoogleMapAction = 
-  | { type: 'SET_ADDRESS'; payload: { address: string; coordinates?: google.maps.LatLngLiteral; formattedAddress?: string } }
-  | { type: 'START_ANALYSIS' }
-  | { type: 'COMPLETE_ANALYSIS'; payload: { results: AnalysisResults; analysisId?: string; addressId?: string } }
-  | { type: 'SET_ERROR'; payload: string }
-  | { type: 'RESET' }
-  | { type: 'SET_ANALYSIS_ID'; payload: string | null }
-  | { type: 'SET_ADDRESS_ID'; payload: string | null };
 
 export interface GoogleMapContextType {
   address: string;
+  setAddress: (address: string) => void;
   addressCoordinates: google.maps.LatLngLiteral | null;
-  formattedAddress: string;
-  isAnalyzing: boolean;
-  analysisComplete: boolean;
+  setAddressCoordinates: (coords: google.maps.LatLngLiteral | null) => void;
+  isLocating: boolean;
+  setIsLocating: (locating: boolean) => void;
+  isAddressValid: boolean;
+  setAddressValid: (valid: boolean) => void;
+  mapInstance: google.maps.Map | null;
+  setMapInstance: (map: google.maps.Map | null) => void;
   analysisResults: AnalysisResults | null;
-  error: string | null;
+  setAnalysisResults: (results: AnalysisResults | null) => void;
+  isGeneratingAnalysis: boolean;
+  setIsGeneratingAnalysis: (generating: boolean) => void;
+  generateAnalysis: (address: string, coords?: google.maps.LatLngLiteral, satelliteImageBase64?: string) => Promise<void>;
+  syncAnalysisToDatabase: (address: string, analysis: any, coordinates?: any, satelliteImageUrl?: string) => Promise<void>;
+  dataSyncEnabled: boolean;
+  setDataSyncEnabled: (enabled: boolean) => void;
+  propertyType: string;
+  setPropertyType: (type: string) => void;
+  satelliteImageBase64: string | null;
+  setSatelliteImageBase64: (image: string | null) => void;
+  resetMapContext: () => void;
+  isAnalyzing: boolean;
+  setIsAnalyzing: (analyzing: boolean) => void;
+  analysisComplete: boolean;
+  setAnalysisComplete: (complete: boolean) => void;
+  mapLoaded: boolean;
+  setMapLoaded: (loaded: boolean) => void;
+  generatePropertyAnalysis: (address: string) => Promise<any>;
+  analysisError: string | null;
+  setAnalysisError: (error: string | null) => void;
+  useLocalAnalysis: boolean;
+  setUseLocalAnalysis: (useLocal: boolean) => void;
+  zoomLevel: number;
+  setZoomLevel: (zoom: number) => void;
   currentAnalysisId: string | null;
+  setCurrentAnalysisId: (id: string | null) => void;
   currentAddressId: string | null;
-  setAddress: (address: string, coordinates?: google.maps.LatLngLiteral, formattedAddress?: string) => void;
-  startAnalysis: () => void;
-  completeAnalysis: (results: AnalysisResults, analysisId?: string, addressId?: string) => void;
-  setError: (error: string) => void;
-  resetAnalysis: () => void;
-  setAnalysisId: (analysisId: string | null) => void;
-  setAddressId: (addressId: string | null) => void;
+  setCurrentAddressId: (id: string | null) => void;
 }
