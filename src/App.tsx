@@ -29,6 +29,7 @@ import ModelViewer from "./pages/ModelViewer";
 import Options from "./pages/Options";
 import SettingsPage from "./pages/SettingsPage";
 import NotFound from "./pages/NotFound";
+import Auth from "./pages/Auth";
 
 const queryClient = new QueryClient();
 
@@ -46,6 +47,7 @@ function App() {
                   <ServiceProviderProvider>
                     <Routes>
                       <Route path="/" element={<Index />} />
+                      <Route path="/auth" element={<Auth />} />
                       <Route path="/dashboard" element={<Dashboard />} />
                       <Route path="/dashboard/analytics" element={<AnalyticsDashboard />} />
                       <Route path="/dashboard/rooftop" element={<RooftopDashboard />} />

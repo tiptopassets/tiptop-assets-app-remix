@@ -79,7 +79,7 @@ const Index = () => {
               </Link>
             )}
             <Link 
-              to="/dashboard" 
+              to={user ? "/dashboard" : "/auth"} 
               className="glass-effect px-2 py-1 sm:px-3 sm:py-2 md:px-4 md:py-2 rounded-full flex items-center gap-1 sm:gap-2 text-white hover:scale-105 transition-transform text-xs sm:text-sm md:text-base relative"
             >
               <span className="text-gray-100">Dashboard</span>
