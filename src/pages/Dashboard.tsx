@@ -26,7 +26,7 @@ const Dashboard = () => {
       revenue: journeyData.totalMonthlyRevenue,
       opportunities: journeyData.totalOpportunities,
       selectedOption: journeyData.selectedOption,
-      currentStep: journeyData.journeyProgress?.currentStep,
+      currentStep: journeyData.journeyProgress?.current_step,
       coordinates: journeyData.analysisResults?.coordinates || journeyData.analysisResults?.propertyCoordinates
     } : null
   });
@@ -113,7 +113,7 @@ const Dashboard = () => {
     analysis_results: journeyData.analysisResults,
     total_monthly_revenue: journeyData.totalMonthlyRevenue,
     total_opportunities: journeyData.totalOpportunities,
-    created_at: journeyData.journeyProgress?.journeyStart || new Date().toISOString(),
+    created_at: journeyData.journeyProgress?.journey_start || new Date().toISOString(),
     satellite_image_url: journeyData.analysisResults?.rooftop?.satelliteImageUrl,
     coordinates: coordinates
   };

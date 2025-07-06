@@ -4,25 +4,30 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { getRecentAnalysisId, autoRecoverUserData } from '@/services/dataRecoveryService';
 
-interface PropertyData {
+export interface AssetInfo {
+  type: string;
+  name: string;
+  monthlyRevenue: number;
+  setupCost: number;
+  description: string;
+  hasRevenuePotential: boolean;
+  isConfigured: boolean;
+  area?: number;
+}
+
+export interface PropertyAnalysisData {
   analysisId: string;
   address: string;
   coordinates?: any;
   totalMonthlyRevenue: number;
   totalOpportunities: number;
-  availableAssets: Array<{
-    type: string;
-    name: string;
-    monthlyRevenue: number;
-    setupCost: number;
-    description: string;
-  }>;
+  availableAssets: AssetInfo[];
   analysisResults: any;
 }
 
 export const useUserPropertyAnalysis = (targetAnalysisId?: string) => {
   const { user } = useAuth();
-  const [propertyData, setPropertyData] = useState<PropertyData | null>(null);
+  const [propertyData, setPropertyData] = useState<PropertyAnalysisData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -100,18 +105,23 @@ export const useUserPropertyAnalysis = (targetAnalysisId?: string) => {
 
         // Process analysis results to extract available assets
         const analysisResults = analysisData.analysis_results;
-        const availableAssets = [];
+        const availableAssets: AssetInfo[] = [];
 
-        // Extract assets from analysis results
-        if (analysisResults?.topOpportunities) {
-          for (const opportunity of analysisResults.topOpportunities) {
-            availableAssets.push({
-              type: opportunity.title.toLowerCase().replace(/\s+/g, '_'),
-              name: opportunity.title,
-              monthlyRevenue: opportunity.monthlyRevenue || 0,
-              setupCost: opportunity.setupCost || 0,
-              description: opportunity.description || `Monetize your ${opportunity.title.toLowerCase()}`
-            });
+        // Extract assets from analysis results with proper type checking
+        if (analysisResults && typeof analysisResults === 'object' && 'topOpportunities' in analysisResults) {
+          const topOpportunities = (analysisResults as any).topOpportunities;
+          if (Array.isArray(topOpportunities)) {
+            for (const opportunity of topOpportunities) {
+              availableAssets.push({
+                type: opportunity.title.toLowerCase().replace(/\s+/g, '_'),
+                name: opportunity.title,
+                monthlyRevenue: opportunity.monthlyRevenue || 0,
+                setupCost: opportunity.setupCost || 0,
+                description: opportunity.description || `Monetize your ${opportunity.title.toLowerCase()}`,
+                hasRevenuePotential: (opportunity.monthlyRevenue || 0) > 0,
+                isConfigured: false
+              });
+            }
           }
         }
 
@@ -121,7 +131,7 @@ export const useUserPropertyAnalysis = (targetAnalysisId?: string) => {
           throw new Error('Address information not found for analysis');
         }
 
-        const propertyData: PropertyData = {
+        const propertyData: PropertyAnalysisData = {
           analysisId: analysisData.id,
           address: addressInfo.formatted_address || addressInfo.address,
           coordinates: analysisData.coordinates || addressInfo.coordinates,

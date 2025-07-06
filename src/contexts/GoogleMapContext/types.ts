@@ -84,53 +84,42 @@ export interface FormField {
   options?: string[];
 }
 
-export interface GoogleMapContextType {
-  mapInstance: google.maps.Map | null;
-  setMapInstance: React.Dispatch<React.SetStateAction<google.maps.Map | null>>;
+export interface GoogleMapState {
   address: string;
-  setAddress: React.Dispatch<React.SetStateAction<string>>;
-  isAnalyzing: boolean;
-  setIsAnalyzing: React.Dispatch<React.SetStateAction<boolean>>;
-  analysisComplete: boolean;
-  setAnalysisComplete: React.Dispatch<React.SetStateAction<boolean>>;
-  analysisResults: AnalysisResults | null;
-  setAnalysisResults: React.Dispatch<React.SetStateAction<AnalysisResults | null>>;
-  mapLoaded: boolean;
-  setMapLoaded: React.Dispatch<React.SetStateAction<boolean>>;
   addressCoordinates: google.maps.LatLngLiteral | null;
-  setAddressCoordinates: React.Dispatch<React.SetStateAction<google.maps.LatLngLiteral | null>>;
-  generatePropertyAnalysis: (propertyAddress: string) => Promise<void>;
-  isGeneratingAnalysis: boolean;
-  analysisError: string | null;
-  setAnalysisError: React.Dispatch<React.SetStateAction<string | null>>;
-  useLocalAnalysis: boolean;
-  setUseLocalAnalysis: React.Dispatch<React.SetStateAction<boolean>>;
-  zoomLevel: number;
-  setZoomLevel: React.Dispatch<React.SetStateAction<number>>;
+  formattedAddress: string;
+  isAnalyzing: boolean;
+  analysisComplete: boolean;
+  analysisResults: AnalysisResults | null;
+  error: string | null;
+  currentAnalysisId: string | null;
+  currentAddressId: string | null;
 }
 
-// Update the interface used by the provider
-export interface GoogleMapContextProps extends GoogleMapContextType {
-  // Additional properties that were in the original provider
+export type GoogleMapAction = 
+  | { type: 'SET_ADDRESS'; payload: { address: string; coordinates?: google.maps.LatLngLiteral; formattedAddress?: string } }
+  | { type: 'START_ANALYSIS' }
+  | { type: 'COMPLETE_ANALYSIS'; payload: { results: AnalysisResults; analysisId?: string; addressId?: string } }
+  | { type: 'SET_ERROR'; payload: string }
+  | { type: 'RESET' }
+  | { type: 'SET_ANALYSIS_ID'; payload: string | null }
+  | { type: 'SET_ADDRESS_ID'; payload: string | null };
+
+export interface GoogleMapContextType {
+  address: string;
   addressCoordinates: google.maps.LatLngLiteral | null;
-  setAddressCoordinates: (coords: google.maps.LatLngLiteral | null) => void;
-  isLocating: boolean;
-  setIsLocating: (isLocating: boolean) => void;
-  isAddressValid: boolean;
-  setAddressValid: (isValid: boolean) => void;
-  generateAnalysis: (address: string, coords?: google.maps.LatLngLiteral, satelliteImageBase64?: string) => Promise<void>;
-  syncAnalysisToDatabase: (address: string, analysis: any, coordinates?: any, satelliteImageUrl?: string) => Promise<void>;
-  dataSyncEnabled: boolean;
-  setDataSyncEnabled: (enabled: boolean) => void;
-  propertyType: string | null;
-  setPropertyType: (type: string | null) => void;
-  satelliteImageBase64: string | null;
-  setSatelliteImageBase64: (base64: string | null) => void;
-  resetMapContext: () => void;
-  isGeneratingAnalysis: boolean;
-  setIsGeneratingAnalysis: React.Dispatch<React.SetStateAction<boolean>>;
+  formattedAddress: string;
+  isAnalyzing: boolean;
+  analysisComplete: boolean;
+  analysisResults: AnalysisResults | null;
+  error: string | null;
   currentAnalysisId: string | null;
-  setCurrentAnalysisId: React.Dispatch<React.SetStateAction<string | null>>;
   currentAddressId: string | null;
-  setCurrentAddressId: React.Dispatch<React.SetStateAction<string | null>>;
+  setAddress: (address: string, coordinates?: google.maps.LatLngLiteral, formattedAddress?: string) => void;
+  startAnalysis: () => void;
+  completeAnalysis: (results: AnalysisResults, analysisId?: string, addressId?: string) => void;
+  setError: (error: string) => void;
+  resetAnalysis: () => void;
+  setAnalysisId: (analysisId: string | null) => void;
+  setAddressId: (addressId: string | null) => void;
 }

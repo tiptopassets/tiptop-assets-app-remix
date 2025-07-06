@@ -64,7 +64,19 @@ export const useDashboardJourneyData = () => {
           totalOpportunities: data.total_opportunities || 0,
           selectedServices: data.selected_services || [],
           selectedOption: data.selected_option || 'manual',
-          journeyProgress: data.journey_progress
+          journeyProgress: typeof data.journey_progress === 'object' && data.journey_progress !== null 
+            ? data.journey_progress as {
+                steps_completed: string[];
+                current_step: string;
+                journey_start: string;
+                last_activity: string;
+              }
+            : {
+                steps_completed: [],
+                current_step: 'analysis_completed',
+                journey_start: new Date().toISOString(),
+                last_activity: new Date().toISOString()
+              }
         });
         setLoading(false);
         return;
