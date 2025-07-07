@@ -11,6 +11,7 @@ import RestrictionsCard from './RestrictionsCard';
 import { useGoogleMap } from '@/contexts/GoogleMapContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { useAssetSelection } from '@/hooks/useAssetSelection';
 import { useJourneyTracking } from '@/hooks/useJourneyTracking';
 import { getRecentAnalysisId, validateAssetSelectionData } from '@/services/dataRecoveryService';
 
@@ -30,6 +31,7 @@ const AssetResultList: React.FC<AssetResultListProps> = ({
   const { analysisComplete, address, addressCoordinates, currentAnalysisId, currentAddressId } = useGoogleMap();
   const { user } = useAuth();
   const { toast } = useToast();
+  const { saveSelection } = useAssetSelection();
   const { trackOption } = useJourneyTracking();
 
   console.log('🏠 AssetResultList render:', {
@@ -129,7 +131,7 @@ const AssetResultList: React.FC<AssetResultListProps> = ({
   }, [analysisResults]);
 
   // Memoize the asset toggle handler to prevent unnecessary re-renders
-  const handleAssetToggle = useCallback((assetTitle: string) => {
+  const handleAssetToggle = useCallback(async (assetTitle: string) => {
     console.log('🔄 Asset toggle called for:', assetTitle);
     console.log('📊 Current selectedAssets:', selectedAssets);
     
@@ -145,6 +147,13 @@ const AssetResultList: React.FC<AssetResultListProps> = ({
           console.log('📋 New selectedAssetsData after removal:', newData);
           return newData;
         });
+        
+        // Remove from database if user is authenticated
+        if (user) {
+          // Note: We don't have a removeSelection function yet, but for now we just update local state
+          console.log('🗑️ Would remove from database:', assetTitle);
+        }
+        
         const newSelectedAssets = prev.filter(title => title !== assetTitle);
         console.log('📊 New selectedAssets after removal:', newSelectedAssets);
         return newSelectedAssets;
@@ -177,6 +186,39 @@ const AssetResultList: React.FC<AssetResultListProps> = ({
             console.log('📋 New selectedAssetsData after addition:', newData);
             return newData;
           });
+          
+          // Save to database if user is authenticated
+          if (user) {
+            saveSelection(
+              assetData.title,
+              { 
+                source: 'asset_opportunities_grid',
+                icon: assetData.icon,
+                provider: assetData.provider,
+                description: assetData.description 
+              },
+              assetData.monthlyRevenue,
+              assetData.setupCost || 0,
+              assetData.roi
+            ).then((result) => {
+              if (result) {
+                console.log('✅ Asset saved to database:', result);
+                toast({
+                  title: "Asset Selected",
+                  description: `${assetData.title} added to your selections ($${assetData.monthlyRevenue}/month)`,
+                });
+              }
+            }).catch((error) => {
+              console.error('❌ Failed to save asset to database:', error);
+              toast({
+                title: "Save Failed",
+                description: "Asset selected locally but failed to save to database",
+                variant: "destructive"
+              });
+            });
+          } else {
+            console.log('👤 User not authenticated - asset selected locally only');
+          }
         } else {
           console.error('❌ Asset data not found for:', assetTitle);
         }
@@ -186,7 +228,7 @@ const AssetResultList: React.FC<AssetResultListProps> = ({
         return newSelectedAssets;
       }
     });
-  }, [additionalOpportunities, selectedAssets, displayOpportunities]);
+  }, [additionalOpportunities, selectedAssets, displayOpportunities, user, saveSelection, toast]);
 
   const handleContinue = useCallback(() => {
     console.log('🚀 Continue clicked');
