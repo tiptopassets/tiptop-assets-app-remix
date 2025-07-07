@@ -10,7 +10,7 @@ import { PropertyAnalysisData } from '@/hooks/useUserPropertyAnalysis';
 import ConversationAnalytics from '@/components/onboarding/ConversationAnalytics';
 
 interface ChatbotSidebarProps {
-  propertyData?: PropertyAnalysisData | null;
+  propertyData?: any; // Updated to accept unified data structure
   analysisId?: string | null;
   targetAsset?: string | null;
   hasPropertyData: boolean;
@@ -94,6 +94,22 @@ const ChatbotSidebar: React.FC<ChatbotSidebarProps> = ({
                     <Badge className="bg-tiptop-purple text-white">
                       {targetAsset.replace('_', ' ')} Setup
                     </Badge>
+                  </div>
+                )}
+                {propertyData?.selectedAssets && propertyData.selectedAssets.length > 0 && (
+                  <div>
+                    <p className="text-sm font-medium text-gray-700">Selected Assets ({propertyData.selectedAssets.length})</p>
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      {propertyData.selectedAssets.map((selection: any) => (
+                        <Badge 
+                          key={selection.id} 
+                          variant="secondary" 
+                          className="text-xs bg-green-100 text-green-800 border-green-200"
+                        >
+                          {selection.asset_type.replace('_', ' ')} (${selection.monthly_revenue}/mo)
+                        </Badge>
+                      ))}
+                    </div>
                   </div>
                 )}
               </div>

@@ -1,10 +1,12 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { useSearchParams } from 'react-router-dom';
 import { useUserPropertyAnalysis } from '@/hooks/useUserPropertyAnalysis';
+import { useDashboardJourneyData } from '@/hooks/useDashboardJourneyData';
+import { useUserAssetSelections } from '@/hooks/useUserAssetSelections';
 import { useJourneyTracking } from '@/hooks/useJourneyTracking';
 import EnhancedChatInterface from '@/components/onboarding/EnhancedChatInterface';
 import ChatbotLoadingState from '@/components/onboarding/ChatbotLoadingState';
@@ -30,6 +32,12 @@ const EnhancedOnboardingChatbot = () => {
   // Enhanced property analysis integration with fallback to journey data
   const { propertyData, loading: propertyLoading, hasPropertyData } = useUserPropertyAnalysis(analysisId || undefined);
   
+  // Use dashboard journey data as primary source (same as dashboard)
+  const { journeyData, loading: journeyLoading } = useDashboardJourneyData();
+  
+  // Get asset selections (same as dashboard)
+  const { assetSelections, loading: assetsLoading } = useUserAssetSelections();
+  
   // Use journey tracking to get dashboard data as fallback
   const { getDashboardData } = useJourneyTracking();
   
@@ -39,29 +47,65 @@ const EnhancedOnboardingChatbot = () => {
   const [messageCount, setMessageCount] = useState(0);
   const [showAnalytics, setShowAnalytics] = useState(false);
   
-  // Initialize conversation with target asset if provided
-  useEffect(() => {
-    if (propertyData && targetAsset && !propertyLoading) {
-      console.log('🎯 [ONBOARDING] Initializing with target asset:', {
-        targetAsset,
-        analysisId: propertyData.analysisId,
-        address: propertyData.address,
-        availableAssets: propertyData.availableAssets.map(a => a.type)
+  // Create a unified data object that prioritizes journey data (same as dashboard)
+  const unifiedPropertyData = useMemo(() => {
+    if (journeyData) {
+      console.log('🎯 [CHATBOT] Using journey data as primary source:', {
+        address: journeyData.propertyAddress,
+        analysisId: journeyData.analysisId,
+        revenue: journeyData.totalMonthlyRevenue,
+        opportunities: journeyData.totalOpportunities
       });
       
-      const assetInfo = propertyData.availableAssets.find(a => a.type === targetAsset);
+      return {
+        analysisId: journeyData.analysisId || analysisId || '',
+        address: journeyData.propertyAddress,
+        coordinates: journeyData.analysisResults?.coordinates || journeyData.analysisResults?.propertyCoordinates,
+        totalMonthlyRevenue: journeyData.totalMonthlyRevenue,
+        totalOpportunities: journeyData.totalOpportunities,
+        availableAssets: propertyData?.availableAssets || [],
+        analysisResults: journeyData.analysisResults,
+        selectedAssets: assetSelections || []
+      };
+    } else if (propertyData) {
+      console.log('🎯 [CHATBOT] Using property analysis data as fallback:', {
+        address: propertyData.address,
+        analysisId: propertyData.analysisId,
+        revenue: propertyData.totalMonthlyRevenue
+      });
+      
+      return {
+        ...propertyData,
+        selectedAssets: assetSelections || []
+      };
+    }
+    return null;
+  }, [journeyData, propertyData, assetSelections, analysisId]);
+
+  // Initialize conversation with target asset if provided
+  useEffect(() => {
+    if (unifiedPropertyData && targetAsset && !propertyLoading && !journeyLoading) {
+      console.log('🎯 [ONBOARDING] Initializing with target asset:', {
+        targetAsset,
+        analysisId: unifiedPropertyData.analysisId,
+        address: unifiedPropertyData.address,
+        availableAssets: unifiedPropertyData.availableAssets.map(a => a.type),
+        selectedAssetsCount: unifiedPropertyData.selectedAssets.length
+      });
+      
+      const assetInfo = unifiedPropertyData.availableAssets.find(a => a.type === targetAsset);
       if (assetInfo) {
         setDetectedAssets([targetAsset]);
         setConversationStage('asset_configuration');
         
         toast({
           title: "Asset Setup Started",
-          description: `Let's configure your ${assetInfo.name} at ${propertyData.address} for $${assetInfo.monthlyRevenue}/month potential earnings.`,
+          description: `Let's configure your ${assetInfo.name} at ${unifiedPropertyData.address} for $${assetInfo.monthlyRevenue}/month potential earnings.`,
         });
       } else {
         console.warn('⚠️ [ONBOARDING] Target asset not found in analysis:', {
           targetAsset,
-          availableAssets: propertyData.availableAssets.map(a => a.type)
+          availableAssets: unifiedPropertyData.availableAssets.map(a => a.type)
         });
         
         toast({
@@ -71,7 +115,7 @@ const EnhancedOnboardingChatbot = () => {
         });
       }
     }
-  }, [propertyData, targetAsset, propertyLoading, toast]);
+  }, [unifiedPropertyData, targetAsset, propertyLoading, journeyLoading, toast]);
 
   const [analytics, setAnalytics] = useState({
     totalMessages: 0,
@@ -100,11 +144,14 @@ const EnhancedOnboardingChatbot = () => {
   const generateKeyInsights = (assets: string[], stage: string) => {
     const insights: string[] = [];
     
-    if (propertyData) {
-      insights.push(`Property analyzed: ${propertyData.address}`);
-      insights.push(`Total potential: $${propertyData.totalMonthlyRevenue}/month`);
-      if (analysisId) {
-        insights.push(`Analysis ID: ${analysisId}`);
+    if (unifiedPropertyData) {
+      insights.push(`Property analyzed: ${unifiedPropertyData.address}`);
+      insights.push(`Total potential: $${unifiedPropertyData.totalMonthlyRevenue}/month`);
+      if (unifiedPropertyData.analysisId) {
+        insights.push(`Analysis ID: ${unifiedPropertyData.analysisId}`);
+      }
+      if (unifiedPropertyData.selectedAssets.length > 0) {
+        insights.push(`${unifiedPropertyData.selectedAssets.length} assets already selected`);
       }
     }
     
@@ -130,21 +177,21 @@ const EnhancedOnboardingChatbot = () => {
     setMessageCount(prev => prev + 1);
   };
 
-  // Loading state - wait for both auth and property data
-  const isLoading = authLoading || (propertyLoading && !propertyData);
+  // Loading state - wait for auth and data
+  const isLoading = authLoading || (propertyLoading && journeyLoading && !unifiedPropertyData);
 
   if (isLoading) {
     return (
       <ChatbotLoadingState 
         isAuthLoading={authLoading}
-        analysisId={analysisId}
-        propertyAddress={propertyData?.address}
+        analysisId={unifiedPropertyData?.analysisId || analysisId}
+        propertyAddress={unifiedPropertyData?.address}
       />
     );
   }
 
-  // Show error state if no property data after loading
-  if (!propertyData && !propertyLoading) {
+  // Show error state if no data after loading
+  if (!unifiedPropertyData && !propertyLoading && !journeyLoading) {
     return <ChatbotErrorState analysisId={analysisId} />;
   }
 
@@ -153,7 +200,7 @@ const EnhancedOnboardingChatbot = () => {
       {/* Header */}
       <ChatbotHeader
         targetAsset={targetAsset}
-        hasPropertyData={hasPropertyData}
+        hasPropertyData={!!unifiedPropertyData}
         conversationStage={conversationStage}
         showAnalytics={showAnalytics}
         onToggleAnalytics={() => setShowAnalytics(!showAnalytics)}
@@ -168,17 +215,17 @@ const EnhancedOnboardingChatbot = () => {
               <EnhancedChatInterface
                 onAssetDetected={handleAssetDetected}
                 onConversationStageChange={handleConversationStageChange}
-                propertyData={propertyData}
+                propertyData={unifiedPropertyData}
               />
             </Card>
           </div>
 
           {/* Sidebar */}
           <ChatbotSidebar
-            propertyData={propertyData}
-            analysisId={analysisId}
+            propertyData={unifiedPropertyData}
+            analysisId={unifiedPropertyData?.analysisId || analysisId}
             targetAsset={targetAsset}
-            hasPropertyData={hasPropertyData}
+            hasPropertyData={!!unifiedPropertyData}
             showAnalytics={showAnalytics}
             analytics={analytics}
           />
