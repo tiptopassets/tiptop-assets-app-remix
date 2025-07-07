@@ -31,14 +31,37 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
   const analysisResults = latestAnalysis?.analysis_results;
   const { assetSelections, isAssetConfigured } = useUserAssetSelections();
   
-  // Calculate actual totals based on user selections
+  // Calculate actual totals based on user selections with deduplication
   const hasUserSelections = assetSelections.length > 0;
+  
+  // Deduplicate asset selections for accurate calculations
+  const uniqueAssetSelections = hasUserSelections ? assetSelections.reduce((acc, selection) => {
+    const existingIndex = acc.findIndex(existing => 
+      existing.asset_type.toLowerCase() === selection.asset_type.toLowerCase()
+    );
+    
+    if (existingIndex === -1) {
+      // Asset type not found, add it
+      acc.push(selection);
+    } else {
+      // Asset type exists, keep the more recent one
+      const existingDate = new Date(acc[existingIndex].selected_at);
+      const currentDate = new Date(selection.selected_at);
+      
+      if (currentDate > existingDate) {
+        acc[existingIndex] = selection;
+      }
+    }
+    
+    return acc;
+  }, [] as typeof assetSelections) : [];
+
   const actualTotalRevenue = hasUserSelections 
-    ? assetSelections.reduce((sum, selection) => sum + (selection.monthly_revenue || 0), 0)
+    ? uniqueAssetSelections.reduce((sum, selection) => sum + (selection.monthly_revenue || 0), 0)
     : totalMonthlyRevenue;
   
   const actualTotalOpportunities = hasUserSelections 
-    ? assetSelections.length 
+    ? uniqueAssetSelections.length 
     : totalOpportunities;
 
   return (
