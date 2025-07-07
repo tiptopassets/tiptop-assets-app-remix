@@ -5,6 +5,7 @@ import { Progress } from '@/components/ui/progress';
 import { useGoogleMap } from '@/contexts/GoogleMapContext';
 import { useEnhancedAnalysis } from '@/hooks/useEnhancedAnalysis';
 import { useAuth } from '@/contexts/AuthContext';
+import { useAddressSearch } from '@/hooks/use-address-search';
 import { Zap, CheckCircle, Database, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
@@ -18,6 +19,7 @@ const AnalyzeButton = () => {
     setAnalysisComplete 
   } = useGoogleMap();
   const { analyzeProperty, isLoading: isEnhancedLoading } = useEnhancedAnalysis();
+  const { hasSelectedAddress, isRetrying } = useAddressSearch();
   const { user } = useAuth();
   const { toast } = useToast();
   const [analysisStarted, setAnalysisStarted] = useState(false);
@@ -29,6 +31,16 @@ const AnalyzeButton = () => {
       toast({
         title: "Address Required",
         description: "Please enter a property address first.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Check if address was properly selected from autocomplete
+    if (!hasSelectedAddress) {
+      toast({
+        title: "Please Select Address",
+        description: "Choose your address from the dropdown suggestions to ensure accurate analysis.",
         variant: "destructive"
       });
       return;
@@ -132,11 +144,13 @@ const AnalyzeButton = () => {
     <div className="w-full max-w-md mx-auto">
       <Button
         onClick={handleUnifiedAnalysis}
-        disabled={isLoading || analysisStarted || !hasAddress}
+        disabled={isLoading || analysisStarted || !hasAddress || !hasSelectedAddress || isRetrying}
         className={`w-full ${hasAddress 
-          ? hasError 
-            ? 'bg-red-600 hover:bg-red-700' 
-            : 'bg-gradient-to-r from-tiptop-purple to-purple-600 hover:from-purple-600 hover:to-purple-700'
+          ? hasSelectedAddress
+            ? hasError 
+              ? 'bg-red-600 hover:bg-red-700' 
+              : 'bg-gradient-to-r from-tiptop-purple to-purple-600 hover:from-purple-600 hover:to-purple-700'
+            : 'bg-amber-600 hover:bg-amber-700'
           : 'bg-gray-600 hover:bg-gray-700'
         } text-white font-semibold py-3 px-6 rounded-full transition-all duration-300 transform hover:scale-105`}
         size="lg"
@@ -187,16 +201,21 @@ const AnalyzeButton = () => {
       
       {!analysisStarted && !hasError && (
         <p className="text-center text-sm text-gray-400 mt-2">
-          {hasAddress ? (
-            user ? (
-              <>🚀 Multi-source analysis with Google Solar + GPT-4o<br/>
-              <span className="text-xs">✅ Results will be saved to your dashboard</span></>
-            ) : (
-              <>🏠 Basic property analysis - sign in for enhanced features<br/>
-              <span className="text-xs">ℹ️ Sign in to save results to dashboard</span></>
-            )
-          ) : (
+          {!hasAddress ? (
             <>📍 Enter an address above to start analysis</>
+          ) : !hasSelectedAddress ? (
+            isRetrying ? (
+              <>🔄 Selecting address automatically...</>
+            ) : (
+              <>⚠️ Please select your address from the dropdown suggestions<br/>
+              <span className="text-xs text-amber-400">📋 Choose from the list to ensure accurate analysis</span></>
+            )
+          ) : user ? (
+            <>🚀 Multi-source analysis with Google Solar + GPT-4o<br/>
+            <span className="text-xs">✅ Results will be saved to your dashboard</span></>
+          ) : (
+            <>🏠 Basic property analysis - sign in for enhanced features<br/>
+            <span className="text-xs">ℹ️ Sign in to save results to dashboard</span></>
           )}
         </p>
       )}
