@@ -59,7 +59,7 @@ async function createAssistant(data: any) {
   
   const systemPrompt = `You are an AI assistant for Tiptop, a platform that helps homeowners monetize their property assets (rooftops, parking spaces, pools, internet bandwidth, storage, etc.).
 
-Your role is to guide users through asset monetization in a conversational, helpful way.
+Your role is to guide users through asset monetization and partner onboarding in a conversational, helpful way.
 
 CONTEXT:
 ${propertyData ? `
@@ -69,28 +69,45 @@ ${propertyData ? `
 - Analysis ID: ${propertyData.analysisId}
 ` : 'No property data available yet.'}
 
+PARTNER INTEGRATION FOCUS:
+You now have access to detailed partner information and can provide step-by-step onboarding guidance for:
+- **Swimply**: Pool rentals ($150-800/month) - for swimming pools, hot tubs
+- **Neighbor.com**: Storage rentals ($50-300/month) - for garages, basements, storage spaces
+- **Peerspace**: Event space rentals ($100-500/month) - for unique spaces, meeting rooms
+- **SpotHero**: Parking space rentals ($75-400/month) - for driveways, parking spots
+
 CONVERSATION STYLE:
 - Be conversational, friendly, and encouraging
-- Ask one question at a time to avoid overwhelming users
-- Explain monetization opportunities in simple terms
-- Focus on practical next steps and actionable advice
-- Use the user's property data to provide personalized recommendations
+- Focus on ONE asset/partner at a time for focused guidance
+- Provide specific, actionable steps with document requirements
+- Always include referral links and earning estimates
+- Track user progress through the onboarding process
 
 AVAILABLE FUNCTIONS:
-- collectAddress: Gather property address and location details
-- suggestAssetOpportunities: Recommend specific monetization options
-- saveUserResponse: Store structured user inputs to database
-- connectServiceProviders: Link users with relevant partners
+- getPartnerOnboardingGuide: Get detailed step-by-step guidance for specific partners
+- getPartnerRequirements: Get documents and requirements for partner registration
+- connectServiceProviders: Connect users with partners using referral links
+- trackReferralConversion: Track when users click links or complete registrations
+- saveUserResponse: Store progress and user inputs
+- collectAddress: Gather property details
+
+PARTNER ONBOARDING PROCESS:
+1. **Identify the asset** the user wants to monetize
+2. **Get partner requirements** - what documents/info they need
+3. **Provide step-by-step guidance** - exact setup process
+4. **Share referral link** with tracking for commission
+5. **Follow up** on registration progress and next steps
+6. **Track conversions** for affiliate earnings
 
 GUIDELINES:
-1. Start by understanding what the user wants to achieve
-2. Guide them through asset selection based on their property analysis
-3. Collect necessary information step-by-step (photos, preferences, etc.)
-4. Provide realistic earning estimates and timelines
-5. Connect them with appropriate service providers when ready
-6. Save all important data using the available functions
+1. When user mentions an asset, immediately get partner requirements and onboarding guide
+2. Be specific about documents needed (photos, ID, insurance, bank details, etc.)
+3. Provide realistic timelines (setup time + approval time)
+4. Always use our referral links to ensure we get commission
+5. Track all user actions for affiliate earnings
+6. Guide users through the complete onboarding process step-by-step
 
-Remember: Your goal is to help users successfully monetize their assets while providing excellent customer experience.`;
+Remember: Your goal is to successfully onboard users to our partner platforms while maximizing affiliate earnings through smooth, guided experiences.`;
 
   const response = await fetch('https://api.openai.com/v1/assistants', {
     method: 'POST',
@@ -172,8 +189,46 @@ Remember: Your goal is to help users successfully monetize their assets while pr
         {
           type: 'function',
           function: {
+            name: 'getPartnerOnboardingGuide',
+            description: 'Get detailed step-by-step onboarding guidance for a specific partner and asset type',
+            parameters: {
+              type: 'object',
+              properties: {
+                partnerName: {
+                  type: 'string',
+                  description: 'Name of the partner platform (e.g., Swimply, Neighbor.com, Peerspace, SpotHero)'
+                },
+                assetType: {
+                  type: 'string', 
+                  description: 'Type of asset to onboard (e.g., pool, storage, parking, event_space)'
+                }
+              },
+              required: ['partnerName', 'assetType']
+            }
+          }
+        },
+        {
+          type: 'function',
+          function: {
+            name: 'getPartnerRequirements',
+            description: 'Get detailed requirements, documents needed, and setup time for a specific partner',
+            parameters: {
+              type: 'object',
+              properties: {
+                partnerName: {
+                  type: 'string',
+                  description: 'Name of the partner platform'
+                }
+              },
+              required: ['partnerName']
+            }
+          }
+        },
+        {
+          type: 'function',
+          function: {
             name: 'connectServiceProviders',
-            description: 'Connect user with relevant service providers based on their asset selections',
+            description: 'Connect user with relevant service providers with referral links and onboarding guidance',
             parameters: {
               type: 'object',
               properties: {
@@ -183,9 +238,35 @@ Remember: Your goal is to help users successfully monetize their assets while pr
                   description: 'Asset types to find providers for'
                 },
                 userLocation: { type: 'string', description: 'User location for local providers' },
-                setupPreference: { type: 'string', enum: ['diy', 'guided', 'full_service'] }
+                setupPreference: { type: 'string', enum: ['diy', 'guided', 'full_service'] },
+                partnerName: { type: 'string', description: 'Specific partner to connect with (optional)' }
               },
               required: ['assetTypes']
+            }
+          }
+        },
+        {
+          type: 'function',
+          function: {
+            name: 'trackReferralConversion',
+            description: 'Track when user clicks on referral link or completes partner registration',
+            parameters: {
+              type: 'object',
+              properties: {
+                partnerName: {
+                  type: 'string',
+                  description: 'Partner name for tracking'
+                },
+                action: {
+                  type: 'string',
+                  description: 'Action taken (link_clicked, registration_started, registration_completed)'
+                },
+                userId: {
+                  type: 'string',
+                  description: 'User ID for tracking'
+                }
+              },
+              required: ['partnerName', 'action']
             }
           }
         }
@@ -379,8 +460,17 @@ async function submitToolOutputs(data: any, supabase: any) {
           case 'saveUserResponse':
             result = await handleSaveUserResponse(functionArgs, userId, supabase);
             break;
+          case 'getPartnerOnboardingGuide':
+            result = await handleGetPartnerOnboardingGuide(functionArgs, userId, supabase);
+            break;
+          case 'getPartnerRequirements':
+            result = await handleGetPartnerRequirements(functionArgs, userId, supabase);
+            break;
           case 'connectServiceProviders':
             result = await handleConnectServiceProviders(functionArgs, userId, supabase);
+            break;
+          case 'trackReferralConversion':
+            result = await handleTrackReferralConversion(functionArgs, userId, supabase);
             break;
           default:
             result = { error: `Unknown function: ${function_name}` };
@@ -601,6 +691,152 @@ async function handleConnectServiceProviders(args: any, userId: string, supabase
       providers: connections,
       totalProviders: connections.length,
       assetTypes: args.assetTypes
+    };
+  } catch (error) {
+    return { 
+      success: false, 
+      error: error.message 
+    };
+  }
+}
+
+async function handleGetPartnerOnboardingGuide(args: any, userId: string, supabase: any) {
+  console.log('📋 Getting partner onboarding guide:', args);
+  
+  try {
+    const { data: provider, error } = await supabase
+      .from('enhanced_service_providers')
+      .select('*')
+      .eq('name', args.partnerName)
+      .single();
+
+    if (error) throw error;
+
+    if (!provider) {
+      return {
+        success: false,
+        error: `Partner ${args.partnerName} not found`
+      };
+    }
+
+    // Get detailed setup requirements
+    const { data: requirements, error: reqError } = await supabase
+      .from('provider_setup_requirements')
+      .select('*')
+      .eq('provider_id', provider.id)
+      .order('requirement_key');
+
+    if (reqError) throw reqError;
+
+    const setupSteps = requirements?.map((req: any) => req.requirement_value) || [];
+    const setupRequirements = JSON.parse(provider.setup_requirements || '{}');
+
+    return {
+      success: true,
+      partner: provider.name,
+      assetType: args.assetType,
+      description: provider.description,
+      setupSteps,
+      documentsNeeded: setupRequirements.documents || [],
+      requirements: setupRequirements.requirements || [],
+      setupTime: setupRequirements.setup_time || 'Not specified',
+      approvalTime: setupRequirements.approval_time || 'Not specified',
+      instructions: provider.setup_instructions,
+      referralLink: provider.referral_link_template,
+      earningsRange: `$${provider.avg_monthly_earnings_low}-${provider.avg_monthly_earnings_high}/month`
+    };
+  } catch (error) {
+    return { 
+      success: false, 
+      error: error.message 
+    };
+  }
+}
+
+async function handleGetPartnerRequirements(args: any, userId: string, supabase: any) {
+  console.log('📝 Getting partner requirements:', args);
+  
+  try {
+    const { data: provider, error } = await supabase
+      .from('enhanced_service_providers')
+      .select('*')
+      .eq('name', args.partnerName)
+      .single();
+
+    if (error) throw error;
+
+    if (!provider) {
+      return {
+        success: false,
+        error: `Partner ${args.partnerName} not found`
+      };
+    }
+
+    const setupRequirements = JSON.parse(provider.setup_requirements || '{}');
+
+    return {
+      success: true,
+      partner: provider.name,
+      documents: setupRequirements.documents || [],
+      requirements: setupRequirements.requirements || [],
+      setupTime: setupRequirements.setup_time || 'Not specified',
+      approvalTime: setupRequirements.approval_time || 'Not specified',
+      supportedAssets: provider.asset_types || [],
+      earningsEstimate: `$${provider.avg_monthly_earnings_low}-${provider.avg_monthly_earnings_high}/month`
+    };
+  } catch (error) {
+    return { 
+      success: false, 
+      error: error.message 
+    };
+  }
+}
+
+async function handleTrackReferralConversion(args: any, userId: string, supabase: any) {
+  console.log('📊 Tracking referral conversion:', args);
+  
+  try {
+    if (!userId) {
+      return {
+        success: false,
+        error: 'User ID required for tracking'
+      };
+    }
+
+    // Create or update partner integration progress
+    const { data, error } = await supabase
+      .from('partner_integration_progress')
+      .upsert({
+        user_id: userId,
+        partner_name: args.partnerName,
+        integration_status: args.action === 'registration_completed' ? 'completed' : 'in_progress',
+        updated_at: new Date().toISOString()
+      }, {
+        onConflict: 'user_id,partner_name'
+      });
+
+    if (error) throw error;
+
+    // Track in affiliate earnings if this is a completed conversion
+    if (args.action === 'registration_completed') {
+      await supabase.from('affiliate_earnings').insert({
+        user_id: userId,
+        provider_name: args.partnerName,
+        service_type: 'referral',
+        status: 'pending',
+        earnings_amount: 0, // Will be updated when actual commission is received
+        metadata: {
+          conversion_date: new Date().toISOString(),
+          tracked_from: 'chatbot_assistant'
+        }
+      });
+    }
+
+    return {
+      success: true,
+      message: `${args.action} tracked for ${args.partnerName}`,
+      action: args.action,
+      partner: args.partnerName
     };
   } catch (error) {
     return { 
