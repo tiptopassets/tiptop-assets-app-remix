@@ -9,6 +9,7 @@ import { AssetsTable } from './AssetsTable';
 import DashboardHeader from './DashboardHeader';
 import SavedAssetSelections from './SavedAssetSelections';
 import { useUserAssetSelections } from '@/hooks/useUserAssetSelections';
+import AssetSelectionDebug from './AssetSelectionDebug';
 
 interface DashboardContentProps {
   primaryAddress?: string;
@@ -94,6 +95,9 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
           </Card>
         </motion.div>
       )}
+
+      {/* Debug Component for Development */}
+      <AssetSelectionDebug />
 
       {/* Saved Asset Selections */}
       <motion.div 

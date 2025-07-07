@@ -14,9 +14,23 @@ export const useUserAssetSelections = () => {
     try {
       setLoading(true);
       setError(null);
+      
+      console.log('🔍 Loading asset selections for user:', user?.id || 'anonymous');
       const selections = await loadAssetSelections(user?.id);
       setAssetSelections(selections);
-      console.log('✅ Loaded asset selections for dashboard:', selections.length, selections);
+      
+      console.log('✅ Loaded asset selections for dashboard:', {
+        count: selections.length,
+        userId: user?.id,
+        isAuthenticated: !!user,
+        selections: selections.map(s => ({
+          id: s.id,
+          asset_type: s.asset_type,
+          monthly_revenue: s.monthly_revenue,
+          user_id: s.user_id,
+          session_id: s.session_id
+        }))
+      });
     } catch (err) {
       console.error('Error loading asset selections:', err);
       setError(err instanceof Error ? err.message : 'Failed to load asset selections');

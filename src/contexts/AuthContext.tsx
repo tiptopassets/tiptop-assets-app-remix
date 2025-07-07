@@ -7,6 +7,7 @@ import {
   recoverAnalysesToDatabase, 
   hasUnauthenticatedAnalyses 
 } from '@/services/unauthenticatedAnalysisService';
+import { linkUserSessionOnAuth } from '@/services/authLinkingService';
 
 type AuthContextType = {
   session: Session | null;
@@ -271,6 +272,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                   // Count as actual login for SIGNED_IN events
                   updateLoginStats(currentSession.user.id, true);
                   
+                  // Link any anonymous session asset selections to the authenticated user
+                  linkUserSessionOnAuth(currentSession.user.id);
+                  
                   // Trigger analysis recovery with enhanced data consistency
                   handleAnalysisRecovery(currentSession.user.id);
                   
@@ -321,6 +325,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             setTimeout(() => {
               if (mounted) {
                 // Don't update login stats for existing sessions
+                // Link any session data for existing users (in case it was missed before)
+                linkUserSessionOnAuth(currentSession.user.id);
                 handleAnalysisRecovery(currentSession.user.id);
                 // Also run consistency check for existing users
                 ensureDataConsistency(currentSession.user.id);
