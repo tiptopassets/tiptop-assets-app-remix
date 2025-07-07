@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { saveAssetSelection, loadUserAssetSelections } from '@/services/userAssetService';
-import { saveAssetSelectionAnonymous, loadAssetSelections } from '@/services/sessionStorageService';
+import { saveAssetSelectionAnonymous, loadAssetSelections, getStoredAnalysisId } from '@/services/sessionStorageService';
 import { getRecentAnalysisId } from '@/services/dataRecoveryService';
 import { useToast } from '@/hooks/use-toast';
 

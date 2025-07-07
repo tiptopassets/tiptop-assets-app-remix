@@ -1,4 +1,5 @@
-import { linkSessionToUser } from '@/services/sessionStorageService';
+import { linkSessionToUser, updateAssetSelectionsWithAnalysisId, getStoredAnalysisId } from '@/services/sessionStorageService';
+import { getRecentAnalysisId } from '@/services/dataRecoveryService';
 import { useToast } from '@/hooks/use-toast';
 
 export const linkUserSessionOnAuth = async (userId: string): Promise<void> => {
@@ -10,8 +11,20 @@ export const linkUserSessionOnAuth = async (userId: string): Promise<void> => {
     if (linkedCount > 0) {
       console.log(`✅ Successfully linked ${linkedCount} asset selections to user`);
       
-      // You can add a toast notification here if needed
-      // This would typically be called from the Auth context or login flow
+      // Check if we need to update any asset selections with analysis ID
+      const sessionId = localStorage.getItem('anonymous_session_id');
+      if (sessionId) {
+        // Try to get analysis ID from user's recent analyses or localStorage
+        let analysisId = await getRecentAnalysisId(userId);
+        if (!analysisId) {
+          analysisId = getStoredAnalysisId();
+        }
+        
+        if (analysisId) {
+          await updateAssetSelectionsWithAnalysisId(sessionId, analysisId);
+          console.log('✅ Updated asset selections with analysis ID');
+        }
+      }
     } else {
       console.log('ℹ️ No session data found to link');
     }

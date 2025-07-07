@@ -190,7 +190,13 @@ const AssetResultList: React.FC<AssetResultListProps> = ({
           });
           
           // Save to database (works for both authenticated and anonymous users)
-          console.log('💾 Attempting to save asset with analysis ID:', currentAnalysisId);
+          // Try to get analysis ID from multiple sources
+          let analysisIdToUse = currentAnalysisId;
+          if (!analysisIdToUse) {
+            analysisIdToUse = localStorage.getItem('currentAnalysisId');
+          }
+          
+          console.log('💾 Attempting to save asset with analysis ID:', analysisIdToUse);
           saveSelection(
             assetData.title,
             { 
@@ -202,7 +208,7 @@ const AssetResultList: React.FC<AssetResultListProps> = ({
             assetData.monthlyRevenue,
             assetData.setupCost || 0,
             assetData.roi,
-            currentAnalysisId // Pass the current analysis ID
+            analysisIdToUse // Pass the analysis ID (can be null for anonymous users)
           ).then((result) => {
             if (result) {
               console.log('✅ Asset saved to database:', result);

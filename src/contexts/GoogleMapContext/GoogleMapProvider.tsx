@@ -188,6 +188,18 @@ const GoogleMapProvider = ({ children }: { children: React.ReactNode }) => {
           console.log('💾 Storing analysis ID in context and localStorage:', id);
           setCurrentAnalysisId(id);
           localStorage.setItem('currentAnalysisId', id);
+          
+          // For anonymous users, also update any pending asset selections
+          if (!user) {
+            const sessionId = localStorage.getItem('anonymous_session_id');
+            if (sessionId) {
+              import('@/services/sessionStorageService').then(({ updateAssetSelectionsWithAnalysisId }) => {
+                updateAssetSelectionsWithAnalysisId(sessionId, id).catch(error => {
+                  console.warn('Could not update asset selections with analysis ID:', error);
+                });
+              });
+            }
+          }
         },
         setCurrentAddressId: (id: string) => {
           console.log('💾 Storing address ID in context and localStorage:', id);

@@ -4,7 +4,7 @@ import { UserAssetSelection } from '@/types/userData';
 
 export const saveAssetSelection = async (
   userId: string,
-  analysisId: string,
+  analysisId: string | null,
   assetType: string,
   assetData: any,
   monthlyRevenue: number,
@@ -31,39 +31,40 @@ export const saveAssetSelection = async (
     if (!userId || typeof userId !== 'string') {
       throw new Error('User ID is required and must be a valid string, got: ' + userId);
     }
-    if (!analysisId || typeof analysisId !== 'string') {
-      throw new Error('Analysis ID is required and must be a valid string, got: ' + analysisId);
-    }
     if (!assetType || typeof assetType !== 'string') {
       throw new Error('Asset type is required and must be a valid string, got: ' + assetType);
     }
 
-    // Validate analysisId is a valid UUID format
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-    if (!uuidRegex.test(analysisId)) {
-      console.error('❌ Invalid analysis ID format:', analysisId);
-      throw new Error(`Analysis ID must be a valid UUID, got: ${analysisId}`);
+    // Validate analysisId if provided (now optional)
+    if (analysisId) {
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      if (!uuidRegex.test(analysisId)) {
+        console.error('❌ Invalid analysis ID format:', analysisId);
+        throw new Error(`Analysis ID must be a valid UUID, got: ${analysisId}`);
+      }
+
+      // Verify the analysis exists and belongs to the user
+      const { data: analysisExists, error: verifyError } = await supabase
+        .from('user_property_analyses')
+        .select('id')
+        .eq('id', analysisId)
+        .eq('user_id', userId)
+        .maybeSingle();
+
+      if (verifyError) {
+        console.error('❌ Error verifying analysis:', verifyError);
+        throw new Error('Failed to verify analysis exists');
+      }
+
+      if (!analysisExists) {
+        console.error('❌ Analysis not found or not owned by user:', { analysisId, userId });
+        throw new Error(`Analysis ${analysisId} not found or not accessible to user ${userId}`);
+      }
+
+      console.log('✅ Analysis verification passed:', analysisExists.id);
+    } else {
+      console.log('⚠️ No analysis ID provided - saving asset selection without analysis link');
     }
-
-    // Verify the analysis exists and belongs to the user
-    const { data: analysisExists, error: verifyError } = await supabase
-      .from('user_property_analyses')
-      .select('id')
-      .eq('id', analysisId)
-      .eq('user_id', userId)
-      .maybeSingle();
-
-    if (verifyError) {
-      console.error('❌ Error verifying analysis:', verifyError);
-      throw new Error('Failed to verify analysis exists');
-    }
-
-    if (!analysisExists) {
-      console.error('❌ Analysis not found or not owned by user:', { analysisId, userId });
-      throw new Error(`Analysis ${analysisId} not found or not accessible to user ${userId}`);
-    }
-
-    console.log('✅ Analysis verification passed:', analysisExists.id);
 
     const insertData = {
       user_id: userId,

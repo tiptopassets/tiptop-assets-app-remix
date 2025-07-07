@@ -809,7 +809,7 @@ export type Database = {
       }
       user_asset_selections: {
         Row: {
-          analysis_id: string
+          analysis_id: string | null
           asset_data: Json
           asset_type: string
           id: string
@@ -822,7 +822,7 @@ export type Database = {
           user_id: string | null
         }
         Insert: {
-          analysis_id: string
+          analysis_id?: string | null
           asset_data: Json
           asset_type: string
           id?: string
@@ -835,7 +835,7 @@ export type Database = {
           user_id?: string | null
         }
         Update: {
-          analysis_id?: string
+          analysis_id?: string | null
           asset_data?: Json
           asset_type?: string
           id?: string
@@ -1583,6 +1583,10 @@ export type Database = {
       sync_analysis_addresses: {
         Args: Record<PropertyKey, never>
         Returns: undefined
+      }
+      update_asset_selections_with_analysis: {
+        Args: { p_session_id: string; p_analysis_id: string }
+        Returns: number
       }
       update_journey_step: {
         Args: { p_session_id: string; p_step: string; p_data?: Json }

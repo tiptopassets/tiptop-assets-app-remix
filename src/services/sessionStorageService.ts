@@ -56,6 +56,43 @@ export const linkSessionToUser = async (userId: string): Promise<number> => {
   }
 };
 
+// Store analysis ID for current session (both authenticated and anonymous users)
+export const storeAnalysisIdForSession = (analysisId: string): void => {
+  localStorage.setItem('currentAnalysisId', analysisId);
+  console.log('💾 Stored analysis ID for session:', analysisId);
+};
+
+// Get stored analysis ID for current session
+export const getStoredAnalysisId = (): string | null => {
+  return localStorage.getItem('currentAnalysisId');
+};
+
+// Update asset selections with analysis ID when it becomes available
+export const updateAssetSelectionsWithAnalysisId = async (
+  sessionId: string,
+  analysisId: string
+): Promise<number> => {
+  try {
+    console.log('🔗 Updating asset selections with analysis ID:', { sessionId, analysisId });
+
+    const { data, error } = await supabase.rpc('update_asset_selections_with_analysis', {
+      p_session_id: sessionId,
+      p_analysis_id: analysisId
+    });
+
+    if (error) {
+      console.error('Error updating asset selections with analysis ID:', error);
+      throw error;
+    }
+
+    console.log('✅ Updated', data, 'asset selections with analysis ID');
+    return data || 0;
+  } catch (error) {
+    console.error('Failed to update asset selections with analysis ID:', error);
+    throw error;
+  }
+};
+
 // Save asset selection for anonymous or authenticated users
 export const saveAssetSelectionAnonymous = async (
   assetType: string,
@@ -69,6 +106,12 @@ export const saveAssetSelectionAnonymous = async (
   try {
     const sessionId = !userId ? getSessionId() : null;
     
+    // Try to get analysis ID from localStorage if not provided
+    if (!analysisId) {
+      analysisId = getStoredAnalysisId();
+      console.log('🔍 Retrieved analysis ID from localStorage:', analysisId);
+    }
+    
     console.log('💾 Saving asset selection:', {
       assetType,
       monthlyRevenue,
@@ -81,7 +124,7 @@ export const saveAssetSelectionAnonymous = async (
     const insertData = {
       user_id: userId || null,
       session_id: sessionId,
-      analysis_id: analysisId || null,
+      analysis_id: analysisId || null, // Now nullable
       asset_type: assetType,
       asset_data: assetData || {},
       monthly_revenue: monthlyRevenue || 0,
@@ -108,6 +151,12 @@ export const saveAssetSelectionAnonymous = async (
     }
     
     console.log('✅ Asset selection saved with ID:', data.id);
+    
+    // If we don't have an analysis ID yet, try to update later when it becomes available
+    if (!analysisId && sessionId) {
+      console.log('📝 Asset selection saved without analysis ID, will update when available');
+    }
+    
     return data.id;
   } catch (err) {
     console.error('❌ Error saving asset selection:', err);
