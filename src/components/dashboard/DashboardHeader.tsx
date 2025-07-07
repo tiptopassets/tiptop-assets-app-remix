@@ -30,6 +30,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
           onClick={() => window.open('https://forms.office.com/Pages/ResponsePage.aspx?id=DQSIkWdsW0yxEjajBLZtrQAAAAAAAAAAAAFKAG3Oh5NUN1FBQlBKUzNaQjVGNlBIS1ZXRU8wRTFWRi4u', '_blank')}
           variant="outline" 
           size="sm"
+          className="bg-orange-500 text-white border-orange-500 hover:bg-orange-600 hover:border-orange-600"
         >
           <MessageSquare className="h-4 w-4 mr-2" />
           Quick Survey
