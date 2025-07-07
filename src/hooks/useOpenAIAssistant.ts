@@ -118,18 +118,17 @@ I'm here to guide you through setting up these assets step-by-step. You can clic
     setState(prev => ({ ...prev, isLoading: true, error: null }));
 
     try {
-      // Create assistant
+      // Get existing assistant instead of creating new one
       const { data: assistantData, error: assistantError } = await supabase.functions.invoke('openai-assistant-manager', {
         body: {
-          action: 'create_assistant',
-          data: { propertyData }
+          action: 'get_assistant'
         }
       });
 
       if (assistantError) throw assistantError;
 
       const assistantId = assistantData.assistant.id;
-      console.log('✅ Assistant created:', assistantId);
+      console.log('✅ Using existing assistant:', assistantId);
 
       // Create thread
       const { data: threadData, error: threadError } = await supabase.functions.invoke('openai-assistant-manager', {

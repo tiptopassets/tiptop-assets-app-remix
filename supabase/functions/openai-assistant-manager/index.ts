@@ -11,6 +11,9 @@ const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 
+// Use existing assistant ID instead of creating new ones
+const EXISTING_ASSISTANT_ID = 'asst_LAfMRhVWnpiQwGgZhSykzRtJ';
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -27,8 +30,8 @@ serve(async (req) => {
     console.log('🤖 Assistant Manager action:', action);
 
     switch (action) {
-      case 'create_assistant':
-        return await createAssistant(data);
+      case 'get_assistant':
+        return await getExistingAssistant();
       case 'create_thread':
         return await createThread(data);
       case 'send_message':
@@ -54,237 +57,12 @@ serve(async (req) => {
   }
 });
 
-async function createAssistant(data: any) {
-  const { propertyData } = data;
-  
-  const systemPrompt = `You are an AI assistant for Tiptop, a platform that helps homeowners monetize their property assets (rooftops, parking spaces, pools, internet bandwidth, storage, etc.).
-
-Your role is to guide users through asset monetization and partner onboarding in a conversational, helpful way.
-
-CONTEXT:
-${propertyData ? `
-- User's property: ${propertyData.address}
-- Available assets: ${propertyData.availableAssets?.map((a: any) => `${a.name} ($${a.monthlyRevenue}/month)`).join(', ')}
-- Total potential: $${propertyData.totalMonthlyRevenue}/month
-- Analysis ID: ${propertyData.analysisId}
-` : 'No property data available yet.'}
-
-PARTNER INTEGRATION FOCUS:
-You now have access to detailed partner information and can provide step-by-step onboarding guidance for:
-- **Swimply**: Pool rentals ($150-800/month) - for swimming pools, hot tubs
-- **Neighbor.com**: Storage rentals ($50-300/month) - for garages, basements, storage spaces
-- **Peerspace**: Event space rentals ($100-500/month) - for unique spaces, meeting rooms
-- **SpotHero**: Parking space rentals ($75-400/month) - for driveways, parking spots
-
-CONVERSATION STYLE:
-- Be conversational, friendly, and encouraging
-- Focus on ONE asset/partner at a time for focused guidance
-- Provide specific, actionable steps with document requirements
-- Always include referral links and earning estimates
-- Track user progress through the onboarding process
-
-AVAILABLE FUNCTIONS:
-- getPartnerOnboardingGuide: Get detailed step-by-step guidance for specific partners
-- getPartnerRequirements: Get documents and requirements for partner registration
-- connectServiceProviders: Connect users with partners using referral links
-- trackReferralConversion: Track when users click links or complete registrations
-- saveUserResponse: Store progress and user inputs
-- collectAddress: Gather property details
-
-PARTNER ONBOARDING PROCESS:
-1. **Identify the asset** the user wants to monetize
-2. **Get partner requirements** - what documents/info they need
-3. **Provide step-by-step guidance** - exact setup process
-4. **Share referral link** with tracking for commission
-5. **Follow up** on registration progress and next steps
-6. **Track conversions** for affiliate earnings
-
-GUIDELINES:
-1. When user mentions an asset, immediately get partner requirements and onboarding guide
-2. Be specific about documents needed (photos, ID, insurance, bank details, etc.)
-3. Provide realistic timelines (setup time + approval time)
-4. Always use our referral links to ensure we get commission
-5. Track all user actions for affiliate earnings
-6. Guide users through the complete onboarding process step-by-step
-
-Remember: Your goal is to successfully onboard users to our partner platforms while maximizing affiliate earnings through smooth, guided experiences.`;
-
-  const response = await fetch('https://api.openai.com/v1/assistants', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${OPENAI_API_KEY}`,
-      'Content-Type': 'application/json',
-      'OpenAI-Beta': 'assistants=v2'
-    },
-    body: JSON.stringify({
-      name: 'Tiptop Asset Monetization Assistant',
-      instructions: systemPrompt,
-      model: 'gpt-4o',
-      tools: [
-        {
-          type: 'function',
-          function: {
-            name: 'collectAddress',
-            description: 'Collect and validate user property address information',
-            parameters: {
-              type: 'object',
-              properties: {
-                address: { type: 'string', description: 'Full property address' },
-                coordinates: { 
-                  type: 'object',
-                  properties: {
-                    lat: { type: 'number' },
-                    lng: { type: 'number' }
-                  }
-                },
-                propertyType: { type: 'string', description: 'Type of property (house, apartment, etc.)' }
-              },
-              required: ['address']
-            }
-          }
-        },
-        {
-          type: 'function',
-          function: {
-            name: 'suggestAssetOpportunities',
-            description: 'Suggest specific asset monetization opportunities based on user property and preferences',
-            parameters: {
-              type: 'object',
-              properties: {
-                selectedAssets: { 
-                  type: 'array',
-                  items: { type: 'string' },
-                  description: 'List of asset types user is interested in'
-                },
-                userPreferences: {
-                  type: 'object',
-                  properties: {
-                    timeCommitment: { type: 'string' },
-                    riskTolerance: { type: 'string' },
-                    earningGoals: { type: 'number' }
-                  }
-                }
-              },
-              required: ['selectedAssets']
-            }
-          }
-        },
-        {
-          type: 'function',
-          function: {
-            name: 'saveUserResponse',
-            description: 'Save structured user responses and progress data',
-            parameters: {
-              type: 'object',
-              properties: {
-                responseType: { type: 'string', description: 'Type of response (asset_selection, preferences, contact_info, etc.)' },
-                responseData: { type: 'object', description: 'Structured response data' },
-                analysisId: { type: 'string', description: 'Property analysis ID to associate with' },
-                stepCompleted: { type: 'string', description: 'Journey step that was completed' }
-              },
-              required: ['responseType', 'responseData']
-            }
-          }
-        },
-        {
-          type: 'function',
-          function: {
-            name: 'getPartnerOnboardingGuide',
-            description: 'Get detailed step-by-step onboarding guidance for a specific partner and asset type',
-            parameters: {
-              type: 'object',
-              properties: {
-                partnerName: {
-                  type: 'string',
-                  description: 'Name of the partner platform (e.g., Swimply, Neighbor.com, Peerspace, SpotHero)'
-                },
-                assetType: {
-                  type: 'string', 
-                  description: 'Type of asset to onboard (e.g., pool, storage, parking, event_space)'
-                }
-              },
-              required: ['partnerName', 'assetType']
-            }
-          }
-        },
-        {
-          type: 'function',
-          function: {
-            name: 'getPartnerRequirements',
-            description: 'Get detailed requirements, documents needed, and setup time for a specific partner',
-            parameters: {
-              type: 'object',
-              properties: {
-                partnerName: {
-                  type: 'string',
-                  description: 'Name of the partner platform'
-                }
-              },
-              required: ['partnerName']
-            }
-          }
-        },
-        {
-          type: 'function',
-          function: {
-            name: 'connectServiceProviders',
-            description: 'Connect user with relevant service providers with referral links and onboarding guidance',
-            parameters: {
-              type: 'object',
-              properties: {
-                assetTypes: {
-                  type: 'array',
-                  items: { type: 'string' },
-                  description: 'Asset types to find providers for'
-                },
-                userLocation: { type: 'string', description: 'User location for local providers' },
-                setupPreference: { type: 'string', enum: ['diy', 'guided', 'full_service'] },
-                partnerName: { type: 'string', description: 'Specific partner to connect with (optional)' }
-              },
-              required: ['assetTypes']
-            }
-          }
-        },
-        {
-          type: 'function',
-          function: {
-            name: 'trackReferralConversion',
-            description: 'Track when user clicks on referral link or completes partner registration',
-            parameters: {
-              type: 'object',
-              properties: {
-                partnerName: {
-                  type: 'string',
-                  description: 'Partner name for tracking'
-                },
-                action: {
-                  type: 'string',
-                  description: 'Action taken (link_clicked, registration_started, registration_completed)'
-                },
-                userId: {
-                  type: 'string',
-                  description: 'User ID for tracking'
-                }
-              },
-              required: ['partnerName', 'action']
-            }
-          }
-        }
-      ]
-    })
-  });
-
-  if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(`Failed to create assistant: ${errorData.error?.message || 'Unknown error'}`);
-  }
-
-  const assistant = await response.json();
-  console.log('✅ Assistant created:', assistant.id);
+async function getExistingAssistant() {
+  console.log('✅ Using existing assistant:', EXISTING_ASSISTANT_ID);
 
   return new Response(JSON.stringify({ 
     success: true,
-    assistant 
+    assistant: { id: EXISTING_ASSISTANT_ID }
   }), {
     headers: { ...corsHeaders, 'Content-Type': 'application/json' },
   });
