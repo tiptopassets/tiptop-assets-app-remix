@@ -109,23 +109,52 @@ export const useAddressSearch = () => {
     });
   }, [mapInstance, setAddress, setAddressCoordinates, capturePropertyImages, startAnalysis, toast, setHasSelectedAddress, userData]);
 
-  // Handle autocomplete dropdown clicks
+  // Handle autocomplete dropdown clicks with multiple fallback methods
   const handleAutocompleteClick = useCallback(async () => {
-    if (!autocompleteRef.current) return;
+    if (!autocompleteRef.current || !searchInputRef.current) return;
     
     console.log('handleAutocompleteClick: Detected click on autocomplete item');
     setIsRetrying(true);
     
-    // Wait briefly for Google to populate the input
-    await new Promise(resolve => setTimeout(resolve, 150));
+    // Method 1: Wait briefly for Google to populate the input
+    await new Promise(resolve => setTimeout(resolve, 50));
     
     let place = autocompleteRef.current.getPlace();
     console.log('handleAutocompleteClick: Initial place data:', place);
     
-    // Check if we have valid geometry
+    // Method 2: If no valid place, try multiple selection methods
     if (!place?.geometry?.location || !place.formatted_address) {
-      console.log('handleAutocompleteClick: Invalid place data, forcing selection...');
-      place = await forceSelection();
+      console.log('handleAutocompleteClick: Invalid place data, trying multiple selection methods...');
+      
+      // Try method A: Enter keypress
+      const enterEvent = new KeyboardEvent('keydown', {
+        key: 'Enter',
+        keyCode: 13,
+        which: 13,
+        bubbles: true
+      });
+      searchInputRef.current.dispatchEvent(enterEvent);
+      
+      await new Promise(resolve => setTimeout(resolve, 50));
+      place = autocompleteRef.current.getPlace();
+      
+      // Try method B: Input event if still no place
+      if (!place?.geometry?.location && searchInputRef.current.value) {
+        const inputEvent = new Event('input', { bubbles: true });
+        searchInputRef.current.dispatchEvent(inputEvent);
+        
+        await new Promise(resolve => setTimeout(resolve, 50));
+        place = autocompleteRef.current.getPlace();
+      }
+      
+      // Try method C: Focus and blur to trigger validation
+      if (!place?.geometry?.location) {
+        searchInputRef.current.focus();
+        searchInputRef.current.blur();
+        
+        await new Promise(resolve => setTimeout(resolve, 50));
+        place = autocompleteRef.current.getPlace();
+      }
     }
     
     // Final validation and processing
@@ -133,7 +162,7 @@ export const useAddressSearch = () => {
       console.log('handleAutocompleteClick: Valid place data obtained, processing...');
       await processSelectedPlace(place);
     } else {
-      console.error('handleAutocompleteClick: Could not obtain valid place data');
+      console.error('handleAutocompleteClick: Could not obtain valid place data after all methods');
       setIsRetrying(false);
       toast({
         title: "Address Selection Failed",
@@ -141,7 +170,7 @@ export const useAddressSearch = () => {
         variant: "destructive"
       });
     }
-  }, [forceSelection, processSelectedPlace, toast]);
+  }, [processSelectedPlace, toast]);
 
   // Standard place change handler (backup for when clicks work normally)
   const handlePlaceChanged = useCallback(async () => {
@@ -186,27 +215,50 @@ export const useAddressSearch = () => {
       // Add event listener for normal place_changed events
       autocompleteRef.current.addListener('place_changed', handlePlaceChanged);
 
-      // Add click listener to intercept autocomplete dropdown clicks
+      // Use MutationObserver to dynamically detect .pac-container creation
+      const observer = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+          mutation.addedNodes.forEach((node) => {
+            if (node instanceof Element && node.classList?.contains('pac-container')) {
+              console.log('useAddressSearch: pac-container detected, adding click listener');
+              node.addEventListener('click', (event) => {
+                const target = event.target as HTMLElement;
+                if (target.closest('.pac-item')) {
+                  console.log('useAddressSearch: Detected click on .pac-item');
+                  setTimeout(() => {
+                    handleAutocompleteClick();
+                  }, 10); // Even faster response
+                }
+              });
+            }
+          });
+        });
+      });
+
+      // Start observing for pac-container additions
+      observer.observe(document.body, { childList: true, subtree: true });
+
+      // Also try immediate detection in case container already exists
       const addClickListener = () => {
-        // Find all autocomplete suggestion items
         const pacContainer = document.querySelector('.pac-container');
         if (pacContainer) {
+          console.log('useAddressSearch: Found existing pac-container, adding click listener');
           pacContainer.addEventListener('click', (event) => {
             const target = event.target as HTMLElement;
-            // Check if clicked on a suggestion item or its child
             if (target.closest('.pac-item')) {
               console.log('useAddressSearch: Detected click on .pac-item');
-              // Small delay to let the click complete
               setTimeout(() => {
                 handleAutocompleteClick();
-              }, 50);
+              }, 10);
             }
           });
         }
       };
 
-      // Wait for autocomplete to be fully rendered, then add click listener
+      // Check immediately and after short delays
+      addClickListener();
       setTimeout(addClickListener, 100);
+      setTimeout(addClickListener, 500);
 
       console.log('useAddressSearch: Autocomplete initialized successfully');
 
