@@ -134,6 +134,8 @@ const AssetResultList: React.FC<AssetResultListProps> = ({
   const handleAssetToggle = useCallback(async (assetTitle: string) => {
     console.log('🔄 Asset toggle called for:', assetTitle);
     console.log('📊 Current selectedAssets:', selectedAssets);
+    console.log('🔍 Current user:', user);
+    console.log('🔍 Current analysis ID:', currentAnalysisId);
     
     setSelectedAssets(prev => {
       const isSelected = prev.includes(assetTitle);
@@ -189,6 +191,7 @@ const AssetResultList: React.FC<AssetResultListProps> = ({
           
           // Save to database if user is authenticated
           if (user) {
+            console.log('💾 Attempting to save asset with analysis ID:', currentAnalysisId);
             saveSelection(
               assetData.title,
               { 
@@ -199,7 +202,8 @@ const AssetResultList: React.FC<AssetResultListProps> = ({
               },
               assetData.monthlyRevenue,
               assetData.setupCost || 0,
-              assetData.roi
+              assetData.roi,
+              currentAnalysisId // Pass the current analysis ID
             ).then((result) => {
               if (result) {
                 console.log('✅ Asset saved to database:', result);
