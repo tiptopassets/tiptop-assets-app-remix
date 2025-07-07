@@ -67,15 +67,37 @@ const SavedAssetSelections: React.FC<SavedAssetSelectionsProps> = ({ className }
     );
   }
 
-  const totalMonthlyRevenue = assetSelections.reduce((sum, selection) => sum + (selection.monthly_revenue || 0), 0);
-  const totalSetupCost = assetSelections.reduce((sum, selection) => sum + (selection.setup_cost || 0), 0);
+  // Deduplicate asset selections - keep only the most recent selection for each asset type
+  const uniqueAssetSelections = assetSelections.reduce((acc, selection) => {
+    const existingIndex = acc.findIndex(existing => 
+      existing.asset_type.toLowerCase() === selection.asset_type.toLowerCase()
+    );
+    
+    if (existingIndex === -1) {
+      // Asset type not found, add it
+      acc.push(selection);
+    } else {
+      // Asset type exists, keep the more recent one
+      const existingDate = new Date(acc[existingIndex].selected_at);
+      const currentDate = new Date(selection.selected_at);
+      
+      if (currentDate > existingDate) {
+        acc[existingIndex] = selection;
+      }
+    }
+    
+    return acc;
+  }, [] as typeof assetSelections);
+
+  const totalMonthlyRevenue = uniqueAssetSelections.reduce((sum, selection) => sum + (selection.monthly_revenue || 0), 0);
+  const totalSetupCost = uniqueAssetSelections.reduce((sum, selection) => sum + (selection.setup_cost || 0), 0);
 
   return (
     <Card className={className}>
       <CardHeader>
         <CardTitle className="flex items-center justify-between">
           Your Selected Assets
-          <Badge variant="secondary">{assetSelections.length} Assets</Badge>
+          <Badge variant="secondary">{uniqueAssetSelections.length} Assets</Badge>
         </CardTitle>
         <CardDescription>
           Assets you've chosen to monetize • ${totalMonthlyRevenue}/month potential • ${totalSetupCost} setup cost
@@ -83,7 +105,7 @@ const SavedAssetSelections: React.FC<SavedAssetSelectionsProps> = ({ className }
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          {assetSelections.map((selection, index) => (
+          {uniqueAssetSelections.map((selection, index) => (
             <motion.div
               key={selection.id}
               initial={{ opacity: 0, y: 10 }}
