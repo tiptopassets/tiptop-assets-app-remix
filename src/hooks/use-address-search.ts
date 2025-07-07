@@ -19,13 +19,12 @@ export const useAddressSearch = () => {
   
   const searchInputRef = useRef<HTMLInputElement>(null);
   const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
-  const retryCountRef = useRef(0);
+  const selectedPlaceRef = useRef<google.maps.places.PlaceResult | null>(null);
   const { toast } = useToast();
   const [hasSelectedAddress, setHasSelectedAddress] = useState(false);
   const [isRetrying, setIsRetrying] = useState(false);
   const { capturePropertyImages } = useModelGeneration();
   const userData = useUserData();
-  const maxRetries = 3;
 
   // Start analysis function
   const startAnalysis = useCallback((addressToAnalyze: string) => {
@@ -38,7 +37,113 @@ export const useAddressSearch = () => {
     generatePropertyAnalysis(addressToAnalyze);
   }, [generatePropertyAnalysis, analysisError, setAnalysisError]);
 
-  // Place change handler with automatic retry logic
+  // Force selection helper function
+  const forceSelection = useCallback(async (): Promise<google.maps.places.PlaceResult | null> => {
+    if (!autocompleteRef.current || !searchInputRef.current) return null;
+    
+    console.log('forceSelection: Attempting to force place selection...');
+    
+    // Simulate Enter keypress to force selection
+    const enterEvent = new KeyboardEvent('keydown', {
+      key: 'Enter',
+      keyCode: 13,
+      which: 13,
+      bubbles: true
+    });
+    
+    searchInputRef.current.dispatchEvent(enterEvent);
+    
+    // Wait for Google to process the selection
+    await new Promise(resolve => setTimeout(resolve, 150));
+    
+    const place = autocompleteRef.current.getPlace();
+    console.log('forceSelection: Place after force selection:', place);
+    
+    return place;
+  }, []);
+
+  // Process selected place
+  const processSelectedPlace = useCallback(async (place: google.maps.places.PlaceResult) => {
+    if (!mapInstance || !place.formatted_address || !place.geometry?.location) return;
+    
+    const formattedAddress = place.formatted_address;
+    const lat = place.geometry.location.lat();
+    const lng = place.geometry.location.lng();
+    const coordinates = { lat, lng };
+    
+    console.log('processSelectedPlace: Processing place data');
+    console.log('- Address:', formattedAddress);
+    console.log('- Coordinates:', coordinates);
+    
+    // Store the selected place
+    selectedPlaceRef.current = place;
+    
+    // Update state synchronously
+    setAddress(formattedAddress);
+    setHasSelectedAddress(true);
+    setAddressCoordinates(coordinates);
+    setIsRetrying(false);
+    
+    // Center map and zoom
+    mapInstance.setCenter(place.geometry.location);
+    mapInstance.setZoom(18);
+    
+    // Save address to database in background
+    try {
+      await userData.saveAddress(formattedAddress, coordinates, formattedAddress);
+      console.log('Address saved to database');
+    } catch (error) {
+      console.error('Failed to save address to database:', error);
+    }
+    
+    // Capture property images
+    capturePropertyImages(formattedAddress, coordinates);
+    
+    // Start analysis
+    startAnalysis(formattedAddress);
+    
+    // Show success toast
+    toast({
+      title: "Address Selected",
+      description: `Selected: ${formattedAddress}`,
+    });
+  }, [mapInstance, setAddress, setAddressCoordinates, capturePropertyImages, startAnalysis, toast, setHasSelectedAddress, userData]);
+
+  // Handle autocomplete dropdown clicks
+  const handleAutocompleteClick = useCallback(async () => {
+    if (!autocompleteRef.current) return;
+    
+    console.log('handleAutocompleteClick: Detected click on autocomplete item');
+    setIsRetrying(true);
+    
+    // Wait briefly for Google to populate the input
+    await new Promise(resolve => setTimeout(resolve, 150));
+    
+    let place = autocompleteRef.current.getPlace();
+    console.log('handleAutocompleteClick: Initial place data:', place);
+    
+    // Check if we have valid geometry
+    if (!place?.geometry?.location || !place.formatted_address) {
+      console.log('handleAutocompleteClick: Invalid place data, forcing selection...');
+      place = await forceSelection();
+    }
+    
+    // Final validation and processing
+    if (place?.geometry?.location && place.formatted_address) {
+      console.log('handleAutocompleteClick: Valid place data obtained, processing...');
+      await processSelectedPlace(place);
+    } else {
+      console.error('handleAutocompleteClick: Could not obtain valid place data');
+      setIsRetrying(false);
+      toast({
+        title: "Address Selection Failed",
+        description: "Please try selecting the address again from the dropdown.",
+        variant: "destructive"
+      });
+    }
+  }, [forceSelection, processSelectedPlace, toast]);
+
+  // Standard place change handler (backup for when clicks work normally)
   const handlePlaceChanged = useCallback(async () => {
     if (!autocompleteRef.current || !mapInstance) return;
     
@@ -46,91 +151,20 @@ export const useAddressSearch = () => {
       const place = autocompleteRef.current.getPlace();
       console.log('handlePlaceChanged: Place data received:', place);
       
-      // Check if place data is incomplete
-      if (!place.place_id || !place.geometry?.location || !place.formatted_address) {
-        console.warn('handlePlaceChanged: Incomplete place data, attempting automatic retry...');
-        
-        // If we haven't exceeded max retries, automatically retry
-        if (retryCountRef.current < maxRetries) {
-          retryCountRef.current++;
-          setIsRetrying(true);
-          
-          console.log(`Auto-retry attempt ${retryCountRef.current}/${maxRetries} in 150ms...`);
-          
-          // Retry after a short delay to let Google's autocomplete settle
-          setTimeout(() => {
-            handlePlaceChanged();
-          }, 150);
-          return;
-        }
-        
-        // Exceeded max retries, show error and reset
-        console.error('handlePlaceChanged: Max retries exceeded, showing error');
-        setIsRetrying(false);
-        retryCountRef.current = 0;
-        toast({
-          title: "Invalid Address",
-          description: "Please select a valid address from the dropdown.",
-          variant: "destructive"
-        });
-        return;
+      // Only process if we have complete data
+      if (place.place_id && place.geometry?.location && place.formatted_address) {
+        await processSelectedPlace(place);
       }
-
-      // Success! Reset retry counter and state
-      console.log('handlePlaceChanged: Place data complete, proceeding...');
-      retryCountRef.current = 0;
-      setIsRetrying(false);
-
-      const formattedAddress = place.formatted_address;
-      const lat = place.geometry.location.lat();
-      const lng = place.geometry.location.lng();
-      const coordinates = { lat, lng };
-      
-      console.log('handlePlaceChanged: Processing complete place data');
-      console.log('- Address:', formattedAddress);
-      console.log('- Coordinates:', coordinates);
-      
-      // Update state synchronously
-      setAddress(formattedAddress);
-      setHasSelectedAddress(true);
-      setAddressCoordinates(coordinates);
-      
-      // Center map and zoom
-      mapInstance.setCenter(place.geometry.location);
-      mapInstance.setZoom(18);
-      
-      // Save address to database in background
-      try {
-        await userData.saveAddress(formattedAddress, coordinates, formattedAddress);
-        console.log('Address saved to database');
-      } catch (error) {
-        console.error('Failed to save address to database:', error);
-        // Don't show error as this is a background operation
-      }
-      
-      // Capture property images
-      capturePropertyImages(formattedAddress, coordinates);
-      
-      // Start analysis
-      startAnalysis(formattedAddress);
-      
-      // Show success toast
-      toast({
-        title: "Address Selected",
-        description: `Selected: ${formattedAddress}`,
-      });
-      
     } catch (error) {
       console.error('handlePlaceChanged: Error processing place:', error);
       setIsRetrying(false);
-      retryCountRef.current = 0;
       toast({
         title: "Address Selection Error",
         description: "There was an issue selecting the address. Please try again.",
         variant: "destructive"
       });
     }
-  }, [mapInstance, setAddress, setAddressCoordinates, capturePropertyImages, startAnalysis, toast, setHasSelectedAddress, userData, isRetrying]);
+  }, [mapInstance, processSelectedPlace, toast]);
 
   // Initialize Google Places Autocomplete
   useEffect(() => {
@@ -149,8 +183,30 @@ export const useAddressSearch = () => {
         fields: ['formatted_address', 'geometry', 'place_id']
       });
 
-      // Add event listener
+      // Add event listener for normal place_changed events
       autocompleteRef.current.addListener('place_changed', handlePlaceChanged);
+
+      // Add click listener to intercept autocomplete dropdown clicks
+      const addClickListener = () => {
+        // Find all autocomplete suggestion items
+        const pacContainer = document.querySelector('.pac-container');
+        if (pacContainer) {
+          pacContainer.addEventListener('click', (event) => {
+            const target = event.target as HTMLElement;
+            // Check if clicked on a suggestion item or its child
+            if (target.closest('.pac-item')) {
+              console.log('useAddressSearch: Detected click on .pac-item');
+              // Small delay to let the click complete
+              setTimeout(() => {
+                handleAutocompleteClick();
+              }, 50);
+            }
+          });
+        }
+      };
+
+      // Wait for autocomplete to be fully rendered, then add click listener
+      setTimeout(addClickListener, 100);
 
       console.log('useAddressSearch: Autocomplete initialized successfully');
 
@@ -169,7 +225,7 @@ export const useAddressSearch = () => {
         autocompleteRef.current = null;
       }
     };
-  }, [mapLoaded, mapInstance, handlePlaceChanged, toast]);
+  }, [mapLoaded, mapInstance, handlePlaceChanged, handleAutocompleteClick, toast]);
 
   return {
     searchInputRef,
