@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { MapPin, RefreshCw } from 'lucide-react';
+import { MapPin, RefreshCw, MessageSquare } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 interface DashboardHeaderProps {
@@ -25,6 +25,14 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
         <Button onClick={onRefresh} variant="outline" size="sm">
           <RefreshCw className="h-4 w-4 mr-2" />
           Refresh
+        </Button>
+        <Button 
+          onClick={() => window.open('https://forms.office.com/Pages/ResponsePage.aspx?id=DQSIkWdsW0yxEjajBLZtrQAAAAAAAAAAAAFKAG3Oh5NUN1FBQlBKUzNaQjVGNlBIS1ZXRU8wRTFWRi4u', '_blank')}
+          variant="outline" 
+          size="sm"
+        >
+          <MessageSquare className="h-4 w-4 mr-2" />
+          Quick Survey
         </Button>
         <Button asChild variant="outline">
           <Link to="/">
