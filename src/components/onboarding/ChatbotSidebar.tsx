@@ -98,18 +98,46 @@ const ChatbotSidebar: React.FC<ChatbotSidebarProps> = ({
                 )}
                 {propertyData?.selectedAssets && propertyData.selectedAssets.length > 0 && (
                   <div>
-                    <p className="text-sm font-medium text-gray-700">Selected Assets ({propertyData.selectedAssets.length})</p>
-                    <div className="flex flex-wrap gap-1 mt-1">
-                      {propertyData.selectedAssets.map((selection: any) => (
-                        <Badge 
-                          key={selection.id} 
-                          variant="secondary" 
-                          className="text-xs bg-green-100 text-green-800 border-green-200"
-                        >
-                          {selection.asset_type.replace('_', ' ')} (${selection.monthly_revenue}/mo)
-                        </Badge>
-                      ))}
-                    </div>
+                    {(() => {
+                      // Deduplicate selected assets - keep only the most recent selection for each asset type
+                      const uniqueAssets = propertyData.selectedAssets.reduce((acc: any[], selection: any) => {
+                        const existingIndex = acc.findIndex(existing => 
+                          existing.asset_type.toLowerCase() === selection.asset_type.toLowerCase()
+                        );
+                        
+                        if (existingIndex === -1) {
+                          // Asset type not found, add it
+                          acc.push(selection);
+                        } else {
+                          // Asset type exists, keep the more recent one
+                          const existingDate = new Date(acc[existingIndex].selected_at);
+                          const currentDate = new Date(selection.selected_at);
+                          
+                          if (currentDate > existingDate) {
+                            acc[existingIndex] = selection;
+                          }
+                        }
+                        
+                        return acc;
+                      }, []);
+
+                      return (
+                        <>
+                          <p className="text-sm font-medium text-gray-700">Selected Assets ({uniqueAssets.length})</p>
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {uniqueAssets.map((selection: any) => (
+                              <Badge 
+                                key={selection.id} 
+                                variant="secondary" 
+                                className="text-xs bg-green-100 text-green-800 border-green-200"
+                              >
+                                {selection.asset_type.replace('_', ' ')} (${selection.monthly_revenue}/mo)
+                              </Badge>
+                            ))}
+                          </div>
+                        </>
+                      );
+                    })()}
                   </div>
                 )}
               </div>
