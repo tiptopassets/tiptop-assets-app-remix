@@ -82,9 +82,12 @@ const EnhancedOnboardingChatbot = () => {
     return null;
   }, [journeyData, propertyData, assetSelections, analysisId]);
 
+  // Store reference to send initial message function
+  const [sendInitialMessage, setSendInitialMessage] = useState<((message: string) => Promise<void>) | null>(null);
+
   // Initialize conversation with target asset if provided
   useEffect(() => {
-    if (unifiedPropertyData && targetAsset && !propertyLoading && !journeyLoading) {
+    if (unifiedPropertyData && targetAsset && !propertyLoading && !journeyLoading && sendInitialMessage) {
       console.log('🎯 [ONBOARDING] Initializing with target asset:', {
         targetAsset,
         analysisId: unifiedPropertyData.analysisId,
@@ -97,6 +100,11 @@ const EnhancedOnboardingChatbot = () => {
       if (assetInfo) {
         setDetectedAssets([targetAsset]);
         setConversationStage('asset_configuration');
+        
+        // Auto-start the conversation with the target asset
+        setTimeout(() => {
+          sendInitialMessage(`I want to manage my ${assetInfo.name.toLowerCase()} setup. Can you help me with the current configuration and next steps?`);
+        }, 1000);
         
         toast({
           title: "Asset Setup Started",
@@ -115,7 +123,7 @@ const EnhancedOnboardingChatbot = () => {
         });
       }
     }
-  }, [unifiedPropertyData, targetAsset, propertyLoading, journeyLoading, toast]);
+  }, [unifiedPropertyData, targetAsset, propertyLoading, journeyLoading, toast, sendInitialMessage]);
 
   const [analytics, setAnalytics] = useState({
     totalMessages: 0,
@@ -216,6 +224,7 @@ const EnhancedOnboardingChatbot = () => {
                 onAssetDetected={handleAssetDetected}
                 onConversationStageChange={handleConversationStageChange}
                 propertyData={unifiedPropertyData}
+                onSendMessageReady={setSendInitialMessage}
               />
             </Card>
           </div>

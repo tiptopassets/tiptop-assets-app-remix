@@ -11,12 +11,14 @@ interface EnhancedChatInterfaceProps {
   onAssetDetected: (assets: string[]) => void;
   onConversationStageChange: (stage: string) => void;
   propertyData: PropertyAnalysisData | null;
+  onSendMessageReady?: (sendMessage: (message: string) => Promise<void>) => void;
 }
 
 const EnhancedChatInterface = ({ 
   onAssetDetected, 
   onConversationStageChange, 
-  propertyData 
+  propertyData,
+  onSendMessageReady 
 }: EnhancedChatInterfaceProps) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [inputMessage, setInputMessage] = useState('');
@@ -42,6 +44,11 @@ const EnhancedChatInterface = ({
           await initializeAssistant();
           setIsInitialized(true);
           console.log('🎬 [CHAT] Assistant initialized successfully');
+          
+          // Provide sendMessage function to parent component
+          if (onSendMessageReady) {
+            onSendMessageReady(sendMessage);
+          }
         } catch (error) {
           console.error('❌ [CHAT] Failed to initialize assistant:', error);
         }
@@ -49,11 +56,14 @@ const EnhancedChatInterface = ({
       
       initAsync();
     }
-  }, [isInitialized, aiLoading, isProcessing, initializeAssistant]);
+  }, [isInitialized, aiLoading, isProcessing, initializeAssistant, onSendMessageReady, sendMessage]);
 
-  // Scroll to bottom when messages change
+  // Scroll to bottom when messages change (only within chat container)
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    messagesEndRef.current?.scrollIntoView({ 
+      behavior: 'smooth',
+      block: 'nearest' // Prevents page-level scrolling
+    });
   }, [assistantMessages]);
 
   const handleSendMessage = async () => {
