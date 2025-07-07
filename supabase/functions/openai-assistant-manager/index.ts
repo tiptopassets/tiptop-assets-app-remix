@@ -58,11 +58,137 @@ serve(async (req) => {
 });
 
 async function getExistingAssistant() {
-  console.log('✅ Using existing assistant:', EXISTING_ASSISTANT_ID);
+  try {
+    // First, try to retrieve the existing assistant to check if it exists
+    const response = await fetch(`https://api.openai.com/v1/assistants/${EXISTING_ASSISTANT_ID}`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${OPENAI_API_KEY}`,
+        'OpenAI-Beta': 'assistants=v2'
+      }
+    });
+
+    if (!response.ok) {
+      console.log('❌ Existing assistant not found, falling back to simple assistant setup');
+      // Don't create new assistant programmatically, just return the ID
+      console.log('✅ Using hardcoded assistant ID for now:', EXISTING_ASSISTANT_ID);
+    }
+
+    console.log('✅ Using existing assistant:', EXISTING_ASSISTANT_ID);
+
+    return new Response(JSON.stringify({ 
+      success: true,
+      assistant: { id: EXISTING_ASSISTANT_ID }
+    }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  } catch (error) {
+    console.error('❌ Error accessing existing assistant:', error);
+    // Fallback to just using the hardcoded ID
+    console.log('✅ Using hardcoded assistant ID as fallback:', EXISTING_ASSISTANT_ID);
+    
+    return new Response(JSON.stringify({ 
+      success: true,
+      assistant: { id: EXISTING_ASSISTANT_ID }
+    }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
+}
+
+async function createNewAssistant() {
+  console.log('🤖 Creating new assistant with updated functions');
+  
+  const systemPrompt = `You are an AI assistant for Tiptop, a platform that helps homeowners monetize their property assets (rooftops, parking spaces, pools, internet bandwidth, storage, etc.).
+
+Your role is to guide users through asset monetization and partner onboarding in a conversational, helpful way.
+
+PARTNER INTEGRATION FOCUS:
+You now have access to detailed partner information and can provide step-by-step onboarding guidance for:
+- **Swimply**: Pool rentals ($150-800/month) - for swimming pools, hot tubs
+- **Neighbor.com**: Storage rentals ($50-300/month) - for garages, basements, storage spaces
+- **Peerspace**: Event space rentals ($100-500/month) - for unique spaces, meeting rooms
+- **SpotHero**: Parking space rentals ($75-400/month) - for driveways, parking spots
+
+CONVERSATION STYLE:
+- Be conversational, friendly, and encouraging
+- Focus on ONE asset/partner at a time for focused guidance
+- Provide specific, actionable steps with document requirements
+- Always include referral links and earning estimates
+- Track user progress through the onboarding process
+
+AVAILABLE FUNCTIONS:
+- getPartnerOnboardingGuide: Get detailed step-by-step guidance for specific partners
+- getPartnerRequirements: Get documents and requirements for partner registration
+- connectServiceProviders: Connect users with partners using referral links
+- trackReferralConversion: Track when users click links or complete registrations
+- saveUserResponse: Store progress and user inputs
+- collectAddress: Gather property details
+
+Remember: Your goal is to successfully onboard users to our partner platforms while maximizing affiliate earnings through smooth, guided experiences.`;
+
+  const response = await fetch('https://api.openai.com/v1/assistants', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${OPENAI_API_KEY}`,
+      'Content-Type': 'application/json',
+      'OpenAI-Beta': 'assistants=v2'
+    },
+    body: JSON.stringify({
+      name: 'Tiptop Asset Monetization Assistant',
+      instructions: systemPrompt,
+      model: 'gpt-4.1-2025-04-14',
+      tools: [
+        {
+          type: 'function',
+          function: {
+            name: 'connectServiceProviders',
+            description: 'Connect user with relevant service providers with referral links and onboarding guidance',
+            parameters: {
+              type: 'object',
+              properties: {
+                assetTypes: {
+                  type: 'array',
+                  items: { type: 'string' },
+                  description: 'Asset types to find providers for'
+                }
+              },
+              required: ['assetTypes']
+            }
+          }
+        },
+        {
+          type: 'function',
+          function: {
+            name: 'getPartnerRequirements',
+            description: 'Get detailed requirements, documents needed, and setup time for a specific partner',
+            parameters: {
+              type: 'object',
+              properties: {
+                partnerName: {
+                  type: 'string',
+                  description: 'Name of the partner platform (e.g., SpotHero, Neighbor.com, Swimply, Peerspace)'
+                }
+              },
+              required: ['partnerName']
+            }
+          }
+        }
+      ]
+    })
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(`Failed to create assistant: ${errorData.error?.message || 'Unknown error'}`);
+  }
+
+  const assistant = await response.json();
+  console.log('✅ New assistant created:', assistant.id);
 
   return new Response(JSON.stringify({ 
     success: true,
-    assistant: { id: EXISTING_ASSISTANT_ID }
+    assistant 
   }), {
     headers: { ...corsHeaders, 'Content-Type': 'application/json' },
   });
@@ -220,10 +346,35 @@ async function getRunStatus(data: any) {
 async function submitToolOutputs(data: any, supabase: any) {
   const { threadId, runId, toolOutputs, userId } = data;
 
+  console.log('🔧 Processing tool outputs:', {
+    threadId,
+    runId,
+    toolOutputsCount: toolOutputs?.length,
+    userId,
+    toolOutputs: toolOutputs?.map((t: any) => ({ 
+      tool_call_id: t.tool_call_id, 
+      function_name: t.function_name 
+    }))
+  });
+
+  // Ensure toolOutputs is an array and not empty
+  if (!Array.isArray(toolOutputs) || toolOutputs.length === 0) {
+    console.warn('⚠️ No tool outputs provided or invalid format');
+    return new Response(JSON.stringify({ 
+      success: false,
+      error: 'No tool outputs provided'
+    }), {
+      status: 400,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
+
   // Process each tool call and generate appropriate outputs
   const processedOutputs = await Promise.all(
     toolOutputs.map(async (output: any) => {
       const { tool_call_id, function_name, arguments: functionArgs } = output;
+      
+      console.log(`🛠️ Processing function: ${function_name}`, { tool_call_id, functionArgs });
       
       try {
         let result;
@@ -254,12 +405,14 @@ async function submitToolOutputs(data: any, supabase: any) {
             result = { error: `Unknown function: ${function_name}` };
         }
 
+        console.log(`✅ Function ${function_name} result:`, result);
+
         return {
           tool_call_id,
           output: JSON.stringify(result)
         };
       } catch (error) {
-        console.error(`Error processing ${function_name}:`, error);
+        console.error(`❌ Error processing ${function_name}:`, error);
         return {
           tool_call_id,
           output: JSON.stringify({ error: error.message })
