@@ -816,9 +816,10 @@ export type Database = {
           monthly_revenue: number | null
           roi_months: number | null
           selected_at: string | null
+          session_id: string | null
           setup_cost: number | null
           status: string | null
-          user_id: string
+          user_id: string | null
         }
         Insert: {
           analysis_id: string
@@ -828,9 +829,10 @@ export type Database = {
           monthly_revenue?: number | null
           roi_months?: number | null
           selected_at?: string | null
+          session_id?: string | null
           setup_cost?: number | null
           status?: string | null
-          user_id: string
+          user_id?: string | null
         }
         Update: {
           analysis_id?: string
@@ -840,9 +842,10 @@ export type Database = {
           monthly_revenue?: number | null
           roi_months?: number | null
           selected_at?: string | null
+          session_id?: string | null
           setup_cost?: number | null
           status?: string | null
-          user_id?: string
+          user_id?: string | null
         }
         Relationships: [
           {
@@ -1564,6 +1567,10 @@ export type Database = {
       link_journey_to_user: {
         Args: { p_session_id: string; p_user_id: string }
         Returns: undefined
+      }
+      link_session_to_user: {
+        Args: { p_session_id: string; p_user_id: string }
+        Returns: number
       }
       save_user_onboarding_data: {
         Args: { user_id: string; onboarding_data: Json }

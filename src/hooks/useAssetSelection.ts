@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { saveAssetSelection, loadUserAssetSelections } from '@/services/userAssetService';
+import { saveAssetSelectionAnonymous, loadAssetSelections } from '@/services/sessionStorageService';
 import { getRecentAnalysisId } from '@/services/dataRecoveryService';
 import { useToast } from '@/hooks/use-toast';
 
@@ -18,15 +19,6 @@ export const useAssetSelection = () => {
     roiMonths?: number,
     analysisId?: string
   ) => {
-    if (!user) {
-      toast({
-        title: "Authentication Required",
-        description: "Please log in to save asset selections.",
-        variant: "destructive"
-      });
-      return null;
-    }
-
     setLoading(true);
     setError(null);
 
@@ -35,43 +27,37 @@ export const useAssetSelection = () => {
         assetType,
         monthlyRevenue,
         providedAnalysisId: analysisId,
-        userId: user.id
+        userId: user?.id,
+        isAnonymous: !user
       });
 
-      // Get analysis ID - use provided one or find the most recent
-      let finalAnalysisId = analysisId;
-      if (!finalAnalysisId) {
-        console.log('🔍 No analysis ID provided, finding recent one...');
-        finalAnalysisId = await getRecentAnalysisId(user.id);
-        
-        if (!finalAnalysisId) {
-          throw new Error('No analysis found. Please complete a property analysis first.');
-        }
-        console.log('✅ Found recent analysis ID:', finalAnalysisId);
-      }
-
-      // Save the asset selection
-      const selectionId = await saveAssetSelection(
-        user.id,
-        finalAnalysisId,
+      // Use session-based storage for anonymous users or authenticated users
+      const selectionId = await saveAssetSelectionAnonymous(
         assetType,
         assetData,
         monthlyRevenue,
         setupCost,
-        roiMonths
+        roiMonths,
+        analysisId,
+        user?.id
       );
 
       if (selectionId) {
+        const successMessage = user 
+          ? `Successfully saved ${assetType} selection with $${monthlyRevenue}/month potential.`
+          : `${assetType} selection saved. Sign in later to access your saved selections.`;
+          
         toast({
           title: "Asset Selection Saved",
-          description: `Successfully saved ${assetType} selection with $${monthlyRevenue}/month potential.`,
+          description: successMessage,
         });
         
         console.log('✅ Asset selection saved successfully:', {
           selectionId,
           assetType,
-          analysisId: finalAnalysisId,
-          monthlyRevenue
+          analysisId,
+          monthlyRevenue,
+          isAnonymous: !user
         });
         
         return selectionId;
@@ -96,14 +82,13 @@ export const useAssetSelection = () => {
   }, [user, toast]);
 
   const loadSelections = useCallback(async () => {
-    if (!user) return [];
-
     setLoading(true);
     setError(null);
 
     try {
-      const selections = await loadUserAssetSelections(user.id);
-      console.log('✅ Loaded asset selections:', selections.length);
+      // Load selections for both authenticated and anonymous users
+      const selections = await loadAssetSelections(user?.id);
+      console.log('✅ Loaded asset selections:', selections.length, user ? 'for user' : 'for session');
       return selections;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to load asset selections';

@@ -189,40 +189,40 @@ const AssetResultList: React.FC<AssetResultListProps> = ({
             return newData;
           });
           
-          // Save to database if user is authenticated
-          if (user) {
-            console.log('💾 Attempting to save asset with analysis ID:', currentAnalysisId);
-            saveSelection(
-              assetData.title,
-              { 
-                source: 'asset_opportunities_grid',
-                icon: assetData.icon,
-                provider: assetData.provider,
-                description: assetData.description 
-              },
-              assetData.monthlyRevenue,
-              assetData.setupCost || 0,
-              assetData.roi,
-              currentAnalysisId // Pass the current analysis ID
-            ).then((result) => {
-              if (result) {
-                console.log('✅ Asset saved to database:', result);
-                toast({
-                  title: "Asset Selected",
-                  description: `${assetData.title} added to your selections ($${assetData.monthlyRevenue}/month)`,
-                });
-              }
-            }).catch((error) => {
-              console.error('❌ Failed to save asset to database:', error);
+          // Save to database (works for both authenticated and anonymous users)
+          console.log('💾 Attempting to save asset with analysis ID:', currentAnalysisId);
+          saveSelection(
+            assetData.title,
+            { 
+              source: 'asset_opportunities_grid',
+              icon: assetData.icon,
+              provider: assetData.provider,
+              description: assetData.description 
+            },
+            assetData.monthlyRevenue,
+            assetData.setupCost || 0,
+            assetData.roi,
+            currentAnalysisId // Pass the current analysis ID
+          ).then((result) => {
+            if (result) {
+              console.log('✅ Asset saved to database:', result);
+              const message = user 
+                ? `${assetData.title} added to your selections ($${assetData.monthlyRevenue}/month)`
+                : `${assetData.title} saved. Sign in later to access your selections ($${assetData.monthlyRevenue}/month)`;
+              
               toast({
-                title: "Save Failed",
-                description: "Asset selected locally but failed to save to database",
-                variant: "destructive"
+                title: "Asset Selected",
+                description: message,
               });
+            }
+          }).catch((error) => {
+            console.error('❌ Failed to save asset to database:', error);
+            toast({
+              title: "Save Failed",
+              description: "Asset selected locally but failed to save to database",
+              variant: "destructive"
             });
-          } else {
-            console.log('👤 User not authenticated - asset selected locally only');
-          }
+          });
         } else {
           console.error('❌ Asset data not found for:', assetTitle);
         }
