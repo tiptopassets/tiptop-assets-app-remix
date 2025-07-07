@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import { Plus, Sun, Wifi, BatteryCharging, Car, Home, ParkingCircle } from "lucide-react";
 import { useAdditionalOpportunities } from "@/hooks/useAdditionalOpportunities";
+import { useAssetSelection } from "@/hooks/useAssetSelection";
+import { useToast } from "@/hooks/use-toast";
 
 interface AssetCardProps {
   title: string;
@@ -126,10 +128,48 @@ const CategorySection = ({ title, opportunities, onAssetSelect }: {
 
 const AddAsset = () => {
   const { opportunitiesByCategory } = useAdditionalOpportunities();
+  const { saveSelection } = useAssetSelection();
+  const { toast } = useToast();
 
-  const handleAssetSelect = (assetType: string) => {
+  const handleAssetSelect = async (assetType: string) => {
     console.log(`Selected asset: ${assetType}`);
-    // In a real app, this would navigate to a form for the specific asset type
+    
+    // Get estimated revenue based on asset type
+    const estimatedRevenue = getEstimatedRevenue(assetType);
+    
+    try {
+      await saveSelection(
+        assetType,
+        { source: 'add_asset_page', selected_at: new Date().toISOString() },
+        estimatedRevenue,
+        0 // setup cost - can be updated later
+      );
+      
+      toast({
+        title: "Asset Added",
+        description: `Successfully added ${assetType} to your monetization portfolio.`,
+      });
+    } catch (error) {
+      console.error('Failed to save asset selection:', error);
+      toast({
+        title: "Save Failed",
+        description: "There was an issue saving your asset selection. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  // Helper function to get estimated revenue based on asset type
+  const getEstimatedRevenue = (assetType: string): number => {
+    const revenueMap: Record<string, number> = {
+      'rooftop': 350,
+      'internet': 35,
+      'ev-charging': 200,
+      'parking': 200,
+      'storage': 125,
+      'vehicle': 150
+    };
+    return revenueMap[assetType] || 100;
   };
 
   const containerVariants = {

@@ -8,6 +8,7 @@ import { Loader2, Send, MessageSquare, Settings2, Bot, User } from 'lucide-react
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { useOnboarding } from '@/hooks/useOnboarding';
+import { useAssetSelection } from '@/hooks/useAssetSelection';
 import { toast } from '@/hooks/use-toast';
 import { 
   generatePartnerRecommendations, 
@@ -41,6 +42,7 @@ const OnboardingChatbot = () => {
   const [integratingPartners, setIntegratingPartners] = useState<Set<string>>(new Set());
   const [completedIntegrations, setCompletedIntegrations] = useState<Set<string>>(new Set());
   const [selectedAsset, setSelectedAsset] = useState<string | null>(null);
+  const { saveSelection } = useAssetSelection();
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Auto-scroll to bottom when new messages arrive
@@ -102,9 +104,24 @@ const OnboardingChatbot = () => {
   const handleAssetSelection = async (assetId: string) => {
     setSelectedAsset(assetId);
     
+    // Save asset selection to database
+    const assetName = assetId.replace('_', ' ');
+    const estimatedRevenue = getEstimatedRevenue(assetId);
+    
+    try {
+      await saveSelection(
+        assetName,
+        { source: 'onboarding_chatbot', asset_id: assetId },
+        estimatedRevenue,
+        0 // setup cost - can be updated later
+      );
+    } catch (error) {
+      console.error('Failed to save asset selection:', error);
+    }
+    
     // Add message about starting the asset setup process
     await addMessage('assistant', 
-      `Perfect! Let's set up your ${assetId.replace('_', ' ')} for monetization. I'll guide you through the specific requirements and connect you with the best service providers.`
+      `Perfect! Let's set up your ${assetName} for monetization. I'll guide you through the specific requirements and connect you with the best service providers.`
     );
 
     // Generate targeted recommendations for this specific asset
@@ -126,6 +143,20 @@ const OnboardingChatbot = () => {
     
     // Hide asset selection cards
     setShowAssetSelection(false);
+  };
+
+  // Helper function to get estimated revenue based on asset type
+  const getEstimatedRevenue = (assetId: string): number => {
+    const revenueMap: Record<string, number> = {
+      'rooftop': 350,
+      'internet': 35,
+      'parking': 200,
+      'pool': 100,
+      'storage': 125,
+      'garden': 65,
+      'unique_spaces': 300
+    };
+    return revenueMap[assetId] || 100;
   };
 
   const handleSendMessage = async () => {
