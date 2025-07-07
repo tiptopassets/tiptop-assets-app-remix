@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { PropertyAnalysisData } from '@/hooks/useUserPropertyAnalysis';
@@ -34,10 +34,87 @@ export const useOpenAIAssistant = (propertyData: PropertyAnalysisData | null) =>
     error: null
   });
 
+  // Store the property data reference to detect changes
+  const propertyDataRef = useRef<PropertyAnalysisData | null>(null);
+  
+  // Reset assistant when property data changes
+  useEffect(() => {
+    const currentPropertyData = propertyData;
+    const previousPropertyData = propertyDataRef.current;
+    
+    // Check if property data has meaningfully changed
+    const hasChanged = (
+      currentPropertyData?.analysisId !== previousPropertyData?.analysisId ||
+      currentPropertyData?.address !== previousPropertyData?.address
+    );
+    
+    if (hasChanged && (state.assistantId || state.threadId)) {
+      console.log('🔄 Property data changed, resetting assistant:', {
+        previous: { 
+          analysisId: previousPropertyData?.analysisId, 
+          address: previousPropertyData?.address 
+        },
+        current: { 
+          analysisId: currentPropertyData?.analysisId, 
+          address: currentPropertyData?.address 
+        }
+      });
+      
+      // Reset the assistant state
+      setState({
+        assistantId: null,
+        threadId: null,
+        runId: null,
+        isLoading: false,
+        isProcessing: false,
+        messages: [],
+        error: null
+      });
+    }
+    
+    propertyDataRef.current = currentPropertyData;
+  }, [propertyData?.analysisId, propertyData?.address, state.assistantId, state.threadId]);
+
   const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
+  const generateWelcomeMessage = useCallback(() => {
+    if (!propertyData) {
+      return "Hi! I'm your AI assistant for property monetization. I'm here to help you explore ways to earn money from your property assets. How can I assist you today?";
+    }
+
+    const { address, totalMonthlyRevenue, availableAssets } = propertyData;
+    
+    console.log('🎯 [WELCOME] Generating message with property data:', {
+      address,
+      totalMonthlyRevenue,
+      availableAssetsCount: availableAssets.length,
+      assetsWithRevenue: availableAssets.filter(a => a.hasRevenuePotential).length,
+      availableAssets: availableAssets.map(a => ({ name: a.name, revenue: a.monthlyRevenue, hasRevenue: a.hasRevenuePotential }))
+    });
+
+    // Get assets with revenue potential OR monthly revenue > 0
+    const topAssets = availableAssets.filter(a => a.hasRevenuePotential || a.monthlyRevenue > 0).slice(0, 3);
+
+    if (topAssets.length === 0 && totalMonthlyRevenue === 0) {
+      return `Hi! I've reviewed your property at **${address}**. While I don't see immediate monetization opportunities in our current analysis, I'm here to help you explore other options. What specific areas of your property are you most interested in monetizing?`;
+    }
+
+    const assetList = topAssets.map(asset => `**${asset.name}** ($${asset.monthlyRevenue}/month)`).join(', ');
+    
+    return `Hi! I'm your AI assistant and I've analyzed your property at **${address}**! 🏠
+
+I found great monetization opportunities including: ${assetList}. Your total earning potential is **$${totalMonthlyRevenue}/month**.
+
+I'm here to guide you through setting up these assets step-by-step. You can click on any asset badge in the sidebar to start its specific setup, or ask me any questions about the monetization process!`;
+  }, [propertyData]);
+
   const initializeAssistant = useCallback(async () => {
-    console.log('🤖 Initializing OpenAI Assistant...');
+    console.log('🤖 Initializing OpenAI Assistant with property data:', {
+      address: propertyData?.address,
+      analysisId: propertyData?.analysisId,
+      totalRevenue: propertyData?.totalMonthlyRevenue,
+      assetsCount: propertyData?.availableAssets?.length
+    });
     setState(prev => ({ ...prev, isLoading: true, error: null }));
 
     try {
@@ -96,28 +173,7 @@ export const useOpenAIAssistant = (propertyData: PropertyAnalysisData | null) =>
       }));
       throw error;
     }
-  }, [propertyData, user?.id]);
-
-  const generateWelcomeMessage = useCallback(() => {
-    if (!propertyData) {
-      return "Hi! I'm your AI assistant for property monetization. I'm here to help you explore ways to earn money from your property assets. How can I assist you today?";
-    }
-
-    const { address, totalMonthlyRevenue, availableAssets } = propertyData;
-    const topAssets = availableAssets.filter(a => a.hasRevenuePotential).slice(0, 3);
-
-    if (topAssets.length === 0) {
-      return `Hi! I've reviewed your property at **${address}**. While I don't see immediate monetization opportunities in our current analysis, I'm here to help you explore other options. What specific areas of your property are you most interested in monetizing?`;
-    }
-
-    const assetList = topAssets.map(asset => `**${asset.name}** ($${asset.monthlyRevenue}/month)`).join(', ');
-    
-    return `Hi! I'm your AI assistant and I've analyzed your property at **${address}**! 🏠
-
-I found great monetization opportunities including: ${assetList}. Your total earning potential is **$${totalMonthlyRevenue}/month**.
-
-I'm here to guide you through setting up these assets step-by-step. You can click on any asset badge in the sidebar to start its specific setup, or ask me any questions about the monetization process!`;
-  }, [propertyData]);
+  }, [propertyData, user?.id, generateWelcomeMessage]);
 
   const sendMessage = useCallback(async (message: string) => {
     if (!state.assistantId || !state.threadId || state.isProcessing) return;
