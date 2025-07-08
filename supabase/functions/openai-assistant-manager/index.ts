@@ -266,6 +266,12 @@ async function sendMessage(data: any, supabase: any) {
     hasSupabase: !!supabase
   });
 
+  // Validate threadId before proceeding
+  if (!threadId) {
+    console.error('❌ [DEBUG] threadId is null or undefined');
+    throw new Error('threadId is required for sending messages');
+  }
+
   // Step 1: Send message to OpenAI first
   console.log('📤 [DEBUG] Sending message to OpenAI API');
   const response = await fetch(`https://api.openai.com/v1/threads/${threadId}/messages`, {
@@ -299,46 +305,25 @@ async function sendMessage(data: any, supabase: any) {
       const onboardingResult = await ensureOnboardingRecord(threadId, userId, supabase);
       console.log('✅ [DEBUG] ensureOnboardingRecord completed:', onboardingResult);
       
-      // Prepare message data for insertion
-      const messageInsertData = {
-        onboarding_id: threadId,
-        role: 'user',
-        content: message,
-        metadata: { 
+      // Use the new database function to insert the message
+      console.log('🔍 [DEBUG] Calling insert_onboarding_message function...');
+      const { data: insertResult, error: insertError } = await supabase.rpc('insert_onboarding_message', {
+        p_onboarding_id: threadId,
+        p_role: 'user',
+        p_content: message,
+        p_metadata: { 
           messageId: messageData.id,
           timestamp: new Date().toISOString(),
           userId: userId
         }
-      };
-      
-      console.log('🔍 [DEBUG] About to insert message with data:', {
-        onboarding_id: threadId,
-        role: 'user',
-        content: message?.substring(0, 50) + '...',
-        metadataKeys: Object.keys(messageInsertData.metadata)
       });
       
-      // Insert the message with enhanced error handling
-      console.log('🔍 [DEBUG] Calling supabase.from(onboarding_messages).insert...');
-      const { data: insertData, error: insertError } = await supabase
-        .from('onboarding_messages')
-        .insert(messageInsertData)
-        .select();
-      
       if (insertError) {
-        console.error('❌ [DEBUG] Database insert error details:', {
-          error: insertError,
-          code: insertError.code,
-          message: insertError.message,
-          details: insertError.details,
-          hint: insertError.hint,
-          insertData: messageInsertData
-        });
-        
+        console.error('❌ [DEBUG] Database insert error:', insertError);
         // Don't throw here - let the OpenAI operation succeed even if DB save fails
         console.warn('⚠️ [DEBUG] Message saved to OpenAI but failed to save to database');
       } else {
-        console.log('✅ [DEBUG] Message saved to database successfully:', insertData);
+        console.log('✅ [DEBUG] Message saved to database successfully:', insertResult);
       }
       
     } catch (dbError) {

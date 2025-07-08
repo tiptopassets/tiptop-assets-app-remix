@@ -1564,6 +1564,15 @@ export type Database = {
         Args: Record<PropertyKey, never> | { user_uuid: string }
         Returns: string
       }
+      insert_onboarding_message: {
+        Args: {
+          p_onboarding_id: string
+          p_role: string
+          p_content: string
+          p_metadata?: Json
+        }
+        Returns: string
+      }
       link_journey_to_user: {
         Args: { p_session_id: string; p_user_id: string }
         Returns: undefined
