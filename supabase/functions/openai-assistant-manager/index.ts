@@ -266,6 +266,8 @@ async function sendMessage(data: any, supabase: any) {
     hasSupabase: !!supabase
   });
 
+  // Step 1: Send message to OpenAI first
+  console.log('📤 [DEBUG] Sending message to OpenAI API');
   const response = await fetch(`https://api.openai.com/v1/threads/${threadId}/messages`, {
     method: 'POST',
     headers: {
@@ -282,63 +284,73 @@ async function sendMessage(data: any, supabase: any) {
   if (!response.ok) {
     const errorData = await response.json();
     console.error('❌ OpenAI API error:', errorData);
-    throw new Error(`Failed to send message: ${errorData.error?.message || 'Unknown error'}`);
+    throw new Error(`Failed to send message to OpenAI: ${errorData.error?.message || 'Unknown error'}`);
   }
 
   const messageData = await response.json();
-  console.log('✅ OpenAI message sent, ID:', messageData.id);
+  console.log('✅ OpenAI message sent successfully, ID:', messageData.id);
   
-  // Save message to Supabase if user is authenticated
+  // Step 2: Save message to database if user is authenticated
   if (userId && threadId) {
-    console.log('🔍 [DEBUG] Attempting to save message to database');
+    console.log('🔍 [DEBUG] Starting database save operation');
     try {
       // First, ensure onboarding record exists
       console.log('🔍 [DEBUG] Calling ensureOnboardingRecord...');
       const onboardingResult = await ensureOnboardingRecord(threadId, userId, supabase);
       console.log('✅ [DEBUG] ensureOnboardingRecord completed:', onboardingResult);
       
-      // Verify the IDs before insertion
+      // Prepare message data for insertion
+      const messageInsertData = {
+        onboarding_id: threadId,
+        role: 'user',
+        content: message,
+        metadata: { 
+          messageId: messageData.id,
+          timestamp: new Date().toISOString(),
+          userId: userId
+        }
+      };
+      
       console.log('🔍 [DEBUG] About to insert message with data:', {
         onboarding_id: threadId,
         role: 'user',
         content: message?.substring(0, 50) + '...',
-        metadata: { messageId: messageData.id }
+        metadataKeys: Object.keys(messageInsertData.metadata)
       });
       
-      // Then save the message with enhanced error handling
+      // Insert the message with enhanced error handling
       console.log('🔍 [DEBUG] Calling supabase.from(onboarding_messages).insert...');
       const { data: insertData, error: insertError } = await supabase
         .from('onboarding_messages')
-        .insert({
-          onboarding_id: threadId,
-          role: 'user',
-          content: message,
-          metadata: { messageId: messageData.id }
-        });
+        .insert(messageInsertData)
+        .select();
       
       if (insertError) {
-        console.error('❌ [DEBUG] Database insert error:', {
+        console.error('❌ [DEBUG] Database insert error details:', {
           error: insertError,
           code: insertError.code,
           message: insertError.message,
           details: insertError.details,
-          hint: insertError.hint
+          hint: insertError.hint,
+          insertData: messageInsertData
         });
-        throw new Error(`Database insert failed: ${insertError.message} (Code: ${insertError.code})`);
+        
+        // Don't throw here - let the OpenAI operation succeed even if DB save fails
+        console.warn('⚠️ [DEBUG] Message saved to OpenAI but failed to save to database');
+      } else {
+        console.log('✅ [DEBUG] Message saved to database successfully:', insertData);
       }
       
-      console.log('✅ [DEBUG] Message saved to database successfully:', insertData);
-      
-    } catch (error) {
-      console.error('❌ [DEBUG] Failed to save user message to DB:', {
-        error: error.message,
-        stack: error.stack,
+    } catch (dbError) {
+      console.error('❌ [DEBUG] Database operation failed:', {
+        error: dbError.message,
+        stack: dbError.stack,
         threadId,
         userId
       });
       
-      // Re-throw the error with more context for debugging
-      throw new Error(`Message save failed: ${error.message}. ThreadId: ${threadId}, UserId: ${userId}`);
+      // Don't throw - let OpenAI operation succeed even if DB fails
+      console.warn('⚠️ [DEBUG] Continuing despite database error');
     }
   } else {
     console.log('⚠️ [DEBUG] Skipping database save - missing userId or threadId:', { userId, threadId });
@@ -543,7 +555,7 @@ async function ensureOnboardingRecord(threadId: string, userId: string, supabase
       .from('user_onboarding')
       .select('id')
       .eq('id', threadId)
-      .maybeSingle(); // Use maybeSingle instead of single to avoid errors when no record exists
+      .maybeSingle();
 
     console.log('🔍 [DEBUG] Existing record check result:', { 
       existing, 
@@ -579,7 +591,8 @@ async function ensureOnboardingRecord(threadId: string, userId: string, supabase
       
       const { data: insertResult, error: insertError } = await supabase
         .from('user_onboarding')
-        .insert(insertData);
+        .insert(insertData)
+        .select();
 
       if (insertError) {
         console.error('❌ [DEBUG] Failed to create fallback onboarding record:', {
