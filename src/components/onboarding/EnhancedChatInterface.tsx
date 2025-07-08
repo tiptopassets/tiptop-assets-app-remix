@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent } from '@/components/ui/card';
@@ -6,6 +7,8 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { useOpenAIAssistant } from '@/hooks/useOpenAIAssistant';
 import { PropertyAnalysisData } from '@/hooks/useUserPropertyAnalysis';
+import { useAuth } from '@/contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
 interface EnhancedChatInterfaceProps {
   onAssetDetected: (assets: string[]) => void;
@@ -20,6 +23,8 @@ const EnhancedChatInterface = ({
   propertyData,
   onSendMessageReady 
 }: EnhancedChatInterfaceProps) => {
+  const { user } = useAuth();
+  const navigate = useNavigate();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [inputMessage, setInputMessage] = useState('');
   const [isInitialized, setIsInitialized] = useState(false);
@@ -33,12 +38,22 @@ const EnhancedChatInterface = ({
     isProcessing,
     isReady,
     error: assistantError,
+    authError,
     clearError
   } = useOpenAIAssistant(propertyData);
 
-  // Initialize assistant when component mounts
+  // Check if user is authenticated and redirect if not
   useEffect(() => {
-    if (!isInitialized && !aiLoading && !isProcessing) {
+    if (authError && !user) {
+      console.log('🔐 User not authenticated, redirecting to auth page');
+      navigate('/auth');
+      return;
+    }
+  }, [authError, user, navigate]);
+
+  // Initialize assistant when component mounts and user is authenticated
+  useEffect(() => {
+    if (!isInitialized && !aiLoading && !isProcessing && user?.id) {
       const initAsync = async () => {
         try {
           await initializeAssistant();
@@ -56,7 +71,7 @@ const EnhancedChatInterface = ({
       
       initAsync();
     }
-  }, [isInitialized, aiLoading, isProcessing, initializeAssistant, onSendMessageReady, sendMessage]);
+  }, [isInitialized, aiLoading, isProcessing, user?.id, initializeAssistant, onSendMessageReady, sendMessage]);
 
   // Scroll to bottom when messages change (only within chat container)
   useEffect(() => {
@@ -126,6 +141,25 @@ const EnhancedChatInterface = ({
           'Show me requirements'
         ];
   }, [propertyData]);
+
+  // Show authentication required message if user is not authenticated
+  if (!user) {
+    return (
+      <div className="flex flex-col h-full bg-gradient-to-br from-gray-50 to-purple-50">
+        <div className="flex-1 flex items-center justify-center p-4">
+          <Card className="w-full max-w-md text-center">
+            <CardContent className="p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Authentication Required</h3>
+              <p className="text-gray-600 mb-4">Please sign in to use the AI assistant for property monetization guidance.</p>
+              <Button onClick={() => navigate('/auth')} className="w-full">
+                Sign In to Continue
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col h-full bg-gradient-to-br from-gray-50 to-purple-50">

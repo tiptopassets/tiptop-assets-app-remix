@@ -1,4 +1,3 @@
-
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.4';
@@ -133,6 +132,21 @@ async function getExistingAssistant() {
 
 async function createThread(data: any, supabase: any) {
   try {
+    // Validate userId is provided
+    const userId = data?.metadata?.userId;
+    if (!userId) {
+      console.error('❌ [AUTH] No userId provided for thread creation');
+      return new Response(JSON.stringify({ 
+        error: 'Authentication required - userId missing',
+        success: false 
+      }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    console.log('✅ [AUTH] Creating thread for authenticated user:', userId);
+
     const response = await fetch('https://api.openai.com/v1/threads', {
       method: 'POST',
       headers: {
@@ -162,35 +176,34 @@ async function createThread(data: any, supabase: any) {
     console.log('✅ Thread created:', threadId);
 
     // Create corresponding onboarding record using threadId
-    const userId = data?.metadata?.userId;
-    if (userId) {
-      try {
-        const { error: onboardingError } = await supabase
-          .from('user_onboarding')
-          .insert({
-            id: threadId, // Use OpenAI thread ID as the onboarding ID
-            user_id: userId,
-            selected_option: 'concierge', // Default to concierge for AI assistant
-            status: 'in_progress',
-            current_step: 1,
-            total_steps: 5,
-            chat_history: [],
-            completed_assets: [],
-            progress_data: {
-              assistant_thread_id: threadId,
-              created_via: 'openai_assistant'
-            }
-          });
+    try {
+      const { error: onboardingError } = await supabase
+        .from('user_onboarding')
+        .insert({
+          id: threadId, // Use OpenAI thread ID as the onboarding ID
+          user_id: userId,
+          selected_option: 'concierge', // Default to concierge for AI assistant
+          status: 'in_progress',
+          current_step: 1,
+          total_steps: 5,
+          chat_history: [],
+          completed_assets: [],
+          progress_data: {
+            assistant_thread_id: threadId,
+            created_via: 'openai_assistant'
+          }
+        });
 
-        if (onboardingError) {
-          console.warn('⚠️ Failed to create onboarding record:', onboardingError);
-          // Don't fail the request - the thread is already created
-        } else {
-          console.log('✅ Onboarding record created for thread:', threadId);
-        }
-      } catch (error) {
-        console.warn('⚠️ Error creating onboarding record:', error);
+      if (onboardingError) {
+        console.error('❌ [DB] Failed to create onboarding record:', onboardingError);
+        // Continue - don't fail the thread creation if DB operation fails
+        console.warn('⚠️ [DB] Thread created but onboarding record creation failed');
+      } else {
+        console.log('✅ [DB] Onboarding record created for thread:', threadId);
       }
+    } catch (error) {
+      console.error('❌ [DB] Error creating onboarding record:', error);
+      // Continue - don't fail the thread creation if DB operation fails
     }
 
     return new Response(JSON.stringify({ 
@@ -227,6 +240,18 @@ async function sendMessage(data: any, supabase: any) {
   }
 
   const { threadId, message, userId } = data;
+
+  // Validate authentication first
+  if (!userId) {
+    console.error('❌ [AUTH] No userId provided for message sending');
+    return new Response(JSON.stringify({ 
+      error: 'Authentication required - userId missing',
+      success: false 
+    }), {
+      status: 401,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
 
   // Validate threadId
   if (!threadId) {
@@ -285,48 +310,39 @@ async function sendMessage(data: any, supabase: any) {
     const messageData = await response.json();
     console.log('✅ OpenAI message sent successfully, ID:', messageData.id);
     
-    // Step 2: Save message to database if user is authenticated
-    if (userId && threadId) {
-      console.log('🔍 [DEBUG] Starting database save operation');
-      try {
-        // First, ensure onboarding record exists
-        console.log('🔍 [DEBUG] Calling ensureOnboardingRecord...');
-        const onboardingResult = await ensureOnboardingRecord(threadId, userId, supabase);
-        console.log('✅ [DEBUG] ensureOnboardingRecord completed:', onboardingResult);
-        
-        // Use the new database function to insert the message
-        console.log('🔍 [DEBUG] Calling insert_onboarding_message function...');
-        const { data: insertResult, error: insertError } = await supabase.rpc('insert_onboarding_message', {
-          p_onboarding_id: threadId,
-          p_role: 'user',
-          p_content: message,
-          p_metadata: { 
-            messageId: messageData.id,
-            timestamp: new Date().toISOString(),
-            userId: userId
-          }
-        });
-        
-        if (insertError) {
-          console.error('❌ [DEBUG] Database insert error:', insertError);
-          // Don't fail the request - let the OpenAI operation succeed even if DB save fails
-          console.warn('⚠️ [DEBUG] Message saved to OpenAI but failed to save to database');
-        } else {
-          console.log('✅ [DEBUG] Message saved to database successfully:', insertResult);
+    // Step 2: Save message to database (graceful failure)
+    console.log('🔍 [DEBUG] Starting database save operation');
+    try {
+      // Use the database function to insert the message
+      console.log('🔍 [DEBUG] Calling insert_onboarding_message function...');
+      const { data: insertResult, error: insertError } = await supabase.rpc('insert_onboarding_message', {
+        p_onboarding_id: threadId,
+        p_role: 'user',
+        p_content: message,
+        p_metadata: { 
+          messageId: messageData.id,
+          timestamp: new Date().toISOString(),
+          userId: userId
         }
-        
-      } catch (dbError) {
-        console.error('❌ [DEBUG] Database operation failed:', {
-          error: dbError.message,
-          threadId,
-          userId
-        });
-        
-        // Don't fail the request - let OpenAI operation succeed even if DB fails
-        console.warn('⚠️ [DEBUG] Continuing despite database error');
+      });
+      
+      if (insertError) {
+        console.error('❌ [DEBUG] Database insert error:', insertError);
+        // Don't fail the request - let the OpenAI operation succeed even if DB save fails
+        console.warn('⚠️ [DEBUG] Message saved to OpenAI but failed to save to database');
+      } else {
+        console.log('✅ [DEBUG] Message saved to database successfully:', insertResult);
       }
-    } else {
-      console.log('⚠️ [DEBUG] Skipping database save - missing userId or threadId:', { userId, threadId });
+      
+    } catch (dbError) {
+      console.error('❌ [DEBUG] Database operation failed:', {
+        error: dbError.message,
+        threadId,
+        userId
+      });
+      
+      // Don't fail the request - let OpenAI operation succeed even if DB fails
+      console.warn('⚠️ [DEBUG] Continuing despite database error');
     }
 
     return new Response(JSON.stringify({ 
@@ -361,6 +377,18 @@ async function runAssistant(data: any, supabase: any) {
   }
 
   const { threadId, assistantId, userId } = data;
+
+  // Validate authentication
+  if (!userId) {
+    console.error('❌ [AUTH] No userId provided for assistant run');
+    return new Response(JSON.stringify({ 
+      error: 'Authentication required - userId missing',
+      success: false 
+    }), {
+      status: 401,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
 
   if (!threadId) {
     return new Response(JSON.stringify({ 
@@ -525,6 +553,18 @@ async function submitToolOutputs(data: any, supabase: any) {
 
   const { threadId, runId, toolOutputs, userId } = data;
 
+  // Validate authentication
+  if (!userId) {
+    console.error('❌ [AUTH] No userId provided for tool outputs');
+    return new Response(JSON.stringify({ 
+      error: 'Authentication required - userId missing',
+      success: false 
+    }), {
+      status: 401,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
+
   if (!threadId || !runId) {
     return new Response(JSON.stringify({ 
       error: 'threadId and runId are required',
@@ -652,84 +692,6 @@ async function submitToolOutputs(data: any, supabase: any) {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
-  }
-}
-
-// Helper function to ensure onboarding record exists
-async function ensureOnboardingRecord(threadId: string, userId: string, supabase: any) {
-  console.log('🔍 [DEBUG] ensureOnboardingRecord called with:', { threadId, userId });
-  
-  try {
-    // Check if onboarding record exists
-    console.log('🔍 [DEBUG] Checking for existing onboarding record...');
-    const { data: existing, error: checkError } = await supabase
-      .from('user_onboarding')
-      .select('id')
-      .eq('id', threadId)
-      .maybeSingle();
-
-    console.log('🔍 [DEBUG] Existing record check result:', { 
-      existing, 
-      checkError,
-      errorCode: checkError?.code 
-    });
-
-    if (checkError) {
-      console.error('❌ [DEBUG] Error checking existing record:', checkError);
-      throw checkError;
-    }
-
-    // If no record exists, create one
-    if (!existing) {
-      console.log('📝 [DEBUG] No existing record found, creating new onboarding record for thread:', threadId);
-      
-      const insertData = {
-        id: threadId,
-        user_id: userId,
-        selected_option: 'concierge',
-        status: 'in_progress',
-        current_step: 1,
-        total_steps: 5,
-        chat_history: [],
-        completed_assets: [],
-        progress_data: {
-          assistant_thread_id: threadId,
-          created_via: 'openai_assistant_fallback'
-        }
-      };
-      
-      console.log('🔍 [DEBUG] About to insert onboarding record with data:', insertData);
-      
-      const { data: insertResult, error: insertError } = await supabase
-        .from('user_onboarding')
-        .insert(insertData)
-        .select();
-
-      if (insertError) {
-        console.error('❌ [DEBUG] Failed to create fallback onboarding record:', {
-          error: insertError,
-          code: insertError.code,
-          message: insertError.message,
-          details: insertError.details,
-          hint: insertError.hint,
-          insertData
-        });
-        throw new Error(`Onboarding record creation failed: ${insertError.message} (Code: ${insertError.code})`);
-      }
-      
-      console.log('✅ [DEBUG] Fallback onboarding record created successfully:', { threadId, insertResult });
-      return { created: true, threadId };
-    } else {
-      console.log('✅ [DEBUG] Existing onboarding record found:', existing);
-      return { created: false, existing };
-    }
-  } catch (error) {
-    console.error('❌ [DEBUG] Error in ensureOnboardingRecord:', {
-      error: error.message,
-      threadId,
-      userId
-    });
-    throw new Error(`ensureOnboardingRecord failed: ${error.message}`);
   }
 }
 

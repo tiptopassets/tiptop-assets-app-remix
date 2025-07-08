@@ -20,6 +20,7 @@ interface AssistantState {
   isProcessing: boolean;
   messages: AssistantMessage[];
   error: string | null;
+  authError: boolean;
 }
 
 export const useOpenAIAssistant = (propertyData: PropertyAnalysisData | null) => {
@@ -31,7 +32,8 @@ export const useOpenAIAssistant = (propertyData: PropertyAnalysisData | null) =>
     isLoading: false,
     isProcessing: false,
     messages: [],
-    error: null
+    error: null,
+    authError: false
   });
 
   // Store the property data reference to detect changes
@@ -68,7 +70,8 @@ export const useOpenAIAssistant = (propertyData: PropertyAnalysisData | null) =>
         isLoading: false,
         isProcessing: false,
         messages: [],
-        error: null
+        error: null,
+        authError: false
       });
     }
     
@@ -113,9 +116,23 @@ I'm here to guide you through setting up these assets step-by-step. You can clic
       address: propertyData?.address,
       analysisId: propertyData?.analysisId,
       totalRevenue: propertyData?.totalMonthlyRevenue,
-      assetsCount: propertyData?.availableAssets?.length
+      assetsCount: propertyData?.availableAssets?.length,
+      userId: user?.id
     });
-    setState(prev => ({ ...prev, isLoading: true, error: null }));
+
+    // Check if user is authenticated
+    if (!user?.id) {
+      console.error('❌ User not authenticated, cannot initialize assistant');
+      setState(prev => ({
+        ...prev,
+        isLoading: false,
+        error: 'Authentication required to use AI assistant',
+        authError: true
+      }));
+      return;
+    }
+
+    setState(prev => ({ ...prev, isLoading: true, error: null, authError: false }));
 
     try {
       // Get existing assistant instead of creating new one
@@ -130,13 +147,13 @@ I'm here to guide you through setting up these assets step-by-step. You can clic
       const assistantId = assistantData.assistant.id;
       console.log('✅ Using existing assistant:', assistantId);
 
-      // Create thread
+      // Create thread with authenticated user
       const { data: threadData, error: threadError } = await supabase.functions.invoke('openai-assistant-manager', {
         body: {
           action: 'create_thread',
           data: {
             metadata: {
-              userId: user?.id,
+              userId: user.id,
               propertyAddress: propertyData?.address,
               analysisId: propertyData?.analysisId
             }
@@ -177,6 +194,17 @@ I'm here to guide you through setting up these assets step-by-step. You can clic
   const sendMessage = useCallback(async (message: string) => {
     if (!state.assistantId || !state.threadId || state.isProcessing) return;
 
+    // Check if user is authenticated
+    if (!user?.id) {
+      console.error('❌ User not authenticated, cannot send message');
+      setState(prev => ({
+        ...prev,
+        error: 'Authentication required to send messages',
+        authError: true
+      }));
+      return;
+    }
+
     console.log('💬 Sending message to assistant:', message);
     setState(prev => ({ 
       ...prev, 
@@ -190,14 +218,14 @@ I'm here to guide you through setting up these assets step-by-step. You can clic
     }));
 
     try {
-      // Send message to thread
+      // Send message to thread with user authentication
       const { data: messageData, error: messageError } = await supabase.functions.invoke('openai-assistant-manager', {
         body: {
           action: 'send_message',
           data: {
             threadId: state.threadId,
             message,
-            userId: user?.id
+            userId: user.id
           }
         }
       });
@@ -211,7 +239,7 @@ I'm here to guide you through setting up these assets step-by-step. You can clic
           data: {
             threadId: state.threadId,
             assistantId: state.assistantId,
-            userId: user?.id
+            userId: user.id
           }
         }
       });
@@ -373,7 +401,7 @@ I'm here to guide you through setting up these assets step-by-step. You can clic
   }, [state.threadId, user?.id, pollForCompletion]);
 
   const clearError = useCallback(() => {
-    setState(prev => ({ ...prev, error: null }));
+    setState(prev => ({ ...prev, error: null, authError: false }));
   }, []);
 
   const resetConversation = useCallback(() => {
@@ -389,7 +417,8 @@ I'm here to guide you through setting up these assets step-by-step. You can clic
       isLoading: false,
       isProcessing: false,
       messages: [],
-      error: null
+      error: null,
+      authError: false
     });
   }, []);
 
@@ -399,6 +428,6 @@ I'm here to guide you through setting up these assets step-by-step. You can clic
     sendMessage,
     clearError,
     resetConversation,
-    isReady: !!state.assistantId && !!state.threadId
+    isReady: !!state.assistantId && !!state.threadId && !!user?.id
   };
 };
