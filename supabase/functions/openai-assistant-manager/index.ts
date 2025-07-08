@@ -258,6 +258,13 @@ async function createThread(data: any, supabase: any) {
 
 async function sendMessage(data: any, supabase: any) {
   const { threadId, message, userId } = data;
+  
+  console.log('🔍 [DEBUG] sendMessage called with:', {
+    threadId,
+    messageLength: message?.length,
+    userId,
+    hasSupabase: !!supabase
+  });
 
   const response = await fetch(`https://api.openai.com/v1/threads/${threadId}/messages`, {
     method: 'POST',
@@ -274,27 +281,67 @@ async function sendMessage(data: any, supabase: any) {
 
   if (!response.ok) {
     const errorData = await response.json();
+    console.error('❌ OpenAI API error:', errorData);
     throw new Error(`Failed to send message: ${errorData.error?.message || 'Unknown error'}`);
   }
 
   const messageData = await response.json();
+  console.log('✅ OpenAI message sent, ID:', messageData.id);
   
   // Save message to Supabase if user is authenticated
   if (userId && threadId) {
+    console.log('🔍 [DEBUG] Attempting to save message to database');
     try {
       // First, ensure onboarding record exists
-      await ensureOnboardingRecord(threadId, userId, supabase);
+      console.log('🔍 [DEBUG] Calling ensureOnboardingRecord...');
+      const onboardingResult = await ensureOnboardingRecord(threadId, userId, supabase);
+      console.log('✅ [DEBUG] ensureOnboardingRecord completed:', onboardingResult);
       
-      // Then save the message
-      await supabase.from('onboarding_messages').insert({
+      // Verify the IDs before insertion
+      console.log('🔍 [DEBUG] About to insert message with data:', {
         onboarding_id: threadId,
         role: 'user',
-        content: message,
+        content: message?.substring(0, 50) + '...',
         metadata: { messageId: messageData.id }
       });
+      
+      // Then save the message with enhanced error handling
+      console.log('🔍 [DEBUG] Calling supabase.from(onboarding_messages).insert...');
+      const { data: insertData, error: insertError } = await supabase
+        .from('onboarding_messages')
+        .insert({
+          onboarding_id: threadId,
+          role: 'user',
+          content: message,
+          metadata: { messageId: messageData.id }
+        });
+      
+      if (insertError) {
+        console.error('❌ [DEBUG] Database insert error:', {
+          error: insertError,
+          code: insertError.code,
+          message: insertError.message,
+          details: insertError.details,
+          hint: insertError.hint
+        });
+        throw new Error(`Database insert failed: ${insertError.message} (Code: ${insertError.code})`);
+      }
+      
+      console.log('✅ [DEBUG] Message saved to database successfully:', insertData);
+      
     } catch (error) {
-      console.warn('Failed to save user message to DB:', error);
+      console.error('❌ [DEBUG] Failed to save user message to DB:', {
+        error: error.message,
+        stack: error.stack,
+        threadId,
+        userId
+      });
+      
+      // Re-throw the error with more context for debugging
+      throw new Error(`Message save failed: ${error.message}. ThreadId: ${threadId}, UserId: ${userId}`);
     }
+  } else {
+    console.log('⚠️ [DEBUG] Skipping database save - missing userId or threadId:', { userId, threadId });
   }
 
   return new Response(JSON.stringify({ 
@@ -487,48 +534,79 @@ async function submitToolOutputs(data: any, supabase: any) {
 
 // Helper function to ensure onboarding record exists
 async function ensureOnboardingRecord(threadId: string, userId: string, supabase: any) {
+  console.log('🔍 [DEBUG] ensureOnboardingRecord called with:', { threadId, userId });
+  
   try {
     // Check if onboarding record exists
+    console.log('🔍 [DEBUG] Checking for existing onboarding record...');
     const { data: existing, error: checkError } = await supabase
       .from('user_onboarding')
       .select('id')
       .eq('id', threadId)
-      .single();
+      .maybeSingle(); // Use maybeSingle instead of single to avoid errors when no record exists
 
-    if (checkError && checkError.code !== 'PGRST116') {
+    console.log('🔍 [DEBUG] Existing record check result:', { 
+      existing, 
+      checkError,
+      errorCode: checkError?.code 
+    });
+
+    if (checkError) {
+      console.error('❌ [DEBUG] Error checking existing record:', checkError);
       throw checkError;
     }
 
     // If no record exists, create one
     if (!existing) {
-      console.log('📝 Creating missing onboarding record for thread:', threadId);
-      const { error: insertError } = await supabase
+      console.log('📝 [DEBUG] No existing record found, creating new onboarding record for thread:', threadId);
+      
+      const insertData = {
+        id: threadId,
+        user_id: userId,
+        selected_option: 'concierge',
+        status: 'in_progress',
+        current_step: 1,
+        total_steps: 5,
+        chat_history: [],
+        completed_assets: [],
+        progress_data: {
+          assistant_thread_id: threadId,
+          created_via: 'openai_assistant_fallback'
+        }
+      };
+      
+      console.log('🔍 [DEBUG] About to insert onboarding record with data:', insertData);
+      
+      const { data: insertResult, error: insertError } = await supabase
         .from('user_onboarding')
-        .insert({
-          id: threadId,
-          user_id: userId,
-          selected_option: 'concierge',
-          status: 'in_progress',
-          current_step: 1,
-          total_steps: 5,
-          chat_history: [],
-          completed_assets: [],
-          progress_data: {
-            assistant_thread_id: threadId,
-            created_via: 'openai_assistant_fallback'
-          }
-        });
+        .insert(insertData);
 
       if (insertError) {
-        console.error('❌ Failed to create fallback onboarding record:', insertError);
-        throw insertError;
+        console.error('❌ [DEBUG] Failed to create fallback onboarding record:', {
+          error: insertError,
+          code: insertError.code,
+          message: insertError.message,
+          details: insertError.details,
+          hint: insertError.hint,
+          insertData
+        });
+        throw new Error(`Onboarding record creation failed: ${insertError.message} (Code: ${insertError.code})`);
       }
       
-      console.log('✅ Fallback onboarding record created for thread:', threadId);
+      console.log('✅ [DEBUG] Fallback onboarding record created successfully:', { threadId, insertResult });
+      return { created: true, threadId };
+    } else {
+      console.log('✅ [DEBUG] Existing onboarding record found:', existing);
+      return { created: false, existing };
     }
   } catch (error) {
-    console.error('❌ Error ensuring onboarding record:', error);
-    throw error;
+    console.error('❌ [DEBUG] Error in ensureOnboardingRecord:', {
+      error: error.message,
+      stack: error.stack,
+      threadId,
+      userId
+    });
+    throw new Error(`ensureOnboardingRecord failed: ${error.message}`);
   }
 }
 
