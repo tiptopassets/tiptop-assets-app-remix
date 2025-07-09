@@ -27,7 +27,6 @@ const EnhancedChatInterface = ({
   const navigate = useNavigate();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [inputMessage, setInputMessage] = useState('');
-  const [isInitialized, setIsInitialized] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(true);
 
   const {
@@ -43,27 +42,12 @@ const EnhancedChatInterface = ({
     clearError
   } = useOpenAIAssistant(propertyData);
 
-  // Initialize assistant when component mounts (works for both auth and unauth users)
+  // Provide sendMessage function to parent component once ready
   useEffect(() => {
-    if (!isInitialized && !aiLoading && !isProcessing) {
-      const initAsync = async () => {
-        try {
-          await initializeAssistant();
-          setIsInitialized(true);
-          console.log('🎬 [CHAT] Assistant initialized successfully');
-          
-          // Provide sendMessage function to parent component
-          if (onSendMessageReady) {
-            onSendMessageReady(sendMessage);
-          }
-        } catch (error) {
-          console.error('❌ [CHAT] Failed to initialize assistant:', error);
-        }
-      };
-      
-      initAsync();
+    if (onSendMessageReady && isReady) {
+      onSendMessageReady(sendMessage);
     }
-  }, [isInitialized, aiLoading, isProcessing, initializeAssistant, onSendMessageReady, sendMessage]);
+  }, [onSendMessageReady, sendMessage, isReady]);
 
   // Scroll to bottom when messages change (only within chat container)
   useEffect(() => {
@@ -134,6 +118,9 @@ const EnhancedChatInterface = ({
         ];
   }, [propertyData]);
 
+  // Loading state indicator
+  const showLoadingState = aiLoading || (!userContext.isLoaded && !assistantError);
+
   return (
     <div className="flex flex-col h-full bg-gradient-to-br from-gray-50 to-purple-50">
       {/* Header */}
@@ -151,7 +138,13 @@ const EnhancedChatInterface = ({
             </p>
           </div>
           <div className="flex items-center space-x-2">
-            {isReady && (
+            {showLoadingState && (
+              <Badge variant="outline" className="text-blue-600 border-blue-200">
+                <div className="w-2 h-2 bg-blue-500 rounded-full mr-1 animate-pulse"></div>
+                Loading
+              </Badge>
+            )}
+            {isReady && !showLoadingState && (
               <Badge variant="outline" className="text-green-600 border-green-200">
                 <div className="w-2 h-2 bg-green-500 rounded-full mr-1"></div>
                 Connected
@@ -180,11 +173,13 @@ const EnhancedChatInterface = ({
       {/* Messages Area */}
       <div className="flex-1 overflow-y-auto p-4">
         {/* Loading state */}
-        {aiLoading && !isInitialized && (
+        {showLoadingState && (
           <div className="flex justify-center items-center h-full">
             <div className="flex items-center space-x-2">
               <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
-              <span className="text-sm text-muted-foreground">Initializing AI assistant...</span>
+              <span className="text-sm text-muted-foreground">
+                {userContext.isLoaded ? 'Initializing AI assistant...' : 'Loading your data...'}
+              </span>
             </div>
           </div>
         )}
@@ -279,7 +274,7 @@ const EnhancedChatInterface = ({
           )}
 
           {/* Quick Start Suggestions */}
-          {showSuggestions && assistantMessages.length <= 1 && propertyData && (
+          {showSuggestions && assistantMessages.length <= 1 && propertyData && isReady && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -301,6 +296,7 @@ const EnhancedChatInterface = ({
                       variant="outline"
                       className="h-auto p-3 justify-start hover:bg-tiptop-purple hover:text-white transition-colors"
                       onClick={() => handleSuggestedAction(`I want to set up ${asset.name.toLowerCase()} at my property. What do I need to get started?`)}
+                      disabled={!isReady || isProcessing}
                     >
                       <div className="text-left">
                         <div className="font-medium">{asset.name}</div>
@@ -327,7 +323,9 @@ const EnhancedChatInterface = ({
             placeholder={
               isReady 
                 ? "Ask me about your property monetization..." 
-                : "Assistant is starting up..."
+                : showLoadingState
+                  ? "Assistant is starting up..."
+                  : "Assistant not available"
             }
             disabled={!isReady || isProcessing}
             className="flex-1"
@@ -342,7 +340,7 @@ const EnhancedChatInterface = ({
         </div>
         
         {/* Quick suggestions */}
-        {showSuggestions && assistantMessages.length === 0 && !aiLoading && (
+        {showSuggestions && assistantMessages.length === 0 && !showLoadingState && isReady && (
           <div className="mt-3 flex flex-wrap gap-2">
             {quickStartSuggestions.map((suggestion, index) => (
               <Button
@@ -360,7 +358,7 @@ const EnhancedChatInterface = ({
         )}
         
         {/* Context indicators */}
-        {userContext && (
+        {userContext.isLoaded && (
           <div className="mt-2 flex flex-wrap gap-1 text-xs text-gray-500">
             {userContext.propertyData && (
               <Badge variant="secondary" className="text-xs">

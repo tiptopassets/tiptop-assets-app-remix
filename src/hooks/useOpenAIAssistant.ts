@@ -27,6 +27,7 @@ interface UserContext {
   propertyData: PropertyAnalysisData | null;
   serviceProviders: any[];
   onboardingProgress: any;
+  isLoaded: boolean;
 }
 
 export const useOpenAIAssistant = (propertyData: PropertyAnalysisData | null) => {
@@ -45,11 +46,13 @@ export const useOpenAIAssistant = (propertyData: PropertyAnalysisData | null) =>
   const [userContext, setUserContext] = useState<UserContext>({
     propertyData: null,
     serviceProviders: [],
-    onboardingProgress: null
+    onboardingProgress: null,
+    isLoaded: false
   });
 
   // Store the property data reference to detect changes
   const propertyDataRef = useRef<PropertyAnalysisData | null>(null);
+  const initializationAttempted = useRef(false);
   
   // Reset assistant when property data changes
   useEffect(() => {
@@ -74,7 +77,7 @@ export const useOpenAIAssistant = (propertyData: PropertyAnalysisData | null) =>
         }
       });
       
-      // Reset the assistant state
+      // Reset everything for new property data
       setState({
         assistantId: null,
         threadId: null,
@@ -85,6 +88,14 @@ export const useOpenAIAssistant = (propertyData: PropertyAnalysisData | null) =>
         error: null,
         authError: false
       });
+      
+      setUserContext(prev => ({
+        ...prev,
+        propertyData: currentPropertyData,
+        isLoaded: false
+      }));
+      
+      initializationAttempted.current = false;
     }
     
     propertyDataRef.current = currentPropertyData;
@@ -92,61 +103,78 @@ export const useOpenAIAssistant = (propertyData: PropertyAnalysisData | null) =>
 
   const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Load user context data
+  // Load user context data with proper timing
   const loadUserContext = useCallback(async () => {
-    if (!user?.id) return;
+    console.log('🔍 Loading user context data...');
 
     try {
-      console.log('🔍 Loading user context data for:', user.id);
-
-      // Load service providers
+      // Load service providers (always available)
       const { data: providers } = await supabase
         .from('enhanced_service_providers')
         .select('*')
         .eq('is_active', true)
         .order('priority', { ascending: false });
 
-      // Load onboarding progress
-      const { data: onboarding } = await supabase
-        .from('user_onboarding')
-        .select('*')
-        .eq('user_id', user.id)
-        .maybeSingle();
+      let onboarding = null;
+      
+      // Load onboarding progress only for authenticated users
+      if (user?.id) {
+        const { data: onboardingData } = await supabase
+          .from('user_onboarding')
+          .select('*')
+          .eq('user_id', user.id)
+          .maybeSingle();
+        
+        onboarding = onboardingData;
+      }
 
-      setUserContext({
+      const contextData = {
         propertyData: propertyData,
         serviceProviders: providers || [],
-        onboardingProgress: onboarding
-      });
+        onboardingProgress: onboarding,
+        isLoaded: true
+      };
+
+      setUserContext(contextData);
 
       console.log('✅ User context loaded:', {
         providersCount: providers?.length || 0,
         hasOnboarding: !!onboarding,
-        hasPropertyData: !!propertyData
+        hasPropertyData: !!propertyData,
+        isLoaded: true
       });
 
+      return contextData;
     } catch (error) {
       console.error('❌ Failed to load user context:', error);
+      // Set context as loaded even if some data failed to prevent infinite loading
+      setUserContext(prev => ({
+        ...prev,
+        propertyData: propertyData,
+        isLoaded: true
+      }));
+      return {
+        propertyData: propertyData,
+        serviceProviders: [],
+        onboardingProgress: null,
+        isLoaded: true
+      };
     }
   }, [user?.id, propertyData]);
 
-  // Load context when user or property data changes
+  // Load context when dependencies change
   useEffect(() => {
-    if (user?.id) {
-      loadUserContext();
-    }
-  }, [user?.id, loadUserContext]);
+    loadUserContext();
+  }, [loadUserContext]);
 
-  const generateWelcomeMessage = useCallback(() => {
-    const context = userContext;
-    
+  const generateWelcomeMessage = useCallback((context: UserContext) => {
     if (!context.propertyData) {
       return "Hi! I'm your AI assistant for property monetization. I'm here to help you explore ways to earn money from your property assets and connect you with the right partners. How can I assist you today?";
     }
 
     const { address, totalMonthlyRevenue, availableAssets } = context.propertyData;
     
-    console.log('🎯 [WELCOME] Generating message with user context:', {
+    console.log('🎯 [WELCOME] Generating message with context:', {
       address,
       totalMonthlyRevenue,
       availableAssetsCount: availableAssets.length,
@@ -172,24 +200,33 @@ I found great monetization opportunities including: ${assetList}. Your total ear
 I have access to **${partnersAvailable} partner services** that can help you set up these opportunities. I can guide you through the entire onboarding process, from initial setup to connecting with the right partners.
 
 Would you like to start with a specific asset, or would you prefer me to recommend the best partner matches for your property?`;
-  }, [userContext]);
+  }, []);
 
-  const initializeAssistant = useCallback(async () => {
-    console.log('🤖 Initializing OpenAI Assistant with enhanced context:', {
+  const initializeAssistant = useCallback(async (retryCount = 0) => {
+    // Prevent multiple initialization attempts
+    if (initializationAttempted.current && retryCount === 0) {
+      console.log('🛑 Assistant initialization already attempted');
+      return;
+    }
+
+    // Wait for user context to be loaded
+    if (!userContext.isLoaded) {
+      console.log('⏳ Waiting for user context to load...');
+      return;
+    }
+
+    console.log('🤖 Initializing OpenAI Assistant with context:', {
       address: userContext.propertyData?.address,
       analysisId: userContext.propertyData?.analysisId,
       totalRevenue: userContext.propertyData?.totalMonthlyRevenue,
       assetsCount: userContext.propertyData?.availableAssets?.length,
       partnersCount: userContext.serviceProviders.length,
-      userId: user?.id,
-      hasOnboarding: !!userContext.onboardingProgress
+      userId: user?.id || 'anonymous',
+      hasOnboarding: !!userContext.onboardingProgress,
+      retryCount
     });
 
-    // Allow non-authenticated users with limited functionality
-    if (!user?.id) {
-      console.log('⚠️ No authenticated user, providing limited assistant functionality');
-    }
-
+    initializationAttempted.current = true;
     setState(prev => ({ ...prev, isLoading: true, error: null, authError: false }));
 
     try {
@@ -200,10 +237,13 @@ Would you like to start with a specific asset, or would you prefer me to recomme
         }
       });
 
-      if (assistantError) throw assistantError;
+      if (assistantError) {
+        console.error('❌ Assistant retrieval failed:', assistantError);
+        throw assistantError;
+      }
 
       const assistantId = assistantData.assistant.id;
-      console.log('✅ Using existing assistant:', assistantId);
+      console.log('✅ Using assistant:', assistantId);
 
       // Create thread with enhanced metadata
       const threadMetadata = {
@@ -240,7 +280,7 @@ Would you like to start with a specific asset, or would you prefer me to recomme
       }
 
       const threadId = threadData.thread.id;
-      console.log('✅ Thread created with enhanced metadata:', threadId);
+      console.log('✅ Thread created:', threadId);
 
       setState(prev => ({
         ...prev,
@@ -250,7 +290,7 @@ Would you like to start with a specific asset, or would you prefer me to recomme
         messages: [{
           id: 'welcome',
           role: 'assistant',
-          content: generateWelcomeMessage(),
+          content: generateWelcomeMessage(userContext),
           timestamp: new Date()
         }]
       }));
@@ -258,6 +298,17 @@ Would you like to start with a specific asset, or would you prefer me to recomme
       return { assistantId, threadId };
     } catch (error) {
       console.error('❌ Failed to initialize assistant:', error);
+      
+      // Retry logic for temporary failures
+      if (retryCount < 2 && !error.message?.includes('auth')) {
+        console.log(`🔄 Retrying assistant initialization (attempt ${retryCount + 1})`);
+        setTimeout(() => {
+          initializationAttempted.current = false;
+          initializeAssistant(retryCount + 1);
+        }, 2000 * (retryCount + 1)); // Exponential backoff
+        return;
+      }
+      
       setState(prev => ({
         ...prev,
         isLoading: false,
@@ -267,6 +318,14 @@ Would you like to start with a specific asset, or would you prefer me to recomme
       throw error;
     }
   }, [userContext, user?.id, generateWelcomeMessage]);
+
+  // Auto-initialize when context is loaded
+  useEffect(() => {
+    if (userContext.isLoaded && !state.assistantId && !state.isLoading && !initializationAttempted.current) {
+      console.log('🚀 Auto-initializing assistant with loaded context');
+      initializeAssistant();
+    }
+  }, [userContext.isLoaded, state.assistantId, state.isLoading, initializeAssistant]);
 
   const sendMessage = useCallback(async (message: string) => {
     if (!state.assistantId || !state.threadId || state.isProcessing) return;
@@ -492,6 +551,9 @@ Would you like to start with a specific asset, or would you prefer me to recomme
       error: null,
       authError: false
     });
+    
+    setUserContext(prev => ({ ...prev, isLoaded: false }));
+    initializationAttempted.current = false;
   }, []);
 
   return {
