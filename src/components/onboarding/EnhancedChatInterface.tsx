@@ -36,6 +36,7 @@ const EnhancedChatInterface = ({
     isLoading: aiLoading,
     isProcessing,
     isReady,
+    isInitialized,
     error: assistantError,
     authError,
     userContext,
@@ -49,15 +50,16 @@ const EnhancedChatInterface = ({
     }
   }, [onSendMessageReady, sendMessage, isReady]);
 
-  // Scroll to bottom when messages change (only within chat container)
+  // Scroll to bottom when messages change
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ 
       behavior: 'smooth',
-      block: 'nearest' // Prevents page-level scrolling
+      block: 'nearest'
     });
   }, [assistantMessages]);
 
-  const handleSendMessage = async () => {
+  // Enhanced message handling with debouncing
+  const handleSendMessage = useCallback(async () => {
     if (!inputMessage.trim() || !isReady || isProcessing) return;
 
     const message = inputMessage.trim();
@@ -72,9 +74,9 @@ const EnhancedChatInterface = ({
     } catch (error) {
       console.error('❌ [CHAT] Error sending message:', error);
     }
-  };
+  }, [inputMessage, isReady, isProcessing, sendMessage, onConversationStageChange]);
 
-  const handleSuggestedAction = async (action: string) => {
+  const handleSuggestedAction = useCallback(async (action: string) => {
     if (!isReady || isProcessing) return;
     
     console.log('🎯 [CHAT] Suggested action selected:', action);
@@ -86,14 +88,18 @@ const EnhancedChatInterface = ({
     } catch (error) {
       console.error('❌ [CHAT] Error with suggested action:', error);
     }
-  };
+  }, [isReady, isProcessing, sendMessage, onConversationStageChange]);
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
+  const handleKeyPress = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSendMessage();
     }
-  };
+  }, [handleSendMessage]);
+
+  // Enhanced loading state detection
+  const showLoadingState = aiLoading || (!userContext.isLoaded && !assistantError);
+  const showReadyState = isInitialized && isReady && userContext.isLoaded;
 
   // Quick start suggestions based on property data and authentication status
   const quickStartSuggestions = React.useMemo(() => {
@@ -118,12 +124,9 @@ const EnhancedChatInterface = ({
         ];
   }, [propertyData]);
 
-  // Loading state indicator
-  const showLoadingState = aiLoading || (!userContext.isLoaded && !assistantError);
-
   return (
     <div className="flex flex-col h-full bg-gradient-to-br from-gray-50 to-purple-50">
-      {/* Header */}
+      {/* Enhanced Header with better status indicators */}
       <div className="bg-white border-b border-gray-200 px-4 py-3">
         <div className="flex items-center justify-between">
           <div>
@@ -141,19 +144,25 @@ const EnhancedChatInterface = ({
             {showLoadingState && (
               <Badge variant="outline" className="text-blue-600 border-blue-200">
                 <div className="w-2 h-2 bg-blue-500 rounded-full mr-1 animate-pulse"></div>
-                Loading
+                {userContext.isLoaded ? 'Initializing AI...' : 'Loading data...'}
               </Badge>
             )}
-            {isReady && !showLoadingState && (
+            {showReadyState && (
               <Badge variant="outline" className="text-green-600 border-green-200">
                 <div className="w-2 h-2 bg-green-500 rounded-full mr-1"></div>
-                Connected
+                Ready
               </Badge>
             )}
             {isProcessing && (
               <Badge variant="outline" className="text-blue-600 border-blue-200">
                 <div className="w-2 h-2 bg-blue-500 rounded-full mr-1 animate-pulse"></div>
                 Processing
+              </Badge>
+            )}
+            {assistantError && (
+              <Badge variant="outline" className="text-red-600 border-red-200">
+                <div className="w-2 h-2 bg-red-500 rounded-full mr-1"></div>
+                Error
               </Badge>
             )}
             {!user && (
@@ -172,29 +181,46 @@ const EnhancedChatInterface = ({
 
       {/* Messages Area */}
       <div className="flex-1 overflow-y-auto p-4">
-        {/* Loading state */}
+        {/* Enhanced Loading state */}
         {showLoadingState && (
           <div className="flex justify-center items-center h-full">
-            <div className="flex items-center space-x-2">
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
-              <span className="text-sm text-muted-foreground">
-                {userContext.isLoaded ? 'Initializing AI assistant...' : 'Loading your data...'}
-              </span>
+            <div className="flex flex-col items-center space-y-3">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              <div className="text-center">
+                <span className="text-sm text-muted-foreground">
+                  {userContext.isLoaded ? 'Initializing AI assistant...' : 'Loading your data...'}
+                </span>
+                {propertyData && (
+                  <div className="text-xs text-gray-500 mt-1">
+                    Preparing assistant for {propertyData.address}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         )}
 
-        {/* Error state */}
+        {/* Enhanced Error state with retry options */}
         {assistantError && (
           <div className="flex justify-center mb-4">
-            <div className="bg-destructive/10 text-destructive rounded-lg px-4 py-2 border border-destructive/20">
-              <div className="text-sm">{assistantError}</div>
-              <div className="flex gap-2 mt-2">
+            <div className="bg-destructive/10 text-destructive rounded-lg px-4 py-3 border border-destructive/20 max-w-md">
+              <div className="text-sm font-medium mb-2">Assistant Error</div>
+              <div className="text-sm mb-3">{assistantError}</div>
+              <div className="flex gap-2">
                 <button 
                   onClick={clearError}
                   className="text-xs underline"
                 >
                   Dismiss
+                </button>
+                <button 
+                  onClick={() => {
+                    clearError();
+                    initializeAssistant();
+                  }}
+                  className="text-xs underline ml-2"
+                >
+                  Retry
                 </button>
                 {authError && !user && (
                   <button 
@@ -273,8 +299,8 @@ const EnhancedChatInterface = ({
             </motion.div>
           )}
 
-          {/* Quick Start Suggestions */}
-          {showSuggestions && assistantMessages.length <= 1 && propertyData && isReady && (
+          {/* Enhanced Quick Start Suggestions */}
+          {showSuggestions && assistantMessages.length <= 1 && propertyData && showReadyState && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -296,7 +322,7 @@ const EnhancedChatInterface = ({
                       variant="outline"
                       className="h-auto p-3 justify-start hover:bg-tiptop-purple hover:text-white transition-colors"
                       onClick={() => handleSuggestedAction(`I want to set up ${asset.name.toLowerCase()} at my property. What do I need to get started?`)}
-                      disabled={!isReady || isProcessing}
+                      disabled={!showReadyState || isProcessing}
                     >
                       <div className="text-left">
                         <div className="font-medium">{asset.name}</div>
@@ -313,7 +339,7 @@ const EnhancedChatInterface = ({
         </div>
       </div>
 
-      {/* Input Area */}
+      {/* Enhanced Input Area */}
       <div className="border-t border-gray-200 bg-white p-4">
         <div className="flex space-x-2">
           <Input
@@ -321,18 +347,20 @@ const EnhancedChatInterface = ({
             onChange={(e) => setInputMessage(e.target.value)}
             onKeyPress={handleKeyPress}
             placeholder={
-              isReady 
+              showReadyState 
                 ? "Ask me about your property monetization..." 
                 : showLoadingState
                   ? "Assistant is starting up..."
-                  : "Assistant not available"
+                  : assistantError
+                    ? "Assistant error - please retry"
+                    : "Assistant not available"
             }
-            disabled={!isReady || isProcessing}
+            disabled={!showReadyState || isProcessing}
             className="flex-1"
           />
           <Button 
             onClick={handleSendMessage}
-            disabled={!inputMessage.trim() || !isReady || isProcessing}
+            disabled={!inputMessage.trim() || !showReadyState || isProcessing}
             className="px-6"
           >
             Send
@@ -340,7 +368,7 @@ const EnhancedChatInterface = ({
         </div>
         
         {/* Quick suggestions */}
-        {showSuggestions && assistantMessages.length === 0 && !showLoadingState && isReady && (
+        {showSuggestions && assistantMessages.length === 0 && !showLoadingState && showReadyState && (
           <div className="mt-3 flex flex-wrap gap-2">
             {quickStartSuggestions.map((suggestion, index) => (
               <Button
@@ -348,7 +376,7 @@ const EnhancedChatInterface = ({
                 variant="outline"
                 size="sm"
                 onClick={() => handleSuggestedAction(suggestion)}
-                disabled={!isReady || isProcessing}
+                disabled={!showReadyState || isProcessing}
                 className="text-xs"
               >
                 {suggestion}
@@ -357,7 +385,7 @@ const EnhancedChatInterface = ({
           </div>
         )}
         
-        {/* Context indicators */}
+        {/* Enhanced context indicators */}
         {userContext.isLoaded && (
           <div className="mt-2 flex flex-wrap gap-1 text-xs text-gray-500">
             {userContext.propertyData && (
@@ -373,6 +401,11 @@ const EnhancedChatInterface = ({
             {user && (
               <Badge variant="secondary" className="text-xs">
                 Signed In: Full Features
+              </Badge>
+            )}
+            {showReadyState && (
+              <Badge variant="secondary" className="text-xs bg-green-50 text-green-700">
+                Assistant Ready
               </Badge>
             )}
           </div>
