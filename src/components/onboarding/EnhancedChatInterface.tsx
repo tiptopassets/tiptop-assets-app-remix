@@ -9,6 +9,7 @@ import { useOpenAIAssistant } from '@/hooks/useOpenAIAssistant';
 import { PropertyAnalysisData } from '@/hooks/useUserPropertyAnalysis';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { AlertCircle, Wifi, WifiOff, RefreshCw } from 'lucide-react';
 
 interface EnhancedChatInterfaceProps {
   onAssetDetected: (assets: string[]) => void;
@@ -37,10 +38,12 @@ const EnhancedChatInterface = ({
     isProcessing,
     isReady,
     isInitialized,
+    isReconnecting,
     error: assistantError,
     authError,
     userContext,
-    clearError
+    clearError,
+    resetConversation
   } = useOpenAIAssistant(propertyData);
 
   // Provide sendMessage function to parent component once ready
@@ -100,6 +103,17 @@ const EnhancedChatInterface = ({
   // Enhanced loading state detection
   const showLoadingState = aiLoading || (!userContext.isLoaded && !assistantError);
   const showReadyState = isInitialized && isReady && userContext.isLoaded;
+  const showReconnectingState = isReconnecting;
+
+  // Connection status indicator
+  const getConnectionStatus = () => {
+    if (showReconnectingState) return { icon: RefreshCw, label: 'Reconnecting...', color: 'text-yellow-600 border-yellow-200' };
+    if (showReadyState) return { icon: Wifi, label: 'Connected', color: 'text-green-600 border-green-200' };
+    if (assistantError) return { icon: WifiOff, label: 'Connection Error', color: 'text-red-600 border-red-200' };
+    return { icon: RefreshCw, label: 'Connecting...', color: 'text-blue-600 border-blue-200' };
+  };
+
+  const connectionStatus = getConnectionStatus();
 
   // Quick start suggestions based on property data and authentication status
   const quickStartSuggestions = React.useMemo(() => {
@@ -141,30 +155,10 @@ const EnhancedChatInterface = ({
             </p>
           </div>
           <div className="flex items-center space-x-2">
-            {showLoadingState && (
-              <Badge variant="outline" className="text-blue-600 border-blue-200">
-                <div className="w-2 h-2 bg-blue-500 rounded-full mr-1 animate-pulse"></div>
-                {userContext.isLoaded ? 'Initializing AI...' : 'Loading data...'}
-              </Badge>
-            )}
-            {showReadyState && (
-              <Badge variant="outline" className="text-green-600 border-green-200">
-                <div className="w-2 h-2 bg-green-500 rounded-full mr-1"></div>
-                Ready
-              </Badge>
-            )}
-            {isProcessing && (
-              <Badge variant="outline" className="text-blue-600 border-blue-200">
-                <div className="w-2 h-2 bg-blue-500 rounded-full mr-1 animate-pulse"></div>
-                Processing
-              </Badge>
-            )}
-            {assistantError && (
-              <Badge variant="outline" className="text-red-600 border-red-200">
-                <div className="w-2 h-2 bg-red-500 rounded-full mr-1"></div>
-                Error
-              </Badge>
-            )}
+            <Badge variant="outline" className={connectionStatus.color}>
+              <connectionStatus.icon className={`w-2 h-2 mr-1 ${showReconnectingState ? 'animate-spin' : ''}`} />
+              {connectionStatus.label}
+            </Badge>
             {!user && (
               <Button 
                 onClick={() => navigate('/auth')} 
@@ -200,12 +194,26 @@ const EnhancedChatInterface = ({
           </div>
         )}
 
+        {/* Reconnecting state */}
+        {showReconnectingState && (
+          <div className="flex justify-center mb-4">
+            <div className="bg-yellow-50 text-yellow-800 rounded-lg px-4 py-3 border border-yellow-200 max-w-md text-center">
+              <RefreshCw className="w-4 h-4 animate-spin mx-auto mb-2" />
+              <div className="text-sm font-medium mb-1">Reconnecting...</div>
+              <div className="text-sm">Attempting to restore connection</div>
+            </div>
+          </div>
+        )}
+
         {/* Enhanced Error state with retry options */}
-        {assistantError && (
+        {assistantError && !showReconnectingState && (
           <div className="flex justify-center mb-4">
             <div className="bg-destructive/10 text-destructive rounded-lg px-4 py-3 border border-destructive/20 max-w-md">
-              <div className="text-sm font-medium mb-2">Assistant Error</div>
-              <div className="text-sm mb-3">{assistantError}</div>
+              <div className="flex items-center mb-2">
+                <AlertCircle className="w-4 h-4 mr-2" />
+                <div className="text-sm font-medium">Assistant Error</div>
+              </div>
+              <div className="text-sm mb-3 whitespace-pre-line">{assistantError}</div>
               <div className="flex gap-2">
                 <button 
                   onClick={clearError}
@@ -214,13 +222,10 @@ const EnhancedChatInterface = ({
                   Dismiss
                 </button>
                 <button 
-                  onClick={() => {
-                    clearError();
-                    initializeAssistant();
-                  }}
+                  onClick={resetConversation}
                   className="text-xs underline ml-2"
                 >
-                  Retry
+                  Reset & Retry
                 </button>
                 {authError && !user && (
                   <button 

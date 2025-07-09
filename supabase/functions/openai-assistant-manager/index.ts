@@ -1,4 +1,3 @@
-
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.4';
@@ -37,20 +36,10 @@ serve(async (req) => {
   console.log(`🔄 [${requestId}] Request started: ${req.method} ${req.url}`);
 
   try {
-    // Enhanced environment validation
-    if (!OPENAI_API_KEY) {
-      console.error(`❌ [${requestId}] OpenAI API key not configured`);
-      return errorResponse('OpenAI API key not configured', 500, requestId);
-    }
-
-    if (!EXISTING_ASSISTANT_ID) {
-      console.error(`❌ [${requestId}] OpenAI Assistant ID not configured`);
-      return errorResponse('OpenAI Assistant ID not configured in environment variables', 500, requestId);
-    }
-
-    if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
-      console.error(`❌ [${requestId}] Supabase configuration missing`);
-      return errorResponse('Database configuration missing', 500, requestId);
+    // Enhanced environment validation with detailed error codes
+    const validationResult = validateEnvironment(requestId);
+    if (!validationResult.success) {
+      return errorResponse(validationResult.error, validationResult.code, requestId);
     }
 
     // Parse and validate request body
@@ -80,7 +69,7 @@ serve(async (req) => {
       return errorResponse('Database connection failed', 500, requestId);
     }
 
-    // Route to action handlers with timeout
+    // Route to action handlers with timeout and structured error handling
     const actionTimeout = new Promise((_, reject) =>
       setTimeout(() => reject(new Error('Action timeout after 30 seconds')), 30000)
     );
@@ -88,11 +77,14 @@ serve(async (req) => {
     let result;
     try {
       switch (action) {
+        case 'test_assistant_setup':
+          result = await Promise.race([testAssistantSetup(supabase, requestId), actionTimeout]);
+          break;
         case 'get_assistant':
           result = await Promise.race([getAssistant(requestId), actionTimeout]);
           break;
         case 'create_thread':
-          result = await Promise.race([createThread(data, supabase, requestId), actionTimeout]);
+          result = await Promise.race([createThreadSimplified(data, supabase, requestId), actionTimeout]);
           break;
         case 'send_message':
           result = await Promise.race([sendMessage(data, supabase, requestId), actionTimeout]);
@@ -134,6 +126,25 @@ serve(async (req) => {
   }
 });
 
+function validateEnvironment(requestId: string) {
+  if (!OPENAI_API_KEY) {
+    console.error(`❌ [${requestId}] OpenAI API key not configured`);
+    return { success: false, error: 'OpenAI API key not configured', code: 500 };
+  }
+
+  if (!EXISTING_ASSISTANT_ID) {
+    console.error(`❌ [${requestId}] OpenAI Assistant ID not configured`);
+    return { success: false, error: 'OpenAI Assistant ID not configured in environment variables', code: 500 };
+  }
+
+  if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+    console.error(`❌ [${requestId}] Supabase configuration missing`);
+    return { success: false, error: 'Database configuration missing', code: 500 };
+  }
+
+  return { success: true };
+}
+
 function errorResponse(message: string, status: number, requestId?: string) {
   const errorId = requestId || crypto.randomUUID().substring(0, 8);
   console.error(`❌ [${errorId}] Returning error: ${status} - ${message}`);
@@ -141,7 +152,8 @@ function errorResponse(message: string, status: number, requestId?: string) {
     error: message,
     success: false,
     requestId: errorId,
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
+    errorCode: status
   }), {
     status,
     headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -203,6 +215,61 @@ async function openAIRequest(endpoint: string, options: any, requestId: string) 
   }
 }
 
+// New simplified test endpoint for assistant setup
+async function testAssistantSetup(supabase: any, requestId: string) {
+  console.log(`🔧 [${requestId}] Testing assistant setup...`);
+  
+  const results = {
+    environment: {
+      hasOpenAIKey: !!OPENAI_API_KEY,
+      hasAssistantId: !!EXISTING_ASSISTANT_ID,
+      hasSupabaseConfig: !!(SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY)
+    },
+    tests: {
+      openai: false,
+      assistant: false,
+      database: false
+    },
+    errors: []
+  };
+
+  // Test OpenAI connection
+  try {
+    await openAIRequest('models', { method: 'GET' }, requestId);
+    results.tests.openai = true;
+    console.log(`✅ [${requestId}] OpenAI connection: OK`);
+  } catch (error) {
+    results.errors.push(`OpenAI: ${error.message}`);
+    console.error(`❌ [${requestId}] OpenAI connection: FAILED`);
+  }
+
+  // Test assistant
+  try {
+    if (!EXISTING_ASSISTANT_ID) {
+      throw new Error('Assistant ID not configured');
+    }
+    const assistant = await openAIRequest(`assistants/${EXISTING_ASSISTANT_ID}`, { method: 'GET' }, requestId);
+    results.tests.assistant = true;
+    console.log(`✅ [${requestId}] Assistant verified: ${assistant.name}`);
+  } catch (error) {
+    results.errors.push(`Assistant: ${error.message}`);
+    console.error(`❌ [${requestId}] Assistant verification: FAILED`);
+  }
+
+  // Test database
+  try {
+    const { data, error } = await supabase.from('enhanced_service_providers').select('count').limit(1);
+    if (error) throw error;
+    results.tests.database = true;
+    console.log(`✅ [${requestId}] Database connection: OK`);
+  } catch (error) {
+    results.errors.push(`Database: ${error.message}`);
+    console.error(`❌ [${requestId}] Database connection: FAILED`);
+  }
+
+  return successResponse(results, requestId);
+}
+
 async function getAssistant(requestId: string) {
   console.log(`🤖 [${requestId}] Getting assistant: ${EXISTING_ASSISTANT_ID}`);
   
@@ -236,17 +303,17 @@ async function getAssistant(requestId: string) {
   }
 }
 
-async function createThread(data: any, supabase: any, requestId: string) {
-  console.log(`🧵 [${requestId}] Creating thread...`);
+// Simplified thread creation with optional onboarding record
+async function createThreadSimplified(data: any, supabase: any, requestId: string) {
+  console.log(`🧵 [${requestId}] Creating simplified thread...`);
   
   try {
     const userId = data?.metadata?.userId;
     const isAuthenticated = userId && userId !== 'anonymous';
     
     console.log(`🧵 [${requestId}] User type: ${isAuthenticated ? 'authenticated' : 'anonymous'}`);
-    console.log(`🧵 [${requestId}] Metadata:`, data?.metadata);
 
-    // Create OpenAI thread
+    // Create OpenAI thread (this is the critical part that must succeed)
     const thread = await openAIRequest('threads', {
       method: 'POST',
       body: JSON.stringify({
@@ -257,10 +324,10 @@ async function createThread(data: any, supabase: any, requestId: string) {
     const threadId = thread.id;
     console.log(`✅ [${requestId}] OpenAI thread created: ${threadId}`);
 
-    // Create onboarding record for authenticated users
+    // Attempt to create onboarding record (but don't fail if this fails)
     if (isAuthenticated) {
       try {
-        console.log(`💾 [${requestId}] Creating onboarding record for user: ${userId}`);
+        console.log(`💾 [${requestId}] Attempting onboarding record for user: ${userId}`);
         
         const onboardingData = {
           id: threadId,
@@ -279,35 +346,17 @@ async function createThread(data: any, supabase: any, requestId: string) {
           }
         };
 
-        console.log(`💾 [${requestId}] Inserting onboarding data:`, {
-          id: onboardingData.id,
-          user_id: onboardingData.user_id,
-          selected_option: onboardingData.selected_option,
-          status: onboardingData.status
-        });
-
-        const { data: insertData, error: insertError } = await supabase
+        const { error: insertError } = await supabase
           .from('user_onboarding')
-          .insert(onboardingData)
-          .select();
+          .insert(onboardingData);
 
         if (insertError) {
-          console.error(`❌ [${requestId}] Database insert failed:`, {
-            error: insertError,
-            code: insertError.code,
-            message: insertError.message,
-            details: insertError.details
-          });
-          
-          // Don't fail the thread creation if DB insert fails
-          console.warn(`⚠️ [${requestId}] Continuing without DB record`);
+          console.warn(`⚠️ [${requestId}] Onboarding record failed but continuing:`, insertError.message);
         } else {
-          console.log(`✅ [${requestId}] Onboarding record created successfully:`, insertData);
+          console.log(`✅ [${requestId}] Onboarding record created successfully`);
         }
       } catch (dbError) {
-        console.error(`❌ [${requestId}] Database operation error:`, dbError);
-        // Continue without failing the thread creation
-        console.warn(`⚠️ [${requestId}] Continuing without DB record`);
+        console.warn(`⚠️ [${requestId}] Database operation failed but continuing:`, dbError.message);
       }
     }
 

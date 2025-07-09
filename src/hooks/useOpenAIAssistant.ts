@@ -1,4 +1,3 @@
-
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -26,7 +25,8 @@ type AssistantState =
   | 'initializing'
   | 'ready'
   | 'chatting'
-  | 'error';
+  | 'error'
+  | 'reconnecting';
 
 export const useOpenAIAssistant = (propertyData: PropertyAnalysisData | null) => {
   const { user } = useAuth();
@@ -48,6 +48,8 @@ export const useOpenAIAssistant = (propertyData: PropertyAnalysisData | null) =>
   const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const initializationRef = useRef<boolean>(false);
   const abortControllerRef = useRef<AbortController | null>(null);
+  const retryCountRef = useRef<number>(0);
+  const maxRetries = 3;
 
   // Computed states
   const isLoading = state === 'loading_context' || state === 'initializing';
@@ -135,7 +137,7 @@ export const useOpenAIAssistant = (propertyData: PropertyAnalysisData | null) =>
     }
   }, [user?.id, propertyData]);
 
-  // Enhanced assistant initialization with detailed error handling
+  // Enhanced assistant initialization with retry logic
   const initializeAssistant = useCallback(async () => {
     if (initializationRef.current || state !== 'idle') {
       console.log('🛑 [ASSISTANT] Already initializing or not idle, state:', state);
@@ -152,31 +154,31 @@ export const useOpenAIAssistant = (propertyData: PropertyAnalysisData | null) =>
     abortControllerRef.current = new AbortController();
 
     try {
-      // Step 1: Test connection first
+      // Step 1: Test assistant setup first
       setState('loading_context');
       setError(null);
       
-      console.log('🔧 [ASSISTANT] Testing connections...');
-      const { data: testData, error: testError } = await supabase.functions.invoke('openai-assistant-manager', {
-        body: { action: 'test_connection' }
+      console.log('🔧 [ASSISTANT] Testing assistant setup...');
+      const { data: setupTest, error: setupError } = await supabase.functions.invoke('openai-assistant-manager', {
+        body: { action: 'test_assistant_setup' }
       });
 
-      if (testError) {
-        console.error('❌ [ASSISTANT] Connection test failed:', testError);
-        throw new Error(`Connection test failed: ${testError.message}`);
+      if (setupError) {
+        console.error('❌ [ASSISTANT] Setup test failed:', setupError);
+        throw new Error(`Setup test failed: ${setupError.message}`);
       }
 
-      if (!testData.tests.openai || !testData.tests.database) {
-        console.error('❌ [ASSISTANT] Connection tests failed:', testData);
+      if (!setupTest.tests.openai || !setupTest.tests.database || !setupTest.tests.assistant) {
+        console.error('❌ [ASSISTANT] Setup tests failed:', setupTest);
         const failedTests = [];
-        if (!testData.tests.openai) failedTests.push('OpenAI API');
-        if (!testData.tests.database) failedTests.push('Database');
-        if (!testData.tests.assistant) failedTests.push('AI Assistant');
+        if (!setupTest.tests.openai) failedTests.push('OpenAI API');
+        if (!setupTest.tests.database) failedTests.push('Database');
+        if (!setupTest.tests.assistant) failedTests.push('AI Assistant');
         
-        throw new Error(`Service connectivity issues: ${failedTests.join(', ')} failed. ${testData.errors.join('; ')}`);
+        throw new Error(`Service connectivity issues: ${failedTests.join(', ')} failed. ${setupTest.errors.join('; ')}`);
       }
 
-      console.log('✅ [ASSISTANT] Connection tests passed');
+      console.log('✅ [ASSISTANT] Setup tests passed');
 
       // Step 2: Load context
       const context = await loadUserContext();
@@ -223,9 +225,6 @@ export const useOpenAIAssistant = (propertyData: PropertyAnalysisData | null) =>
 
       if (threadError) {
         console.error('❌ [ASSISTANT] Thread creation failed:', threadError);
-        if (threadError.message?.includes('auth')) {
-          throw new Error('Please sign in to use the AI assistant with full functionality');
-        }
         throw new Error(`Thread creation failed: ${threadError.message}. Please try refreshing the page.`);
       }
 
@@ -236,6 +235,7 @@ export const useOpenAIAssistant = (propertyData: PropertyAnalysisData | null) =>
       setAssistantId(newAssistantId);
       setThreadId(newThreadId);
       setState('ready');
+      retryCountRef.current = 0; // Reset retry count on success
 
       // Add enhanced welcome message
       const welcomeMessage = generateWelcomeMessage(context);
@@ -250,13 +250,27 @@ export const useOpenAIAssistant = (propertyData: PropertyAnalysisData | null) =>
 
     } catch (error: any) {
       console.error('❌ [ASSISTANT] Initialization failed:', error);
+      
+      // Implement retry logic for certain errors
+      if (retryCountRef.current < maxRetries && !error.message.includes('Assistant ID not configured')) {
+        retryCountRef.current++;
+        console.log(`🔄 [ASSISTANT] Retrying initialization (${retryCountRef.current}/${maxRetries})`);
+        
+        setState('reconnecting');
+        setTimeout(() => {
+          initializationRef.current = false;
+          initializeAssistant();
+        }, 2000 * retryCountRef.current); // Exponential backoff
+        return;
+      }
+      
       setState('error');
       
       // Enhanced error messaging
       let errorMessage = error.message || 'Failed to initialize assistant';
       
-      if (errorMessage.includes('Connection test failed')) {
-        errorMessage += '\n\nThis usually means:\n• OpenAI API key is missing or invalid\n• Database connection issues\n• Service temporarily unavailable';
+      if (errorMessage.includes('Setup test failed')) {
+        errorMessage += '\n\nThis usually means:\n• OpenAI API key is missing or invalid\n• Assistant ID is not configured\n• Database connection issues\n• Service temporarily unavailable';
       } else if (errorMessage.includes('Thread creation failed')) {
         errorMessage += '\n\nTry refreshing the page or signing in if you haven\'t already.';
       }
@@ -307,7 +321,7 @@ ${!user ? '💡 **Tip:** Sign in to save your progress and access full partner i
 Would you like to start with a specific asset, or would you prefer me to recommend the best partner matches for your property?`;
   }, [user]);
 
-  // Auto-initialize when component mounts
+  // Auto-initialize when component mounts with retry logic
   useEffect(() => {
     if (state === 'idle') {
       // Small delay to allow component to settle
@@ -319,7 +333,7 @@ Would you like to start with a specific asset, or would you prefer me to recomme
     }
   }, [initializeAssistant, state]);
 
-  // Enhanced send message with better error handling
+  // Enhanced send message with better error handling and retry logic
   const sendMessage = useCallback(async (message: string) => {
     if (!assistantId || !threadId || state !== 'ready') {
       console.warn('⚠️ [MESSAGE] Cannot send message - assistant not ready:', {
@@ -540,11 +554,12 @@ Would you like to start with a specific asset, or would you prefer me to recomme
     }
   }, [threadId, user?.id, pollForCompletion]);
 
-  // Enhanced error clearing
+  // Enhanced error clearing with auto-retry
   const clearError = useCallback(() => {
     setError(null);
     if (state === 'error') {
       setState('idle');
+      retryCountRef.current = 0; // Reset retry count
       // Auto-retry initialization
       setTimeout(() => {
         initializeAssistant();
@@ -552,7 +567,7 @@ Would you like to start with a specific asset, or would you prefer me to recomme
     }
   }, [state, initializeAssistant]);
 
-  // Enhanced reset with cleanup
+  // Enhanced reset with cleanup and retry logic
   const resetConversation = useCallback(() => {
     console.log('🔄 [ASSISTANT] Resetting conversation...');
     
@@ -582,6 +597,7 @@ Would you like to start with a specific asset, or would you prefer me to recomme
     });
     
     initializationRef.current = false;
+    retryCountRef.current = 0;
     
     // Auto-restart
     setTimeout(() => {
@@ -609,6 +625,7 @@ Would you like to start with a specific asset, or would you prefer me to recomme
     resetConversation,
     
     // Computed
-    isReady: isReady && isInitialized
+    isReady: isReady && isInitialized,
+    isReconnecting: state === 'reconnecting'
   };
 };
