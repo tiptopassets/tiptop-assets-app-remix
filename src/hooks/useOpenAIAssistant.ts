@@ -44,9 +44,10 @@ export const useOpenAIAssistant = (propertyData: PropertyAnalysisData | null) =>
     isLoaded: false
   });
 
-  // Refs for cleanup
+  // Refs for cleanup and control
   const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const initializationRef = useRef<boolean>(false);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   // Computed states
   const isLoading = state === 'loading_context' || state === 'initializing';
@@ -55,38 +56,53 @@ export const useOpenAIAssistant = (propertyData: PropertyAnalysisData | null) =>
   const isInitialized = assistantId !== null && threadId !== null;
   const authError = error?.includes('auth') || error?.includes('sign in');
 
-  // Clean up polling on unmount
+  // Enhanced cleanup
   useEffect(() => {
     return () => {
       if (pollIntervalRef.current) {
         clearInterval(pollIntervalRef.current);
       }
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
     };
   }, []);
 
-  // Step 1: Load User Context
+  // Enhanced context loading with better error handling
   const loadUserContext = useCallback(async (): Promise<UserContext> => {
     console.log('📊 [ASSISTANT] Loading user context...');
     
     try {
       // Load service providers (always available)
-      const { data: providers } = await supabase
+      const { data: providers, error: providersError } = await supabase
         .from('enhanced_service_providers')
         .select('*')
         .eq('is_active', true)
         .order('priority', { ascending: false });
 
+      if (providersError) {
+        console.warn('⚠️ [ASSISTANT] Failed to load providers:', providersError.message);
+      }
+
       let onboarding = null;
       
       // Load onboarding progress only for authenticated users
       if (user?.id) {
-        const { data: onboardingData } = await supabase
-          .from('user_onboarding')
-          .select('*')
-          .eq('user_id', user.id)
-          .maybeSingle();
-        
-        onboarding = onboardingData;
+        try {
+          const { data: onboardingData, error: onboardingError } = await supabase
+            .from('user_onboarding')
+            .select('*')
+            .eq('user_id', user.id)
+            .maybeSingle();
+          
+          if (onboardingError) {
+            console.warn('⚠️ [ASSISTANT] Failed to load onboarding:', onboardingError.message);
+          } else {
+            onboarding = onboardingData;
+          }
+        } catch (onboardingError: any) {
+          console.warn('⚠️ [ASSISTANT] Onboarding query failed:', onboardingError.message);
+        }
       }
 
       const contextData = {
@@ -100,13 +116,14 @@ export const useOpenAIAssistant = (propertyData: PropertyAnalysisData | null) =>
       console.log('✅ [ASSISTANT] Context loaded:', {
         providersCount: contextData.serviceProviders.length,
         hasOnboarding: !!contextData.onboardingProgress,
-        hasPropertyData: !!contextData.propertyData
+        hasPropertyData: !!contextData.propertyData,
+        userType: user?.id ? 'authenticated' : 'anonymous'
       });
 
       return contextData;
-    } catch (error) {
+    } catch (error: any) {
       console.error('❌ [ASSISTANT] Context loading failed:', error);
-      // Return fallback context
+      // Return fallback context to prevent total failure
       const fallbackContext = {
         propertyData: propertyData,
         serviceProviders: [],
@@ -118,26 +135,56 @@ export const useOpenAIAssistant = (propertyData: PropertyAnalysisData | null) =>
     }
   }, [user?.id, propertyData]);
 
-  // Step 2: Initialize Assistant
+  // Enhanced assistant initialization with detailed error handling
   const initializeAssistant = useCallback(async () => {
     if (initializationRef.current || state !== 'idle') {
-      console.log('🛑 [ASSISTANT] Already initializing or not idle');
+      console.log('🛑 [ASSISTANT] Already initializing or not idle, state:', state);
       return;
     }
 
     initializationRef.current = true;
     console.log('🚀 [ASSISTANT] Starting initialization...');
 
+    // Create new abort controller for this initialization
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    abortControllerRef.current = new AbortController();
+
     try {
-      // Step 1: Load Context
+      // Step 1: Test connection first
       setState('loading_context');
+      setError(null);
+      
+      console.log('🔧 [ASSISTANT] Testing connections...');
+      const { data: testData, error: testError } = await supabase.functions.invoke('openai-assistant-manager', {
+        body: { action: 'test_connection' }
+      });
+
+      if (testError) {
+        console.error('❌ [ASSISTANT] Connection test failed:', testError);
+        throw new Error(`Connection test failed: ${testError.message}`);
+      }
+
+      if (!testData.tests.openai || !testData.tests.database) {
+        console.error('❌ [ASSISTANT] Connection tests failed:', testData);
+        const failedTests = [];
+        if (!testData.tests.openai) failedTests.push('OpenAI API');
+        if (!testData.tests.database) failedTests.push('Database');
+        if (!testData.tests.assistant) failedTests.push('AI Assistant');
+        
+        throw new Error(`Service connectivity issues: ${failedTests.join(', ')} failed. ${testData.errors.join('; ')}`);
+      }
+
+      console.log('✅ [ASSISTANT] Connection tests passed');
+
+      // Step 2: Load context
       const context = await loadUserContext();
 
-      // Step 2: Initialize Assistant
+      // Step 3: Initialize assistant
       setState('initializing');
-      setError(null);
-
-      // Create assistant session
+      
+      console.log('🤖 [ASSISTANT] Getting assistant...');
       const { data: assistantData, error: assistantError } = await supabase.functions.invoke('openai-assistant-manager', {
         body: { action: 'get_assistant' }
       });
@@ -149,15 +196,23 @@ export const useOpenAIAssistant = (propertyData: PropertyAnalysisData | null) =>
       const newAssistantId = assistantData.assistant.id;
       console.log('✅ [ASSISTANT] Got assistant:', newAssistantId);
 
-      // Create thread
+      // Step 4: Create thread with enhanced metadata
       const threadMetadata = {
         userId: user?.id || 'anonymous',
         propertyAddress: context.propertyData?.address || 'not_provided',
         analysisId: context.propertyData?.analysisId || 'not_provided',
         totalRevenue: context.propertyData?.totalMonthlyRevenue || 0,
         partnersAvailable: context.serviceProviders.length,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        userAgent: navigator.userAgent,
+        url: window.location.href
       };
+
+      console.log('🧵 [ASSISTANT] Creating thread with metadata:', {
+        userId: threadMetadata.userId,
+        propertyAddress: threadMetadata.propertyAddress,
+        partnersAvailable: threadMetadata.partnersAvailable
+      });
 
       const { data: threadData, error: threadError } = await supabase.functions.invoke('openai-assistant-manager', {
         body: {
@@ -167,21 +222,22 @@ export const useOpenAIAssistant = (propertyData: PropertyAnalysisData | null) =>
       });
 
       if (threadError) {
+        console.error('❌ [ASSISTANT] Thread creation failed:', threadError);
         if (threadError.message?.includes('auth')) {
           throw new Error('Please sign in to use the AI assistant with full functionality');
         }
-        throw new Error(`Thread creation failed: ${threadError.message}`);
+        throw new Error(`Thread creation failed: ${threadError.message}. Please try refreshing the page.`);
       }
 
       const newThreadId = threadData.thread.id;
       console.log('✅ [ASSISTANT] Thread created:', newThreadId);
 
-      // Set state
+      // Step 5: Set state and show welcome message
       setAssistantId(newAssistantId);
       setThreadId(newThreadId);
       setState('ready');
 
-      // Add welcome message
+      // Add enhanced welcome message
       const welcomeMessage = generateWelcomeMessage(context);
       setMessages([{
         id: 'welcome',
@@ -192,59 +248,93 @@ export const useOpenAIAssistant = (propertyData: PropertyAnalysisData | null) =>
 
       console.log('🎉 [ASSISTANT] Initialization complete');
 
-    } catch (error) {
+    } catch (error: any) {
       console.error('❌ [ASSISTANT] Initialization failed:', error);
       setState('error');
-      setError(error.message || 'Failed to initialize assistant');
+      
+      // Enhanced error messaging
+      let errorMessage = error.message || 'Failed to initialize assistant';
+      
+      if (errorMessage.includes('Connection test failed')) {
+        errorMessage += '\n\nThis usually means:\n• OpenAI API key is missing or invalid\n• Database connection issues\n• Service temporarily unavailable';
+      } else if (errorMessage.includes('Thread creation failed')) {
+        errorMessage += '\n\nTry refreshing the page or signing in if you haven\'t already.';
+      }
+      
+      setError(errorMessage);
     } finally {
       initializationRef.current = false;
     }
   }, [user?.id, loadUserContext, state]);
 
-  // Generate welcome message
+  // Enhanced welcome message generation
   const generateWelcomeMessage = useCallback((context: UserContext) => {
     if (!context.propertyData) {
-      return "Hi! I'm your AI assistant for property monetization. I'm here to help you explore ways to earn money from your property assets and connect you with the right partners. How can I assist you today?";
+      return `Hi! I'm your AI assistant for property monetization. I'm here to help you explore ways to earn money from your property assets and connect you with the right partners.
+
+${!user ? '💡 **Tip:** Sign in to save your progress and access full partner integration features.' : ''}
+
+How can I assist you today?`;
     }
 
     const { address, totalMonthlyRevenue, availableAssets } = context.propertyData;
     const topAssets = availableAssets.filter(a => a.hasRevenuePotential || a.monthlyRevenue > 0).slice(0, 3);
 
     if (topAssets.length === 0 && totalMonthlyRevenue === 0) {
-      return `Hi! I've reviewed your property at **${address}**. While our initial analysis shows limited immediate monetization opportunities, I'm here to help you explore other options and connect you with partners who can help unlock your property's potential. What specific areas are you most interested in exploring?`;
+      return `Hi! I've reviewed your property at **${address}**.
+
+While our initial analysis shows limited immediate monetization opportunities, I'm here to help you explore other options and connect you with partners who can help unlock your property's potential.
+
+${!user ? '💡 **Tip:** Sign in to save your progress and access full partner integration features.' : ''}
+
+What specific areas are you most interested in exploring?`;
     }
 
-    const assetList = topAssets.map(asset => `**${asset.name}** ($${asset.monthlyRevenue}/month)`).join(', ');
+    const assetList = topAssets.map(asset => `• **${asset.name}** - $${asset.monthlyRevenue}/month potential`).join('\n');
     const partnersAvailable = context.serviceProviders.length;
     
     return `Hi! I'm your AI assistant and I've analyzed your property at **${address}**! 🏠
 
-I found great monetization opportunities including: ${assetList}. Your total earning potential is **$${totalMonthlyRevenue}/month**.
+**Your Monetization Opportunities:**
+${assetList}
 
-I have access to **${partnersAvailable} partner services** that can help you set up these opportunities. I can guide you through the entire onboarding process, from initial setup to connecting with the right partners.
+**Total Earning Potential:** $${totalMonthlyRevenue}/month
+
+I have access to **${partnersAvailable} partner services** that can help you set up these opportunities. I can guide you through the entire process, from initial setup to connecting with the right partners.
+
+${!user ? '💡 **Tip:** Sign in to save your progress and access full partner integration features.' : ''}
 
 Would you like to start with a specific asset, or would you prefer me to recommend the best partner matches for your property?`;
-  }, []);
+  }, [user]);
 
-  // Auto-initialize when mounted
+  // Auto-initialize when component mounts
   useEffect(() => {
     if (state === 'idle') {
-      initializeAssistant();
+      // Small delay to allow component to settle
+      const timer = setTimeout(() => {
+        initializeAssistant();
+      }, 100);
+      
+      return () => clearTimeout(timer);
     }
   }, [initializeAssistant, state]);
 
-  // Send Message
+  // Enhanced send message with better error handling
   const sendMessage = useCallback(async (message: string) => {
     if (!assistantId || !threadId || state !== 'ready') {
-      console.warn('⚠️ [MESSAGE] Cannot send message - assistant not ready');
+      console.warn('⚠️ [MESSAGE] Cannot send message - assistant not ready:', {
+        assistantId: !!assistantId,
+        threadId: !!threadId,
+        state
+      });
       return;
     }
 
-    console.log('💬 [MESSAGE] Sending:', message);
+    console.log('💬 [MESSAGE] Sending:', message.substring(0, 100) + '...');
     setState('chatting');
     setError(null);
 
-    // Add user message
+    // Add user message immediately
     const userMessage: AssistantMessage = {
       id: Date.now().toString(),
       role: 'user',
@@ -254,7 +344,7 @@ Would you like to start with a specific asset, or would you prefer me to recomme
     setMessages(prev => [...prev, userMessage]);
 
     try {
-      // Send message
+      // Send message with enhanced context
       const { data: messageData, error: messageError } = await supabase.functions.invoke('openai-assistant-manager', {
         body: {
           action: 'send_message',
@@ -283,26 +373,33 @@ Would you like to start with a specific asset, or would you prefer me to recomme
 
       if (runError) throw runError;
 
-      // Poll for completion
+      // Start polling for completion
       pollForCompletion(runData.run.id);
 
-    } catch (error) {
+    } catch (error: any) {
       console.error('❌ [MESSAGE] Send failed:', error);
       setState('ready');
-      setError(error.message || 'Failed to send message');
+      
+      let errorMessage = error.message || 'Failed to send message';
+      if (errorMessage.includes('Thread creation failed')) {
+        errorMessage = 'Connection lost. Please refresh the page and try again.';
+      }
+      
+      setError(errorMessage);
     }
   }, [assistantId, threadId, state, user?.id, userContext]);
 
-  // Poll for completion
+  // Enhanced polling with exponential backoff
   const pollForCompletion = useCallback((runId: string) => {
     if (pollIntervalRef.current) {
       clearInterval(pollIntervalRef.current);
     }
 
     let attempts = 0;
-    const maxAttempts = 30; // 60 seconds max
+    let pollInterval = 1000; // Start with 1 second
+    const maxAttempts = 60; // 60 attempts max (about 2 minutes with exponential backoff)
 
-    pollIntervalRef.current = setInterval(async () => {
+    const poll = async () => {
       attempts++;
       
       if (attempts > maxAttempts) {
@@ -311,7 +408,7 @@ Would you like to start with a specific asset, or would you prefer me to recomme
           pollIntervalRef.current = null;
         }
         setState('ready');
-        setError('Response timeout - please try again');
+        setError('Response timeout - the AI is taking too long to respond. Please try again.');
         return;
       }
 
@@ -326,7 +423,7 @@ Would you like to start with a specific asset, or would you prefer me to recomme
         if (error) throw error;
 
         const { run, messages: newMessages } = data;
-        console.log('📊 [POLL] Run status:', run.status);
+        console.log(`📊 [POLL] Run status (attempt ${attempts}):`, run.status);
 
         if (run.status === 'completed') {
           if (pollIntervalRef.current) {
@@ -334,17 +431,19 @@ Would you like to start with a specific asset, or would you prefer me to recomme
             pollIntervalRef.current = null;
           }
 
-          if (newMessages) {
+          if (newMessages && newMessages.length > 0) {
             const assistantMessages = newMessages
               .filter((msg: any) => msg.role === 'assistant')
               .map((msg: any) => ({
                 id: msg.id,
                 role: 'assistant' as const,
-                content: msg.content[0]?.text?.value || '',
+                content: msg.content[0]?.text?.value || 'Sorry, I encountered an issue processing that request.',
                 timestamp: new Date(msg.created_at * 1000)
               }));
 
-            setMessages(prev => [...prev, ...assistantMessages]);
+            if (assistantMessages.length > 0) {
+              setMessages(prev => [...prev, ...assistantMessages]);
+            }
           }
 
           setState('ready');
@@ -362,33 +461,49 @@ Would you like to start with a specific asset, or would you prefer me to recomme
             pollIntervalRef.current = null;
           }
           setState('ready');
-          setError(`Run ${run.status}: ${run.last_error?.message || 'Unknown error'}`);
+          setError(`AI processing ${run.status}: ${run.last_error?.message || 'Please try again.'}`);
+          
+        } else if (run.status === 'in_progress' || run.status === 'queued') {
+          // Continue polling with exponential backoff
+          pollInterval = Math.min(pollInterval * 1.2, 5000); // Max 5 seconds
         }
 
-      } catch (error) {
+      } catch (error: any) {
         console.error('❌ [POLL] Error:', error);
-        if (pollIntervalRef.current) {
-          clearInterval(pollIntervalRef.current);
-          pollIntervalRef.current = null;
+        
+        // Don't fail immediately on polling errors, but do increment attempts
+        if (attempts % 5 === 0) { // Every 5 attempts, log a warning
+          console.warn(`⚠️ [POLL] ${attempts} failed attempts, continuing...`);
         }
-        setState('ready');
-        setError('Communication error - please try again');
+        
+        if (attempts > maxAttempts / 2) { // After half the max attempts, fail
+          if (pollIntervalRef.current) {
+            clearInterval(pollIntervalRef.current);
+            pollIntervalRef.current = null;
+          }
+          setState('ready');
+          setError('Connection issues - please try again');
+        }
       }
-    }, 2000);
+    };
+
+    // Start polling
+    pollIntervalRef.current = setInterval(poll, pollInterval);
+    poll(); // Initial poll
   }, [threadId]);
 
-  // Handle required actions
+  // Enhanced action handling
   const handleRequiredActions = useCallback(async (run: any, runId: string) => {
     console.log('🔧 [ACTIONS] Handling required actions');
 
     if (run.required_action?.type === 'submit_tool_outputs') {
       const toolCalls = run.required_action.submit_tool_outputs.tool_calls;
       
-      // Add processing message
+      // Add processing message with more detail
       setMessages(prev => [...prev, {
         id: `tool_calls_${runId}`,
         role: 'assistant',
-        content: 'I\'m processing your request and gathering the necessary information...',
+        content: `I'm processing your request and gathering information from ${toolCalls.length} different sources. This may take a moment...`,
         timestamp: new Date(),
         functionCalls: toolCalls
       }]);
@@ -413,31 +528,47 @@ Would you like to start with a specific asset, or would you prefer me to recomme
         });
 
         if (error) throw error;
+        
+        // Continue polling with the new run
         pollForCompletion(data.run.id);
 
-      } catch (error) {
+      } catch (error: any) {
         console.error('❌ [ACTIONS] Failed:', error);
         setState('ready');
-        setError('Failed to process function calls');
+        setError('Failed to process your request. Please try again.');
       }
     }
   }, [threadId, user?.id, pollForCompletion]);
 
-  // Clear error
+  // Enhanced error clearing
   const clearError = useCallback(() => {
     setError(null);
     if (state === 'error') {
       setState('idle');
+      // Auto-retry initialization
+      setTimeout(() => {
+        initializeAssistant();
+      }, 500);
     }
-  }, [state]);
+  }, [state, initializeAssistant]);
 
-  // Reset conversation
+  // Enhanced reset with cleanup
   const resetConversation = useCallback(() => {
+    console.log('🔄 [ASSISTANT] Resetting conversation...');
+    
+    // Clean up polling
     if (pollIntervalRef.current) {
       clearInterval(pollIntervalRef.current);
       pollIntervalRef.current = null;
     }
     
+    // Clean up abort controller
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+    }
+    
+    // Reset state
     setAssistantId(null);
     setThreadId(null);
     setMessages([]);
@@ -451,13 +582,18 @@ Would you like to start with a specific asset, or would you prefer me to recomme
     });
     
     initializationRef.current = false;
-  }, []);
+    
+    // Auto-restart
+    setTimeout(() => {
+      initializeAssistant();
+    }, 500);
+  }, [initializeAssistant]);
 
   return {
     // State
     assistantId,
     threadId,
-    runId: null, // Not tracking run ID in this simplified version
+    runId: null,
     isLoading,
     isProcessing,
     messages,
