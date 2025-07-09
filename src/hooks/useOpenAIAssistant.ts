@@ -23,6 +23,12 @@ interface AssistantState {
   authError: boolean;
 }
 
+interface UserContext {
+  propertyData: PropertyAnalysisData | null;
+  serviceProviders: any[];
+  onboardingProgress: any;
+}
+
 export const useOpenAIAssistant = (propertyData: PropertyAnalysisData | null) => {
   const { user } = useAuth();
   const [state, setState] = useState<AssistantState>({
@@ -34,6 +40,12 @@ export const useOpenAIAssistant = (propertyData: PropertyAnalysisData | null) =>
     messages: [],
     error: null,
     authError: false
+  });
+
+  const [userContext, setUserContext] = useState<UserContext>({
+    propertyData: null,
+    serviceProviders: [],
+    onboardingProgress: null
   });
 
   // Store the property data reference to detect changes
@@ -80,62 +92,108 @@ export const useOpenAIAssistant = (propertyData: PropertyAnalysisData | null) =>
 
   const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Load user context data
+  const loadUserContext = useCallback(async () => {
+    if (!user?.id) return;
+
+    try {
+      console.log('🔍 Loading user context data for:', user.id);
+
+      // Load service providers
+      const { data: providers } = await supabase
+        .from('enhanced_service_providers')
+        .select('*')
+        .eq('is_active', true)
+        .order('priority', { ascending: false });
+
+      // Load onboarding progress
+      const { data: onboarding } = await supabase
+        .from('user_onboarding')
+        .select('*')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      setUserContext({
+        propertyData: propertyData,
+        serviceProviders: providers || [],
+        onboardingProgress: onboarding
+      });
+
+      console.log('✅ User context loaded:', {
+        providersCount: providers?.length || 0,
+        hasOnboarding: !!onboarding,
+        hasPropertyData: !!propertyData
+      });
+
+    } catch (error) {
+      console.error('❌ Failed to load user context:', error);
+    }
+  }, [user?.id, propertyData]);
+
+  // Load context when user or property data changes
+  useEffect(() => {
+    if (user?.id) {
+      loadUserContext();
+    }
+  }, [user?.id, loadUserContext]);
+
   const generateWelcomeMessage = useCallback(() => {
-    if (!propertyData) {
-      return "Hi! I'm your AI assistant for property monetization. I'm here to help you explore ways to earn money from your property assets. How can I assist you today?";
+    const context = userContext;
+    
+    if (!context.propertyData) {
+      return "Hi! I'm your AI assistant for property monetization. I'm here to help you explore ways to earn money from your property assets and connect you with the right partners. How can I assist you today?";
     }
 
-    const { address, totalMonthlyRevenue, availableAssets } = propertyData;
+    const { address, totalMonthlyRevenue, availableAssets } = context.propertyData;
     
-    console.log('🎯 [WELCOME] Generating message with property data:', {
+    console.log('🎯 [WELCOME] Generating message with user context:', {
       address,
       totalMonthlyRevenue,
       availableAssetsCount: availableAssets.length,
-      assetsWithRevenue: availableAssets.filter(a => a.hasRevenuePotential).length,
-      availableAssets: availableAssets.map(a => ({ name: a.name, revenue: a.monthlyRevenue, hasRevenue: a.hasRevenuePotential }))
+      serviceProvidersCount: context.serviceProviders.length,
+      hasOnboarding: !!context.onboardingProgress
     });
 
-    // Get assets with revenue potential OR monthly revenue > 0
+    // Get assets with revenue potential
     const topAssets = availableAssets.filter(a => a.hasRevenuePotential || a.monthlyRevenue > 0).slice(0, 3);
 
     if (topAssets.length === 0 && totalMonthlyRevenue === 0) {
-      return `Hi! I've reviewed your property at **${address}**. While I don't see immediate monetization opportunities in our current analysis, I'm here to help you explore other options. What specific areas of your property are you most interested in monetizing?`;
+      return `Hi! I've reviewed your property at **${address}**. While our initial analysis shows limited immediate monetization opportunities, I'm here to help you explore other options and connect you with partners who can help unlock your property's potential. What specific areas are you most interested in exploring?`;
     }
 
     const assetList = topAssets.map(asset => `**${asset.name}** ($${asset.monthlyRevenue}/month)`).join(', ');
+    
+    const partnersAvailable = context.serviceProviders.length;
     
     return `Hi! I'm your AI assistant and I've analyzed your property at **${address}**! 🏠
 
 I found great monetization opportunities including: ${assetList}. Your total earning potential is **$${totalMonthlyRevenue}/month**.
 
-I'm here to guide you through setting up these assets step-by-step. You can click on any asset badge in the sidebar to start its specific setup, or ask me any questions about the monetization process!`;
-  }, [propertyData]);
+I have access to **${partnersAvailable} partner services** that can help you set up these opportunities. I can guide you through the entire onboarding process, from initial setup to connecting with the right partners.
+
+Would you like to start with a specific asset, or would you prefer me to recommend the best partner matches for your property?`;
+  }, [userContext]);
 
   const initializeAssistant = useCallback(async () => {
-    console.log('🤖 Initializing OpenAI Assistant with property data:', {
-      address: propertyData?.address,
-      analysisId: propertyData?.analysisId,
-      totalRevenue: propertyData?.totalMonthlyRevenue,
-      assetsCount: propertyData?.availableAssets?.length,
-      userId: user?.id
+    console.log('🤖 Initializing OpenAI Assistant with enhanced context:', {
+      address: userContext.propertyData?.address,
+      analysisId: userContext.propertyData?.analysisId,
+      totalRevenue: userContext.propertyData?.totalMonthlyRevenue,
+      assetsCount: userContext.propertyData?.availableAssets?.length,
+      partnersCount: userContext.serviceProviders.length,
+      userId: user?.id,
+      hasOnboarding: !!userContext.onboardingProgress
     });
 
-    // Check if user is authenticated
+    // Allow non-authenticated users with limited functionality
     if (!user?.id) {
-      console.error('❌ User not authenticated, cannot initialize assistant');
-      setState(prev => ({
-        ...prev,
-        isLoading: false,
-        error: 'Authentication required to use AI assistant',
-        authError: true
-      }));
-      return;
+      console.log('⚠️ No authenticated user, providing limited assistant functionality');
     }
 
     setState(prev => ({ ...prev, isLoading: true, error: null, authError: false }));
 
     try {
-      // Get existing assistant instead of creating new one
+      // Get existing assistant
       const { data: assistantData, error: assistantError } = await supabase.functions.invoke('openai-assistant-manager', {
         body: {
           action: 'get_assistant'
@@ -147,24 +205,42 @@ I'm here to guide you through setting up these assets step-by-step. You can clic
       const assistantId = assistantData.assistant.id;
       console.log('✅ Using existing assistant:', assistantId);
 
-      // Create thread with authenticated user
+      // Create thread with enhanced metadata
+      const threadMetadata = {
+        userId: user?.id || 'anonymous',
+        propertyAddress: userContext.propertyData?.address,
+        analysisId: userContext.propertyData?.analysisId,
+        totalRevenue: userContext.propertyData?.totalMonthlyRevenue,
+        assetsCount: userContext.propertyData?.availableAssets?.length,
+        partnersAvailable: userContext.serviceProviders.length,
+        timestamp: new Date().toISOString()
+      };
+
       const { data: threadData, error: threadError } = await supabase.functions.invoke('openai-assistant-manager', {
         body: {
           action: 'create_thread',
           data: {
-            metadata: {
-              userId: user.id,
-              propertyAddress: propertyData?.address,
-              analysisId: propertyData?.analysisId
-            }
+            metadata: threadMetadata
           }
         }
       });
 
-      if (threadError) throw threadError;
+      if (threadError) {
+        console.error('❌ Thread creation failed:', threadError);
+        if (threadError.message?.includes('Authentication required')) {
+          setState(prev => ({
+            ...prev,
+            isLoading: false,
+            error: 'Please sign in to use the AI assistant with full functionality',
+            authError: true
+          }));
+          return;
+        }
+        throw threadError;
+      }
 
       const threadId = threadData.thread.id;
-      console.log('✅ Thread created:', threadId);
+      console.log('✅ Thread created with enhanced metadata:', threadId);
 
       setState(prev => ({
         ...prev,
@@ -185,30 +261,21 @@ I'm here to guide you through setting up these assets step-by-step. You can clic
       setState(prev => ({
         ...prev,
         isLoading: false,
-        error: error.message || 'Failed to initialize assistant'
+        error: error.message || 'Failed to initialize assistant. Please try again.',
+        authError: error.message?.includes('auth') || error.message?.includes('Authentication')
       }));
       throw error;
     }
-  }, [propertyData, user?.id, generateWelcomeMessage]);
+  }, [userContext, user?.id, generateWelcomeMessage]);
 
   const sendMessage = useCallback(async (message: string) => {
     if (!state.assistantId || !state.threadId || state.isProcessing) return;
-
-    // Check if user is authenticated
-    if (!user?.id) {
-      console.error('❌ User not authenticated, cannot send message');
-      setState(prev => ({
-        ...prev,
-        error: 'Authentication required to send messages',
-        authError: true
-      }));
-      return;
-    }
 
     console.log('💬 Sending message to assistant:', message);
     setState(prev => ({ 
       ...prev, 
       isProcessing: true,
+      error: null,
       messages: [...prev.messages, {
         id: Date.now().toString(),
         role: 'user',
@@ -218,14 +285,19 @@ I'm here to guide you through setting up these assets step-by-step. You can clic
     }));
 
     try {
-      // Send message to thread with user authentication
+      // Send message to thread
       const { data: messageData, error: messageError } = await supabase.functions.invoke('openai-assistant-manager', {
         body: {
           action: 'send_message',
           data: {
             threadId: state.threadId,
             message,
-            userId: user.id
+            userId: user?.id || 'anonymous',
+            userContext: {
+              propertyData: userContext.propertyData,
+              serviceProviders: userContext.serviceProviders.slice(0, 10), // Limit context size
+              onboardingProgress: userContext.onboardingProgress
+            }
           }
         }
       });
@@ -239,7 +311,7 @@ I'm here to guide you through setting up these assets step-by-step. You can clic
           data: {
             threadId: state.threadId,
             assistantId: state.assistantId,
-            userId: user.id
+            userId: user?.id || 'anonymous'
           }
         }
       });
@@ -256,10 +328,10 @@ I'm here to guide you through setting up these assets step-by-step. You can clic
       setState(prev => ({
         ...prev,
         isProcessing: false,
-        error: error.message || 'Failed to send message'
+        error: error.message || 'Failed to send message. Please try again.'
       }));
     }
-  }, [state.assistantId, state.threadId, state.isProcessing, user?.id]);
+  }, [state.assistantId, state.threadId, state.isProcessing, user?.id, userContext]);
 
   const pollForCompletion = useCallback((runId: string) => {
     if (pollIntervalRef.current) {
@@ -340,7 +412,7 @@ I'm here to guide you through setting up these assets step-by-step. You can clic
         setState(prev => ({
           ...prev,
           isProcessing: false,
-          error: error.message || 'Polling failed'
+          error: error.message || 'Communication error. Please try again.'
         }));
       }
     }, 2000);
@@ -378,7 +450,7 @@ I'm here to guide you through setting up these assets step-by-step. You can clic
               threadId: state.threadId,
               runId,
               toolOutputs,
-              userId: user?.id
+              userId: user?.id || 'anonymous'
             }
           }
         });
@@ -424,10 +496,11 @@ I'm here to guide you through setting up these assets step-by-step. You can clic
 
   return {
     ...state,
+    userContext,
     initializeAssistant,
     sendMessage,
     clearError,
     resetConversation,
-    isReady: !!state.assistantId && !!state.threadId && !!user?.id
+    isReady: !!state.assistantId && !!state.threadId
   };
 };

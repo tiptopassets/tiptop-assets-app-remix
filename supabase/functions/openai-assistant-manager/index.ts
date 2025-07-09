@@ -132,20 +132,14 @@ async function getExistingAssistant() {
 
 async function createThread(data: any, supabase: any) {
   try {
-    // Validate userId is provided
     const userId = data?.metadata?.userId;
-    if (!userId) {
-      console.error('❌ [AUTH] No userId provided for thread creation');
-      return new Response(JSON.stringify({ 
-        error: 'Authentication required - userId missing',
-        success: false 
-      }), {
-        status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+    
+    // Handle both authenticated and anonymous users
+    if (!userId || userId === 'anonymous') {
+      console.log('⚠️ [AUTH] Creating thread for anonymous user');
+    } else {
+      console.log('✅ [AUTH] Creating thread for authenticated user:', userId);
     }
-
-    console.log('✅ [AUTH] Creating thread for authenticated user:', userId);
 
     const response = await fetch('https://api.openai.com/v1/threads', {
       method: 'POST',
@@ -175,35 +169,38 @@ async function createThread(data: any, supabase: any) {
     const threadId = thread.id;
     console.log('✅ Thread created:', threadId);
 
-    // Create corresponding onboarding record using threadId
-    try {
-      const { error: onboardingError } = await supabase
-        .from('user_onboarding')
-        .insert({
-          id: threadId, // Use OpenAI thread ID as the onboarding ID
-          user_id: userId,
-          selected_option: 'concierge', // Default to concierge for AI assistant
-          status: 'in_progress',
-          current_step: 1,
-          total_steps: 5,
-          chat_history: [],
-          completed_assets: [],
-          progress_data: {
-            assistant_thread_id: threadId,
-            created_via: 'openai_assistant'
-          }
-        });
+    // Only create onboarding record for authenticated users
+    if (userId && userId !== 'anonymous') {
+      try {
+        const { error: onboardingError } = await supabase
+          .from('user_onboarding')
+          .insert({
+            id: threadId, // Use OpenAI thread ID as the onboarding ID
+            user_id: userId,
+            selected_option: 'concierge', // Default to concierge for AI assistant
+            status: 'in_progress',
+            current_step: 1,
+            total_steps: 5,
+            chat_history: [],
+            completed_assets: [],
+            progress_data: {
+              assistant_thread_id: threadId,
+              created_via: 'openai_assistant',
+              user_context: data?.metadata || {}
+            }
+          });
 
-      if (onboardingError) {
-        console.error('❌ [DB] Failed to create onboarding record:', onboardingError);
+        if (onboardingError) {
+          console.error('❌ [DB] Failed to create onboarding record:', onboardingError);
+          // Continue - don't fail the thread creation if DB operation fails
+          console.warn('⚠️ [DB] Thread created but onboarding record creation failed');
+        } else {
+          console.log('✅ [DB] Onboarding record created for thread:', threadId);
+        }
+      } catch (error) {
+        console.error('❌ [DB] Error creating onboarding record:', error);
         // Continue - don't fail the thread creation if DB operation fails
-        console.warn('⚠️ [DB] Thread created but onboarding record creation failed');
-      } else {
-        console.log('✅ [DB] Onboarding record created for thread:', threadId);
       }
-    } catch (error) {
-      console.error('❌ [DB] Error creating onboarding record:', error);
-      // Continue - don't fail the thread creation if DB operation fails
     }
 
     return new Response(JSON.stringify({ 
@@ -239,18 +236,15 @@ async function sendMessage(data: any, supabase: any) {
     });
   }
 
-  const { threadId, message, userId } = data;
+  const { threadId, message, userId, userContext } = data;
 
-  // Validate authentication first
-  if (!userId) {
-    console.error('❌ [AUTH] No userId provided for message sending');
-    return new Response(JSON.stringify({ 
-      error: 'Authentication required - userId missing',
-      success: false 
-    }), {
-      status: 401,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+  // Handle both authenticated and anonymous users
+  const isAuthenticated = userId && userId !== 'anonymous';
+  
+  if (!isAuthenticated) {
+    console.log('⚠️ [AUTH] Processing message for anonymous user');
+  } else {
+    console.log('✅ [AUTH] Processing message for authenticated user:', userId);
   }
 
   // Validate threadId
@@ -280,6 +274,22 @@ async function sendMessage(data: any, supabase: any) {
   console.log('🔍 [DEBUG] Validated input - threadId:', threadId, 'messageLength:', message.length, 'userId:', userId);
 
   try {
+    // Enhance message with user context if available
+    let contextualMessage = message;
+    if (userContext) {
+      console.log('🎯 [CONTEXT] Adding user context to message:', {
+        hasPropertyData: !!userContext.propertyData,
+        serviceProvidersCount: userContext.serviceProviders?.length || 0,
+        hasOnboarding: !!userContext.onboardingProgress
+      });
+
+      // Add context as a system message or append to user message
+      if (userContext.propertyData) {
+        const propertyInfo = `\n\n[Property Context: ${userContext.propertyData.address}, Revenue Potential: $${userContext.propertyData.totalMonthlyRevenue}/month, Assets: ${userContext.propertyData.availableAssets?.length || 0}]`;
+        contextualMessage += propertyInfo;
+      }
+    }
+
     // Step 1: Send message to OpenAI first
     console.log('📤 [DEBUG] Sending message to OpenAI API');
     const response = await fetch(`https://api.openai.com/v1/threads/${threadId}/messages`, {
@@ -291,7 +301,7 @@ async function sendMessage(data: any, supabase: any) {
       },
       body: JSON.stringify({
         role: 'user',
-        content: message
+        content: contextualMessage
       })
     });
 
@@ -310,39 +320,44 @@ async function sendMessage(data: any, supabase: any) {
     const messageData = await response.json();
     console.log('✅ OpenAI message sent successfully, ID:', messageData.id);
     
-    // Step 2: Save message to database (graceful failure)
-    console.log('🔍 [DEBUG] Starting database save operation');
-    try {
-      // Use the database function to insert the message
-      console.log('🔍 [DEBUG] Calling insert_onboarding_message function...');
-      const { data: insertResult, error: insertError } = await supabase.rpc('insert_onboarding_message', {
-        p_onboarding_id: threadId,
-        p_role: 'user',
-        p_content: message,
-        p_metadata: { 
-          messageId: messageData.id,
-          timestamp: new Date().toISOString(),
-          userId: userId
+    // Step 2: Save message to database (graceful failure for authenticated users only)
+    if (isAuthenticated) {
+      console.log('🔍 [DEBUG] Starting database save operation for authenticated user');
+      try {
+        // Use the database function to insert the message
+        console.log('🔍 [DEBUG] Calling insert_onboarding_message function...');
+        const { data: insertResult, error: insertError } = await supabase.rpc('insert_onboarding_message', {
+          p_onboarding_id: threadId,
+          p_role: 'user',
+          p_content: message, // Use original message, not contextual one
+          p_metadata: { 
+            messageId: messageData.id,
+            timestamp: new Date().toISOString(),
+            userId: userId,
+            hasContext: !!userContext
+          }
+        });
+        
+        if (insertError) {
+          console.error('❌ [DEBUG] Database insert error:', insertError);
+          // Don't fail the request - let the OpenAI operation succeed even if DB save fails
+          console.warn('⚠️ [DEBUG] Message saved to OpenAI but failed to save to database');
+        } else {
+          console.log('✅ [DEBUG] Message saved to database successfully:', insertResult);
         }
-      });
-      
-      if (insertError) {
-        console.error('❌ [DEBUG] Database insert error:', insertError);
-        // Don't fail the request - let the OpenAI operation succeed even if DB save fails
-        console.warn('⚠️ [DEBUG] Message saved to OpenAI but failed to save to database');
-      } else {
-        console.log('✅ [DEBUG] Message saved to database successfully:', insertResult);
+        
+      } catch (dbError) {
+        console.error('❌ [DEBUG] Database operation failed:', {
+          error: dbError.message,
+          threadId,
+          userId
+        });
+        
+        // Don't fail the request - let OpenAI operation succeed even if DB fails
+        console.warn('⚠️ [DEBUG] Continuing despite database error');
       }
-      
-    } catch (dbError) {
-      console.error('❌ [DEBUG] Database operation failed:', {
-        error: dbError.message,
-        threadId,
-        userId
-      });
-      
-      // Don't fail the request - let OpenAI operation succeed even if DB fails
-      console.warn('⚠️ [DEBUG] Continuing despite database error');
+    } else {
+      console.log('ℹ️ [DEBUG] Skipping database save for anonymous user');
     }
 
     return new Response(JSON.stringify({ 
@@ -378,16 +393,13 @@ async function runAssistant(data: any, supabase: any) {
 
   const { threadId, assistantId, userId } = data;
 
-  // Validate authentication
-  if (!userId) {
-    console.error('❌ [AUTH] No userId provided for assistant run');
-    return new Response(JSON.stringify({ 
-      error: 'Authentication required - userId missing',
-      success: false 
-    }), {
-      status: 401,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+  // Handle both authenticated and anonymous users
+  const isAuthenticated = userId && userId !== 'anonymous';
+  
+  if (!isAuthenticated) {
+    console.log('⚠️ [AUTH] Running assistant for anonymous user');
+  } else {
+    console.log('✅ [AUTH] Running assistant for authenticated user:', userId);
   }
 
   if (!threadId) {
@@ -553,16 +565,13 @@ async function submitToolOutputs(data: any, supabase: any) {
 
   const { threadId, runId, toolOutputs, userId } = data;
 
-  // Validate authentication
-  if (!userId) {
-    console.error('❌ [AUTH] No userId provided for tool outputs');
-    return new Response(JSON.stringify({ 
-      error: 'Authentication required - userId missing',
-      success: false 
-    }), {
-      status: 401,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+  // Handle both authenticated and anonymous users
+  const isAuthenticated = userId && userId !== 'anonymous';
+  
+  if (!isAuthenticated) {
+    console.log('⚠️ [TOOL] Processing tool outputs for anonymous user');
+  } else {
+    console.log('✅ [TOOL] Processing tool outputs for authenticated user:', userId);
   }
 
   if (!threadId || !runId) {
@@ -611,25 +620,25 @@ async function submitToolOutputs(data: any, supabase: any) {
           
           switch (function_name) {
             case 'collectAddress':
-              result = await handleCollectAddress(functionArgs, userId, supabase);
+              result = await handleCollectAddress(functionArgs, userId, supabase, isAuthenticated);
               break;
             case 'suggestAssetOpportunities':
-              result = await handleSuggestAssetOpportunities(functionArgs, userId, supabase);
+              result = await handleSuggestAssetOpportunities(functionArgs, userId, supabase, isAuthenticated);
               break;
             case 'saveUserResponse':
-              result = await handleSaveUserResponse(functionArgs, userId, supabase);
+              result = await handleSaveUserResponse(functionArgs, userId, supabase, isAuthenticated);
               break;
             case 'getPartnerOnboardingGuide':
-              result = await handleGetPartnerOnboardingGuide(functionArgs, userId, supabase);
+              result = await handleGetPartnerOnboardingGuide(functionArgs, userId, supabase, isAuthenticated);
               break;
             case 'getPartnerRequirements':
-              result = await handleGetPartnerRequirements(functionArgs, userId, supabase);
+              result = await handleGetPartnerRequirements(functionArgs, userId, supabase, isAuthenticated);
               break;
             case 'connectServiceProviders':
-              result = await handleConnectServiceProviders(functionArgs, userId, supabase);
+              result = await handleConnectServiceProviders(functionArgs, userId, supabase, isAuthenticated);
               break;
             case 'trackReferralConversion':
-              result = await handleTrackReferralConversion(functionArgs, userId, supabase);
+              result = await handleTrackReferralConversion(functionArgs, userId, supabase, isAuthenticated);
               break;
             default:
               result = { error: `Unknown function: ${function_name}` };
@@ -695,11 +704,11 @@ async function submitToolOutputs(data: any, supabase: any) {
   }
 }
 
-// Tool function handlers
-async function handleCollectAddress(args: any, userId: string, supabase: any) {
+// Enhanced tool function handlers with better authentication handling
+async function handleCollectAddress(args: any, userId: string, supabase: any, isAuthenticated: boolean) {
   console.log('🏠 Collecting address:', args);
   
-  if (userId) {
+  if (isAuthenticated) {
     try {
       // Save or update user address
       const { error } = await supabase.from('user_addresses').upsert({
@@ -727,12 +736,12 @@ async function handleCollectAddress(args: any, userId: string, supabase: any) {
 
   return { 
     success: true, 
-    message: 'Address collected (user not authenticated)',
+    message: 'Address collected (sign in to save permanently)',
     address: args.address 
   };
 }
 
-async function handleSuggestAssetOpportunities(args: any, userId: string, supabase: any) {
+async function handleSuggestAssetOpportunities(args: any, userId: string, supabase: any, isAuthenticated: boolean) {
   console.log('💡 Suggesting asset opportunities:', args);
   
   // Get enhanced service providers for the selected assets
@@ -756,7 +765,8 @@ async function handleSuggestAssetOpportunities(args: any, userId: string, supaba
           assetTypes: p.asset_types,
           description: p.description,
           earningsRange: `$${p.avg_monthly_earnings_low}-${p.avg_monthly_earnings_high}`,
-          setupInstructions: p.setup_instructions
+          setupInstructions: p.setup_instructions,
+          requiresAuth: !isAuthenticated ? 'Sign in to access partner connections' : null
         })) || []
       };
     } catch (error) {
@@ -773,10 +783,10 @@ async function handleSuggestAssetOpportunities(args: any, userId: string, supaba
   };
 }
 
-async function handleSaveUserResponse(args: any, userId: string, supabase: any) {
+async function handleSaveUserResponse(args: any, userId: string, supabase: any, isAuthenticated: boolean) {
   console.log('💾 Saving user response:', args);
   
-  if (userId) {
+  if (isAuthenticated) {
     try {
       // Update user onboarding data
       const { error } = await supabase
@@ -819,11 +829,11 @@ async function handleSaveUserResponse(args: any, userId: string, supabase: any) 
 
   return { 
     success: true, 
-    message: 'Response collected (user not authenticated)' 
+    message: 'Response collected (sign in to save permanently)' 
   };
 }
 
-async function handleConnectServiceProviders(args: any, userId: string, supabase: any) {
+async function handleConnectServiceProviders(args: any, userId: string, supabase: any, isAuthenticated: boolean) {
   console.log('🤝 Connecting service providers:', args);
   
   try {
@@ -843,11 +853,12 @@ async function handleConnectServiceProviders(args: any, userId: string, supabase
       assetTypes: provider.asset_types.filter((type: string) => args.assetTypes.includes(type)),
       referralLink: provider.referral_link_template,
       setupInstructions: provider.setup_instructions,
-      averageEarnings: `$${provider.avg_monthly_earnings_low}-${provider.avg_monthly_earnings_high}/month`
+      averageEarnings: `$${provider.avg_monthly_earnings_low}-${provider.avg_monthly_earnings_high}/month`,
+      requiresAuth: !isAuthenticated ? 'Sign in to save connections and track progress with partners' : null
     })) || [];
 
-    // Save provider connections for the user
-    if (userId && connections.length > 0) {
+    // Save provider connections for authenticated users
+    if (isAuthenticated && connections.length > 0) {
       const connectionRecords = connections.map((connection: any) => ({
         user_id: userId,
         supplier_name: connection.name,
@@ -868,7 +879,8 @@ async function handleConnectServiceProviders(args: any, userId: string, supabase
       success: true,
       providers: connections,
       totalProviders: connections.length,
-      assetTypes: args.assetTypes
+      assetTypes: args.assetTypes,
+      authMessage: !isAuthenticated ? 'Sign in to save connections and track your progress with partners' : null
     };
   } catch (error) {
     return { 
@@ -878,7 +890,7 @@ async function handleConnectServiceProviders(args: any, userId: string, supabase
   }
 }
 
-async function handleGetPartnerOnboardingGuide(args: any, userId: string, supabase: any) {
+async function handleGetPartnerOnboardingGuide(args: any, userId: string, supabase: any, isAuthenticated: boolean) {
   console.log('📋 Getting partner onboarding guide:', args);
   
   try {
@@ -921,7 +933,8 @@ async function handleGetPartnerOnboardingGuide(args: any, userId: string, supaba
       approvalTime: setupRequirements.approval_time || 'Not specified',
       instructions: provider.setup_instructions,
       referralLink: provider.referral_link_template,
-      earningsRange: `$${provider.avg_monthly_earnings_low}-${provider.avg_monthly_earnings_high}/month`
+      earningsRange: `$${provider.avg_monthly_earnings_low}-${provider.avg_monthly_earnings_high}/month`,
+      authMessage: !isAuthenticated ? 'Sign in to track your onboarding progress' : null
     };
   } catch (error) {
     return { 
@@ -931,7 +944,7 @@ async function handleGetPartnerOnboardingGuide(args: any, userId: string, supaba
   }
 }
 
-async function handleGetPartnerRequirements(args: any, userId: string, supabase: any) {
+async function handleGetPartnerRequirements(args: any, userId: string, supabase: any, isAuthenticated: boolean) {
   console.log('📝 Getting partner requirements:', args);
   
   try {
@@ -960,7 +973,8 @@ async function handleGetPartnerRequirements(args: any, userId: string, supabase:
       setupTime: setupRequirements.setup_time || 'Not specified',
       approvalTime: setupRequirements.approval_time || 'Not specified',
       supportedAssets: provider.asset_types || [],
-      earningsEstimate: `$${provider.avg_monthly_earnings_low}-${provider.avg_monthly_earnings_high}/month`
+      earningsEstimate: `$${provider.avg_monthly_earnings_low}-${provider.avg_monthly_earnings_high}/month`,
+      authMessage: !isAuthenticated ? 'Sign in to save requirements and track progress' : null
     };
   } catch (error) {
     return { 
@@ -970,17 +984,17 @@ async function handleGetPartnerRequirements(args: any, userId: string, supabase:
   }
 }
 
-async function handleTrackReferralConversion(args: any, userId: string, supabase: any) {
+async function handleTrackReferralConversion(args: any, userId: string, supabase: any, isAuthenticated: boolean) {
   console.log('📊 Tracking referral conversion:', args);
   
-  try {
-    if (!userId) {
-      return {
-        success: false,
-        error: 'User ID required for tracking'
-      };
-    }
+  if (!isAuthenticated) {
+    return {
+      success: false,
+      error: 'Sign in required to track referral conversions'
+    };
+  }
 
+  try {
     // Create or update partner integration progress
     const { data, error } = await supabase
       .from('partner_integration_progress')

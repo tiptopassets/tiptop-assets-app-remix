@@ -39,21 +39,13 @@ const EnhancedChatInterface = ({
     isReady,
     error: assistantError,
     authError,
+    userContext,
     clearError
   } = useOpenAIAssistant(propertyData);
 
-  // Check if user is authenticated and redirect if not
+  // Initialize assistant when component mounts (works for both auth and unauth users)
   useEffect(() => {
-    if (authError && !user) {
-      console.log('🔐 User not authenticated, redirecting to auth page');
-      navigate('/auth');
-      return;
-    }
-  }, [authError, user, navigate]);
-
-  // Initialize assistant when component mounts and user is authenticated
-  useEffect(() => {
-    if (!isInitialized && !aiLoading && !isProcessing && user?.id) {
+    if (!isInitialized && !aiLoading && !isProcessing) {
       const initAsync = async () => {
         try {
           await initializeAssistant();
@@ -71,7 +63,7 @@ const EnhancedChatInterface = ({
       
       initAsync();
     }
-  }, [isInitialized, aiLoading, isProcessing, user?.id, initializeAssistant, onSendMessageReady, sendMessage]);
+  }, [isInitialized, aiLoading, isProcessing, initializeAssistant, onSendMessageReady, sendMessage]);
 
   // Scroll to bottom when messages change (only within chat container)
   useEffect(() => {
@@ -119,7 +111,7 @@ const EnhancedChatInterface = ({
     }
   };
 
-  // Quick start suggestions based on property data
+  // Quick start suggestions based on property data and authentication status
   const quickStartSuggestions = React.useMemo(() => {
     if (!propertyData || !propertyData.availableAssets.length) {
       return [
@@ -142,34 +134,20 @@ const EnhancedChatInterface = ({
         ];
   }, [propertyData]);
 
-  // Show authentication required message if user is not authenticated
-  if (!user) {
-    return (
-      <div className="flex flex-col h-full bg-gradient-to-br from-gray-50 to-purple-50">
-        <div className="flex-1 flex items-center justify-center p-4">
-          <Card className="w-full max-w-md text-center">
-            <CardContent className="p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Authentication Required</h3>
-              <p className="text-gray-600 mb-4">Please sign in to use the AI assistant for property monetization guidance.</p>
-              <Button onClick={() => navigate('/auth')} className="w-full">
-                Sign In to Continue
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="flex flex-col h-full bg-gradient-to-br from-gray-50 to-purple-50">
       {/* Header */}
       <div className="bg-white border-b border-gray-200 px-4 py-3">
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="font-semibold text-gray-900">AI Property Assistant</h3>
+            <h3 className="font-semibold text-gray-900">AI Assistant</h3>
             <p className="text-sm text-gray-600">
               {propertyData ? `Helping you monetize ${propertyData.address}` : 'Ready to help with property monetization'}
+              {!user && (
+                <span className="ml-2 text-xs text-amber-600">
+                  • Sign in for full features
+                </span>
+              )}
             </p>
           </div>
           <div className="flex items-center space-x-2">
@@ -184,6 +162,16 @@ const EnhancedChatInterface = ({
                 <div className="w-2 h-2 bg-blue-500 rounded-full mr-1 animate-pulse"></div>
                 Processing
               </Badge>
+            )}
+            {!user && (
+              <Button 
+                onClick={() => navigate('/auth')} 
+                size="sm" 
+                variant="outline"
+                className="text-xs"
+              >
+                Sign In
+              </Button>
             )}
           </div>
         </div>
@@ -206,12 +194,22 @@ const EnhancedChatInterface = ({
           <div className="flex justify-center mb-4">
             <div className="bg-destructive/10 text-destructive rounded-lg px-4 py-2 border border-destructive/20">
               <div className="text-sm">{assistantError}</div>
-              <button 
-                onClick={clearError}
-                className="text-xs underline mt-1"
-              >
-                Dismiss
-              </button>
+              <div className="flex gap-2 mt-2">
+                <button 
+                  onClick={clearError}
+                  className="text-xs underline"
+                >
+                  Dismiss
+                </button>
+                {authError && !user && (
+                  <button 
+                    onClick={() => navigate('/auth')}
+                    className="text-xs underline ml-2"
+                  >
+                    Sign In
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         )}
@@ -288,7 +286,14 @@ const EnhancedChatInterface = ({
               className="space-y-3"
             >
               <div className="text-center">
-                <p className="text-sm text-gray-600 mb-3">Click to start asset setup:</p>
+                <p className="text-sm text-gray-600 mb-3">
+                  Click to start asset setup:
+                  {!user && (
+                    <span className="block text-xs text-amber-600 mt-1">
+                      Sign in to save progress and connect with partners
+                    </span>
+                  )}
+                </p>
                 <div className="grid gap-2">
                   {propertyData.availableAssets.filter(a => a.hasRevenuePotential).slice(0, 3).map((asset) => (
                     <Button
@@ -351,6 +356,27 @@ const EnhancedChatInterface = ({
                 {suggestion}
               </Button>
             ))}
+          </div>
+        )}
+        
+        {/* Context indicators */}
+        {userContext && (
+          <div className="mt-2 flex flex-wrap gap-1 text-xs text-gray-500">
+            {userContext.propertyData && (
+              <Badge variant="secondary" className="text-xs">
+                Property: {userContext.propertyData.address}
+              </Badge>
+            )}
+            {userContext.serviceProviders.length > 0 && (
+              <Badge variant="secondary" className="text-xs">
+                {userContext.serviceProviders.length} Partners Available
+              </Badge>
+            )}
+            {user && (
+              <Badge variant="secondary" className="text-xs">
+                Signed In: Full Features
+              </Badge>
+            )}
           </div>
         )}
       </div>
