@@ -199,15 +199,26 @@ async function getAssistant(requestId: string) {
   
   try {
     // Test the assistant exists by trying to retrieve it
-    await openAIRequest(`assistants/${EXISTING_ASSISTANT_ID}`, {
+    const assistant = await openAIRequest(`assistants/${EXISTING_ASSISTANT_ID}`, {
       method: 'GET'
     }, requestId);
     
-    console.log(`✅ [${requestId}] Assistant verified: ${EXISTING_ASSISTANT_ID}`);
-    return successResponse({ assistant: { id: EXISTING_ASSISTANT_ID } }, requestId);
+    console.log(`✅ [${requestId}] Assistant verified: ${EXISTING_ASSISTANT_ID}`, {
+      name: assistant.name,
+      model: assistant.model,
+      instructions: assistant.instructions ? 'has instructions' : 'no instructions'
+    });
+    
+    return successResponse({ assistant: { id: EXISTING_ASSISTANT_ID, name: assistant.name } }, requestId);
   } catch (error) {
     console.error(`❌ [${requestId}] Assistant verification failed:`, error.message);
-    throw new Error(`Assistant not found or invalid: ${error.message}`);
+    
+    // Enhanced error message for assistant not found
+    if (error.message.includes('404') || error.message.includes('not found')) {
+      throw new Error(`Assistant with ID ${EXISTING_ASSISTANT_ID} not found in your OpenAI account. Please check the assistant ID or create a new assistant.`);
+    }
+    
+    throw new Error(`Assistant verification failed: ${error.message}`);
   }
 }
 
@@ -486,7 +497,7 @@ async function submitToolOutputs(data: any, supabase: any, requestId: string) {
   }
 }
 
-// New diagnostic function
+// Enhanced diagnostic function
 async function testConnection(supabase: any, requestId: string) {
   console.log(`🔧 [${requestId}] Running connection tests...`);
   
@@ -518,11 +529,11 @@ async function testConnection(supabase: any, requestId: string) {
     console.error(`❌ [${requestId}] Database connection: FAILED`);
   }
 
-  // Test assistant
+  // Test assistant with the correct ID
   try {
-    await openAIRequest(`assistants/${EXISTING_ASSISTANT_ID}`, { method: 'GET' }, requestId);
+    const assistant = await openAIRequest(`assistants/${EXISTING_ASSISTANT_ID}`, { method: 'GET' }, requestId);
     results.assistant = true;
-    console.log(`✅ [${requestId}] Assistant connection: OK`);
+    console.log(`✅ [${requestId}] Assistant connection: OK - Found assistant: ${assistant.name}`);
   } catch (error) {
     results.errors.push(`Assistant: ${error.message}`);
     console.error(`❌ [${requestId}] Assistant connection: FAILED`);
