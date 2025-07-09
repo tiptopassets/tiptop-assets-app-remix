@@ -1,3 +1,4 @@
+
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.4';
@@ -10,8 +11,6 @@ const corsHeaders = {
 const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-
-// Use existing assistant ID instead of creating new ones
 const EXISTING_ASSISTANT_ID = 'asst_LAfMRhVWnpiQwGgZhSykzRtJ';
 
 serve(async (req) => {
@@ -21,315 +20,167 @@ serve(async (req) => {
 
   try {
     if (!OPENAI_API_KEY) {
-      return new Response(JSON.stringify({ 
-        error: 'OpenAI API key not configured',
-        success: false 
-      }), {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+      return errorResponse('OpenAI API key not configured', 500);
     }
 
-    let requestBody;
-    try {
-      requestBody = await req.json();
-    } catch (parseError) {
-      console.error('❌ Request parsing error:', parseError);
-      return new Response(JSON.stringify({ 
-        error: 'Invalid JSON in request body',
-        success: false 
-      }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+    const requestBody = await req.json().catch(() => null);
+    if (!requestBody?.action) {
+      return errorResponse('Missing required field: action', 400);
     }
 
     const { action, data } = requestBody;
-    console.log('🤖 Assistant Manager action:', action, 'Data keys:', data ? Object.keys(data) : 'none');
-
-    if (!action) {
-      return new Response(JSON.stringify({ 
-        error: 'Missing required field: action',
-        success: false 
-      }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
+    console.log('🤖 [MANAGER] Action:', action);
 
     const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!);
 
     switch (action) {
       case 'get_assistant':
-        return await getExistingAssistant();
+        return await getAssistant();
       case 'create_thread':
         return await createThread(data, supabase);
       case 'send_message':
         return await sendMessage(data, supabase);
       case 'run_assistant':
-        return await runAssistant(data, supabase);
+        return await runAssistant(data);
       case 'get_run_status':
         return await getRunStatus(data);
       case 'submit_tool_outputs':
         return await submitToolOutputs(data, supabase);
       default:
-        return new Response(JSON.stringify({ 
-          error: `Unknown action: ${action}`,
-          success: false 
-        }), {
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
+        return errorResponse(`Unknown action: ${action}`, 400);
     }
   } catch (error) {
-    console.error('❌ Assistant Manager error:', error);
-    return new Response(JSON.stringify({ 
-      error: error.message || 'Internal server error',
-      success: false 
-    }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    console.error('❌ [MANAGER] Error:', error);
+    return errorResponse(error.message || 'Internal server error', 500);
   }
 });
 
-async function getExistingAssistant() {
-  try {
-    // First, try to retrieve the existing assistant to check if it exists
-    const response = await fetch(`https://api.openai.com/v1/assistants/${EXISTING_ASSISTANT_ID}`, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${OPENAI_API_KEY}`,
-        'OpenAI-Beta': 'assistants=v2'
-      }
-    });
+function errorResponse(message: string, status: number) {
+  return new Response(JSON.stringify({ 
+    error: message,
+    success: false 
+  }), {
+    status,
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+  });
+}
 
-    if (!response.ok) {
-      console.log('❌ Existing assistant not found, falling back to simple assistant setup');
-      console.log('✅ Using hardcoded assistant ID for now:', EXISTING_ASSISTANT_ID);
+function successResponse(data: any) {
+  return new Response(JSON.stringify({ 
+    success: true,
+    ...data
+  }), {
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+  });
+}
+
+async function openAIRequest(endpoint: string, options: any) {
+  const response = await fetch(`https://api.openai.com/v1/${endpoint}`, {
+    ...options,
+    headers: {
+      'Authorization': `Bearer ${OPENAI_API_KEY}`,
+      'OpenAI-Beta': 'assistants=v2',
+      'Content-Type': 'application/json',
+      ...options.headers
     }
+  });
 
-    console.log('✅ Using existing assistant:', EXISTING_ASSISTANT_ID);
-
-    return new Response(JSON.stringify({ 
-      success: true,
-      assistant: { id: EXISTING_ASSISTANT_ID }
-    }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
-  } catch (error) {
-    console.error('❌ Error accessing existing assistant:', error);
-    console.log('✅ Using hardcoded assistant ID as fallback:', EXISTING_ASSISTANT_ID);
-    
-    return new Response(JSON.stringify({ 
-      success: true,
-      assistant: { id: EXISTING_ASSISTANT_ID }
-    }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.error?.message || `OpenAI API error: ${response.status}`);
   }
+
+  return response.json();
+}
+
+async function getAssistant() {
+  console.log('✅ [ASSISTANT] Using existing assistant:', EXISTING_ASSISTANT_ID);
+  return successResponse({ assistant: { id: EXISTING_ASSISTANT_ID } });
 }
 
 async function createThread(data: any, supabase: any) {
   try {
     const userId = data?.metadata?.userId;
+    const isAuthenticated = userId && userId !== 'anonymous';
     
-    // Handle both authenticated and anonymous users
-    if (!userId || userId === 'anonymous') {
-      console.log('⚠️ [AUTH] Creating thread for anonymous user');
-    } else {
-      console.log('✅ [AUTH] Creating thread for authenticated user:', userId);
-    }
+    console.log(`🧵 [THREAD] Creating for ${isAuthenticated ? 'authenticated' : 'anonymous'} user`);
 
-    const response = await fetch('https://api.openai.com/v1/threads', {
+    const thread = await openAIRequest('threads', {
       method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${OPENAI_API_KEY}`,
-        'Content-Type': 'application/json',
-        'OpenAI-Beta': 'assistants=v2'
-      },
       body: JSON.stringify({
         metadata: data?.metadata || {}
       })
     });
 
-    if (!response.ok) {
-      const errorData = await response.json();
-      console.error('❌ OpenAI thread creation failed:', errorData);
-      return new Response(JSON.stringify({ 
-        error: `Failed to create thread: ${errorData.error?.message || 'Unknown error'}`,
-        success: false 
-      }), {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
-    const thread = await response.json();
     const threadId = thread.id;
-    console.log('✅ Thread created:', threadId);
+    console.log('✅ [THREAD] Created:', threadId);
 
-    // Only create onboarding record for authenticated users
-    if (userId && userId !== 'anonymous') {
+    // Create onboarding record for authenticated users
+    if (isAuthenticated) {
       try {
-        const { error: onboardingError } = await supabase
-          .from('user_onboarding')
-          .insert({
-            id: threadId, // Use OpenAI thread ID as the onboarding ID
-            user_id: userId,
-            selected_option: 'concierge', // Default to concierge for AI assistant
-            status: 'in_progress',
-            current_step: 1,
-            total_steps: 5,
-            chat_history: [],
-            completed_assets: [],
-            progress_data: {
-              assistant_thread_id: threadId,
-              created_via: 'openai_assistant',
-              user_context: data?.metadata || {}
-            }
-          });
-
-        if (onboardingError) {
-          console.error('❌ [DB] Failed to create onboarding record:', onboardingError);
-          // Continue - don't fail the thread creation if DB operation fails
-          console.warn('⚠️ [DB] Thread created but onboarding record creation failed');
-        } else {
-          console.log('✅ [DB] Onboarding record created for thread:', threadId);
-        }
+        await supabase.from('user_onboarding').insert({
+          id: threadId,
+          user_id: userId,
+          selected_option: 'concierge',
+          status: 'in_progress',
+          current_step: 1,
+          total_steps: 5,
+          chat_history: [],
+          completed_assets: [],
+          progress_data: {
+            assistant_thread_id: threadId,
+            created_via: 'openai_assistant',
+            user_context: data?.metadata || {}
+          }
+        });
+        console.log('✅ [DB] Onboarding record created');
       } catch (error) {
-        console.error('❌ [DB] Error creating onboarding record:', error);
-        // Continue - don't fail the thread creation if DB operation fails
+        console.warn('⚠️ [DB] Onboarding record creation failed:', error);
       }
     }
 
-    return new Response(JSON.stringify({ 
-      success: true,
-      thread 
-    }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    return successResponse({ thread });
   } catch (error) {
-    console.error('❌ Create thread error:', error);
-    return new Response(JSON.stringify({ 
-      error: error.message || 'Failed to create thread',
-      success: false 
-    }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    console.error('❌ [THREAD] Creation failed:', error);
+    throw error;
   }
 }
 
 async function sendMessage(data: any, supabase: any) {
-  console.log('🔍 [DEBUG] sendMessage called with data keys:', data ? Object.keys(data) : 'none');
-  
-  // Validate required fields
-  if (!data) {
-    console.error('❌ No data provided to sendMessage');
-    return new Response(JSON.stringify({ 
-      error: 'Missing request data',
-      success: false 
-    }), {
-      status: 400,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
-  }
-
   const { threadId, message, userId, userContext } = data;
 
-  // Handle both authenticated and anonymous users
+  if (!threadId || !message?.trim()) {
+    throw new Error('threadId and message are required');
+  }
+
   const isAuthenticated = userId && userId !== 'anonymous';
-  
-  if (!isAuthenticated) {
-    console.log('⚠️ [AUTH] Processing message for anonymous user');
-  } else {
-    console.log('✅ [AUTH] Processing message for authenticated user:', userId);
-  }
-
-  // Validate threadId
-  if (!threadId) {
-    console.error('❌ threadId is missing or null');
-    return new Response(JSON.stringify({ 
-      error: 'threadId is required for sending messages',
-      success: false 
-    }), {
-      status: 400,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
-  }
-
-  // Validate message
-  if (!message || typeof message !== 'string' || message.trim().length === 0) {
-    console.error('❌ message is missing, empty, or invalid');
-    return new Response(JSON.stringify({ 
-      error: 'A valid message is required',
-      success: false 
-    }), {
-      status: 400,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
-  }
-
-  console.log('🔍 [DEBUG] Validated input - threadId:', threadId, 'messageLength:', message.length, 'userId:', userId);
+  console.log(`💬 [MESSAGE] Sending for ${isAuthenticated ? 'authenticated' : 'anonymous'} user`);
 
   try {
-    // Enhance message with user context if available
+    // Enhance message with context
     let contextualMessage = message;
-    if (userContext) {
-      console.log('🎯 [CONTEXT] Adding user context to message:', {
-        hasPropertyData: !!userContext.propertyData,
-        serviceProvidersCount: userContext.serviceProviders?.length || 0,
-        hasOnboarding: !!userContext.onboardingProgress
-      });
-
-      // Add context as a system message or append to user message
-      if (userContext.propertyData) {
-        const propertyInfo = `\n\n[Property Context: ${userContext.propertyData.address}, Revenue Potential: $${userContext.propertyData.totalMonthlyRevenue}/month, Assets: ${userContext.propertyData.availableAssets?.length || 0}]`;
-        contextualMessage += propertyInfo;
-      }
+    if (userContext?.propertyData) {
+      const propertyInfo = `\n\n[Property Context: ${userContext.propertyData.address}, Revenue Potential: $${userContext.propertyData.totalMonthlyRevenue}/month, Assets: ${userContext.propertyData.availableAssets?.length || 0}]`;
+      contextualMessage += propertyInfo;
     }
 
-    // Step 1: Send message to OpenAI first
-    console.log('📤 [DEBUG] Sending message to OpenAI API');
-    const response = await fetch(`https://api.openai.com/v1/threads/${threadId}/messages`, {
+    const messageData = await openAIRequest(`threads/${threadId}/messages`, {
       method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${OPENAI_API_KEY}`,
-        'Content-Type': 'application/json',
-        'OpenAI-Beta': 'assistants=v2'
-      },
       body: JSON.stringify({
         role: 'user',
         content: contextualMessage
       })
     });
 
-    if (!response.ok) {
-      const errorData = await response.json();
-      console.error('❌ OpenAI API error:', errorData);
-      return new Response(JSON.stringify({ 
-        error: `Failed to send message to OpenAI: ${errorData.error?.message || 'Unknown error'}`,
-        success: false 
-      }), {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
+    console.log('✅ [MESSAGE] Sent to OpenAI:', messageData.id);
 
-    const messageData = await response.json();
-    console.log('✅ OpenAI message sent successfully, ID:', messageData.id);
-    
-    // Step 2: Save message to database (graceful failure for authenticated users only)
+    // Save to database for authenticated users
     if (isAuthenticated) {
-      console.log('🔍 [DEBUG] Starting database save operation for authenticated user');
       try {
-        // Use the database function to insert the message
-        console.log('🔍 [DEBUG] Calling insert_onboarding_message function...');
-        const { data: insertResult, error: insertError } = await supabase.rpc('insert_onboarding_message', {
+        await supabase.rpc('insert_onboarding_message', {
           p_onboarding_id: threadId,
           p_role: 'user',
-          p_content: message, // Use original message, not contextual one
+          p_content: message,
           p_metadata: { 
             messageId: messageData.id,
             timestamp: new Date().toISOString(),
@@ -337,283 +188,88 @@ async function sendMessage(data: any, supabase: any) {
             hasContext: !!userContext
           }
         });
-        
-        if (insertError) {
-          console.error('❌ [DEBUG] Database insert error:', insertError);
-          // Don't fail the request - let the OpenAI operation succeed even if DB save fails
-          console.warn('⚠️ [DEBUG] Message saved to OpenAI but failed to save to database');
-        } else {
-          console.log('✅ [DEBUG] Message saved to database successfully:', insertResult);
-        }
-        
-      } catch (dbError) {
-        console.error('❌ [DEBUG] Database operation failed:', {
-          error: dbError.message,
-          threadId,
-          userId
-        });
-        
-        // Don't fail the request - let OpenAI operation succeed even if DB fails
-        console.warn('⚠️ [DEBUG] Continuing despite database error');
+        console.log('✅ [DB] Message saved');
+      } catch (error) {
+        console.warn('⚠️ [DB] Message save failed:', error);
       }
-    } else {
-      console.log('ℹ️ [DEBUG] Skipping database save for anonymous user');
     }
 
-    return new Response(JSON.stringify({ 
-      success: true,
-      message: messageData 
-    }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
-
+    return successResponse({ message: messageData });
   } catch (error) {
-    console.error('❌ [DEBUG] sendMessage error:', error);
-    return new Response(JSON.stringify({ 
-      error: error.message || 'Failed to send message',
-      success: false 
-    }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    console.error('❌ [MESSAGE] Send failed:', error);
+    throw error;
   }
 }
 
-async function runAssistant(data: any, supabase: any) {
-  // Validate required fields
-  if (!data) {
-    return new Response(JSON.stringify({ 
-      error: 'Missing request data',
-      success: false 
-    }), {
-      status: 400,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
-  }
-
+async function runAssistant(data: any) {
   const { threadId, assistantId, userId } = data;
 
-  // Handle both authenticated and anonymous users
+  if (!threadId || !assistantId) {
+    throw new Error('threadId and assistantId are required');
+  }
+
   const isAuthenticated = userId && userId !== 'anonymous';
-  
-  if (!isAuthenticated) {
-    console.log('⚠️ [AUTH] Running assistant for anonymous user');
-  } else {
-    console.log('✅ [AUTH] Running assistant for authenticated user:', userId);
-  }
-
-  if (!threadId) {
-    return new Response(JSON.stringify({ 
-      error: 'threadId is required',
-      success: false 
-    }), {
-      status: 400,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
-  }
-
-  if (!assistantId) {
-    return new Response(JSON.stringify({ 
-      error: 'assistantId is required',
-      success: false 
-    }), {
-      status: 400,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
-  }
+  console.log(`🏃 [RUN] Starting for ${isAuthenticated ? 'authenticated' : 'anonymous'} user`);
 
   try {
-    const response = await fetch(`https://api.openai.com/v1/threads/${threadId}/runs`, {
+    const run = await openAIRequest(`threads/${threadId}/runs`, {
       method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${OPENAI_API_KEY}`,
-        'Content-Type': 'application/json',
-        'OpenAI-Beta': 'assistants=v2'
-      },
       body: JSON.stringify({
         assistant_id: assistantId
       })
     });
 
-    if (!response.ok) {
-      const errorData = await response.json();
-      console.error('❌ Run assistant failed:', errorData);
-      return new Response(JSON.stringify({ 
-        error: `Failed to run assistant: ${errorData.error?.message || 'Unknown error'}`,
-        success: false 
-      }), {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
-    const run = await response.json();
-    console.log('✅ Assistant run started:', run.id);
-
-    return new Response(JSON.stringify({ 
-      success: true,
-      run 
-    }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    console.log('✅ [RUN] Started:', run.id);
+    return successResponse({ run });
   } catch (error) {
-    console.error('❌ runAssistant error:', error);
-    return new Response(JSON.stringify({ 
-      error: error.message || 'Failed to run assistant',
-      success: false 
-    }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    console.error('❌ [RUN] Start failed:', error);
+    throw error;
   }
 }
 
 async function getRunStatus(data: any) {
-  // Validate required fields
-  if (!data) {
-    return new Response(JSON.stringify({ 
-      error: 'Missing request data',
-      success: false 
-    }), {
-      status: 400,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
-  }
-
   const { threadId, runId } = data;
 
   if (!threadId || !runId) {
-    return new Response(JSON.stringify({ 
-      error: 'threadId and runId are required',
-      success: false 
-    }), {
-      status: 400,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    throw new Error('threadId and runId are required');
   }
 
   try {
-    const response = await fetch(`https://api.openai.com/v1/threads/${threadId}/runs/${runId}`, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${OPENAI_API_KEY}`,
-        'OpenAI-Beta': 'assistants=v2'
-      }
+    const run = await openAIRequest(`threads/${threadId}/runs/${runId}`, {
+      method: 'GET'
     });
 
-    if (!response.ok) {
-      const errorData = await response.json();
-      console.error('❌ Get run status failed:', errorData);
-      return new Response(JSON.stringify({ 
-        error: `Failed to get run status: ${errorData.error?.message || 'Unknown error'}`,
-        success: false 
-      }), {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
-    const run = await response.json();
-
-    // If run is completed, get the latest messages
     let messages = null;
     if (run.status === 'completed') {
-      const messagesResponse = await fetch(`https://api.openai.com/v1/threads/${threadId}/messages`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${OPENAI_API_KEY}`,
-          'OpenAI-Beta': 'assistants=v2'
-        }
+      const messagesData = await openAIRequest(`threads/${threadId}/messages`, {
+        method: 'GET'
       });
-
-      if (messagesResponse.ok) {
-        const messagesData = await messagesResponse.json();
-        messages = messagesData.data;
-      }
+      messages = messagesData.data;
     }
 
-    return new Response(JSON.stringify({ 
-      success: true,
-      run,
-      messages 
-    }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    return successResponse({ run, messages });
   } catch (error) {
-    console.error('❌ getRunStatus error:', error);
-    return new Response(JSON.stringify({ 
-      error: error.message || 'Failed to get run status',
-      success: false 
-    }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    console.error('❌ [RUN] Status check failed:', error);
+    throw error;
   }
 }
 
 async function submitToolOutputs(data: any, supabase: any) {
-  // Validate required fields
-  if (!data) {
-    return new Response(JSON.stringify({ 
-      error: 'Missing request data',
-      success: false 
-    }), {
-      status: 400,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
-  }
-
   const { threadId, runId, toolOutputs, userId } = data;
 
-  // Handle both authenticated and anonymous users
+  if (!threadId || !runId || !Array.isArray(toolOutputs)) {
+    throw new Error('threadId, runId, and toolOutputs are required');
+  }
+
   const isAuthenticated = userId && userId !== 'anonymous';
-  
-  if (!isAuthenticated) {
-    console.log('⚠️ [TOOL] Processing tool outputs for anonymous user');
-  } else {
-    console.log('✅ [TOOL] Processing tool outputs for authenticated user:', userId);
-  }
-
-  if (!threadId || !runId) {
-    return new Response(JSON.stringify({ 
-      error: 'threadId and runId are required',
-      success: false 
-    }), {
-      status: 400,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
-  }
-
-  console.log('🔧 Processing tool outputs:', {
-    threadId,
-    runId,
-    toolOutputsCount: toolOutputs?.length,
-    userId,
-    toolOutputs: toolOutputs?.map((t: any) => ({ 
-      tool_call_id: t.tool_call_id, 
-      function_name: t.function_name 
-    }))
-  });
-
-  // Ensure toolOutputs is an array and not empty
-  if (!Array.isArray(toolOutputs) || toolOutputs.length === 0) {
-    console.warn('⚠️ No tool outputs provided or invalid format');
-    return new Response(JSON.stringify({ 
-      success: false,
-      error: 'No tool outputs provided'
-    }), {
-      status: 400,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
-  }
+  console.log(`🔧 [TOOLS] Processing ${toolOutputs.length} outputs for ${isAuthenticated ? 'authenticated' : 'anonymous'} user`);
 
   try {
-    // Process each tool call and generate appropriate outputs
     const processedOutputs = await Promise.all(
       toolOutputs.map(async (output: any) => {
         const { tool_call_id, function_name, arguments: functionArgs } = output;
         
-        console.log(`🛠️ Processing function: ${function_name}`, { tool_call_id, functionArgs });
+        console.log(`🛠️ [TOOLS] Processing: ${function_name}`);
         
         try {
           let result;
@@ -644,14 +300,13 @@ async function submitToolOutputs(data: any, supabase: any) {
               result = { error: `Unknown function: ${function_name}` };
           }
 
-          console.log(`✅ Function ${function_name} result:`, result);
-
+          console.log(`✅ [TOOLS] ${function_name} completed`);
           return {
             tool_call_id,
             output: JSON.stringify(result)
           };
         } catch (error) {
-          console.error(`❌ Error processing ${function_name}:`, error);
+          console.error(`❌ [TOOLS] ${function_name} failed:`, error);
           return {
             tool_call_id,
             output: JSON.stringify({ error: error.message })
@@ -660,58 +315,27 @@ async function submitToolOutputs(data: any, supabase: any) {
       })
     );
 
-    const response = await fetch(`https://api.openai.com/v1/threads/${threadId}/runs/${runId}/submit_tool_outputs`, {
+    const run = await openAIRequest(`threads/${threadId}/runs/${runId}/submit_tool_outputs`, {
       method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${OPENAI_API_KEY}`,
-        'Content-Type': 'application/json',
-        'OpenAI-Beta': 'assistants=v2'
-      },
       body: JSON.stringify({
         tool_outputs: processedOutputs
       })
     });
 
-    if (!response.ok) {
-      const errorData = await response.json();
-      console.error('❌ Submit tool outputs failed:', errorData);
-      return new Response(JSON.stringify({ 
-        error: `Failed to submit tool outputs: ${errorData.error?.message || 'Unknown error'}`,
-        success: false 
-      }), {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
-    const run = await response.json();
-
-    return new Response(JSON.stringify({ 
-      success: true,
-      run 
-    }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    return successResponse({ run });
   } catch (error) {
-    console.error('❌ submitToolOutputs error:', error);
-    return new Response(JSON.stringify({ 
-      error: error.message || 'Failed to submit tool outputs',
-      success: false 
-    }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    console.error('❌ [TOOLS] Submission failed:', error);
+    throw error;
   }
 }
 
-// Enhanced tool function handlers with better authentication handling
+// Tool function handlers
 async function handleCollectAddress(args: any, userId: string, supabase: any, isAuthenticated: boolean) {
-  console.log('🏠 Collecting address:', args);
+  console.log('🏠 [TOOL] Collecting address:', args);
   
   if (isAuthenticated) {
     try {
-      // Save or update user address
-      const { error } = await supabase.from('user_addresses').upsert({
+      await supabase.from('user_addresses').upsert({
         user_id: userId,
         address: args.address,
         coordinates: args.coordinates,
@@ -719,18 +343,13 @@ async function handleCollectAddress(args: any, userId: string, supabase: any, is
         is_primary: true
       });
 
-      if (error) throw error;
-
       return { 
         success: true, 
         message: 'Address saved successfully',
         address: args.address 
       };
     } catch (error) {
-      return { 
-        success: false, 
-        error: error.message 
-      };
+      return { success: false, error: error.message };
     }
   }
 
@@ -742,9 +361,8 @@ async function handleCollectAddress(args: any, userId: string, supabase: any, is
 }
 
 async function handleSuggestAssetOpportunities(args: any, userId: string, supabase: any, isAuthenticated: boolean) {
-  console.log('💡 Suggesting asset opportunities:', args);
+  console.log('💡 [TOOL] Suggesting asset opportunities:', args);
   
-  // Get enhanced service providers for the selected assets
   if (args.selectedAssets && args.selectedAssets.length > 0) {
     try {
       const { data: providers, error } = await supabase
@@ -770,49 +388,29 @@ async function handleSuggestAssetOpportunities(args: any, userId: string, supaba
         })) || []
       };
     } catch (error) {
-      return { 
-        success: false, 
-        error: error.message 
-      };
+      return { success: false, error: error.message };
     }
   }
 
-  return { 
-    success: true, 
-    message: 'No specific assets selected for recommendations' 
-  };
+  return { success: true, message: 'No specific assets selected for recommendations' };
 }
 
 async function handleSaveUserResponse(args: any, userId: string, supabase: any, isAuthenticated: boolean) {
-  console.log('💾 Saving user response:', args);
+  console.log('💾 [TOOL] Saving user response:', args);
   
   if (isAuthenticated) {
     try {
-      // Update user onboarding data
-      const { error } = await supabase
-        .from('user_onboarding')
-        .upsert({
-          user_id: userId,
-          onboarding_data: {
-            [args.responseType]: args.responseData,
-            last_updated: new Date().toISOString(),
-            step_completed: args.stepCompleted
-          }
-        }, { 
-          onConflict: 'user_id',
-          ignoreDuplicates: false 
-        });
-
-      if (error) throw error;
-
-      // Also save to journey tracking if analysis ID provided
-      if (args.analysisId && args.stepCompleted) {
-        await supabase.rpc('update_journey_step', {
-          p_session_id: `assistant_${userId}`,
-          p_step: args.stepCompleted,
-          p_data: args.responseData
-        });
-      }
+      await supabase.from('user_onboarding').upsert({
+        user_id: userId,
+        onboarding_data: {
+          [args.responseType]: args.responseData,
+          last_updated: new Date().toISOString(),
+          step_completed: args.stepCompleted
+        }
+      }, { 
+        onConflict: 'user_id',
+        ignoreDuplicates: false 
+      });
 
       return { 
         success: true, 
@@ -820,21 +418,15 @@ async function handleSaveUserResponse(args: any, userId: string, supabase: any, 
         responseType: args.responseType 
       };
     } catch (error) {
-      return { 
-        success: false, 
-        error: error.message 
-      };
+      return { success: false, error: error.message };
     }
   }
 
-  return { 
-    success: true, 
-    message: 'Response collected (sign in to save permanently)' 
-  };
+  return { success: true, message: 'Response collected (sign in to save permanently)' };
 }
 
 async function handleConnectServiceProviders(args: any, userId: string, supabase: any, isAuthenticated: boolean) {
-  console.log('🤝 Connecting service providers:', args);
+  console.log('🤝 [TOOL] Connecting service providers:', args);
   
   try {
     const { data: providers, error } = await supabase
@@ -857,24 +449,6 @@ async function handleConnectServiceProviders(args: any, userId: string, supabase
       requiresAuth: !isAuthenticated ? 'Sign in to save connections and track progress with partners' : null
     })) || [];
 
-    // Save provider connections for authenticated users
-    if (isAuthenticated && connections.length > 0) {
-      const connectionRecords = connections.map((connection: any) => ({
-        user_id: userId,
-        supplier_name: connection.name,
-        asset_type: connection.assetTypes[0], // Primary asset type
-        connection_status: 'recommended',
-        referral_link: connection.referralLink,
-        supplier_data: {
-          provider_id: connection.id,
-          all_asset_types: connection.assetTypes,
-          setup_preference: args.setupPreference || 'guided'
-        }
-      }));
-
-      await supabase.from('user_supplier_connections').upsert(connectionRecords);
-    }
-
     return {
       success: true,
       providers: connections,
@@ -883,15 +457,12 @@ async function handleConnectServiceProviders(args: any, userId: string, supabase
       authMessage: !isAuthenticated ? 'Sign in to save connections and track your progress with partners' : null
     };
   } catch (error) {
-    return { 
-      success: false, 
-      error: error.message 
-    };
+    return { success: false, error: error.message };
   }
 }
 
 async function handleGetPartnerOnboardingGuide(args: any, userId: string, supabase: any, isAuthenticated: boolean) {
-  console.log('📋 Getting partner onboarding guide:', args);
+  console.log('📋 [TOOL] Getting partner onboarding guide:', args);
   
   try {
     const { data: provider, error } = await supabase
@@ -903,22 +474,9 @@ async function handleGetPartnerOnboardingGuide(args: any, userId: string, supaba
     if (error) throw error;
 
     if (!provider) {
-      return {
-        success: false,
-        error: `Partner ${args.partnerName} not found`
-      };
+      return { success: false, error: `Partner ${args.partnerName} not found` };
     }
 
-    // Get detailed setup requirements
-    const { data: requirements, error: reqError } = await supabase
-      .from('provider_setup_requirements')
-      .select('*')
-      .eq('provider_id', provider.id)
-      .order('requirement_key');
-
-    if (reqError) throw reqError;
-
-    const setupSteps = requirements?.map((req: any) => req.requirement_value) || [];
     const setupRequirements = JSON.parse(provider.setup_requirements || '{}');
 
     return {
@@ -926,26 +484,21 @@ async function handleGetPartnerOnboardingGuide(args: any, userId: string, supaba
       partner: provider.name,
       assetType: args.assetType,
       description: provider.description,
-      setupSteps,
-      documentsNeeded: setupRequirements.documents || [],
-      requirements: setupRequirements.requirements || [],
-      setupTime: setupRequirements.setup_time || 'Not specified',
-      approvalTime: setupRequirements.approval_time || 'Not specified',
       instructions: provider.setup_instructions,
       referralLink: provider.referral_link_template,
       earningsRange: `$${provider.avg_monthly_earnings_low}-${provider.avg_monthly_earnings_high}/month`,
+      requirements: setupRequirements.requirements || [],
+      documentsNeeded: setupRequirements.documents || [],
+      setupTime: setupRequirements.setup_time || 'Not specified',
       authMessage: !isAuthenticated ? 'Sign in to track your onboarding progress' : null
     };
   } catch (error) {
-    return { 
-      success: false, 
-      error: error.message 
-    };
+    return { success: false, error: error.message };
   }
 }
 
 async function handleGetPartnerRequirements(args: any, userId: string, supabase: any, isAuthenticated: boolean) {
-  console.log('📝 Getting partner requirements:', args);
+  console.log('📝 [TOOL] Getting partner requirements:', args);
   
   try {
     const { data: provider, error } = await supabase
@@ -957,10 +510,7 @@ async function handleGetPartnerRequirements(args: any, userId: string, supabase:
     if (error) throw error;
 
     if (!provider) {
-      return {
-        success: false,
-        error: `Partner ${args.partnerName} not found`
-      };
+      return { success: false, error: `Partner ${args.partnerName} not found` };
     }
 
     const setupRequirements = JSON.parse(provider.setup_requirements || '{}');
@@ -971,58 +521,31 @@ async function handleGetPartnerRequirements(args: any, userId: string, supabase:
       documents: setupRequirements.documents || [],
       requirements: setupRequirements.requirements || [],
       setupTime: setupRequirements.setup_time || 'Not specified',
-      approvalTime: setupRequirements.approval_time || 'Not specified',
       supportedAssets: provider.asset_types || [],
       earningsEstimate: `$${provider.avg_monthly_earnings_low}-${provider.avg_monthly_earnings_high}/month`,
       authMessage: !isAuthenticated ? 'Sign in to save requirements and track progress' : null
     };
   } catch (error) {
-    return { 
-      success: false, 
-      error: error.message 
-    };
+    return { success: false, error: error.message };
   }
 }
 
 async function handleTrackReferralConversion(args: any, userId: string, supabase: any, isAuthenticated: boolean) {
-  console.log('📊 Tracking referral conversion:', args);
+  console.log('📊 [TOOL] Tracking referral conversion:', args);
   
   if (!isAuthenticated) {
-    return {
-      success: false,
-      error: 'Sign in required to track referral conversions'
-    };
+    return { success: false, error: 'Sign in required to track referral conversions' };
   }
 
   try {
-    // Create or update partner integration progress
-    const { data, error } = await supabase
-      .from('partner_integration_progress')
-      .upsert({
-        user_id: userId,
-        partner_name: args.partnerName,
-        integration_status: args.action === 'registration_completed' ? 'completed' : 'in_progress',
-        updated_at: new Date().toISOString()
-      }, {
-        onConflict: 'user_id,partner_name'
-      });
-
-    if (error) throw error;
-
-    // Track in affiliate earnings if this is a completed conversion
-    if (args.action === 'registration_completed') {
-      await supabase.from('affiliate_earnings').insert({
-        user_id: userId,
-        provider_name: args.partnerName,
-        service_type: 'referral',
-        status: 'pending',
-        earnings_amount: 0, // Will be updated when actual commission is received
-        metadata: {
-          conversion_date: new Date().toISOString(),
-          tracked_from: 'chatbot_assistant'
-        }
-      });
-    }
+    await supabase.from('partner_integration_progress').upsert({
+      user_id: userId,
+      partner_name: args.partnerName,
+      integration_status: args.action === 'registration_completed' ? 'completed' : 'in_progress',
+      updated_at: new Date().toISOString()
+    }, {
+      onConflict: 'user_id,partner_name'
+    });
 
     return {
       success: true,
@@ -1031,9 +554,6 @@ async function handleTrackReferralConversion(args: any, userId: string, supabase
       partner: args.partnerName
     };
   } catch (error) {
-    return { 
-      success: false, 
-      error: error.message 
-    };
+    return { success: false, error: error.message };
   }
 }
