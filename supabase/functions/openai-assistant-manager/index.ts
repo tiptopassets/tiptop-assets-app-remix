@@ -300,9 +300,9 @@ async function getAssistant(requestId: string) {
   }
 }
 
-// FIXED: Thread creation with proper assistant_id linking
+// FIXED: Thread creation without assistant_id parameter (not supported by OpenAI API)
 async function createThread(data: any, supabase: any, requestId: string) {
-  console.log(`🧵 [${requestId}] Creating thread with assistant linkage...`);
+  console.log(`🧵 [${requestId}] Creating thread...`);
   
   try {
     // Validate required fields
@@ -315,8 +315,7 @@ async function createThread(data: any, supabase: any, requestId: string) {
     const analysisId = data?.metadata?.analysisId;
     const partnersAvailable = data?.metadata?.partnersAvailable;
 
-    // Log the exact payload being sent
-    console.log(`🧪 [${requestId}] Creating thread with assistant:`, OPENAI_ASSISTANT_ID);
+    console.log(`🧪 [${requestId}] Creating thread for assistant:`, OPENAI_ASSISTANT_ID);
     console.log(`🧪 [${requestId}] Metadata:`, {
       userId: userId || 'anonymous',
       propertyAddress: propertyAddress || 'not_provided',
@@ -342,9 +341,8 @@ async function createThread(data: any, supabase: any, requestId: string) {
 
     console.log(`🧪 [${requestId}] Clean metadata for OpenAI:`, cleanMetadata);
 
-    // ⭐ CRITICAL FIX: Add assistant_id to thread creation payload
+    // ⭐ CRITICAL FIX: Create thread WITHOUT assistant_id (OpenAI API doesn't support this parameter)
     const threadPayload = {
-      assistant_id: OPENAI_ASSISTANT_ID,
       metadata: cleanMetadata
     };
 
@@ -356,10 +354,10 @@ async function createThread(data: any, supabase: any, requestId: string) {
     }, requestId);
 
     const threadId = thread.id;
-    console.log(`✅ [${requestId}] OpenAI thread created with assistant linkage: ${threadId}`);
-    console.log(`🔗 [${requestId}] Thread linked to assistant: ${OPENAI_ASSISTANT_ID}`);
+    console.log(`✅ [${requestId}] OpenAI thread created: ${threadId}`);
+    console.log(`🔗 [${requestId}] Will be linked to assistant: ${OPENAI_ASSISTANT_ID} when runs are created`);
 
-    // ⭐ Phase 5: Verify thread is properly linked
+    // ⭐ Verify thread creation
     try {
       const verifyThread = await openAIRequest(`threads/${threadId}`, {
         method: 'GET'
@@ -415,13 +413,20 @@ async function createThread(data: any, supabase: any, requestId: string) {
     return successResponse({ 
       thread: {
         ...thread,
-        assistant_id: OPENAI_ASSISTANT_ID,
-        linked_properly: true
+        assistant_will_be_linked: OPENAI_ASSISTANT_ID,
+        linkage_method: 'via_runs'
       }
     }, requestId);
   } catch (error) {
     console.error(`❌ [${requestId}] Thread creation failed:`, error.message);
-    throw new Error(`Thread creation failed: ${error.message}`);
+    
+    // Enhanced error messaging for OpenAI API errors
+    let errorMessage = error.message || 'Thread creation failed';
+    if (errorMessage.includes('assistant_id')) {
+      errorMessage = 'OpenAI API rejected thread creation with assistant_id parameter. This is now fixed.';
+    }
+    
+    throw new Error(`Thread creation failed: ${errorMessage}`);
   }
 }
 
