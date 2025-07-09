@@ -1,4 +1,3 @@
-
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.4';
@@ -301,9 +300,9 @@ async function getAssistant(requestId: string) {
   }
 }
 
-// FIXED: Thread creation with proper assistant_id and validation
+// FIXED: Thread creation with proper assistant_id linking
 async function createThread(data: any, supabase: any, requestId: string) {
-  console.log(`🧵 [${requestId}] Creating thread with fixed assistant integration...`);
+  console.log(`🧵 [${requestId}] Creating thread with assistant linkage...`);
   
   try {
     // Validate required fields
@@ -343,16 +342,38 @@ async function createThread(data: any, supabase: any, requestId: string) {
 
     console.log(`🧪 [${requestId}] Clean metadata for OpenAI:`, cleanMetadata);
 
-    // CRITICAL FIX: Add assistant_id to thread creation
+    // ⭐ CRITICAL FIX: Add assistant_id to thread creation payload
+    const threadPayload = {
+      assistant_id: OPENAI_ASSISTANT_ID,
+      metadata: cleanMetadata
+    };
+
+    console.log(`🔥 [${requestId}] Thread creation payload:`, threadPayload);
+
     const thread = await openAIRequest('threads', {
       method: 'POST',
-      body: JSON.stringify({
-        metadata: cleanMetadata
-      })
+      body: JSON.stringify(threadPayload)
     }, requestId);
 
     const threadId = thread.id;
-    console.log(`✅ [${requestId}] OpenAI thread created: ${threadId}`);
+    console.log(`✅ [${requestId}] OpenAI thread created with assistant linkage: ${threadId}`);
+    console.log(`🔗 [${requestId}] Thread linked to assistant: ${OPENAI_ASSISTANT_ID}`);
+
+    // ⭐ Phase 5: Verify thread is properly linked
+    try {
+      const verifyThread = await openAIRequest(`threads/${threadId}`, {
+        method: 'GET'
+      }, requestId);
+      
+      console.log(`🔍 [${requestId}] Thread verification:`, {
+        threadId: verifyThread.id,
+        hasMetadata: !!verifyThread.metadata,
+        metadataKeys: Object.keys(verifyThread.metadata || {}),
+        createdAt: verifyThread.created_at
+      });
+    } catch (verifyError) {
+      console.warn(`⚠️ [${requestId}] Thread verification failed but continuing:`, verifyError.message);
+    }
 
     // Optional: Create onboarding record (non-blocking)
     if (userId && userId !== 'anonymous') {
@@ -370,6 +391,7 @@ async function createThread(data: any, supabase: any, requestId: string) {
           completed_assets: [],
           progress_data: {
             assistant_thread_id: threadId,
+            assistant_id: OPENAI_ASSISTANT_ID,
             created_via: 'openai_assistant',
             user_context: data?.metadata || {},
             created_at: new Date().toISOString()
@@ -390,7 +412,13 @@ async function createThread(data: any, supabase: any, requestId: string) {
       }
     }
 
-    return successResponse({ thread }, requestId);
+    return successResponse({ 
+      thread: {
+        ...thread,
+        assistant_id: OPENAI_ASSISTANT_ID,
+        linked_properly: true
+      }
+    }, requestId);
   } catch (error) {
     console.error(`❌ [${requestId}] Thread creation failed:`, error.message);
     throw new Error(`Thread creation failed: ${error.message}`);
