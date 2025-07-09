@@ -1,3 +1,4 @@
+
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.4';
@@ -11,7 +12,7 @@ const corsHeaders = {
 const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-const EXISTING_ASSISTANT_ID = 'asst_LAfMRhVWnpiQwGgZhSykzRtJ';
+const EXISTING_ASSISTANT_ID = Deno.env.get('OPENAI_ASSISTANT_ID');
 
 // Validate environment on startup
 if (!OPENAI_API_KEY) {
@@ -22,6 +23,9 @@ if (!SUPABASE_URL) {
 }
 if (!SUPABASE_SERVICE_ROLE_KEY) {
   console.error('❌ [STARTUP] SUPABASE_SERVICE_ROLE_KEY is missing');
+}
+if (!EXISTING_ASSISTANT_ID) {
+  console.error('❌ [STARTUP] OPENAI_ASSISTANT_ID is missing');
 }
 
 serve(async (req) => {
@@ -37,6 +41,11 @@ serve(async (req) => {
     if (!OPENAI_API_KEY) {
       console.error(`❌ [${requestId}] OpenAI API key not configured`);
       return errorResponse('OpenAI API key not configured', 500, requestId);
+    }
+
+    if (!EXISTING_ASSISTANT_ID) {
+      console.error(`❌ [${requestId}] OpenAI Assistant ID not configured`);
+      return errorResponse('OpenAI Assistant ID not configured in environment variables', 500, requestId);
     }
 
     if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
@@ -196,6 +205,11 @@ async function openAIRequest(endpoint: string, options: any, requestId: string) 
 
 async function getAssistant(requestId: string) {
   console.log(`🤖 [${requestId}] Getting assistant: ${EXISTING_ASSISTANT_ID}`);
+  
+  if (!EXISTING_ASSISTANT_ID) {
+    console.error(`❌ [${requestId}] Assistant ID not configured`);
+    throw new Error('OpenAI Assistant ID not configured in environment variables');
+  }
   
   try {
     // Test the assistant exists by trying to retrieve it
@@ -531,6 +545,9 @@ async function testConnection(supabase: any, requestId: string) {
 
   // Test assistant with the correct ID
   try {
+    if (!EXISTING_ASSISTANT_ID) {
+      throw new Error('Assistant ID not configured in environment variables');
+    }
     const assistant = await openAIRequest(`assistants/${EXISTING_ASSISTANT_ID}`, { method: 'GET' }, requestId);
     results.assistant = true;
     console.log(`✅ [${requestId}] Assistant connection: OK - Found assistant: ${assistant.name}`);
@@ -545,6 +562,7 @@ async function testConnection(supabase: any, requestId: string) {
       hasOpenAIKey: !!OPENAI_API_KEY,
       hasSupabaseUrl: !!SUPABASE_URL,
       hasServiceRole: !!SUPABASE_SERVICE_ROLE_KEY,
+      hasAssistantId: !!EXISTING_ASSISTANT_ID,
       assistantId: EXISTING_ASSISTANT_ID
     }
   }, requestId);
