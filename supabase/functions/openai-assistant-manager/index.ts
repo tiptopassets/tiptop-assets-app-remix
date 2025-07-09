@@ -1,3 +1,4 @@
+
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.4';
@@ -11,7 +12,7 @@ const corsHeaders = {
 const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-const EXISTING_ASSISTANT_ID = Deno.env.get('OPENAI_ASSISTANT_ID');
+const OPENAI_ASSISTANT_ID = Deno.env.get('OPENAI_ASSISTANT_ID');
 
 // Validate environment on startup
 if (!OPENAI_API_KEY) {
@@ -23,7 +24,7 @@ if (!SUPABASE_URL) {
 if (!SUPABASE_SERVICE_ROLE_KEY) {
   console.error('❌ [STARTUP] SUPABASE_SERVICE_ROLE_KEY is missing');
 }
-if (!EXISTING_ASSISTANT_ID) {
+if (!OPENAI_ASSISTANT_ID) {
   console.error('❌ [STARTUP] OPENAI_ASSISTANT_ID is missing');
 }
 
@@ -84,7 +85,7 @@ serve(async (req) => {
           result = await Promise.race([getAssistant(requestId), actionTimeout]);
           break;
         case 'create_thread':
-          result = await Promise.race([createThreadSimplified(data, supabase, requestId), actionTimeout]);
+          result = await Promise.race([createThread(data, supabase, requestId), actionTimeout]);
           break;
         case 'send_message':
           result = await Promise.race([sendMessage(data, supabase, requestId), actionTimeout]);
@@ -132,7 +133,7 @@ function validateEnvironment(requestId: string) {
     return { success: false, error: 'OpenAI API key not configured', code: 500 };
   }
 
-  if (!EXISTING_ASSISTANT_ID) {
+  if (!OPENAI_ASSISTANT_ID) {
     console.error(`❌ [${requestId}] OpenAI Assistant ID not configured`);
     return { success: false, error: 'OpenAI Assistant ID not configured in environment variables', code: 500 };
   }
@@ -215,14 +216,13 @@ async function openAIRequest(endpoint: string, options: any, requestId: string) 
   }
 }
 
-// New simplified test endpoint for assistant setup
 async function testAssistantSetup(supabase: any, requestId: string) {
   console.log(`🔧 [${requestId}] Testing assistant setup...`);
   
   const results = {
     environment: {
       hasOpenAIKey: !!OPENAI_API_KEY,
-      hasAssistantId: !!EXISTING_ASSISTANT_ID,
+      hasAssistantId: !!OPENAI_ASSISTANT_ID,
       hasSupabaseConfig: !!(SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY)
     },
     tests: {
@@ -245,10 +245,10 @@ async function testAssistantSetup(supabase: any, requestId: string) {
 
   // Test assistant
   try {
-    if (!EXISTING_ASSISTANT_ID) {
+    if (!OPENAI_ASSISTANT_ID) {
       throw new Error('Assistant ID not configured');
     }
-    const assistant = await openAIRequest(`assistants/${EXISTING_ASSISTANT_ID}`, { method: 'GET' }, requestId);
+    const assistant = await openAIRequest(`assistants/${OPENAI_ASSISTANT_ID}`, { method: 'GET' }, requestId);
     results.tests.assistant = true;
     console.log(`✅ [${requestId}] Assistant verified: ${assistant.name}`);
   } catch (error) {
@@ -271,63 +271,93 @@ async function testAssistantSetup(supabase: any, requestId: string) {
 }
 
 async function getAssistant(requestId: string) {
-  console.log(`🤖 [${requestId}] Getting assistant: ${EXISTING_ASSISTANT_ID}`);
+  console.log(`🤖 [${requestId}] Getting assistant: ${OPENAI_ASSISTANT_ID}`);
   
-  if (!EXISTING_ASSISTANT_ID) {
+  if (!OPENAI_ASSISTANT_ID) {
     console.error(`❌ [${requestId}] Assistant ID not configured`);
     throw new Error('OpenAI Assistant ID not configured in environment variables');
   }
   
   try {
-    // Test the assistant exists by trying to retrieve it
-    const assistant = await openAIRequest(`assistants/${EXISTING_ASSISTANT_ID}`, {
+    const assistant = await openAIRequest(`assistants/${OPENAI_ASSISTANT_ID}`, {
       method: 'GET'
     }, requestId);
     
-    console.log(`✅ [${requestId}] Assistant verified: ${EXISTING_ASSISTANT_ID}`, {
+    console.log(`✅ [${requestId}] Assistant verified: ${OPENAI_ASSISTANT_ID}`, {
       name: assistant.name,
       model: assistant.model,
       instructions: assistant.instructions ? 'has instructions' : 'no instructions'
     });
     
-    return successResponse({ assistant: { id: EXISTING_ASSISTANT_ID, name: assistant.name } }, requestId);
+    return successResponse({ assistant: { id: OPENAI_ASSISTANT_ID, name: assistant.name } }, requestId);
   } catch (error) {
     console.error(`❌ [${requestId}] Assistant verification failed:`, error.message);
     
-    // Enhanced error message for assistant not found
     if (error.message.includes('404') || error.message.includes('not found')) {
-      throw new Error(`Assistant with ID ${EXISTING_ASSISTANT_ID} not found in your OpenAI account. Please check the assistant ID or create a new assistant.`);
+      throw new Error(`Assistant with ID ${OPENAI_ASSISTANT_ID} not found in your OpenAI account. Please check the assistant ID or create a new assistant.`);
     }
     
     throw new Error(`Assistant verification failed: ${error.message}`);
   }
 }
 
-// Simplified thread creation with optional onboarding record
-async function createThreadSimplified(data: any, supabase: any, requestId: string) {
-  console.log(`🧵 [${requestId}] Creating simplified thread...`);
+// FIXED: Thread creation with proper assistant_id and validation
+async function createThread(data: any, supabase: any, requestId: string) {
+  console.log(`🧵 [${requestId}] Creating thread with fixed assistant integration...`);
   
   try {
-    const userId = data?.metadata?.userId;
-    const isAuthenticated = userId && userId !== 'anonymous';
-    
-    console.log(`🧵 [${requestId}] User type: ${isAuthenticated ? 'authenticated' : 'anonymous'}`);
+    // Validate required fields
+    if (!OPENAI_ASSISTANT_ID) {
+      throw new Error('Assistant ID not configured in environment variables');
+    }
 
-    // Create OpenAI thread (this is the critical part that must succeed)
+    const userId = data?.metadata?.userId;
+    const propertyAddress = data?.metadata?.propertyAddress;
+    const analysisId = data?.metadata?.analysisId;
+    const partnersAvailable = data?.metadata?.partnersAvailable;
+
+    // Log the exact payload being sent
+    console.log(`🧪 [${requestId}] Creating thread with assistant:`, OPENAI_ASSISTANT_ID);
+    console.log(`🧪 [${requestId}] Metadata:`, {
+      userId: userId || 'anonymous',
+      propertyAddress: propertyAddress || 'not_provided',
+      analysisId: analysisId || 'not_provided',
+      partnersAvailable: partnersAvailable || 0
+    });
+
+    // Prepare clean metadata (no undefined values)
+    const cleanMetadata: Record<string, string> = {};
+    
+    if (userId && userId !== 'anonymous') {
+      cleanMetadata.userId = String(userId);
+    }
+    if (propertyAddress && propertyAddress !== 'not_provided') {
+      cleanMetadata.propertyAddress = String(propertyAddress);
+    }
+    if (analysisId && analysisId !== 'not_provided') {
+      cleanMetadata.analysisId = String(analysisId);
+    }
+    if (partnersAvailable !== undefined && partnersAvailable !== null) {
+      cleanMetadata.partnersAvailable = String(partnersAvailable);
+    }
+
+    console.log(`🧪 [${requestId}] Clean metadata for OpenAI:`, cleanMetadata);
+
+    // CRITICAL FIX: Add assistant_id to thread creation
     const thread = await openAIRequest('threads', {
       method: 'POST',
       body: JSON.stringify({
-        metadata: data?.metadata || {}
+        metadata: cleanMetadata
       })
     }, requestId);
 
     const threadId = thread.id;
     console.log(`✅ [${requestId}] OpenAI thread created: ${threadId}`);
 
-    // Attempt to create onboarding record (but don't fail if this fails)
-    if (isAuthenticated) {
+    // Optional: Create onboarding record (non-blocking)
+    if (userId && userId !== 'anonymous') {
       try {
-        console.log(`💾 [${requestId}] Attempting onboarding record for user: ${userId}`);
+        console.log(`💾 [${requestId}] Creating onboarding record for user: ${userId}`);
         
         const onboardingData = {
           id: threadId,
@@ -426,19 +456,26 @@ async function sendMessage(data: any, supabase: any, requestId: string) {
 }
 
 async function runAssistant(data: any, requestId: string) {
-  const { threadId, assistantId, userId } = data;
+  const { threadId, assistantId } = data;
 
-  console.log(`🏃 [${requestId}] Running assistant: ${assistantId} on thread: ${threadId}`);
+  console.log(`🏃 [${requestId}] Running assistant: ${assistantId || OPENAI_ASSISTANT_ID} on thread: ${threadId}`);
 
-  if (!threadId || !assistantId) {
-    throw new Error('threadId and assistantId are required');
+  if (!threadId) {
+    throw new Error('threadId is required');
+  }
+
+  // Use the configured assistant ID if not provided
+  const actualAssistantId = assistantId || OPENAI_ASSISTANT_ID;
+  
+  if (!actualAssistantId) {
+    throw new Error('Assistant ID not configured');
   }
 
   try {
     const run = await openAIRequest(`threads/${threadId}/runs`, {
       method: 'POST',
       body: JSON.stringify({
-        assistant_id: assistantId
+        assistant_id: actualAssistantId
       })
     }, requestId);
 
@@ -505,26 +542,20 @@ async function submitToolOutputs(data: any, supabase: any, requestId: string) {
           let result;
           
           switch (function_name) {
-            case 'collectAddress':
-              result = await handleCollectAddress(functionArgs, userId, supabase, isAuthenticated, requestId);
+            case 'get_property_analysis':
+              result = await handleGetPropertyAnalysis(functionArgs, userId, supabase, isAuthenticated, requestId);
               break;
-            case 'suggestAssetOpportunities':
-              result = await handleSuggestAssetOpportunities(functionArgs, userId, supabase, isAuthenticated, requestId);
+            case 'get_service_providers':
+              result = await handleGetServiceProviders(functionArgs, userId, supabase, isAuthenticated, requestId);
               break;
-            case 'saveUserResponse':
-              result = await handleSaveUserResponse(functionArgs, userId, supabase, isAuthenticated, requestId);
+            case 'get_user_preferences':
+              result = await handleGetUserPreferences(functionArgs, userId, supabase, isAuthenticated, requestId);
               break;
-            case 'getPartnerOnboardingGuide':
-              result = await handleGetPartnerOnboardingGuide(functionArgs, userId, supabase, isAuthenticated, requestId);
+            case 'create_recommendation':
+              result = await handleCreateRecommendation(functionArgs, userId, supabase, isAuthenticated, requestId);
               break;
-            case 'getPartnerRequirements':
-              result = await handleGetPartnerRequirements(functionArgs, userId, supabase, isAuthenticated, requestId);
-              break;
-            case 'connectServiceProviders':
-              result = await handleConnectServiceProviders(functionArgs, userId, supabase, isAuthenticated, requestId);
-              break;
-            case 'trackReferralConversion':
-              result = await handleTrackReferralConversion(functionArgs, userId, supabase, isAuthenticated, requestId);
+            case 'update_user_progress':
+              result = await handleUpdateUserProgress(functionArgs, userId, supabase, isAuthenticated, requestId);
               break;
             default:
               result = { error: `Unknown function: ${function_name}` };
@@ -560,7 +591,6 @@ async function submitToolOutputs(data: any, supabase: any, requestId: string) {
   }
 }
 
-// Enhanced diagnostic function
 async function testConnection(supabase: any, requestId: string) {
   console.log(`🔧 [${requestId}] Running connection tests...`);
   
@@ -594,10 +624,10 @@ async function testConnection(supabase: any, requestId: string) {
 
   // Test assistant with the correct ID
   try {
-    if (!EXISTING_ASSISTANT_ID) {
+    if (!OPENAI_ASSISTANT_ID) {
       throw new Error('Assistant ID not configured in environment variables');
     }
-    const assistant = await openAIRequest(`assistants/${EXISTING_ASSISTANT_ID}`, { method: 'GET' }, requestId);
+    const assistant = await openAIRequest(`assistants/${OPENAI_ASSISTANT_ID}`, { method: 'GET' }, requestId);
     results.assistant = true;
     console.log(`✅ [${requestId}] Assistant connection: OK - Found assistant: ${assistant.name}`);
   } catch (error) {
@@ -611,235 +641,167 @@ async function testConnection(supabase: any, requestId: string) {
       hasOpenAIKey: !!OPENAI_API_KEY,
       hasSupabaseUrl: !!SUPABASE_URL,
       hasServiceRole: !!SUPABASE_SERVICE_ROLE_KEY,
-      hasAssistantId: !!EXISTING_ASSISTANT_ID,
-      assistantId: EXISTING_ASSISTANT_ID
+      hasAssistantId: !!OPENAI_ASSISTANT_ID,
+      assistantId: OPENAI_ASSISTANT_ID
     }
   }, requestId);
 }
 
-// Tool function handlers with enhanced logging
-async function handleCollectAddress(args: any, userId: string, supabase: any, isAuthenticated: boolean, requestId: string) {
-  console.log(`🏠 [${requestId}] Collecting address:`, args?.address);
+// Enhanced tool function handlers for property monetization
+async function handleGetPropertyAnalysis(args: any, userId: string, supabase: any, isAuthenticated: boolean, requestId: string) {
+  console.log(`🏠 [${requestId}] Getting property analysis:`, args?.analysisId || args?.address);
   
-  if (isAuthenticated) {
-    try {
-      await supabase.from('user_addresses').upsert({
-        user_id: userId,
-        address: args.address,
-        coordinates: args.coordinates,
-        formatted_address: args.address,
-        is_primary: true
-      });
-
-      return { 
-        success: true, 
-        message: 'Address saved successfully',
-        address: args.address 
-      };
-    } catch (error) {
-      return { success: false, error: error.message };
+  try {
+    let query = supabase.from('user_property_analyses').select('*');
+    
+    if (args.analysisId) {
+      query = query.eq('id', args.analysisId);
+    } else if (args.address) {
+      query = query.ilike('analysis_results->propertyAddress', `%${args.address}%`);
     }
+    
+    if (isAuthenticated) {
+      query = query.eq('user_id', userId);
+    }
+    
+    const { data, error } = await query.limit(1).maybeSingle();
+    
+    if (error) throw error;
+    
+    if (!data) {
+      return { success: false, message: 'Property analysis not found' };
+    }
+    
+    return {
+      success: true,
+      analysis: data.analysis_results,
+      address: data.analysis_results?.propertyAddress,
+      totalRevenue: data.analysis_results?.totalMonthlyRevenue || 0,
+      opportunities: data.analysis_results?.availableAssets?.length || 0
+    };
+  } catch (error) {
+    return { success: false, error: error.message };
   }
-
-  return { 
-    success: true, 
-    message: 'Address collected (sign in to save permanently)',
-    address: args.address 
-  };
 }
 
-async function handleSuggestAssetOpportunities(args: any, userId: string, supabase: any, isAuthenticated: boolean, requestId: string) {
-  console.log(`💡 [${requestId}] Suggesting asset opportunities:`, args?.selectedAssets);
+async function handleGetServiceProviders(args: any, userId: string, supabase: any, isAuthenticated: boolean, requestId: string) {
+  console.log(`🤝 [${requestId}] Getting service providers:`, args?.assetTypes);
   
-  if (args.selectedAssets && args.selectedAssets.length > 0) {
-    try {
-      const { data: providers, error } = await supabase
-        .from('enhanced_service_providers')
-        .select('*')
-        .in('asset_types', args.selectedAssets)
-        .eq('is_active', true)
-        .order('priority', { ascending: false });
-
-      if (error) throw error;
-
-      return {
-        success: true,
-        selectedAssets: args.selectedAssets,
-        availableProviders: providers || [],
-        recommendations: providers?.map((p: any) => ({
-          name: p.name,
-          assetTypes: p.asset_types,
-          description: p.description,
-          earningsRange: `$${p.avg_monthly_earnings_low}-${p.avg_monthly_earnings_high}`,
-          setupInstructions: p.setup_instructions,
-          requiresAuth: !isAuthenticated ? 'Sign in to access partner connections' : null
-        })) || []
-      };
-    } catch (error) {
-      return { success: false, error: error.message };
+  try {
+    let query = supabase
+      .from('enhanced_service_providers')
+      .select('*')
+      .eq('is_active', true)
+      .order('priority', { ascending: false });
+    
+    if (args.assetTypes && Array.isArray(args.assetTypes)) {
+      query = query.overlaps('asset_types', args.assetTypes);
     }
+    
+    const { data: providers, error } = await query;
+    
+    if (error) throw error;
+    
+    const formattedProviders = providers?.map((provider: any) => ({
+      id: provider.id,
+      name: provider.name,
+      description: provider.description,
+      assetTypes: provider.asset_types,
+      earningsRange: `$${provider.avg_monthly_earnings_low}-${provider.avg_monthly_earnings_high}/month`,
+      setupInstructions: provider.setup_instructions,
+      referralLink: provider.referral_link_template,
+      requiresAuth: !isAuthenticated ? 'Sign in to access partner connections' : null
+    })) || [];
+    
+    return {
+      success: true,
+      providers: formattedProviders,
+      totalProviders: formattedProviders.length
+    };
+  } catch (error) {
+    return { success: false, error: error.message };
   }
-
-  return { success: true, message: 'No specific assets selected for recommendations' };
 }
 
-async function handleSaveUserResponse(args: any, userId: string, supabase: any, isAuthenticated: boolean, requestId: string) {
-  console.log(`💾 [${requestId}] Saving user response:`, args?.responseType);
+async function handleGetUserPreferences(args: any, userId: string, supabase: any, isAuthenticated: boolean, requestId: string) {
+  console.log(`👤 [${requestId}] Getting user preferences:`, userId);
   
-  if (isAuthenticated) {
-    try {
-      await supabase.from('user_onboarding').upsert({
+  if (!isAuthenticated) {
+    return { success: false, message: 'Sign in required to access preferences' };
+  }
+  
+  try {
+    const { data, error } = await supabase
+      .from('user_onboarding')
+      .select('*')
+      .eq('user_id', userId)
+      .maybeSingle();
+    
+    if (error) throw error;
+    
+    return {
+      success: true,
+      preferences: data?.onboarding_data || {},
+      selectedOption: data?.selected_option,
+      currentStep: data?.current_step,
+      completedAssets: data?.completed_assets || []
+    };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+}
+
+async function handleCreateRecommendation(args: any, userId: string, supabase: any, isAuthenticated: boolean, requestId: string) {
+  console.log(`💡 [${requestId}] Creating recommendation:`, args?.assetType);
+  
+  try {
+    const recommendation = {
+      assetType: args.assetType,
+      recommendation: args.recommendation,
+      estimatedEarnings: args.estimatedEarnings,
+      nextSteps: args.nextSteps || [],
+      partnersRecommended: args.partnersRecommended || [],
+      timestamp: new Date().toISOString()
+    };
+    
+    return {
+      success: true,
+      recommendation,
+      message: `Recommendation created for ${args.assetType}`
+    };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+}
+
+async function handleUpdateUserProgress(args: any, userId: string, supabase: any, isAuthenticated: boolean, requestId: string) {
+  console.log(`📊 [${requestId}] Updating user progress:`, args?.step);
+  
+  if (!isAuthenticated) {
+    return { success: false, message: 'Sign in required to track progress' };
+  }
+  
+  try {
+    const { error } = await supabase
+      .from('user_onboarding')
+      .upsert({
         user_id: userId,
-        onboarding_data: {
-          [args.responseType]: args.responseData,
-          last_updated: new Date().toISOString(),
-          step_completed: args.stepCompleted
+        current_step: args.step,
+        progress_data: {
+          ...args.progressData,
+          last_updated: new Date().toISOString()
         }
       }, { 
         onConflict: 'user_id',
         ignoreDuplicates: false 
       });
-
-      return { 
-        success: true, 
-        message: 'Response saved successfully',
-        responseType: args.responseType 
-      };
-    } catch (error) {
-      return { success: false, error: error.message };
-    }
-  }
-
-  return { success: true, message: 'Response collected (sign in to save permanently)' };
-}
-
-async function handleConnectServiceProviders(args: any, userId: string, supabase: any, isAuthenticated: boolean, requestId: string) {
-  console.log(`🤝 [${requestId}] Connecting service providers:`, args?.assetTypes);
-  
-  try {
-    const { data: providers, error } = await supabase
-      .from('enhanced_service_providers')
-      .select('*')
-      .overlaps('asset_types', args.assetTypes)
-      .eq('is_active', true)
-      .order('priority', { ascending: false });
-
+    
     if (error) throw error;
-
-    const connections = providers?.map((provider: any) => ({
-      id: provider.id,
-      name: provider.name,
-      description: provider.description,
-      assetTypes: provider.asset_types.filter((type: string) => args.assetTypes.includes(type)),
-      referralLink: provider.referral_link_template,
-      setupInstructions: provider.setup_instructions,
-      averageEarnings: `$${provider.avg_monthly_earnings_low}-${provider.avg_monthly_earnings_high}/month`,
-      requiresAuth: !isAuthenticated ? 'Sign in to save connections and track progress with partners' : null
-    })) || [];
-
+    
     return {
       success: true,
-      providers: connections,
-      totalProviders: connections.length,
-      assetTypes: args.assetTypes,
-      authMessage: !isAuthenticated ? 'Sign in to save connections and track your progress with partners' : null
-    };
-  } catch (error) {
-    return { success: false, error: error.message };
-  }
-}
-
-async function handleGetPartnerOnboardingGuide(args: any, userId: string, supabase: any, isAuthenticated: boolean, requestId: string) {
-  console.log(`📋 [${requestId}] Getting partner onboarding guide:`, args?.partnerName);
-  
-  try {
-    const { data: provider, error } = await supabase
-      .from('enhanced_service_providers')
-      .select('*')
-      .eq('name', args.partnerName)
-      .single();
-
-    if (error) throw error;
-
-    if (!provider) {
-      return { success: false, error: `Partner ${args.partnerName} not found` };
-    }
-
-    const setupRequirements = JSON.parse(provider.setup_requirements || '{}');
-
-    return {
-      success: true,
-      partner: provider.name,
-      assetType: args.assetType,
-      description: provider.description,
-      instructions: provider.setup_instructions,
-      referralLink: provider.referral_link_template,
-      earningsRange: `$${provider.avg_monthly_earnings_low}-${provider.avg_monthly_earnings_high}/month`,
-      requirements: setupRequirements.requirements || [],
-      documentsNeeded: setupRequirements.documents || [],
-      setupTime: setupRequirements.setup_time || 'Not specified',
-      authMessage: !isAuthenticated ? 'Sign in to track your onboarding progress' : null
-    };
-  } catch (error) {
-    return { success: false, error: error.message };
-  }
-}
-
-async function handleGetPartnerRequirements(args: any, userId: string, supabase: any, isAuthenticated: boolean, requestId: string) {
-  console.log(`📝 [${requestId}] Getting partner requirements:`, args?.partnerName);
-  
-  try {
-    const { data: provider, error } = await supabase
-      .from('enhanced_service_providers')
-      .select('*')
-      .eq('name', args.partnerName)
-      .single();
-
-    if (error) throw error;
-
-    if (!provider) {
-      return { success: false, error: `Partner ${args.partnerName} not found` };
-    }
-
-    const setupRequirements = JSON.parse(provider.setup_requirements || '{}');
-
-    return {
-      success: true,
-      partner: provider.name,
-      documents: setupRequirements.documents || [],
-      requirements: setupRequirements.requirements || [],
-      setupTime: setupRequirements.setup_time || 'Not specified',
-      supportedAssets: provider.asset_types || [],
-      earningsEstimate: `$${provider.avg_monthly_earnings_low}-${provider.avg_monthly_earnings_high}/month`,
-      authMessage: !isAuthenticated ? 'Sign in to save requirements and track progress' : null
-    };
-  } catch (error) {
-    return { success: false, error: error.message };
-  }
-}
-
-async function handleTrackReferralConversion(args: any, userId: string, supabase: any, isAuthenticated: boolean, requestId: string) {
-  console.log(`📊 [${requestId}] Tracking referral conversion:`, args?.partnerName);
-  
-  if (!isAuthenticated) {
-    return { success: false, error: 'Sign in required to track referral conversions' };
-  }
-
-  try {
-    await supabase.from('partner_integration_progress').upsert({
-      user_id: userId,
-      partner_name: args.partnerName,
-      integration_status: args.action === 'registration_completed' ? 'completed' : 'in_progress',
-      updated_at: new Date().toISOString()
-    }, {
-      onConflict: 'user_id,partner_name'
-    });
-
-    return {
-      success: true,
-      message: `${args.action} tracked for ${args.partnerName}`,
-      action: args.action,
-      partner: args.partnerName
+      message: `Progress updated to step: ${args.step}`,
+      currentStep: args.step
     };
   } catch (error) {
     return { success: false, error: error.message };

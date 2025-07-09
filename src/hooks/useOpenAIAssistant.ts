@@ -281,7 +281,6 @@ export const useOpenAIAssistant = (propertyData: PropertyAnalysisData | null) =>
     }
   }, [user?.id, loadUserContext, state]);
 
-  // Enhanced welcome message generation
   const generateWelcomeMessage = useCallback((context: UserContext) => {
     if (!context.propertyData) {
       return `Hi! I'm your AI assistant for property monetization. I'm here to help you explore ways to earn money from your property assets and connect you with the right partners.
@@ -373,13 +372,13 @@ Would you like to start with a specific asset, or would you prefer me to recomme
 
       if (messageError) throw messageError;
 
-      // Run assistant
+      // Run assistant using the correct assistant ID
       const { data: runData, error: runError } = await supabase.functions.invoke('openai-assistant-manager', {
         body: {
           action: 'run_assistant',
           data: {
             threadId,
-            assistantId,
+            assistantId, // Use the stored assistant ID
             userId: user?.id || 'anonymous'
           }
         }
