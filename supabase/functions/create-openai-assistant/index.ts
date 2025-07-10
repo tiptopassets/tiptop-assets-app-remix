@@ -66,16 +66,25 @@ serve(async (req) => {
 
 async function listAssistants(requestId: string) {
   console.log(`📋 [${requestId}] Listing existing assistants...`);
+  console.log(`📋 [${requestId}] OpenAI API Key exists: ${!!OPENAI_API_KEY}`);
+  console.log(`📋 [${requestId}] OpenAI API Key length: ${OPENAI_API_KEY?.length || 0}`);
   
   try {
+    console.log(`📋 [${requestId}] Importing OpenAI SDK...`);
     const OpenAI = (await import('https://deno.land/x/openai@v4.24.0/mod.ts')).default;
+    console.log(`📋 [${requestId}] OpenAI SDK imported successfully`);
+    
+    console.log(`📋 [${requestId}] Creating OpenAI client...`);
     const openai = new OpenAI({
       apiKey: OPENAI_API_KEY
     });
+    console.log(`📋 [${requestId}] OpenAI client created`);
 
+    console.log(`📋 [${requestId}] Making API call to list assistants...`);
     const assistants = await openai.beta.assistants.list({
       limit: 20
     });
+    console.log(`📋 [${requestId}] API call successful`);
 
     console.log(`✅ [${requestId}] Found ${assistants.data.length} assistants`);
 
@@ -93,13 +102,20 @@ async function listAssistants(requestId: string) {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
   } catch (error) {
-    console.error(`❌ [${requestId}] List assistants failed:`, error.message);
+    console.error(`❌ [${requestId}] List assistants failed:`, error);
+    console.error(`❌ [${requestId}] Error details:`, {
+      name: error.name,
+      message: error.message,
+      stack: error.stack
+    });
     throw error;
   }
 }
 
 async function createAssistant(requestId: string) {
   console.log(`🤖 [${requestId}] Creating new OpenAI assistant...`);
+  console.log(`🤖 [${requestId}] OpenAI API Key exists: ${!!OPENAI_API_KEY}`);
+  console.log(`🤖 [${requestId}] OpenAI API Key starts with: ${OPENAI_API_KEY?.substring(0, 7)}...`);
   
   try {
     const OpenAI = (await import('https://deno.land/x/openai@v4.24.0/mod.ts')).default;
