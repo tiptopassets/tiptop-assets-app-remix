@@ -34,112 +34,33 @@ export const OpenAIConnectionTest = () => {
     setIsRunning(true);
     setResults([]);
 
-    // Test 1: Basic OpenAI Connection
-    updateResult('OpenAI Connection', 'pending');
-    try {
-      console.log('🔧 Testing OpenAI connection...');
-      const { data: connectionTest, error: connectionError } = await supabase.functions.invoke('openai-assistant-manager', {
-        body: { action: 'test_connection' }
-      });
-
-      if (connectionError) {
-        throw new Error(`Connection test failed: ${connectionError.message}`);
-      }
-
-      if (!connectionTest.success) {
-        throw new Error(`OpenAI connection failed: ${connectionTest.error}`);
-      }
-
-      updateResult('OpenAI Connection', 'success', `Connected successfully. Models available: ${connectionTest.modelsAvailable}`, connectionTest);
-    } catch (error: any) {
-      updateResult('OpenAI Connection', 'error', error.message);
-    }
-
-    // Test 2: Assistant Setup
-    updateResult('Assistant Setup', 'pending');
-    try {
-      console.log('🔧 Testing assistant setup...');
-      const { data: setupTest, error: setupError } = await supabase.functions.invoke('openai-assistant-manager', {
-        body: { action: 'test_assistant_setup' }
-      });
-
-      if (setupError) {
-        throw new Error(`Setup test failed: ${setupError.message}`);
-      }
-
-      if (!setupTest.success) {
-        const failedTests = [];
-        if (!setupTest.tests?.openai) failedTests.push('OpenAI API');
-        if (!setupTest.tests?.database) failedTests.push('Database');
-        if (!setupTest.tests?.assistant) failedTests.push('AI Assistant');
-        throw new Error(`Service issues: ${failedTests.join(', ')} failed`);
-      }
-
-      updateResult('Assistant Setup', 'success', 'All setup tests passed', setupTest);
-    } catch (error: any) {
-      updateResult('Assistant Setup', 'error', error.message);
-    }
-
-    // Test 3: Get Assistant
-    updateResult('Get Assistant', 'pending');
-    try {
-      console.log('🔧 Getting assistant...');
-      const { data: assistantData, error: assistantError } = await supabase.functions.invoke('openai-assistant-manager', {
-        body: { action: 'get_assistant' }
-      });
-
-      if (assistantError) {
-        throw new Error(`Assistant get failed: ${assistantError.message}`);
-      }
-
-      if (!assistantData.success) {
-        throw new Error(`Assistant get failed: ${assistantData.error}`);
-      }
-
-      updateResult('Get Assistant', 'success', `Assistant retrieved: ${assistantData.assistant.name} (${assistantData.assistant.model})`, assistantData);
-    } catch (error: any) {
-      updateResult('Get Assistant', 'error', error.message);
-    }
-
-    // Test 4: Create Thread (following OpenAI documentation - threads are created independently)
+    // Test 1: Create Thread (using working openai-chat function)
     updateResult('Create Thread', 'pending');
     try {
       console.log('🧵 Creating thread...');
-      const { data: threadData, error: threadError } = await supabase.functions.invoke('openai-assistant-manager', {
-        body: {
-          action: 'create_thread',
-          data: { 
-            metadata: {
-              userId: 'test_user',
-              testRun: true,
-              timestamp: new Date().toISOString()
-            }
-          }
-        }
+      const { data: threadData, error: threadError } = await supabase.functions.invoke('openai-chat', {
+        body: { action: 'create_thread' }
       });
 
       if (threadError) {
         throw new Error(`Thread creation failed: ${threadError.message}`);
       }
 
-      if (!threadData?.success || !threadData?.thread?.id) {
-        throw new Error(`Thread creation failed: ${threadData?.error || 'Invalid response'}`);
+      if (!threadData?.threadId) {
+        throw new Error(`Thread creation failed: No thread ID returned`);
       }
 
-      updateResult('Create Thread', 'success', `Thread created: ${threadData.thread.id}`, threadData);
+      updateResult('Create Thread', 'success', `Thread created: ${threadData.threadId}`, threadData);
 
-      // Test 5: Add Message to Thread
-      updateResult('Add Message', 'pending');
+      // Test 2: Send Message to Thread
+      updateResult('Send Message', 'pending');
       try {
-        console.log('💬 Adding message to thread...');
-        const { data: messageData, error: messageError } = await supabase.functions.invoke('openai-assistant-manager', {
+        console.log('💬 Sending message to thread...');
+        const { data: messageData, error: messageError } = await supabase.functions.invoke('openai-chat', {
           body: {
             action: 'send_message',
-            data: {
-              threadId: threadData.thread.id,
-              message: 'Hello! This is a test message to verify the OpenAI Assistant API integration.',
-              userId: 'test_user'
-            }
+            threadId: threadData.threadId,
+            message: 'Hello! This is a test message to verify the OpenAI Assistant API integration.'
           }
         });
 
@@ -147,13 +68,13 @@ export const OpenAIConnectionTest = () => {
           throw new Error(`Message sending failed: ${messageError.message}`);
         }
 
-        if (!messageData.success) {
-          throw new Error(`Message sending failed: ${messageData.error}`);
+        if (!messageData?.response) {
+          throw new Error(`Message sending failed: No response received`);
         }
 
-        updateResult('Add Message', 'success', `Message added successfully`, messageData);
+        updateResult('Send Message', 'success', `Assistant responded: ${messageData.response.substring(0, 100)}...`, messageData);
       } catch (error: any) {
-        updateResult('Add Message', 'error', error.message);
+        updateResult('Send Message', 'error', error.message);
       }
 
     } catch (error: any) {
