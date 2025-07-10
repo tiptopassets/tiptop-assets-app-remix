@@ -13,6 +13,7 @@ import ChatbotLoadingState from '@/components/onboarding/ChatbotLoadingState';
 import ChatbotErrorState from '@/components/onboarding/ChatbotErrorState';
 import ChatbotHeader from '@/components/onboarding/ChatbotHeader';
 import ChatbotSidebar from '@/components/onboarding/ChatbotSidebar';
+import QuickActionsBar from '@/components/onboarding/QuickActionsBar';
 
 const EnhancedOnboardingChatbot = () => {
   const { user, loading: authLoading } = useAuth();
@@ -219,7 +220,10 @@ const EnhancedOnboardingChatbot = () => {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           {/* Chat Interface */}
           <div className="lg:col-span-8">
-            <Card className="h-[calc(100vh-12rem)]">
+            {/* Quick Actions Bar - Above Chat */}
+            <QuickActionsBar />
+            
+            <Card className="h-[calc(100vh-16rem)]">
               <EnhancedChatInterface
                 onAssetDetected={handleAssetDetected}
                 onConversationStageChange={handleConversationStageChange}
