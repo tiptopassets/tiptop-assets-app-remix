@@ -329,9 +329,13 @@ async function getAssistant(requestId: string) {
   }
   
   try {
-    const assistant = await openAIRequest(`assistants/${OPENAI_ASSISTANT_ID}`, {
-      method: 'GET'
-    }, requestId);
+    // Use OpenAI SDK for assistant verification
+    const OpenAI = (await import('https://deno.land/x/openai@v4.24.0/mod.ts')).default;
+    const openai = new OpenAI({
+      apiKey: OPENAI_API_KEY
+    });
+
+    const assistant = await openai.beta.assistants.retrieve(OPENAI_ASSISTANT_ID);
     
     console.log(`✅ [${requestId}] Assistant verified:`, {
       id: assistant.id,
@@ -347,11 +351,19 @@ async function getAssistant(requestId: string) {
         model: assistant.model
       } 
     }, requestId);
-  } catch (error) {
-    console.error(`❌ [${requestId}] Assistant verification failed:`, error.message);
+  } catch (error: any) {
+    console.error(`❌ [${requestId}] Assistant verification failed:`, {
+      message: error.message,
+      status: error.status,
+      code: error.code
+    });
     
-    if (error.message.includes('404') || error.message.includes('not found')) {
+    if (error.status === 404 || error.message.includes('not found')) {
       throw new Error(`Assistant with ID ${OPENAI_ASSISTANT_ID} not found. Please check the assistant ID.`);
+    }
+    
+    if (error.status === 401) {
+      throw new Error('OpenAI API key is invalid or missing permissions');
     }
     
     throw new Error(`Assistant verification failed: ${error.message}`);
