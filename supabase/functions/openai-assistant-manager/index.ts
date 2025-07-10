@@ -300,9 +300,15 @@ async function testAssistantSetup(supabase: any, requestId: string) {
     }
     const assistant = await openAIRequest(`assistants/${OPENAI_ASSISTANT_ID}`, { method: 'GET' }, requestId);
     results.tests.assistant = true;
-    console.log(`✅ [${requestId}] Assistant verified: ${assistant.name}`);
+    console.log(`✅ [${requestId}] Assistant verified: ${assistant.name} (${assistant.model})`);
   } catch (error) {
-    results.errors.push(`Assistant: ${error.message}`);
+    if (error.message.includes('404') || error.message.includes('not found')) {
+      results.errors.push(`Assistant: ID ${OPENAI_ASSISTANT_ID} not found - may need to create a new assistant`);
+    } else if (error.message.includes('401')) {
+      results.errors.push(`Assistant: API key lacks permission for Assistant API`);
+    } else {
+      results.errors.push(`Assistant: ${error.message}`);
+    }
     console.error(`❌ [${requestId}] Assistant verification: FAILED`);
   }
 

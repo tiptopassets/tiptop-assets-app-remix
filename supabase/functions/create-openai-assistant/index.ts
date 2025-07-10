@@ -1,82 +1,52 @@
+import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
+const OPENAI_ASSISTANT_ID = Deno.env.get('OPENAI_ASSISTANT_ID');
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Validate OpenAI API Key
-function validateApiKey(requestId: string): boolean {
+// Comprehensive API Key Validation
+function validateApiKey(requestId: string): { valid: boolean, error?: string } {
   console.log(`🔑 [${requestId}] Validating OpenAI API Key...`);
   
   if (!OPENAI_API_KEY) {
-    console.error(`❌ [${requestId}] OPENAI_API_KEY environment variable is not set`);
-    return false;
+    const error = 'OPENAI_API_KEY environment variable is not set';
+    console.error(`❌ [${requestId}] ${error}`);
+    return { valid: false, error };
   }
   
   if (!OPENAI_API_KEY.startsWith('sk-')) {
-    console.error(`❌ [${requestId}] Invalid API key format - should start with 'sk-'`);
-    return false;
+    const error = 'Invalid API key format - should start with "sk-"';
+    console.error(`❌ [${requestId}] ${error}`);
+    return { valid: false, error };
   }
   
   if (OPENAI_API_KEY.length < 50) {
-    console.error(`❌ [${requestId}] API key appears too short (${OPENAI_API_KEY.length} chars)`);
-    return false;
+    const error = `API key appears too short (${OPENAI_API_KEY.length} chars)`;
+    console.error(`❌ [${requestId}] ${error}`);
+    return { valid: false, error };
   }
   
   console.log(`✅ [${requestId}] API key validation passed`);
-  return true;
+  return { valid: true };
 }
 
-// Make HTTP request to OpenAI API
-async function makeOpenAIRequest(requestId: string, endpoint: string, method: string = 'GET', body?: any) {
-  const url = `https://api.openai.com/v1${endpoint}`;
-  
-  console.log(`🌐 [${requestId}] Making ${method} request to: ${url}`);
-  
-  const requestOptions: RequestInit = {
-    method,
-    headers: {
-      'Authorization': `Bearer ${OPENAI_API_KEY}`,
-      'Content-Type': 'application/json',
-      'User-Agent': 'Tiptop-Assistant-Manager/1.0'
-    }
-  };
-  
-  if (body && method !== 'GET') {
-    requestOptions.body = JSON.stringify(body);
-    console.log(`📤 [${requestId}] Request body:`, JSON.stringify(body, null, 2));
-  }
-  
+// Initialize OpenAI SDK
+async function initOpenAI(requestId: string) {
   try {
-    const response = await fetch(url, requestOptions);
-    console.log(`📡 [${requestId}] Response status: ${response.status} ${response.statusText}`);
-    
-    const responseText = await response.text();
-    console.log(`📥 [${requestId}] Raw response length: ${responseText.length} chars`);
-    
-    if (!response.ok) {
-      console.error(`❌ [${requestId}] OpenAI API error:`, {
-        status: response.status,
-        statusText: response.statusText,
-        body: responseText
-      });
-      throw new Error(`OpenAI API error: ${response.status} ${response.statusText} - ${responseText}`);
-    }
-    
-    const data = JSON.parse(responseText);
-    console.log(`✅ [${requestId}] Successfully parsed response`);
-    return data;
-    
-  } catch (error) {
-    console.error(`❌ [${requestId}] HTTP request failed:`, {
-      name: error.name,
-      message: error.message,
-      stack: error.stack
+    const OpenAI = (await import('https://deno.land/x/openai@v4.24.0/mod.ts')).default;
+    const openai = new OpenAI({
+      apiKey: OPENAI_API_KEY
     });
-    throw error;
+    console.log(`✅ [${requestId}] OpenAI SDK initialized`);
+    return openai;
+  } catch (error) {
+    console.error(`❌ [${requestId}] OpenAI SDK initialization failed:`, error.message);
+    throw new Error(`OpenAI SDK initialization failed: ${error.message}`);
   }
 }
 
@@ -90,8 +60,9 @@ serve(async (req) => {
 
   try {
     // Validate API key first
-    if (!validateApiKey(requestId)) {
-      throw new Error('Invalid or missing OpenAI API key');
+    const validation = validateApiKey(requestId);
+    if (!validation.valid) {
+      throw new Error(validation.error || 'Invalid API key');
     }
 
     // Parse request body
@@ -101,6 +72,9 @@ serve(async (req) => {
 
     let result;
     switch (action) {
+      case 'test_connection':
+        result = await testOpenAIConnection(requestId);
+        break;
       case 'list_assistants':
         result = await listAssistants(requestId);
         break;
@@ -128,17 +102,44 @@ serve(async (req) => {
   }
 });
 
-async function listAssistants(requestId: string) {
-  console.log(`📋 [${requestId}] Listing existing assistants via HTTP...`);
+// NEW: Test OpenAI Connection with simple API call
+async function testOpenAIConnection(requestId: string) {
+  console.log(`🔧 [${requestId}] Testing OpenAI connection...`);
   
   try {
-    const data = await makeOpenAIRequest(requestId, '/assistants?limit=20');
+    const openai = await initOpenAI(requestId);
     
-    console.log(`✅ [${requestId}] Found ${data.data?.length || 0} assistants`);
+    // Test with models endpoint (simple API call)
+    const models = await openai.models.list();
+    console.log(`✅ [${requestId}] OpenAI connection successful, found ${models.data?.length || 0} models`);
+    
+    return new Response(JSON.stringify({
+      success: true,
+      connection: 'success',
+      message: 'OpenAI API connection working',
+      modelsAvailable: models.data?.length || 0,
+      requestId
+    }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+  } catch (error) {
+    console.error(`❌ [${requestId}] OpenAI connection failed:`, error.message);
+    throw new Error(`OpenAI connection failed: ${error.message}`);
+  }
+}
+
+async function listAssistants(requestId: string) {
+  console.log(`📋 [${requestId}] Listing existing assistants via OpenAI SDK...`);
+  
+  try {
+    const openai = await initOpenAI(requestId);
+    const assistants = await openai.beta.assistants.list({ limit: 20 });
+    
+    console.log(`✅ [${requestId}] Found ${assistants.data?.length || 0} assistants`);
 
     return new Response(JSON.stringify({
       success: true,
-      assistants: (data.data || []).map((assistant: any) => ({
+      assistants: (assistants.data || []).map((assistant: any) => ({
         id: assistant.id,
         name: assistant.name,
         model: assistant.model,
@@ -156,11 +157,11 @@ async function listAssistants(requestId: string) {
 }
 
 async function createAssistant(requestId: string) {
-  console.log(`🤖 [${requestId}] Creating new OpenAI assistant via HTTP...`);
+  console.log(`🤖 [${requestId}] Creating new OpenAI assistant via SDK...`);
   
   const assistantConfig = {
     name: "Tiptop Property Monetization Assistant",
-    model: "gpt-4o-mini", // Using a stable model
+    model: "gpt-4.1-2025-04-14", // Updated to latest recommended model
     instructions: `You are Tiptop's AI property monetization assistant. Your role is to help users discover and set up income-generating opportunities from their properties.
 
 CORE CAPABILITIES:
@@ -304,7 +305,8 @@ IMPORTANT:
   };
   
   try {
-    const assistant = await makeOpenAIRequest(requestId, '/assistants', 'POST', assistantConfig);
+    const openai = await initOpenAI(requestId);
+    const assistant = await openai.beta.assistants.create(assistantConfig);
 
     console.log(`✅ [${requestId}] Assistant created:`, {
       id: assistant.id,
@@ -322,12 +324,32 @@ IMPORTANT:
         tools: assistant.tools
       },
       message: "Assistant created successfully! Please update your Supabase secrets with this Assistant ID.",
+      nextSteps: [
+        "1. Copy the assistant ID above",
+        "2. Go to your Supabase dashboard > Settings > Edge Functions",
+        "3. Update OPENAI_ASSISTANT_ID secret with this ID",
+        "4. Test the assistant connection"
+      ],
       requestId
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
   } catch (error) {
-    console.error(`❌ [${requestId}] Create assistant failed:`, error.message);
+    console.error(`❌ [${requestId}] Create assistant failed:`, {
+      message: error.message,
+      status: error.status,
+      code: error.code
+    });
+    
+    // Provide specific error messages for common issues
+    if (error.status === 401) {
+      throw new Error('OpenAI API key is invalid or missing permissions for Assistant API');
+    } else if (error.status === 429) {
+      throw new Error('Rate limit exceeded. Please try again in a moment.');
+    } else if (error.message.includes('insufficient_quota')) {
+      throw new Error('Insufficient quota. Please check your OpenAI billing and ensure you have credits for Assistant API usage.');
+    }
+    
     throw error;
   }
 }
