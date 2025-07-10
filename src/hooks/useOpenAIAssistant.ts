@@ -22,6 +22,7 @@ interface UserContext {
 
 type AssistantState = 
   | 'idle'
+  | 'testing_connection'
   | 'loading_context'
   | 'initializing'
   | 'ready'
@@ -53,7 +54,7 @@ export const useOpenAIAssistant = (propertyData: PropertyAnalysisData | null) =>
   const maxRetries = 3;
 
   // Computed states
-  const isLoading = state === 'loading_context' || state === 'initializing';
+  const isLoading = state === 'testing_connection' || state === 'loading_context' || state === 'initializing';
   const isProcessing = state === 'chatting';
   const isReady = state === 'ready';
   const isInitialized = assistantId !== null && threadId !== null;
@@ -137,6 +138,33 @@ export const useOpenAIAssistant = (propertyData: PropertyAnalysisData | null) =>
     }
   }, [user?.id, propertyData]);
 
+  // Test basic OpenAI connectivity
+  const testOpenAIConnection = useCallback(async () => {
+    console.log('🔧 [ASSISTANT] Testing OpenAI connection...');
+    
+    try {
+      const { data: connectionTest, error: connectionError } = await supabase.functions.invoke('openai-assistant-manager', {
+        body: { action: 'test_connection' }
+      });
+
+      if (connectionError) {
+        console.error('❌ [ASSISTANT] Connection test failed:', connectionError);
+        throw new Error(`Connection test failed: ${connectionError.message}`);
+      }
+
+      if (!connectionTest.success) {
+        console.error('❌ [ASSISTANT] Connection test failed:', connectionTest);
+        throw new Error(`OpenAI connection failed: ${connectionTest.error}`);
+      }
+
+      console.log('✅ [ASSISTANT] OpenAI connection successful');
+      return true;
+    } catch (error: any) {
+      console.error('❌ [ASSISTANT] OpenAI connection test failed:', error);
+      throw error;
+    }
+  }, []);
+
   // FIXED: Assistant initialization with race condition prevention
   const initializeAssistant = useCallback(async () => {
     // Prevent multiple simultaneous initializations
@@ -160,14 +188,16 @@ export const useOpenAIAssistant = (propertyData: PropertyAnalysisData | null) =>
     abortControllerRef.current = new AbortController();
 
     try {
-      setState('loading_context');
+      setState('testing_connection');
       setError(null);
       
-      // Step 1: Test setup
+      // Step 1: Test basic OpenAI connectivity
+      await testOpenAIConnection();
+
+      // Step 2: Test setup
       console.log('🔧 [ASSISTANT] Testing setup...');
       const { data: setupTest, error: setupError } = await supabase.functions.invoke('openai-assistant-manager', {
-        body: { action: 'test_assistant_setup' },
-        signal: abortControllerRef.current.signal
+        body: { action: 'test_assistant_setup' }
       });
 
       if (setupError) {
@@ -187,16 +217,16 @@ export const useOpenAIAssistant = (propertyData: PropertyAnalysisData | null) =>
 
       console.log('✅ [ASSISTANT] Setup tests passed');
 
-      // Step 2: Load context
+      // Step 3: Load context
+      setState('loading_context');
       const context = await loadUserContext();
 
-      // Step 3: Get assistant
+      // Step 4: Get assistant
       setState('initializing');
       
       console.log('🤖 [ASSISTANT] Getting assistant...');
       const { data: assistantData, error: assistantError } = await supabase.functions.invoke('openai-assistant-manager', {
-        body: { action: 'get_assistant' },
-        signal: abortControllerRef.current.signal
+        body: { action: 'get_assistant' }
       });
 
       if (assistantError) {
@@ -212,7 +242,7 @@ export const useOpenAIAssistant = (propertyData: PropertyAnalysisData | null) =>
       const newAssistantId = assistantData.assistant.id;
       console.log('✅ [ASSISTANT] Got assistant:', newAssistantId);
 
-      // Step 4: Create thread (NO assistant_id per OpenAI workflow)
+      // Step 5: Create thread
       const threadMetadata = {
         userId: user?.id || 'anonymous',
         propertyAddress: context.propertyData?.address || 'not_provided',
@@ -232,8 +262,7 @@ export const useOpenAIAssistant = (propertyData: PropertyAnalysisData | null) =>
         body: {
           action: 'create_thread',
           data: { metadata: threadMetadata }
-        },
-        signal: abortControllerRef.current.signal
+        }
       });
 
       if (threadError) {
@@ -249,7 +278,7 @@ export const useOpenAIAssistant = (propertyData: PropertyAnalysisData | null) =>
       const newThreadId = threadData.thread.id;
       console.log('✅ [ASSISTANT] Thread created:', newThreadId);
 
-      // Step 5: Set state and show welcome
+      // Step 6: Set state and show welcome
       setAssistantId(newAssistantId);
       setThreadId(newThreadId);
       setState('ready');
@@ -287,7 +316,9 @@ export const useOpenAIAssistant = (propertyData: PropertyAnalysisData | null) =>
       // Enhanced error messaging
       let errorMessage = error.message || 'Failed to initialize assistant';
       
-      if (errorMessage.includes('Service issues')) {
+      if (errorMessage.includes('Connection test failed')) {
+        errorMessage += '\n\nThis usually means:\n• OpenAI API key is missing or invalid\n• Network connectivity issues\n• OpenAI service temporarily unavailable';
+      } else if (errorMessage.includes('Service issues')) {
         errorMessage += '\n\nThis usually means:\n• OpenAI API key is missing\n• Assistant ID not configured\n• Service temporarily unavailable';
       } else if (errorMessage.includes('Thread creation failed')) {
         errorMessage += '\n\nPlease check your network connection and try again.';
@@ -297,7 +328,7 @@ export const useOpenAIAssistant = (propertyData: PropertyAnalysisData | null) =>
     } finally {
       initializationRef.current = false;
     }
-  }, [user?.id, loadUserContext, state]);
+  }, [user?.id, loadUserContext, state, testOpenAIConnection]);
 
   const generateWelcomeMessage = useCallback((context: UserContext) => {
     if (!context.propertyData) {

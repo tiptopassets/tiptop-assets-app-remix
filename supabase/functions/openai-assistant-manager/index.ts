@@ -74,6 +74,9 @@ serve(async (req) => {
     let result;
     try {
       switch (action) {
+        case 'test_connection':
+          result = await Promise.race([testOpenAIConnection(requestId), actionTimeout]);
+          break;
         case 'test_assistant_setup':
           result = await Promise.race([testAssistantSetup(supabase, requestId), actionTimeout]);
           break;
@@ -202,7 +205,9 @@ async function openAIRequest(endpoint: string, options: any, requestId: string) 
 
     console.log(`🤖 [${requestId}] Request URL: ${url}`);
     console.log(`🤖 [${requestId}] Request method: ${requestOptions.method}`);
-    console.log(`🤖 [${requestId}] Request body:`, requestOptions.body);
+    if (requestOptions.body) {
+      console.log(`🤖 [${requestId}] Request body:`, requestOptions.body);
+    }
 
     const response = await fetch(url, requestOptions);
 
@@ -237,6 +242,26 @@ async function openAIRequest(endpoint: string, options: any, requestId: string) 
       stack: error.stack
     });
     throw error;
+  }
+}
+
+// NEW: Test basic OpenAI connection
+async function testOpenAIConnection(requestId: string) {
+  console.log(`🔧 [${requestId}] Testing basic OpenAI connection...`);
+  
+  try {
+    // Test with a simple models endpoint call
+    const models = await openAIRequest('models', { method: 'GET' }, requestId);
+    console.log(`✅ [${requestId}] OpenAI connection successful, found ${models.data?.length || 0} models`);
+    
+    return successResponse({
+      connection: 'success',
+      message: 'OpenAI API connection working',
+      modelsAvailable: models.data?.length || 0
+    }, requestId);
+  } catch (error) {
+    console.error(`❌ [${requestId}] OpenAI connection failed:`, error.message);
+    return errorResponse(`OpenAI connection failed: ${error.message}`, 500, requestId);
   }
 }
 
@@ -475,7 +500,6 @@ async function sendMessage(data: any, supabase: any, requestId: string) {
   }
 }
 
-// STEP 3: Create Run (OpenAI official workflow)
 async function runAssistant(data: any, requestId: string) {
   const { threadId, assistantId } = data;
   const actualAssistantId = assistantId || OPENAI_ASSISTANT_ID;
@@ -513,7 +537,6 @@ async function runAssistant(data: any, requestId: string) {
   }
 }
 
-// STEP 4: Poll Run Status
 async function getRunStatus(data: any, requestId: string) {
   const { threadId, runId } = data;
 
