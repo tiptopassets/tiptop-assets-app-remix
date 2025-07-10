@@ -16,7 +16,8 @@ const SelectedAssetsCarousel: React.FC<SelectedAssetsCarouselProps> = ({
   onAssetSelect,
   isLoading = false
 }) => {
-  if (!propertyData || !propertyData.selectedAssets || propertyData.selectedAssets.length === 0) {
+  // Check if we have selected assets to display
+  if (!propertyData?.selectedAssets || propertyData.selectedAssets.length === 0) {
     return null;
   }
 

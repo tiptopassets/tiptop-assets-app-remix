@@ -22,6 +22,7 @@ export interface PropertyAnalysisData {
   totalMonthlyRevenue: number;
   totalOpportunities: number;
   availableAssets: AssetInfo[];
+  selectedAssets?: string[]; // Add selectedAssets property
   analysisResults: any;
 }
 
