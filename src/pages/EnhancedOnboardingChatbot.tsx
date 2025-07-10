@@ -186,8 +186,8 @@ const EnhancedOnboardingChatbot = () => {
     setMessageCount(prev => prev + 1);
   };
 
-  // Loading state - wait for auth and at least one data source to finish loading
-  const isLoading = authLoading || (propertyLoading && journeyLoading) || (propertyLoading && !journeyData && !propertyData);
+  // Loading state - keep loading until auth is done AND we have at least one data source
+  const isLoading = authLoading || (!unifiedPropertyData && (propertyLoading || journeyLoading));
   
   console.log('🔄 [CHATBOT] Loading state check:', {
     authLoading,
@@ -198,7 +198,8 @@ const EnhancedOnboardingChatbot = () => {
     hasPropertyData: !!propertyData,
     hasUnifiedData: !!unifiedPropertyData,
     isLoading,
-    user: !!user
+    user: !!user,
+    loadingReason: authLoading ? 'auth' : (!unifiedPropertyData && (propertyLoading || journeyLoading)) ? 'data' : 'none'
   });
 
   if (isLoading) {
