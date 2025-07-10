@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { getRecentAnalysisId, autoRecoverUserData } from '@/services/dataRecoveryService';
+import { safeAssetName, safeAssetType } from '@/utils/safeAssetUtils';
 
 export interface AssetInfo {
   type: string;
@@ -113,16 +114,16 @@ export const useUserPropertyAnalysis = (targetAnalysisId?: string) => {
           const topOpportunities = (analysisResults as any).topOpportunities;
           if (Array.isArray(topOpportunities)) {
             for (const opportunity of topOpportunities) {
-              // Ensure opportunity.title exists and is a string
-              const title = opportunity.title || 'Unknown Asset';
-              const titleLower = typeof title === 'string' ? title.toLowerCase() : 'unknown_asset';
+              // Use safe utility functions to prevent errors
+              const safeName = safeAssetName(opportunity.title);
+              const safeType = safeAssetType(opportunity.title);
               
               availableAssets.push({
-                type: titleLower.replace(/\s+/g, '_'),
-                name: title,
+                type: safeType,
+                name: safeName,
                 monthlyRevenue: opportunity.monthlyRevenue || 0,
                 setupCost: opportunity.setupCost || 0,
-                description: opportunity.description || `Monetize your ${titleLower}`,
+                description: opportunity.description || `Monetize your ${safeName.toLowerCase()}`,
                 hasRevenuePotential: (opportunity.monthlyRevenue || 0) > 0,
                 isConfigured: false
               });

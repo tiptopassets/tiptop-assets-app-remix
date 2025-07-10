@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { DollarSign } from 'lucide-react';
 import { PropertyAnalysisData } from '@/hooks/useUserPropertyAnalysis';
+import { generateAssetSetupMessage } from '@/utils/safeAssetUtils';
 
 interface SelectedAssetsCarouselProps {
   propertyData: PropertyAnalysisData | null;
@@ -26,7 +27,7 @@ const SelectedAssetsCarousel: React.FC<SelectedAssetsCarouselProps> = ({
     
     const asset = propertyData.availableAssets.find(a => a.type === assetType);
     if (asset && asset.name) {
-      onAssetSelect(`Set up my ${asset.name?.toLowerCase() || 'asset'}`);
+      onAssetSelect(generateAssetSetupMessage(asset.name));
     }
   };
 
@@ -48,7 +49,7 @@ const SelectedAssetsCarousel: React.FC<SelectedAssetsCarouselProps> = ({
                 disabled={isLoading}
                 className="whitespace-nowrap rounded-full bg-white hover:bg-gray-100 border-gray-300 text-gray-700 hover:text-gray-900 transition-colors flex-shrink-0"
               >
-                <span className="text-sm">Set up my {asset.name?.toLowerCase() || 'asset'}</span>
+                <span className="text-sm">{generateAssetSetupMessage(asset.name)}</span>
                 <Badge variant="secondary" className="ml-2 text-xs bg-green-100 text-green-700 border-green-200">
                   <DollarSign className="w-3 h-3 mr-1" />
                   ${asset.monthlyRevenue}/mo
