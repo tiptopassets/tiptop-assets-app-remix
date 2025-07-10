@@ -103,7 +103,8 @@ const EnhancedOnboardingChatbot = () => {
         
         // Auto-start the conversation with the target asset
         setTimeout(() => {
-          sendInitialMessage(`I want to manage my ${assetInfo.name.toLowerCase()} setup. Can you help me with the current configuration and next steps?`);
+          const assetName = assetInfo.name?.toLowerCase() || 'asset';
+          sendInitialMessage(`I want to manage my ${assetName} setup. Can you help me with the current configuration and next steps?`);
         }, 1000);
         
         toast({

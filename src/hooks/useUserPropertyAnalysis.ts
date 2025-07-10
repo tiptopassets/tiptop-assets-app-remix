@@ -113,16 +113,34 @@ export const useUserPropertyAnalysis = (targetAnalysisId?: string) => {
           const topOpportunities = (analysisResults as any).topOpportunities;
           if (Array.isArray(topOpportunities)) {
             for (const opportunity of topOpportunities) {
+              // Ensure opportunity.title exists and is a string
+              const title = opportunity.title || 'Unknown Asset';
+              const titleLower = typeof title === 'string' ? title.toLowerCase() : 'unknown_asset';
+              
               availableAssets.push({
-                type: opportunity.title.toLowerCase().replace(/\s+/g, '_'),
-                name: opportunity.title,
+                type: titleLower.replace(/\s+/g, '_'),
+                name: title,
                 monthlyRevenue: opportunity.monthlyRevenue || 0,
                 setupCost: opportunity.setupCost || 0,
-                description: opportunity.description || `Monetize your ${opportunity.title.toLowerCase()}`,
+                description: opportunity.description || `Monetize your ${titleLower}`,
                 hasRevenuePotential: (opportunity.monthlyRevenue || 0) > 0,
                 isConfigured: false
               });
             }
+          }
+        }
+
+        // Fetch user asset selections to populate selectedAssets
+        let selectedAssets: string[] = [];
+        if (user?.id) {
+          const { data: assetSelections } = await supabase
+            .from('user_asset_selections')
+            .select('asset_type')
+            .eq('user_id', user.id)
+            .eq('analysis_id', analysisId);
+          
+          if (assetSelections) {
+            selectedAssets = assetSelections.map(selection => selection.asset_type);
           }
         }
 
@@ -139,6 +157,7 @@ export const useUserPropertyAnalysis = (targetAnalysisId?: string) => {
           totalMonthlyRevenue: analysisData.total_monthly_revenue || 0,
           totalOpportunities: analysisData.total_opportunities || 0,
           availableAssets,
+          selectedAssets,
           analysisResults
         };
 
