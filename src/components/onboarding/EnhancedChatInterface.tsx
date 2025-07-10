@@ -457,15 +457,6 @@ const EnhancedChatInterface = ({
 
       {/* Enhanced Input Area */}
       <div className="border-t border-gray-200 bg-white p-4">
-        {/* Asset Partner Carousel - above input */}
-        {propertyData?.selectedAssets && propertyData.selectedAssets.length > 0 && (
-          <AssetPartnerCarousel 
-            selectedAssets={propertyData.selectedAssets}
-            onPartnerClick={(platformId, assetType) => {
-              console.log('🎯 Partner clicked:', { platformId, assetType });
-            }}
-          />
-        )}
         <div className="flex space-x-2">
           <Input
             value={inputMessage}
@@ -488,7 +479,7 @@ const EnhancedChatInterface = ({
           </Button>
         </div>
         
-        {/* Quick suggestions */}
+        {/* Quick suggestions and partner bubbles */}
         {showSuggestions && messages.length === 0 && !isLoading && (
           <div className="mt-3 flex flex-wrap gap-2">
             {quickStartSuggestions.map((suggestion, index) => (
@@ -503,6 +494,65 @@ const EnhancedChatInterface = ({
                 {suggestion}
               </Button>
             ))}
+            
+            {/* Partner bubbles for selected assets */}
+            {propertyData?.selectedAssets && propertyData.selectedAssets.map((selection, selectionIndex) => {
+              const assetType = selection.asset_type;
+              const getAssetDisplayName = (type: string): string => {
+                const cleanType = type?.toLowerCase?.() || 'asset';
+                const displayNames: Record<string, string> = {
+                  'internet': 'Internet Bandwidth Sharing',
+                  'bandwidth': 'Internet Bandwidth Sharing',
+                  'wifi': 'Internet Bandwidth Sharing',
+                  'pool': 'Swimming Pool',
+                  'swimming_pool': 'Swimming Pool',
+                  'parking': 'Parking Space',
+                  'driveway': 'Parking Space', 
+                  'storage': 'Storage Space',
+                  'garage': 'Storage Space',
+                  'basement': 'Storage Space'
+                };
+                return displayNames[cleanType] || cleanType.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
+              };
+              
+              const getPartnersForAsset = (type: string) => {
+                const cleanType = type?.toLowerCase?.() || 'asset';
+                let platforms = PartnerIntegrationService.getPlatformsByAsset(cleanType);
+                
+                // Special handling for parking - show both SpotHero and Neighbor, prioritize Neighbor
+                if (cleanType.includes('parking') || cleanType.includes('driveway')) {
+                  const neighbor = PartnerIntegrationService.getPlatformById('neighbor');
+                  const spothero = PartnerIntegrationService.getPlatformById('spothero');
+                  
+                  if (neighbor && spothero) {
+                    return [
+                      { ...neighbor, priority: 1 },
+                      { ...spothero, priority: 2 }
+                    ].sort((a, b) => (a.priority || 999) - (b.priority || 999));
+                  }
+                }
+                
+                return platforms;
+              };
+              
+              const displayName = getAssetDisplayName(assetType);
+              const partners = getPartnersForAsset(assetType);
+              
+              return partners.map((partner, partnerIndex) => (
+                <Button
+                  key={`partner-${selectionIndex}-${partnerIndex}`}
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleSuggestedAction(`Set up my ${displayName.toLowerCase()} with ${partner.name}`)}
+                  disabled={isLoading}
+                  className="text-xs bg-primary/5 border-primary/30 hover:bg-primary/10"
+                >
+                  <span className="mr-1">{displayName}</span>
+                  <span className="text-primary font-medium">{partner.name}</span>
+                  {partner.priority === 1 && <span className="ml-1">⭐</span>}
+                </Button>
+              ));
+            })}
           </div>
         )}
         
