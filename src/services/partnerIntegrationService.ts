@@ -85,6 +85,30 @@ export class PartnerIntegrationService {
       description: 'Rent your pool for parties, events, and relaxation'
     },
     {
+      id: 'neighbor-parking',
+      name: 'Neighbor.com',
+      referralLink: 'http://www.neighbor.com/invited/eduardo-944857?program_version=1',
+      assetTypes: ['parking', 'driveway'],
+      requirements: [
+        'Available parking space (driveway, garage, or lot)',
+        'Clear, unobstructed access',
+        'Safe and well-lit area',
+        'Consistent availability',
+        'Clear parking instructions'
+      ],
+      setupSteps: [
+        'Sign up using our referral link',
+        'List your parking space with photos',
+        'Set availability schedule and pricing',
+        'Complete host verification',
+        'Start earning from your parking space'
+      ],
+      earningRange: { min: 100, max: 300 },
+      setupTime: '1-2 hours',
+      description: 'Rent out parking spaces and earn consistent income',
+      priority: 1
+    },
+    {
       id: 'spothero',
       name: 'SpotHero',
       referralLink: 'https://spothero.com/developers',
@@ -105,7 +129,8 @@ export class PartnerIntegrationService {
       ],
       earningRange: { min: 150, max: 400 },
       setupTime: '1-2 hours',
-      description: 'Rent out parking spaces in your driveway or property'
+      description: 'Rent out parking spaces in your driveway or property',
+      priority: 2
     },
     {
       id: 'neighbor',
@@ -128,7 +153,8 @@ export class PartnerIntegrationService {
       ],
       earningRange: { min: 50, max: 300 },
       setupTime: '1-2 hours',
-      description: 'Rent out extra storage space to neighbors'
+      description: 'Rent out extra storage space to neighbors',
+      priority: 1
     },
     {
       id: 'peerspace',
