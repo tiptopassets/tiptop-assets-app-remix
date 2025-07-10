@@ -1,21 +1,84 @@
-import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.4';
+
+const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
-const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
-const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+// Validate OpenAI API Key
+function validateApiKey(requestId: string): boolean {
+  console.log(`🔑 [${requestId}] Validating OpenAI API Key...`);
+  
+  if (!OPENAI_API_KEY) {
+    console.error(`❌ [${requestId}] OPENAI_API_KEY environment variable is not set`);
+    return false;
+  }
+  
+  if (!OPENAI_API_KEY.startsWith('sk-')) {
+    console.error(`❌ [${requestId}] Invalid API key format - should start with 'sk-'`);
+    return false;
+  }
+  
+  if (OPENAI_API_KEY.length < 50) {
+    console.error(`❌ [${requestId}] API key appears too short (${OPENAI_API_KEY.length} chars)`);
+    return false;
+  }
+  
+  console.log(`✅ [${requestId}] API key validation passed`);
+  return true;
+}
 
-console.log('🚀 [ASSISTANT-CREATOR] Environment check:', {
-  hasOpenAIKey: !!OPENAI_API_KEY,
-  hasSupabaseUrl: !!SUPABASE_URL,
-  hasServiceRole: !!SUPABASE_SERVICE_ROLE_KEY
-});
+// Make HTTP request to OpenAI API
+async function makeOpenAIRequest(requestId: string, endpoint: string, method: string = 'GET', body?: any) {
+  const url = `https://api.openai.com/v1${endpoint}`;
+  
+  console.log(`🌐 [${requestId}] Making ${method} request to: ${url}`);
+  
+  const requestOptions: RequestInit = {
+    method,
+    headers: {
+      'Authorization': `Bearer ${OPENAI_API_KEY}`,
+      'Content-Type': 'application/json',
+      'User-Agent': 'Tiptop-Assistant-Manager/1.0'
+    }
+  };
+  
+  if (body && method !== 'GET') {
+    requestOptions.body = JSON.stringify(body);
+    console.log(`📤 [${requestId}] Request body:`, JSON.stringify(body, null, 2));
+  }
+  
+  try {
+    const response = await fetch(url, requestOptions);
+    console.log(`📡 [${requestId}] Response status: ${response.status} ${response.statusText}`);
+    
+    const responseText = await response.text();
+    console.log(`📥 [${requestId}] Raw response length: ${responseText.length} chars`);
+    
+    if (!response.ok) {
+      console.error(`❌ [${requestId}] OpenAI API error:`, {
+        status: response.status,
+        statusText: response.statusText,
+        body: responseText
+      });
+      throw new Error(`OpenAI API error: ${response.status} ${response.statusText} - ${responseText}`);
+    }
+    
+    const data = JSON.parse(responseText);
+    console.log(`✅ [${requestId}] Successfully parsed response`);
+    return data;
+    
+  } catch (error) {
+    console.error(`❌ [${requestId}] HTTP request failed:`, {
+      name: error.name,
+      message: error.message,
+      stack: error.stack
+    });
+    throw error;
+  }
+}
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -26,8 +89,9 @@ serve(async (req) => {
   console.log(`🔄 [${requestId}] ${req.method} ${req.url}`);
 
   try {
-    if (!OPENAI_API_KEY) {
-      throw new Error('OpenAI API key not configured');
+    // Validate API key first
+    if (!validateApiKey(requestId)) {
+      throw new Error('Invalid or missing OpenAI API key');
     }
 
     // Parse request body
@@ -65,32 +129,16 @@ serve(async (req) => {
 });
 
 async function listAssistants(requestId: string) {
-  console.log(`📋 [${requestId}] Listing existing assistants...`);
-  console.log(`📋 [${requestId}] OpenAI API Key exists: ${!!OPENAI_API_KEY}`);
-  console.log(`📋 [${requestId}] OpenAI API Key length: ${OPENAI_API_KEY?.length || 0}`);
+  console.log(`📋 [${requestId}] Listing existing assistants via HTTP...`);
   
   try {
-    console.log(`📋 [${requestId}] Importing OpenAI SDK...`);
-    const OpenAI = (await import('https://deno.land/x/openai@v4.24.0/mod.ts')).default;
-    console.log(`📋 [${requestId}] OpenAI SDK imported successfully`);
+    const data = await makeOpenAIRequest(requestId, '/assistants?limit=20');
     
-    console.log(`📋 [${requestId}] Creating OpenAI client...`);
-    const openai = new OpenAI({
-      apiKey: OPENAI_API_KEY
-    });
-    console.log(`📋 [${requestId}] OpenAI client created`);
-
-    console.log(`📋 [${requestId}] Making API call to list assistants...`);
-    const assistants = await openai.beta.assistants.list({
-      limit: 20
-    });
-    console.log(`📋 [${requestId}] API call successful`);
-
-    console.log(`✅ [${requestId}] Found ${assistants.data.length} assistants`);
+    console.log(`✅ [${requestId}] Found ${data.data?.length || 0} assistants`);
 
     return new Response(JSON.stringify({
       success: true,
-      assistants: assistants.data.map(assistant => ({
+      assistants: (data.data || []).map((assistant: any) => ({
         id: assistant.id,
         name: assistant.name,
         model: assistant.model,
@@ -102,31 +150,18 @@ async function listAssistants(requestId: string) {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
   } catch (error) {
-    console.error(`❌ [${requestId}] List assistants failed:`, error);
-    console.error(`❌ [${requestId}] Error details:`, {
-      name: error.name,
-      message: error.message,
-      stack: error.stack
-    });
+    console.error(`❌ [${requestId}] List assistants failed:`, error.message);
     throw error;
   }
 }
 
 async function createAssistant(requestId: string) {
-  console.log(`🤖 [${requestId}] Creating new OpenAI assistant...`);
-  console.log(`🤖 [${requestId}] OpenAI API Key exists: ${!!OPENAI_API_KEY}`);
-  console.log(`🤖 [${requestId}] OpenAI API Key starts with: ${OPENAI_API_KEY?.substring(0, 7)}...`);
+  console.log(`🤖 [${requestId}] Creating new OpenAI assistant via HTTP...`);
   
-  try {
-    const OpenAI = (await import('https://deno.land/x/openai@v4.24.0/mod.ts')).default;
-    const openai = new OpenAI({
-      apiKey: OPENAI_API_KEY
-    });
-
-    const assistant = await openai.beta.assistants.create({
-      name: "Tiptop Property Monetization Assistant",
-      model: "gpt-4.1-2025-04-14",
-      instructions: `You are Tiptop's AI property monetization assistant. Your role is to help users discover and set up income-generating opportunities from their properties.
+  const assistantConfig = {
+    name: "Tiptop Property Monetization Assistant",
+    model: "gpt-4o-mini", // Using a stable model
+    instructions: `You are Tiptop's AI property monetization assistant. Your role is to help users discover and set up income-generating opportunities from their properties.
 
 CORE CAPABILITIES:
 - Analyze property data and identify revenue opportunities
@@ -155,118 +190,121 @@ IMPORTANT:
 - Include realistic earnings estimates when possible
 - Prioritize opportunities based on user's property features
 - Connect recommendations to actual service providers in our database`,
-      tools: [
-        {
-          type: "function",
-          function: {
-            name: "get_property_analysis",
-            description: "Retrieve property analysis data for a user",
-            parameters: {
-              type: "object",
-              properties: {
-                analysisId: {
-                  type: "string",
-                  description: "The analysis ID to retrieve"
-                },
-                address: {
-                  type: "string",
-                  description: "Property address to search for"
-                }
-              }
-            }
-          }
-        },
-        {
-          type: "function",
-          function: {
-            name: "get_service_providers",
-            description: "Get available service providers for specific asset types",
-            parameters: {
-              type: "object",
-              properties: {
-                assetTypes: {
-                  type: "array",
-                  items: { type: "string" },
-                  description: "Array of asset types to find providers for"
-                }
-              }
-            }
-          }
-        },
-        {
-          type: "function",
-          function: {
-            name: "get_user_preferences",
-            description: "Get user preferences and onboarding data",
-            parameters: {
-              type: "object",
-              properties: {
-                userId: {
-                  type: "string",
-                  description: "User ID to get preferences for"
-                }
-              }
-            }
-          }
-        },
-        {
-          type: "function",
-          function: {
-            name: "create_recommendation",
-            description: "Create a monetization recommendation for the user",
-            parameters: {
-              type: "object",
-              properties: {
-                assetType: {
-                  type: "string",
-                  description: "Type of asset being recommended"
-                },
-                recommendation: {
-                  type: "string",
-                  description: "Detailed recommendation text"
-                },
-                estimatedEarnings: {
-                  type: "number",
-                  description: "Estimated monthly earnings"
-                },
-                nextSteps: {
-                  type: "array",
-                  items: { type: "string" },
-                  description: "Specific next steps for the user"
-                },
-                partnersRecommended: {
-                  type: "array",
-                  items: { type: "string" },
-                  description: "Recommended partner service providers"
-                }
+    tools: [
+      {
+        type: "function",
+        function: {
+          name: "get_property_analysis",
+          description: "Retrieve property analysis data for a user",
+          parameters: {
+            type: "object",
+            properties: {
+              analysisId: {
+                type: "string",
+                description: "The analysis ID to retrieve"
               },
-              required: ["assetType", "recommendation"]
-            }
-          }
-        },
-        {
-          type: "function",
-          function: {
-            name: "update_user_progress",
-            description: "Update user's onboarding progress",
-            parameters: {
-              type: "object",
-              properties: {
-                step: {
-                  type: "number",
-                  description: "Current step number"
-                },
-                progressData: {
-                  type: "object",
-                  description: "Progress data to save"
-                }
-              },
-              required: ["step"]
+              address: {
+                type: "string",
+                description: "Property address to search for"
+              }
             }
           }
         }
-      ]
-    });
+      },
+      {
+        type: "function",
+        function: {
+          name: "get_service_providers",
+          description: "Get available service providers for specific asset types",
+          parameters: {
+            type: "object",
+            properties: {
+              assetTypes: {
+                type: "array",
+                items: { type: "string" },
+                description: "Array of asset types to find providers for"
+              }
+            }
+          }
+        }
+      },
+      {
+        type: "function",
+        function: {
+          name: "get_user_preferences",
+          description: "Get user preferences and onboarding data",
+          parameters: {
+            type: "object",
+            properties: {
+              userId: {
+                type: "string",
+                description: "User ID to get preferences for"
+              }
+            }
+          }
+        }
+      },
+      {
+        type: "function",
+        function: {
+          name: "create_recommendation",
+          description: "Create a monetization recommendation for the user",
+          parameters: {
+            type: "object",
+            properties: {
+              assetType: {
+                type: "string",
+                description: "Type of asset being recommended"
+              },
+              recommendation: {
+                type: "string",
+                description: "Detailed recommendation text"
+              },
+              estimatedEarnings: {
+                type: "number",
+                description: "Estimated monthly earnings"
+              },
+              nextSteps: {
+                type: "array",
+                items: { type: "string" },
+                description: "Specific next steps for the user"
+              },
+              partnersRecommended: {
+                type: "array",
+                items: { type: "string" },
+                description: "Recommended partner service providers"
+              }
+            },
+            required: ["assetType", "recommendation"]
+          }
+        }
+      },
+      {
+        type: "function",
+        function: {
+          name: "update_user_progress",
+          description: "Update user's onboarding progress",
+          parameters: {
+            type: "object",
+            properties: {
+              step: {
+                type: "number",
+                description: "Current step number"
+              },
+              progressData: {
+                type: "object",
+                description: "Progress data to save"
+              }
+            },
+            required: ["step"]
+          }
+        }
+      }
+    ]
+  };
+  
+  try {
+    const assistant = await makeOpenAIRequest(requestId, '/assistants', 'POST', assistantConfig);
 
     console.log(`✅ [${requestId}] Assistant created:`, {
       id: assistant.id,
@@ -296,9 +334,6 @@ IMPORTANT:
 
 async function updateAssistantId(assistantId: string, requestId: string) {
   console.log(`💾 [${requestId}] Would update assistant ID to: ${assistantId}`);
-  
-  // Note: We can't directly update Supabase secrets from Edge Functions
-  // This would need to be done manually in the Supabase dashboard
   
   return new Response(JSON.stringify({
     success: true,
