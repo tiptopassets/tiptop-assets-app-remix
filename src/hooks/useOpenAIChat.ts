@@ -42,7 +42,14 @@ export const useOpenAIChat = (): UseOpenAIChatReturn => {
   };
 
   const sendMessage = async (message: string) => {
-    if (!message.trim()) return;
+    // Validate input is a string and not empty
+    if (typeof message !== 'string') {
+      console.error('Message must be a string');
+      return;
+    }
+    
+    const trimmedMessage = message.trim();
+    if (!trimmedMessage) return;
 
     setIsLoading(true);
     setError(null);
@@ -52,7 +59,7 @@ export const useOpenAIChat = (): UseOpenAIChatReturn => {
       const userMessage: Message = {
         id: Date.now().toString(),
         role: 'user',
-        content: message.trim(),
+        content: trimmedMessage,
         timestamp: new Date(),
       };
       setMessages(prev => [...prev, userMessage]);
@@ -64,7 +71,7 @@ export const useOpenAIChat = (): UseOpenAIChatReturn => {
       const { data, error } = await supabase.functions.invoke('openai-chat', {
         body: { 
           action: 'send_message', 
-          message: message.trim(),
+          message: trimmedMessage,
           threadId: currentThreadId
         }
       });
