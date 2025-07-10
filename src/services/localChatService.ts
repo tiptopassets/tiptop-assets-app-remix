@@ -1,3 +1,4 @@
+
 import { PropertyAnalysisData } from '@/hooks/useUserPropertyAnalysis';
 import { PartnerIntegrationService } from './partnerIntegrationService';
 
@@ -54,7 +55,7 @@ export class LocalChatService {
   constructor(propertyData: PropertyAnalysisData | null) {
     this.context = {
       propertyData,
-      detectedAssets: propertyData?.availableAssets.map(a => a.type) || [],
+      detectedAssets: propertyData?.availableAssets?.map(a => a.type) || [],
       currentStage: 'greeting',
       userGoals: [],
       completedSetups: []
@@ -173,6 +174,10 @@ export class LocalChatService {
   }
 
   async processMessage(userMessage: string): Promise<string> {
+    if (!userMessage || typeof userMessage !== 'string') {
+      return "I didn't receive a valid message. Could you please try again?";
+    }
+
     // Add user message to history
     this.addMessage('user', userMessage);
 
@@ -197,6 +202,10 @@ export class LocalChatService {
   }
 
   private detectAssetFromMessage(message: string): string | null {
+    if (!message || typeof message !== 'string') {
+      return null;
+    }
+
     const lowerMessage = message.toLowerCase();
     
     if (lowerMessage.includes('internet') || lowerMessage.includes('bandwidth') || lowerMessage.includes('wifi')) return 'internet';
@@ -209,6 +218,10 @@ export class LocalChatService {
   }
 
   private async generatePartnerOptionsResponse(assetType: string): Promise<string> {
+    if (!assetType || typeof assetType !== 'string') {
+      return "I couldn't identify the asset type. Could you please be more specific?";
+    }
+
     this.context.currentStage = `${assetType}_partner_selection`;
     
     // Get available partners for this asset type
@@ -251,6 +264,10 @@ Click on any partner below to get started with step-by-step setup instructions a
   }
 
   private getAssetDisplayName(assetType: string): string {
+    if (!assetType || typeof assetType !== 'string') {
+      return 'Asset';
+    }
+
     const displayNames: Record<string, string> = {
       'internet': 'Internet Bandwidth Sharing',
       'pool': 'Swimming Pool',
@@ -263,6 +280,10 @@ Click on any partner below to get started with step-by-step setup instructions a
   }
 
   private analyzeIntent(message: string): string {
+    if (!message || typeof message !== 'string') {
+      return 'general_conversation';
+    }
+
     const lowerMessage = message.toLowerCase();
     
     // Asset-specific intents
@@ -574,8 +595,12 @@ To give you personalized recommendations, could you tell me what type of propert
   }
 
   private hasAsset(assetType: string): boolean {
+    if (!assetType || typeof assetType !== 'string') {
+      return false;
+    }
+
     return this.context.detectedAssets.some(asset => 
-      asset.toLowerCase().includes(assetType.toLowerCase())
+      asset && typeof asset === 'string' && asset.toLowerCase().includes(assetType.toLowerCase())
     );
   }
 
@@ -583,7 +608,7 @@ To give you personalized recommendations, could you tell me what type of propert
     this.messageHistory.push({
       id: `${Date.now()}-${Math.random()}`,
       role,
-      content,
+      content: content || '',
       timestamp: new Date()
     });
   }
@@ -592,7 +617,7 @@ To give you personalized recommendations, could you tell me what type of propert
     this.messageHistory.push({
       id: `${Date.now()}-${Math.random()}`,
       role,
-      content,
+      content: content || '',
       timestamp: new Date(),
       assetCards
     });
@@ -602,19 +627,27 @@ To give you personalized recommendations, could you tell me what type of propert
     this.messageHistory.push({
       id: `${Date.now()}-${Math.random()}`,
       role,
-      content,
+      content: content || '',
       timestamp: new Date(),
       partnerOptions
     });
   }
 
   private getAssetRequirements(assetType: string): string[] {
+    if (!assetType || typeof assetType !== 'string') {
+      return ['Basic setup required'];
+    }
+
     const platformKey = this.getplatformKey(assetType);
     const requirements = this.partnerRequirements.get(platformKey);
     return requirements?.requirements || ['Basic setup required'];
   }
 
   private getPartnerInfo(assetType: string): AssetCard['partnerInfo'] {
+    if (!assetType || typeof assetType !== 'string') {
+      return undefined;
+    }
+
     const platformKey = this.getplatformKey(assetType);
     const partner = this.partnerRequirements.get(platformKey);
     
@@ -628,6 +661,10 @@ To give you personalized recommendations, could you tell me what type of propert
   }
 
   private getplatformKey(assetType: string): string {
+    if (!assetType || typeof assetType !== 'string') {
+      return 'peerspace';
+    }
+
     const typeMap: Record<string, string> = {
       'internet': 'grass',
       'bandwidth': 'grass',
