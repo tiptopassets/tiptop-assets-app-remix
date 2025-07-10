@@ -6,16 +6,24 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { useLocalChat } from '@/hooks/useLocalChat';
 import { PropertyAnalysisData } from '@/hooks/useUserPropertyAnalysis';
+
+interface ExtendedPropertyData extends PropertyAnalysisData {
+  selectedAssets?: Array<{
+    asset_type: string;
+    asset_data: any;
+  }>;
+}
 import { PartnerIntegrationService } from '@/services/partnerIntegrationService';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { AlertCircle, Wifi, Bot, User, Send, ExternalLink, DollarSign, Clock, CheckCircle, Star } from 'lucide-react';
 import { AssetCard, PartnerOption } from '@/services/localChatService';
+import AssetPartnerCarousel from './AssetPartnerCarousel';
 
 interface EnhancedChatInterfaceProps {
   onAssetDetected: (assets: string[]) => void;
   onConversationStageChange: (stage: string) => void;
-  propertyData: PropertyAnalysisData | null;
+  propertyData: ExtendedPropertyData | null;
   onSendMessageReady?: (sendMessage: (message: string) => Promise<void>) => void;
 }
 
@@ -130,7 +138,7 @@ const EnhancedChatInterface = ({
       .slice(0, 3);
 
     return topAssets.length > 0 
-      ? topAssets.map(asset => `Set up my ${asset.name.toLowerCase()}`)
+      ? topAssets.map(asset => `Set up my ${asset.name?.toLowerCase?.() || 'asset'}`)
       : [
           'What are my options?',
           'How do I get started?',
@@ -245,7 +253,7 @@ const EnhancedChatInterface = ({
                         <Card 
                           key={asset.id} 
                           className="cursor-pointer hover:shadow-md transition-all duration-200 hover:border-primary/30"
-                          onClick={() => handleSuggestedAction(`Set up my ${asset.name.toLowerCase()}`)}
+                          onClick={() => handleSuggestedAction(`Set up my ${asset.name?.toLowerCase?.() || 'asset'}`)}
                         >
                           <CardContent className="p-4">
                             <div className="flex items-center justify-between mb-2">
@@ -286,7 +294,7 @@ const EnhancedChatInterface = ({
                               variant="outline"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                handleSuggestedAction(`Set up my ${asset.name.toLowerCase()}`);
+                                handleSuggestedAction(`Set up my ${asset.name?.toLowerCase?.() || 'asset'}`);
                               }}
                             >
                               <CheckCircle className="w-3 h-3 mr-1" />
@@ -429,7 +437,7 @@ const EnhancedChatInterface = ({
                       key={asset.type}
                       variant="outline"
                       className="h-auto p-3 justify-start hover:bg-tiptop-purple hover:text-white transition-colors"
-                      onClick={() => handleSuggestedAction(`I want to set up my ${asset.name.toLowerCase()}. What do I need to get started?`)}
+                      onClick={() => handleSuggestedAction(`I want to set up my ${asset.name?.toLowerCase?.() || 'asset'}. What do I need to get started?`)}
                       disabled={isLoading}
                     >
                       <div className="text-left">
@@ -449,6 +457,15 @@ const EnhancedChatInterface = ({
 
       {/* Enhanced Input Area */}
       <div className="border-t border-gray-200 bg-white p-4">
+        {/* Asset Partner Carousel - above input */}
+        {propertyData?.selectedAssets && propertyData.selectedAssets.length > 0 && (
+          <AssetPartnerCarousel 
+            selectedAssets={propertyData.selectedAssets}
+            onPartnerClick={(platformId, assetType) => {
+              console.log('🎯 Partner clicked:', { platformId, assetType });
+            }}
+          />
+        )}
         <div className="flex space-x-2">
           <Input
             value={inputMessage}

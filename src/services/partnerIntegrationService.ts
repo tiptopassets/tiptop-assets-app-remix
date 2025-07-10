@@ -110,8 +110,8 @@ export class PartnerIntegrationService {
     {
       id: 'neighbor',
       name: 'Neighbor.com',
-      referralLink: 'http://www.neighbor.com/invited/eduardo-944857?program_version=1',
-      assetTypes: ['storage', 'garage', 'basement'],
+      referralLink: 'https://www.neighbor.com/invited/eduardo-944857?program_version=1',
+      assetTypes: ['storage', 'garage', 'basement', 'parking', 'driveway'],
       requirements: [
         'Clean, dry storage space',
         'Secure access to storage area',
