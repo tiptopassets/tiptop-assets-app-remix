@@ -472,19 +472,22 @@ async function sendMessage(data: any, supabase: any, requestId: string) {
       console.log(`💬 [${requestId}] Added context to message`);
     }
 
+    // Use OpenAI SDK for message creation
+    const OpenAI = (await import('https://deno.land/x/openai@v4.24.0/mod.ts')).default;
+    const openai = new OpenAI({
+      apiKey: OPENAI_API_KEY
+    });
+
     // STEP 2: Add message to thread
-    const messageData = await openAIRequest(`threads/${threadId}/messages`, {
-      method: 'POST',
-      body: JSON.stringify({
-        role: 'user',
-        content: contextualMessage
-      })
-    }, requestId);
+    const messageData = await openai.beta.threads.messages.create(threadId, {
+      role: 'user',
+      content: contextualMessage
+    });
 
     console.log(`✅ [${requestId}] Message added successfully:`, {
       id: messageData.id,
       role: messageData.role,
-      content_length: messageData.content[0]?.text?.value?.length || 0
+      content_length: messageData.content?.[0]?.text?.value?.length || contextualMessage.length || 0
     });
 
     // Save to database for authenticated users
@@ -528,13 +531,16 @@ async function runAssistant(data: any, requestId: string) {
   }
 
   try {
+    // Use OpenAI SDK for run creation
+    const OpenAI = (await import('https://deno.land/x/openai@v4.24.0/mod.ts')).default;
+    const openai = new OpenAI({
+      apiKey: OPENAI_API_KEY
+    });
+
     // STEP 3: Create run with assistant_id
-    const run = await openAIRequest(`threads/${threadId}/runs`, {
-      method: 'POST',
-      body: JSON.stringify({
-        assistant_id: actualAssistantId
-      })
-    }, requestId);
+    const run = await openai.beta.threads.runs.create(threadId, {
+      assistant_id: actualAssistantId
+    });
 
     console.log(`✅ [${requestId}] Run created successfully:`, {
       id: run.id,
@@ -560,9 +566,13 @@ async function getRunStatus(data: any, requestId: string) {
   try {
     console.log(`📊 [${requestId}] Checking run status: ${runId}`);
     
-    const run = await openAIRequest(`threads/${threadId}/runs/${runId}`, {
-      method: 'GET'
-    }, requestId);
+    // Use OpenAI SDK for run status
+    const OpenAI = (await import('https://deno.land/x/openai@v4.24.0/mod.ts')).default;
+    const openai = new OpenAI({
+      apiKey: OPENAI_API_KEY
+    });
+    
+    const run = await openai.beta.threads.runs.retrieve(threadId, runId);
 
     console.log(`📊 [${requestId}] Run status:`, {
       id: run.id,
@@ -576,12 +586,10 @@ async function getRunStatus(data: any, requestId: string) {
     if (run.status === 'completed') {
       console.log(`📚 [${requestId}] Fetching messages for completed run`);
       try {
-        const messagesData = await openAIRequest(`threads/${threadId}/messages`, {
-          method: 'GET'
-        }, requestId);
+        const messagesData = await openai.beta.threads.messages.list(threadId);
         messages = messagesData.data;
         console.log(`📚 [${requestId}] Retrieved ${messages?.length || 0} messages`);
-      } catch (messageError) {
+      } catch (messageError: any) {
         console.warn(`⚠️ [${requestId}] Failed to fetch messages:`, messageError.message);
       }
     }
@@ -647,12 +655,15 @@ async function submitToolOutputs(data: any, supabase: any, requestId: string) {
       })
     );
 
-    const run = await openAIRequest(`threads/${threadId}/runs/${runId}/submit_tool_outputs`, {
-      method: 'POST',
-      body: JSON.stringify({
-        tool_outputs: processedOutputs
-      })
-    }, requestId);
+    // Use OpenAI SDK for tool outputs submission
+    const OpenAI = (await import('https://deno.land/x/openai@v4.24.0/mod.ts')).default;
+    const openai = new OpenAI({
+      apiKey: OPENAI_API_KEY
+    });
+
+    const run = await openai.beta.threads.runs.submitToolOutputs(threadId, runId, {
+      tool_outputs: processedOutputs
+    });
 
     console.log(`✅ [${requestId}] Tool outputs submitted successfully`);
     return successResponse({ run }, requestId);
