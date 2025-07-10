@@ -65,7 +65,7 @@ const EnhancedOnboardingChatbot = () => {
         totalOpportunities: journeyData.totalOpportunities,
         availableAssets: propertyData?.availableAssets || [],
         analysisResults: journeyData.analysisResults,
-        selectedAssets: assetSelections || []
+        selectedAssets: assetSelections?.map(selection => selection.asset_type) || []
       };
     } else if (propertyData) {
       console.log('🎯 [CHATBOT] Using property analysis data as fallback:', {
@@ -76,7 +76,7 @@ const EnhancedOnboardingChatbot = () => {
       
       return {
         ...propertyData,
-        selectedAssets: assetSelections || []
+        selectedAssets: assetSelections?.map(selection => selection.asset_type) || []
       };
     }
     return null;
@@ -158,7 +158,7 @@ const EnhancedOnboardingChatbot = () => {
       if (unifiedPropertyData.analysisId) {
         insights.push(`Analysis ID: ${unifiedPropertyData.analysisId}`);
       }
-      if (unifiedPropertyData.selectedAssets.length > 0) {
+      if (unifiedPropertyData.selectedAssets && unifiedPropertyData.selectedAssets.length > 0) {
         insights.push(`${unifiedPropertyData.selectedAssets.length} assets already selected`);
       }
     }
