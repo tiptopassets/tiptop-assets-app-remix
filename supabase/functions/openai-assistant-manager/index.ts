@@ -1,3 +1,4 @@
+
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.4';
@@ -13,19 +14,13 @@ const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 const OPENAI_ASSISTANT_ID = Deno.env.get('OPENAI_ASSISTANT_ID');
 
-// Validate environment on startup
-if (!OPENAI_API_KEY) {
-  console.error('❌ [STARTUP] OPENAI_API_KEY is missing');
-}
-if (!SUPABASE_URL) {
-  console.error('❌ [STARTUP] SUPABASE_URL is missing');
-}
-if (!SUPABASE_SERVICE_ROLE_KEY) {
-  console.error('❌ [STARTUP] SUPABASE_SERVICE_ROLE_KEY is missing');
-}
-if (!OPENAI_ASSISTANT_ID) {
-  console.error('❌ [STARTUP] OPENAI_ASSISTANT_ID is missing');
-}
+console.log('🚀 [STARTUP] Environment check:', {
+  hasOpenAIKey: !!OPENAI_API_KEY,
+  hasSupabaseUrl: !!SUPABASE_URL,
+  hasServiceRole: !!SUPABASE_SERVICE_ROLE_KEY,
+  hasAssistantId: !!OPENAI_ASSISTANT_ID,
+  assistantId: OPENAI_ASSISTANT_ID ? `${OPENAI_ASSISTANT_ID.substring(0, 8)}...` : 'missing'
+});
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -33,43 +28,45 @@ serve(async (req) => {
   }
 
   const requestId = crypto.randomUUID().substring(0, 8);
-  console.log(`🔄 [${requestId}] Request started: ${req.method} ${req.url}`);
+  console.log(`🔄 [${requestId}] ${req.method} ${req.url}`);
 
   try {
-    // Enhanced environment validation with detailed error codes
+    // Enhanced environment validation
     const validationResult = validateEnvironment(requestId);
     if (!validationResult.success) {
-      return errorResponse(validationResult.error, validationResult.code, requestId);
+      console.error(`❌ [${requestId}] Environment validation failed:`, validationResult.error);
+      return errorResponse(validationResult.error, 500, requestId);
     }
 
-    // Parse and validate request body
+    // Parse request body with better error handling
     let requestBody;
     try {
-      requestBody = await req.json();
+      const rawBody = await req.text();
+      console.log(`📥 [${requestId}] Raw request body:`, rawBody);
+      requestBody = JSON.parse(rawBody);
     } catch (error) {
-      console.error(`❌ [${requestId}] Invalid JSON in request:`, error.message);
+      console.error(`❌ [${requestId}] JSON parsing failed:`, error.message);
       return errorResponse('Invalid JSON in request body', 400, requestId);
     }
 
     if (!requestBody?.action) {
-      console.error(`❌ [${requestId}] Missing required field: action`);
+      console.error(`❌ [${requestId}] Missing action field`);
       return errorResponse('Missing required field: action', 400, requestId);
     }
 
     const { action, data } = requestBody;
-    console.log(`🎯 [${requestId}] Action: ${action}`, data ? 'with data' : 'no data');
+    console.log(`🎯 [${requestId}] Action: ${action}`, data ? Object.keys(data) : 'no data');
 
-    // Initialize Supabase client with error handling
+    // Initialize Supabase client
     let supabase;
     try {
       supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-      console.log(`✅ [${requestId}] Supabase client initialized`);
     } catch (error) {
-      console.error(`❌ [${requestId}] Failed to initialize Supabase:`, error.message);
+      console.error(`❌ [${requestId}] Supabase initialization failed:`, error.message);
       return errorResponse('Database connection failed', 500, requestId);
     }
 
-    // Route to action handlers with timeout and structured error handling
+    // Route to action handlers with timeout
     const actionTimeout = new Promise((_, reject) =>
       setTimeout(() => reject(new Error('Action timeout after 30 seconds')), 30000)
     );
@@ -98,9 +95,6 @@ serve(async (req) => {
         case 'submit_tool_outputs':
           result = await Promise.race([submitToolOutputs(data, supabase, requestId), actionTimeout]);
           break;
-        case 'test_connection':
-          result = await Promise.race([testConnection(supabase, requestId), actionTimeout]);
-          break;
         default:
           console.error(`❌ [${requestId}] Unknown action: ${action}`);
           return errorResponse(`Unknown action: ${action}`, 400, requestId);
@@ -122,24 +116,36 @@ serve(async (req) => {
       stack: error.stack,
       name: error.name
     });
-    return errorResponse(error.message || 'Internal server error', 500, requestId);
+    return errorResponse(`Internal server error: ${error.message}`, 500, requestId);
   }
 });
 
 function validateEnvironment(requestId: string) {
+  const issues = [];
+  
   if (!OPENAI_API_KEY) {
-    console.error(`❌ [${requestId}] OpenAI API key not configured`);
-    return { success: false, error: 'OpenAI API key not configured', code: 500 };
+    issues.push('OPENAI_API_KEY is missing');
+  } else if (!OPENAI_API_KEY.startsWith('sk-')) {
+    issues.push('OPENAI_API_KEY appears invalid (should start with sk-)');
   }
 
   if (!OPENAI_ASSISTANT_ID) {
-    console.error(`❌ [${requestId}] OpenAI Assistant ID not configured`);
-    return { success: false, error: 'OpenAI Assistant ID not configured in environment variables', code: 500 };
+    issues.push('OPENAI_ASSISTANT_ID is missing');
+  } else if (!OPENAI_ASSISTANT_ID.startsWith('asst_')) {
+    issues.push('OPENAI_ASSISTANT_ID appears invalid (should start with asst_)');
   }
 
   if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
-    console.error(`❌ [${requestId}] Supabase configuration missing`);
-    return { success: false, error: 'Database configuration missing', code: 500 };
+    issues.push('Supabase configuration missing');
+  }
+
+  if (issues.length > 0) {
+    console.error(`❌ [${requestId}] Environment issues:`, issues);
+    return { 
+      success: false, 
+      error: `Configuration issues: ${issues.join(', ')}`,
+      issues 
+    };
   }
 
   return { success: true };
@@ -147,14 +153,17 @@ function validateEnvironment(requestId: string) {
 
 function errorResponse(message: string, status: number, requestId?: string) {
   const errorId = requestId || crypto.randomUUID().substring(0, 8);
-  console.error(`❌ [${errorId}] Returning error: ${status} - ${message}`);
-  return new Response(JSON.stringify({ 
+  const errorData = {
     error: message,
     success: false,
     requestId: errorId,
     timestamp: new Date().toISOString(),
-    errorCode: status
-  }), {
+    status
+  };
+  
+  console.error(`❌ [${errorId}] Error response:`, errorData);
+  
+  return new Response(JSON.stringify(errorData), {
     status,
     headers: { ...corsHeaders, 'Content-Type': 'application/json' },
   });
@@ -162,13 +171,16 @@ function errorResponse(message: string, status: number, requestId?: string) {
 
 function successResponse(data: any, requestId?: string) {
   const successId = requestId || crypto.randomUUID().substring(0, 8);
-  console.log(`✅ [${successId}] Returning success response`);
-  return new Response(JSON.stringify({ 
+  const responseData = {
     success: true,
     requestId: successId,
     timestamp: new Date().toISOString(),
     ...data
-  }), {
+  };
+  
+  console.log(`✅ [${successId}] Success response:`, Object.keys(responseData));
+  
+  return new Response(JSON.stringify(responseData), {
     headers: { ...corsHeaders, 'Content-Type': 'application/json' },
   });
 }
@@ -177,7 +189,8 @@ async function openAIRequest(endpoint: string, options: any, requestId: string) 
   console.log(`🤖 [${requestId}] OpenAI request: ${endpoint}`);
   
   try {
-    const response = await fetch(`https://api.openai.com/v1/${endpoint}`, {
+    const url = `https://api.openai.com/v1/${endpoint}`;
+    const requestOptions = {
       ...options,
       headers: {
         'Authorization': `Bearer ${OPENAI_API_KEY}`,
@@ -185,27 +198,31 @@ async function openAIRequest(endpoint: string, options: any, requestId: string) 
         'Content-Type': 'application/json',
         ...options.headers
       }
-    });
+    };
 
-    console.log(`🤖 [${requestId}] OpenAI response status: ${response.status}`);
+    console.log(`🤖 [${requestId}] Request URL: ${url}`);
+    console.log(`🤖 [${requestId}] Request method: ${requestOptions.method}`);
+    console.log(`🤖 [${requestId}] Request body:`, requestOptions.body);
+
+    const response = await fetch(url, requestOptions);
+
+    console.log(`🤖 [${requestId}] Response status: ${response.status}`);
+    console.log(`🤖 [${requestId}] Response headers:`, Object.fromEntries(response.headers.entries()));
 
     if (!response.ok) {
       const errorText = await response.text();
+      console.error(`❌ [${requestId}] OpenAI API error response:`, errorText);
+      
       let errorData;
       try {
         errorData = JSON.parse(errorText);
-      } catch {
-        errorData = { message: errorText };
+      } catch (parseError) {
+        console.error(`❌ [${requestId}] Failed to parse error response:`, parseError.message);
+        errorData = { error: { message: errorText } };
       }
       
-      console.error(`❌ [${requestId}] OpenAI API error:`, {
-        status: response.status,
-        error: errorData,
-        endpoint: endpoint
-      });
-      
-      // Enhanced error messaging for specific OpenAI errors
-      let errorMessage = errorData.error?.message || `OpenAI API error: ${response.status}`;
+      const errorMessage = errorData.error?.message || `OpenAI API error: ${response.status}`;
+      console.error(`❌ [${requestId}] OpenAI error:`, errorMessage);
       
       throw new Error(errorMessage);
     }
@@ -215,8 +232,9 @@ async function openAIRequest(endpoint: string, options: any, requestId: string) 
     return data;
   } catch (error) {
     console.error(`❌ [${requestId}] OpenAI request failed:`, {
-      endpoint: endpoint,
-      error: error.message
+      endpoint,
+      error: error.message,
+      stack: error.stack
     });
     throw error;
   }
@@ -241,6 +259,7 @@ async function testAssistantSetup(supabase: any, requestId: string) {
 
   // Test OpenAI connection
   try {
+    console.log(`🔧 [${requestId}] Testing OpenAI connection...`);
     await openAIRequest('models', { method: 'GET' }, requestId);
     results.tests.openai = true;
     console.log(`✅ [${requestId}] OpenAI connection: OK`);
@@ -251,6 +270,7 @@ async function testAssistantSetup(supabase: any, requestId: string) {
 
   // Test assistant
   try {
+    console.log(`🔧 [${requestId}] Testing assistant...`);
     if (!OPENAI_ASSISTANT_ID) {
       throw new Error('Assistant ID not configured');
     }
@@ -264,6 +284,7 @@ async function testAssistantSetup(supabase: any, requestId: string) {
 
   // Test database
   try {
+    console.log(`🔧 [${requestId}] Testing database...`);
     const { data, error } = await supabase.from('enhanced_service_providers').select('count').limit(1);
     if (error) throw error;
     results.tests.database = true;
@@ -280,8 +301,7 @@ async function getAssistant(requestId: string) {
   console.log(`🤖 [${requestId}] Getting assistant: ${OPENAI_ASSISTANT_ID}`);
   
   if (!OPENAI_ASSISTANT_ID) {
-    console.error(`❌ [${requestId}] Assistant ID not configured`);
-    throw new Error('OpenAI Assistant ID not configured in environment variables');
+    throw new Error('OpenAI Assistant ID not configured');
   }
   
   try {
@@ -289,134 +309,101 @@ async function getAssistant(requestId: string) {
       method: 'GET'
     }, requestId);
     
-    console.log(`✅ [${requestId}] Assistant verified: ${OPENAI_ASSISTANT_ID}`, {
+    console.log(`✅ [${requestId}] Assistant verified:`, {
+      id: assistant.id,
       name: assistant.name,
       model: assistant.model,
-      instructions: assistant.instructions ? 'has instructions' : 'no instructions'
+      hasInstructions: !!assistant.instructions
     });
     
-    return successResponse({ assistant: { id: OPENAI_ASSISTANT_ID, name: assistant.name } }, requestId);
+    return successResponse({ 
+      assistant: { 
+        id: assistant.id, 
+        name: assistant.name,
+        model: assistant.model
+      } 
+    }, requestId);
   } catch (error) {
     console.error(`❌ [${requestId}] Assistant verification failed:`, error.message);
     
     if (error.message.includes('404') || error.message.includes('not found')) {
-      throw new Error(`Assistant with ID ${OPENAI_ASSISTANT_ID} not found in your OpenAI account. Please check the assistant ID or create a new assistant.`);
+      throw new Error(`Assistant with ID ${OPENAI_ASSISTANT_ID} not found. Please check the assistant ID.`);
     }
     
     throw new Error(`Assistant verification failed: ${error.message}`);
   }
 }
 
-// STEP 1: Create Thread (following official OpenAI workflow)
+// STEP 1: Create Thread (OpenAI official workflow - NO assistant_id)
 async function createThread(data: any, supabase: any, requestId: string) {
-  console.log(`🧵 [${requestId}] Creating thread following OpenAI workflow...`);
+  console.log(`🧵 [${requestId}] Creating thread (OpenAI Step 1)...`);
   
   try {
-    const userId = data?.metadata?.userId;
-    const propertyAddress = data?.metadata?.propertyAddress;
-    const analysisId = data?.metadata?.analysisId;
-    const partnersAvailable = data?.metadata?.partnersAvailable;
+    const metadata = data?.metadata || {};
+    console.log(`📋 [${requestId}] Thread metadata:`, metadata);
 
-    console.log(`📋 [${requestId}] Thread metadata:`, {
-      userId: userId || 'anonymous',
-      propertyAddress: propertyAddress || 'not_provided',
-      analysisId: analysisId || 'not_provided',
-      partnersAvailable: partnersAvailable || 0
+    // Clean metadata (remove undefined/null values)
+    const cleanMetadata: Record<string, string> = {};
+    Object.entries(metadata).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== '') {
+        cleanMetadata[key] = String(value);
+      }
     });
 
-    // Prepare clean metadata (no undefined values)
-    const cleanMetadata: Record<string, string> = {};
-    
-    if (userId && userId !== 'anonymous') {
-      cleanMetadata.userId = String(userId);
-    }
-    if (propertyAddress && propertyAddress !== 'not_provided') {
-      cleanMetadata.propertyAddress = String(propertyAddress);
-    }
-    if (analysisId && analysisId !== 'not_provided') {
-      cleanMetadata.analysisId = String(analysisId);
-    }
-    if (partnersAvailable !== undefined && partnersAvailable !== null) {
-      cleanMetadata.partnersAvailable = String(partnersAvailable);
-    }
+    console.log(`📋 [${requestId}] Clean metadata:`, cleanMetadata);
 
     // STEP 1: Create thread WITHOUT assistant_id (OpenAI official workflow)
-    const threadPayload = {
-      metadata: cleanMetadata
-    };
-
-    console.log(`🚀 [${requestId}] Creating thread with payload:`, JSON.stringify(threadPayload, null, 2));
+    const threadPayload = Object.keys(cleanMetadata).length > 0 ? { metadata: cleanMetadata } : {};
+    
+    console.log(`🚀 [${requestId}] Creating thread with payload:`, threadPayload);
 
     const thread = await openAIRequest('threads', {
       method: 'POST',
       body: JSON.stringify(threadPayload)
     }, requestId);
 
-    const threadId = thread.id;
-    console.log(`✅ [${requestId}] Thread created successfully: ${threadId}`);
+    console.log(`✅ [${requestId}] Thread created successfully:`, {
+      id: thread.id,
+      object: thread.object,
+      created_at: thread.created_at,
+      metadata: thread.metadata
+    });
 
-    // Verify thread creation
-    try {
-      const verifyThread = await openAIRequest(`threads/${threadId}`, {
-        method: 'GET'
-      }, requestId);
-      
-      console.log(`🔍 [${requestId}] Thread verification:`, {
-        threadId: verifyThread.id,
-        hasMetadata: !!verifyThread.metadata,
-        metadataKeys: Object.keys(verifyThread.metadata || {}),
-        createdAt: verifyThread.created_at
-      });
-    } catch (verifyError) {
-      console.warn(`⚠️ [${requestId}] Thread verification failed but continuing:`, verifyError.message);
-    }
-
-    // Optional: Create onboarding record (non-blocking)
+    // Optional: Save to database for authenticated users
+    const userId = metadata.userId;
     if (userId && userId !== 'anonymous') {
       try {
-        console.log(`💾 [${requestId}] Creating onboarding record for user: ${userId}`);
+        console.log(`💾 [${requestId}] Saving onboarding record for user: ${userId}`);
         
-        const onboardingData = {
-          id: threadId,
-          user_id: userId,
-          selected_option: 'concierge',
-          status: 'in_progress',
-          current_step: 1,
-          total_steps: 5,
-          chat_history: [],
-          completed_assets: [],
-          progress_data: {
-            assistant_thread_id: threadId,
-            assistant_id: OPENAI_ASSISTANT_ID,
-            created_via: 'openai_assistant',
-            user_context: data?.metadata || {},
-            created_at: new Date().toISOString()
-          }
-        };
-
-        const { error: insertError } = await supabase
+        const { error } = await supabase
           .from('user_onboarding')
-          .insert(onboardingData);
+          .upsert({
+            id: thread.id,
+            user_id: userId,
+            selected_option: 'concierge',
+            status: 'in_progress',
+            current_step: 1,
+            total_steps: 5,
+            progress_data: {
+              assistant_thread_id: thread.id,
+              assistant_id: OPENAI_ASSISTANT_ID,
+              created_via: 'openai_assistant',
+              metadata: cleanMetadata,
+              created_at: new Date().toISOString()
+            }
+          }, { onConflict: 'id' });
 
-        if (insertError) {
-          console.warn(`⚠️ [${requestId}] Onboarding record failed but continuing:`, insertError.message);
+        if (error) {
+          console.warn(`⚠️ [${requestId}] Onboarding save failed:`, error.message);
         } else {
-          console.log(`✅ [${requestId}] Onboarding record created successfully`);
+          console.log(`✅ [${requestId}] Onboarding record saved`);
         }
       } catch (dbError) {
-        console.warn(`⚠️ [${requestId}] Database operation failed but continuing:`, dbError.message);
+        console.warn(`⚠️ [${requestId}] Database error:`, dbError.message);
       }
     }
 
-    return successResponse({ 
-      thread: {
-        id: threadId,
-        object: thread.object,
-        created_at: thread.created_at,
-        metadata: thread.metadata,
-        tool_resources: thread.tool_resources
-      }
-    }, requestId);
+    return successResponse({ thread }, requestId);
     
   } catch (error) {
     console.error(`❌ [${requestId}] Thread creation failed:`, {
@@ -424,11 +411,11 @@ async function createThread(data: any, supabase: any, requestId: string) {
       stack: error.stack
     });
     
-    return errorResponse(`Thread creation failed: ${error.message}`, 500, requestId);
+    throw new Error(`Thread creation failed: ${error.message}`);
   }
 }
 
-// STEP 2: Add Message to Thread (following official OpenAI workflow)
+// STEP 2: Add Message to Thread (OpenAI official workflow)
 async function sendMessage(data: any, supabase: any, requestId: string) {
   const { threadId, message, userId, userContext } = data;
 
@@ -439,18 +426,15 @@ async function sendMessage(data: any, supabase: any, requestId: string) {
   }
 
   try {
-    const isAuthenticated = userId && userId !== 'anonymous';
-    console.log(`💬 [${requestId}] User: ${isAuthenticated ? 'authenticated' : 'anonymous'}`);
-
-    // Enhance message with context
+    // Enhance message with context if available
     let contextualMessage = message;
     if (userContext?.propertyData) {
-      const propertyInfo = `\n\n[Property Context: ${userContext.propertyData.address}, Revenue Potential: $${userContext.propertyData.totalMonthlyRevenue}/month, Assets: ${userContext.propertyData.availableAssets?.length || 0}]`;
-      contextualMessage += propertyInfo;
-      console.log(`💬 [${requestId}] Added property context`);
+      const contextInfo = `\n\n[Context: Property at ${userContext.propertyData.address}, Revenue: $${userContext.propertyData.totalMonthlyRevenue}/month]`;
+      contextualMessage += contextInfo;
+      console.log(`💬 [${requestId}] Added context to message`);
     }
 
-    // STEP 2: Add message to thread (OpenAI official workflow)
+    // STEP 2: Add message to thread
     const messageData = await openAIRequest(`threads/${threadId}/messages`, {
       method: 'POST',
       body: JSON.stringify({
@@ -459,10 +443,14 @@ async function sendMessage(data: any, supabase: any, requestId: string) {
       })
     }, requestId);
 
-    console.log(`✅ [${requestId}] Message added to thread successfully: ${messageData.id}`);
+    console.log(`✅ [${requestId}] Message added successfully:`, {
+      id: messageData.id,
+      role: messageData.role,
+      content_length: messageData.content[0]?.text?.value?.length || 0
+    });
 
-    // Save to database for authenticated users (non-blocking)
-    if (isAuthenticated) {
+    // Save to database for authenticated users
+    if (userId && userId !== 'anonymous') {
       try {
         await supabase.rpc('insert_onboarding_message', {
           p_onboarding_id: threadId,
@@ -471,13 +459,12 @@ async function sendMessage(data: any, supabase: any, requestId: string) {
           p_metadata: { 
             messageId: messageData.id,
             timestamp: new Date().toISOString(),
-            userId: userId,
-            hasContext: !!userContext
+            userId: userId
           }
         });
         console.log(`✅ [${requestId}] Message saved to database`);
       } catch (dbError) {
-        console.warn(`⚠️ [${requestId}] Failed to save message to DB:`, dbError.message);
+        console.warn(`⚠️ [${requestId}] Database save failed:`, dbError.message);
       }
     }
 
@@ -488,25 +475,23 @@ async function sendMessage(data: any, supabase: any, requestId: string) {
   }
 }
 
-// STEP 3: Create Run (following official OpenAI workflow)
+// STEP 3: Create Run (OpenAI official workflow)
 async function runAssistant(data: any, requestId: string) {
   const { threadId, assistantId } = data;
+  const actualAssistantId = assistantId || OPENAI_ASSISTANT_ID;
 
-  console.log(`🏃 [${requestId}] STEP 3: Creating run with assistant: ${assistantId || OPENAI_ASSISTANT_ID} on thread: ${threadId}`);
+  console.log(`🏃 [${requestId}] STEP 3: Creating run with assistant: ${actualAssistantId}`);
 
   if (!threadId) {
     throw new Error('threadId is required');
   }
 
-  // Use the configured assistant ID if not provided
-  const actualAssistantId = assistantId || OPENAI_ASSISTANT_ID;
-  
   if (!actualAssistantId) {
     throw new Error('Assistant ID not configured');
   }
 
   try {
-    // STEP 3: Create run with assistant_id (OpenAI official workflow)
+    // STEP 3: Create run with assistant_id
     const run = await openAIRequest(`threads/${threadId}/runs`, {
       method: 'POST',
       body: JSON.stringify({
@@ -514,10 +499,11 @@ async function runAssistant(data: any, requestId: string) {
       })
     }, requestId);
 
-    console.log(`✅ [${requestId}] Run created successfully: ${run.id}`, {
+    console.log(`✅ [${requestId}] Run created successfully:`, {
+      id: run.id,
       status: run.status,
-      threadId: run.thread_id,
-      assistantId: run.assistant_id
+      assistant_id: run.assistant_id,
+      thread_id: run.thread_id
     });
     
     return successResponse({ run }, requestId);
@@ -527,7 +513,7 @@ async function runAssistant(data: any, requestId: string) {
   }
 }
 
-// STEP 4: Poll Run Status (following official OpenAI workflow)
+// STEP 4: Poll Run Status
 async function getRunStatus(data: any, requestId: string) {
   const { threadId, runId } = data;
 
@@ -542,21 +528,26 @@ async function getRunStatus(data: any, requestId: string) {
       method: 'GET'
     }, requestId);
 
-    console.log(`📊 [${requestId}] Run status: ${run.status}`, {
-      runId: run.id,
+    console.log(`📊 [${requestId}] Run status:`, {
+      id: run.id,
       status: run.status,
-      startedAt: run.started_at,
-      completedAt: run.completed_at
+      completed_at: run.completed_at,
+      failed_at: run.failed_at,
+      requires_action: !!run.required_action
     });
 
     let messages = null;
     if (run.status === 'completed') {
-      console.log(`📚 [${requestId}] Run completed, fetching messages`);
-      const messagesData = await openAIRequest(`threads/${threadId}/messages`, {
-        method: 'GET'
-      }, requestId);
-      messages = messagesData.data;
-      console.log(`📚 [${requestId}] Retrieved ${messages?.length || 0} messages`);
+      console.log(`📚 [${requestId}] Fetching messages for completed run`);
+      try {
+        const messagesData = await openAIRequest(`threads/${threadId}/messages`, {
+          method: 'GET'
+        }, requestId);
+        messages = messagesData.data;
+        console.log(`📚 [${requestId}] Retrieved ${messages?.length || 0} messages`);
+      } catch (messageError) {
+        console.warn(`⚠️ [${requestId}] Failed to fetch messages:`, messageError.message);
+      }
     }
 
     return successResponse({ run, messages }, requestId);
@@ -576,8 +567,6 @@ async function submitToolOutputs(data: any, supabase: any, requestId: string) {
   }
 
   try {
-    const isAuthenticated = userId && userId !== 'anonymous';
-    
     const processedOutputs = await Promise.all(
       toolOutputs.map(async (output: any) => {
         const { tool_call_id, function_name, arguments: functionArgs } = output;
@@ -589,19 +578,19 @@ async function submitToolOutputs(data: any, supabase: any, requestId: string) {
           
           switch (function_name) {
             case 'get_property_analysis':
-              result = await handleGetPropertyAnalysis(functionArgs, userId, supabase, isAuthenticated, requestId);
+              result = await handleGetPropertyAnalysis(functionArgs, userId, supabase, requestId);
               break;
             case 'get_service_providers':
-              result = await handleGetServiceProviders(functionArgs, userId, supabase, isAuthenticated, requestId);
+              result = await handleGetServiceProviders(functionArgs, userId, supabase, requestId);
               break;
             case 'get_user_preferences':
-              result = await handleGetUserPreferences(functionArgs, userId, supabase, isAuthenticated, requestId);
+              result = await handleGetUserPreferences(functionArgs, userId, supabase, requestId);
               break;
             case 'create_recommendation':
-              result = await handleCreateRecommendation(functionArgs, userId, supabase, isAuthenticated, requestId);
+              result = await handleCreateRecommendation(functionArgs, userId, supabase, requestId);
               break;
             case 'update_user_progress':
-              result = await handleUpdateUserProgress(functionArgs, userId, supabase, isAuthenticated, requestId);
+              result = await handleUpdateUserProgress(functionArgs, userId, supabase, requestId);
               break;
             default:
               result = { error: `Unknown function: ${function_name}` };
@@ -629,7 +618,7 @@ async function submitToolOutputs(data: any, supabase: any, requestId: string) {
       })
     }, requestId);
 
-    console.log(`✅ [${requestId}] Tool outputs submitted`);
+    console.log(`✅ [${requestId}] Tool outputs submitted successfully`);
     return successResponse({ run }, requestId);
   } catch (error) {
     console.error(`❌ [${requestId}] Submit tool outputs failed:`, error.message);
@@ -637,65 +626,9 @@ async function submitToolOutputs(data: any, supabase: any, requestId: string) {
   }
 }
 
-async function testConnection(supabase: any, requestId: string) {
-  console.log(`🔧 [${requestId}] Running connection tests...`);
-  
-  const results = {
-    openai: false,
-    database: false,
-    assistant: false,
-    errors: []
-  };
-
-  // Test OpenAI connection
-  try {
-    await openAIRequest('models', { method: 'GET' }, requestId);
-    results.openai = true;
-    console.log(`✅ [${requestId}] OpenAI connection: OK`);
-  } catch (error) {
-    results.errors.push(`OpenAI: ${error.message}`);
-    console.error(`❌ [${requestId}] OpenAI connection: FAILED`);
-  }
-
-  // Test database connection
-  try {
-    const { data, error } = await supabase.from('enhanced_service_providers').select('count').limit(1);
-    if (error) throw error;
-    results.database = true;
-    console.log(`✅ [${requestId}] Database connection: OK`);
-  } catch (error) {
-    results.errors.push(`Database: ${error.message}`);
-    console.error(`❌ [${requestId}] Database connection: FAILED`);
-  }
-
-  // Test assistant with the correct ID
-  try {
-    if (!OPENAI_ASSISTANT_ID) {
-      throw new Error('Assistant ID not configured in environment variables');
-    }
-    const assistant = await openAIRequest(`assistants/${OPENAI_ASSISTANT_ID}`, { method: 'GET' }, requestId);
-    results.assistant = true;
-    console.log(`✅ [${requestId}] Assistant connection: OK - Found assistant: ${assistant.name}`);
-  } catch (error) {
-    results.errors.push(`Assistant: ${error.message}`);
-    console.error(`❌ [${requestId}] Assistant connection: FAILED`);
-  }
-
-  return successResponse({ 
-    tests: results,
-    environment: {
-      hasOpenAIKey: !!OPENAI_API_KEY,
-      hasSupabaseUrl: !!SUPABASE_URL,
-      hasServiceRole: !!SUPABASE_SERVICE_ROLE_KEY,
-      hasAssistantId: !!OPENAI_ASSISTANT_ID,
-      assistantId: OPENAI_ASSISTANT_ID
-    }
-  }, requestId);
-}
-
-// ENHANCED: Tool function handlers with proper partner data structure
-async function handleGetPropertyAnalysis(args: any, userId: string, supabase: any, isAuthenticated: boolean, requestId: string) {
-  console.log(`🏠 [${requestId}] Getting property analysis:`, args?.analysisId || args?.address);
+// Tool function handlers
+async function handleGetPropertyAnalysis(args: any, userId: string, supabase: any, requestId: string) {
+  console.log(`🏠 [${requestId}] Getting property analysis for:`, args);
   
   try {
     let query = supabase.from('user_property_analyses').select('*');
@@ -706,13 +639,16 @@ async function handleGetPropertyAnalysis(args: any, userId: string, supabase: an
       query = query.ilike('analysis_results->propertyAddress', `%${args.address}%`);
     }
     
-    if (isAuthenticated) {
+    if (userId && userId !== 'anonymous') {
       query = query.eq('user_id', userId);
     }
     
     const { data, error } = await query.limit(1).maybeSingle();
     
-    if (error) throw error;
+    if (error) {
+      console.error(`❌ [${requestId}] Property analysis query failed:`, error);
+      throw error;
+    }
     
     if (!data) {
       return { success: false, message: 'Property analysis not found' };
@@ -726,28 +662,18 @@ async function handleGetPropertyAnalysis(args: any, userId: string, supabase: an
       opportunities: data.analysis_results?.availableAssets?.length || 0
     };
   } catch (error) {
+    console.error(`❌ [${requestId}] Property analysis failed:`, error.message);
     return { success: false, error: error.message };
   }
 }
 
-async function handleGetServiceProviders(args: any, userId: string, supabase: any, isAuthenticated: boolean, requestId: string) {
-  console.log(`🤝 [${requestId}] Getting service providers:`, args?.assetTypes);
+async function handleGetServiceProviders(args: any, userId: string, supabase: any, requestId: string) {
+  console.log(`🤝 [${requestId}] Getting service providers for:`, args);
   
   try {
     let query = supabase
       .from('enhanced_service_providers')
-      .select(`
-        id,
-        name,
-        description,
-        asset_types,
-        avg_monthly_earnings_low,
-        avg_monthly_earnings_high,
-        setup_requirements,
-        referral_link_template,
-        priority,
-        is_active
-      `)
+      .select('*')
       .eq('is_active', true)
       .order('priority', { ascending: false });
     
@@ -770,8 +696,7 @@ async function handleGetServiceProviders(args: any, userId: string, supabase: an
       earningsRange: `$${provider.avg_monthly_earnings_low}-${provider.avg_monthly_earnings_high}/month`,
       setupRequirements: provider.setup_requirements || {},
       referralLink: provider.referral_link_template,
-      priority: provider.priority,
-      requiresAuth: !isAuthenticated ? 'Sign in to access partner connections' : null
+      priority: provider.priority
     })) || [];
     
     console.log(`✅ [${requestId}] Found ${formattedProviders.length} providers`);
@@ -779,24 +704,19 @@ async function handleGetServiceProviders(args: any, userId: string, supabase: an
     return {
       success: true,
       providers: formattedProviders,
-      totalProviders: formattedProviders.length,
-      message: `Found ${formattedProviders.length} partner providers${args.assetTypes ? ` for ${args.assetTypes.join(', ')}` : ''}`
+      totalProviders: formattedProviders.length
     };
   } catch (error) {
-    console.error(`❌ [${requestId}] Service provider lookup failed:`, error);
-    return { 
-      success: false, 
-      error: error.message,
-      message: 'Unable to retrieve partner information at this time'
-    };
+    console.error(`❌ [${requestId}] Service provider lookup failed:`, error.message);
+    return { success: false, error: error.message };
   }
 }
 
-async function handleGetUserPreferences(args: any, userId: string, supabase: any, isAuthenticated: boolean, requestId: string) {
-  console.log(`👤 [${requestId}] Getting user preferences:`, userId);
+async function handleGetUserPreferences(args: any, userId: string, supabase: any, requestId: string) {
+  console.log(`👤 [${requestId}] Getting user preferences for:`, userId);
   
-  if (!isAuthenticated) {
-    return { success: false, message: 'Sign in required to access preferences' };
+  if (!userId || userId === 'anonymous') {
+    return { success: false, message: 'Authentication required' };
   }
   
   try {
@@ -806,7 +726,10 @@ async function handleGetUserPreferences(args: any, userId: string, supabase: any
       .eq('user_id', userId)
       .maybeSingle();
     
-    if (error) throw error;
+    if (error) {
+      console.error(`❌ [${requestId}] User preferences query failed:`, error);
+      throw error;
+    }
     
     return {
       success: true,
@@ -816,38 +739,35 @@ async function handleGetUserPreferences(args: any, userId: string, supabase: any
       completedAssets: data?.completed_assets || []
     };
   } catch (error) {
+    console.error(`❌ [${requestId}] User preferences failed:`, error.message);
     return { success: false, error: error.message };
   }
 }
 
-async function handleCreateRecommendation(args: any, userId: string, supabase: any, isAuthenticated: boolean, requestId: string) {
-  console.log(`💡 [${requestId}] Creating recommendation:`, args?.assetType);
+async function handleCreateRecommendation(args: any, userId: string, supabase: any, requestId: string) {
+  console.log(`💡 [${requestId}] Creating recommendation:`, args);
   
-  try {
-    const recommendation = {
-      assetType: args.assetType,
-      recommendation: args.recommendation,
-      estimatedEarnings: args.estimatedEarnings,
-      nextSteps: args.nextSteps || [],
-      partnersRecommended: args.partnersRecommended || [],
-      timestamp: new Date().toISOString()
-    };
-    
-    return {
-      success: true,
-      recommendation,
-      message: `Recommendation created for ${args.assetType}`
-    };
-  } catch (error) {
-    return { success: false, error: error.message };
-  }
+  const recommendation = {
+    assetType: args.assetType,
+    recommendation: args.recommendation,
+    estimatedEarnings: args.estimatedEarnings,
+    nextSteps: args.nextSteps || [],
+    partnersRecommended: args.partnersRecommended || [],
+    timestamp: new Date().toISOString()
+  };
+  
+  return {
+    success: true,
+    recommendation,
+    message: `Recommendation created for ${args.assetType}`
+  };
 }
 
-async function handleUpdateUserProgress(args: any, userId: string, supabase: any, isAuthenticated: boolean, requestId: string) {
-  console.log(`📊 [${requestId}] Updating user progress:`, args?.step);
+async function handleUpdateUserProgress(args: any, userId: string, supabase: any, requestId: string) {
+  console.log(`📊 [${requestId}] Updating user progress:`, args);
   
-  if (!isAuthenticated) {
-    return { success: false, message: 'Sign in required to track progress' };
+  if (!userId || userId === 'anonymous') {
+    return { success: false, message: 'Authentication required' };
   }
   
   try {
@@ -860,12 +780,12 @@ async function handleUpdateUserProgress(args: any, userId: string, supabase: any
           ...args.progressData,
           last_updated: new Date().toISOString()
         }
-      }, { 
-        onConflict: 'user_id',
-        ignoreDuplicates: false 
-      });
+      }, { onConflict: 'user_id' });
     
-    if (error) throw error;
+    if (error) {
+      console.error(`❌ [${requestId}] User progress update failed:`, error);
+      throw error;
+    }
     
     return {
       success: true,
@@ -873,6 +793,7 @@ async function handleUpdateUserProgress(args: any, userId: string, supabase: any
       currentStep: args.step
     };
   } catch (error) {
+    console.error(`❌ [${requestId}] User progress update failed:`, error.message);
     return { success: false, error: error.message };
   }
 }
