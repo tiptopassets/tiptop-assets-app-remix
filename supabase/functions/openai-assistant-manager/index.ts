@@ -200,17 +200,27 @@ async function openAIRequest(endpoint: string, options: any, requestId: string) 
       
       console.error(`❌ [${requestId}] OpenAI API error:`, {
         status: response.status,
-        error: errorData
+        error: errorData,
+        endpoint: endpoint
       });
       
-      throw new Error(errorData.error?.message || `OpenAI API error: ${response.status}`);
+      // Enhanced error messaging for specific OpenAI errors
+      let errorMessage = errorData.error?.message || `OpenAI API error: ${response.status}`;
+      if (errorMessage.includes('assistant_id')) {
+        errorMessage = `OpenAI rejected request with assistant_id parameter. Endpoint: ${endpoint}`;
+      }
+      
+      throw new Error(errorMessage);
     }
 
     const data = await response.json();
     console.log(`✅ [${requestId}] OpenAI request successful`);
     return data;
   } catch (error) {
-    console.error(`❌ [${requestId}] OpenAI request failed:`, error.message);
+    console.error(`❌ [${requestId}] OpenAI request failed:`, {
+      endpoint: endpoint,
+      error: error.message
+    });
     throw error;
   }
 }
@@ -300,14 +310,16 @@ async function getAssistant(requestId: string) {
   }
 }
 
-// FIXED: Thread creation without assistant_id parameter (not supported by OpenAI API)
+// ENHANCED: Thread creation with comprehensive error handling and debugging
 async function createThread(data: any, supabase: any, requestId: string) {
   console.log(`🧵 [${requestId}] Creating thread...`);
   
   try {
     // Validate required fields
     if (!OPENAI_ASSISTANT_ID) {
-      throw new Error('Assistant ID not configured in environment variables');
+      const error = 'Assistant ID not configured in environment variables';
+      console.error(`❌ [${requestId}] ${error}`);
+      throw new Error(error);
     }
 
     const userId = data?.metadata?.userId;
@@ -341,12 +353,12 @@ async function createThread(data: any, supabase: any, requestId: string) {
 
     console.log(`🧪 [${requestId}] Clean metadata for OpenAI:`, cleanMetadata);
 
-    // ⭐ CRITICAL FIX: Create thread WITHOUT assistant_id (OpenAI API doesn't support this parameter)
+    // CRITICAL: Create thread WITHOUT assistant_id (OpenAI API doesn't support this parameter)
     const threadPayload = {
       metadata: cleanMetadata
     };
 
-    console.log(`🔥 [${requestId}] Thread creation payload:`, threadPayload);
+    console.log(`🔥 [${requestId}] Thread creation payload:`, JSON.stringify(threadPayload, null, 2));
 
     const thread = await openAIRequest('threads', {
       method: 'POST',
@@ -357,7 +369,7 @@ async function createThread(data: any, supabase: any, requestId: string) {
     console.log(`✅ [${requestId}] OpenAI thread created: ${threadId}`);
     console.log(`🔗 [${requestId}] Will be linked to assistant: ${OPENAI_ASSISTANT_ID} when runs are created`);
 
-    // ⭐ Verify thread creation
+    // Verify thread creation
     try {
       const verifyThread = await openAIRequest(`threads/${threadId}`, {
         method: 'GET'
@@ -410,23 +422,35 @@ async function createThread(data: any, supabase: any, requestId: string) {
       }
     }
 
-    return successResponse({ 
+    const successData = { 
       thread: {
         ...thread,
         assistant_will_be_linked: OPENAI_ASSISTANT_ID,
         linkage_method: 'via_runs'
       }
-    }, requestId);
+    };
+    
+    console.log(`🎉 [${requestId}] Thread creation successful, returning:`, successData);
+    return successResponse(successData, requestId);
+    
   } catch (error) {
-    console.error(`❌ [${requestId}] Thread creation failed:`, error.message);
+    console.error(`❌ [${requestId}] Thread creation failed:`, {
+      error: error.message,
+      stack: error.stack,
+      assistantId: OPENAI_ASSISTANT_ID
+    });
     
     // Enhanced error messaging for OpenAI API errors
     let errorMessage = error.message || 'Thread creation failed';
     if (errorMessage.includes('assistant_id')) {
-      errorMessage = 'OpenAI API rejected thread creation with assistant_id parameter. This is now fixed.';
+      errorMessage = 'OpenAI API rejected thread creation with assistant_id parameter. This should now be fixed.';
+    } else if (errorMessage.includes('Invalid request')) {
+      errorMessage = `Invalid request to OpenAI API: ${error.message}`;
+    } else if (errorMessage.includes('Authentication')) {
+      errorMessage = 'OpenAI API authentication failed. Check API key.';
     }
     
-    throw new Error(`Thread creation failed: ${errorMessage}`);
+    return errorResponse(`Thread creation failed: ${errorMessage}`, 500, requestId);
   }
 }
 
@@ -680,7 +704,7 @@ async function testConnection(supabase: any, requestId: string) {
   }, requestId);
 }
 
-// Enhanced tool function handlers for property monetization
+// ENHANCED: Tool function handlers with proper partner data structure
 async function handleGetPropertyAnalysis(args: any, userId: string, supabase: any, isAuthenticated: boolean, requestId: string) {
   console.log(`🏠 [${requestId}] Getting property analysis:`, args?.analysisId || args?.address);
   
@@ -723,7 +747,18 @@ async function handleGetServiceProviders(args: any, userId: string, supabase: an
   try {
     let query = supabase
       .from('enhanced_service_providers')
-      .select('*')
+      .select(`
+        id,
+        name,
+        description,
+        asset_types,
+        avg_monthly_earnings_low,
+        avg_monthly_earnings_high,
+        setup_requirements,
+        referral_link_template,
+        priority,
+        is_active
+      `)
       .eq('is_active', true)
       .order('priority', { ascending: false });
     
@@ -733,7 +768,10 @@ async function handleGetServiceProviders(args: any, userId: string, supabase: an
     
     const { data: providers, error } = await query;
     
-    if (error) throw error;
+    if (error) {
+      console.error(`❌ [${requestId}] Provider query failed:`, error);
+      throw error;
+    }
     
     const formattedProviders = providers?.map((provider: any) => ({
       id: provider.id,
@@ -741,18 +779,27 @@ async function handleGetServiceProviders(args: any, userId: string, supabase: an
       description: provider.description,
       assetTypes: provider.asset_types,
       earningsRange: `$${provider.avg_monthly_earnings_low}-${provider.avg_monthly_earnings_high}/month`,
-      setupInstructions: provider.setup_instructions,
+      setupRequirements: provider.setup_requirements || {},
       referralLink: provider.referral_link_template,
+      priority: provider.priority,
       requiresAuth: !isAuthenticated ? 'Sign in to access partner connections' : null
     })) || [];
+    
+    console.log(`✅ [${requestId}] Found ${formattedProviders.length} providers`);
     
     return {
       success: true,
       providers: formattedProviders,
-      totalProviders: formattedProviders.length
+      totalProviders: formattedProviders.length,
+      message: `Found ${formattedProviders.length} partner providers${args.assetTypes ? ` for ${args.assetTypes.join(', ')}` : ''}`
     };
   } catch (error) {
-    return { success: false, error: error.message };
+    console.error(`❌ [${requestId}] Service provider lookup failed:`, error);
+    return { 
+      success: false, 
+      error: error.message,
+      message: 'Unable to retrieve partner information at this time'
+    };
   }
 }
 

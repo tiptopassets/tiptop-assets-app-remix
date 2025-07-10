@@ -137,7 +137,7 @@ export const useOpenAIAssistant = (propertyData: PropertyAnalysisData | null) =>
     }
   }, [user?.id, propertyData]);
 
-  // Enhanced assistant initialization with retry logic
+  // ENHANCED: Assistant initialization with comprehensive error handling
   const initializeAssistant = useCallback(async () => {
     if (initializationRef.current || state !== 'idle') {
       console.log('🛑 [ASSISTANT] Already initializing or not idle, state:', state);
@@ -168,14 +168,14 @@ export const useOpenAIAssistant = (propertyData: PropertyAnalysisData | null) =>
         throw new Error(`Setup test failed: ${setupError.message}`);
       }
 
-      if (!setupTest.tests.openai || !setupTest.tests.database || !setupTest.tests.assistant) {
+      if (!setupTest.success) {
         console.error('❌ [ASSISTANT] Setup tests failed:', setupTest);
         const failedTests = [];
-        if (!setupTest.tests.openai) failedTests.push('OpenAI API');
-        if (!setupTest.tests.database) failedTests.push('Database');
-        if (!setupTest.tests.assistant) failedTests.push('AI Assistant');
+        if (!setupTest.tests?.openai) failedTests.push('OpenAI API');
+        if (!setupTest.tests?.database) failedTests.push('Database');
+        if (!setupTest.tests?.assistant) failedTests.push('AI Assistant');
         
-        throw new Error(`Service connectivity issues: ${failedTests.join(', ')} failed. ${setupTest.errors.join('; ')}`);
+        throw new Error(`Service connectivity issues: ${failedTests.join(', ')} failed. ${setupTest.errors?.join('; ') || 'Unknown errors occurred'}`);
       }
 
       console.log('✅ [ASSISTANT] Setup tests passed');
@@ -192,7 +192,13 @@ export const useOpenAIAssistant = (propertyData: PropertyAnalysisData | null) =>
       });
 
       if (assistantError) {
+        console.error('❌ [ASSISTANT] Assistant setup failed:', assistantError);
         throw new Error(`Assistant setup failed: ${assistantError.message}`);
+      }
+
+      if (!assistantData.success) {
+        console.error('❌ [ASSISTANT] Assistant setup failed:', assistantData);
+        throw new Error(`Assistant setup failed: ${assistantData.error || 'Unknown error'}`);
       }
 
       const newAssistantId = assistantData.assistant.id;
@@ -225,7 +231,12 @@ export const useOpenAIAssistant = (propertyData: PropertyAnalysisData | null) =>
 
       if (threadError) {
         console.error('❌ [ASSISTANT] Thread creation failed:', threadError);
-        throw new Error(`Thread creation failed: ${threadError.message}. Please try refreshing the page.`);
+        throw new Error(`Thread creation failed: ${threadError.message}. Please check the console for more details.`);
+      }
+
+      if (!threadData.success) {
+        console.error('❌ [ASSISTANT] Thread creation failed:', threadData);
+        throw new Error(`Thread creation failed: ${threadData.error || 'Unknown error occurred during thread creation'}`);
       }
 
       const newThreadId = threadData.thread.id;
@@ -269,10 +280,12 @@ export const useOpenAIAssistant = (propertyData: PropertyAnalysisData | null) =>
       // Enhanced error messaging
       let errorMessage = error.message || 'Failed to initialize assistant';
       
-      if (errorMessage.includes('Setup test failed')) {
+      if (errorMessage.includes('Setup test failed') || errorMessage.includes('Service connectivity issues')) {
         errorMessage += '\n\nThis usually means:\n• OpenAI API key is missing or invalid\n• Assistant ID is not configured\n• Database connection issues\n• Service temporarily unavailable';
       } else if (errorMessage.includes('Thread creation failed')) {
-        errorMessage += '\n\nTry refreshing the page or signing in if you haven\'t already.';
+        errorMessage += '\n\nPlease check:\n• Network connection\n• OpenAI API status\n• Try refreshing the page';
+      } else if (errorMessage.includes('Assistant setup failed')) {
+        errorMessage += '\n\nThe AI assistant configuration may be incorrect or unavailable.';
       }
       
       setError(errorMessage);
@@ -553,8 +566,9 @@ Would you like to start with a specific asset, or would you prefer me to recomme
     }
   }, [threadId, user?.id, pollForCompletion]);
 
-  // Enhanced error clearing with auto-retry
+  // ENHANCED: Error clearing with better retry logic
   const clearError = useCallback(() => {
+    console.log('🔧 [ASSISTANT] Clearing error and retrying...');
     setError(null);
     if (state === 'error') {
       setState('idle');
