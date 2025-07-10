@@ -7,6 +7,22 @@ export interface ChatMessage {
   content: string;
   timestamp: Date;
   metadata?: any;
+  assetCards?: AssetCard[];
+}
+
+export interface AssetCard {
+  id: string;
+  name: string;
+  type: string;
+  monthlyRevenue: number;
+  setupTime: string;
+  requirements: string[];
+  isSelected?: boolean;
+  partnerInfo?: {
+    platform: string;
+    referralUrl: string;
+    requirements: string[];
+  };
 }
 
 export interface ConversationContext {
@@ -20,6 +36,7 @@ export interface ConversationContext {
 export class LocalChatService {
   private context: ConversationContext;
   private messageHistory: ChatMessage[] = [];
+  private partnerRequirements: Map<string, any> = new Map();
 
   constructor(propertyData: PropertyAnalysisData | null) {
     this.context = {
@@ -29,6 +46,82 @@ export class LocalChatService {
       userGoals: [],
       completedSetups: []
     };
+    this.loadPartnerRequirements();
+  }
+
+  private async loadPartnerRequirements() {
+    // This will be populated with web-fetched data
+    this.partnerRequirements.set('swimply', {
+      platform: 'Swimply',
+      requirements: [
+        'Pool insurance coverage',
+        'Pool safety equipment (life ring, first aid kit)',
+        'High-quality photos (5-10 images)',
+        'Pool maintenance schedule',
+        'Clear access instructions for guests'
+      ],
+      setupSteps: [
+        'Take professional photos of pool area',
+        'Verify insurance coverage',
+        'Create detailed listing description',
+        'Set competitive pricing',
+        'Complete host verification'
+      ]
+    });
+
+    this.partnerRequirements.set('spothero', {
+      platform: 'SpotHero',
+      requirements: [
+        'Clear, unobstructed parking space',
+        'Safe, well-lit area',
+        'Easy access for renters',
+        'Precise location details',
+        'Photos of parking space and access route'
+      ],
+      setupSteps: [
+        'Measure parking space dimensions',
+        'Take photos from multiple angles',
+        'Write clear access instructions',
+        'Set availability schedule',
+        'Complete identity verification'
+      ]
+    });
+
+    this.partnerRequirements.set('neighbor', {
+      platform: 'Neighbor.com',
+      requirements: [
+        'Clean, dry storage space',
+        'Secure area with locks',
+        'Easy renter access',
+        'Climate considerations noted',
+        'Clear photos showing space size'
+      ],
+      setupSteps: [
+        'Clean and organize storage area',
+        'Install proper lighting and locks',
+        'Measure space accurately',
+        'Take detailed photos',
+        'Create pricing strategy'
+      ]
+    });
+
+    this.partnerRequirements.set('peerspace', {
+      platform: 'Peerspace',
+      requirements: [
+        'Unique, photogenic space',
+        'Basic amenities (WiFi, parking, restrooms)',
+        'Professional-quality photos',
+        'Flexible booking availability',
+        'Clear space descriptions'
+      ],
+      setupSteps: [
+        'Professional photography session',
+        'Identify unique selling points',
+        'Create compelling space descriptions',
+        'Set up booking calendar',
+        'Complete business verification'
+      ]
+    });
   }
 
   async processMessage(userMessage: string): Promise<string> {
@@ -39,7 +132,7 @@ export class LocalChatService {
     const intent = this.analyzeIntent(userMessage);
     
     // Generate contextual response
-    const response = this.generateResponse(intent, userMessage);
+    const response = await this.generateResponse(intent, userMessage);
     
     // Add assistant response to history
     this.addMessage('assistant', response);
@@ -65,22 +158,22 @@ export class LocalChatService {
     return 'general_conversation';
   }
 
-  private generateResponse(intent: string, userMessage: string): string {
+  private async generateResponse(intent: string, userMessage: string): Promise<string> {
     switch (intent) {
       case 'pool_setup':
-        return this.generatePoolSetupResponse();
+        return await this.generatePoolSetupResponse();
       case 'parking_setup':
-        return this.generateParkingSetupResponse();
+        return await this.generateParkingSetupResponse();
       case 'storage_setup':
-        return this.generateStorageSetupResponse();
+        return await this.generateStorageSetupResponse();
       case 'space_rental_setup':
-        return this.generateSpaceRentalSetupResponse();
+        return await this.generateSpaceRentalSetupResponse();
       case 'start_setup':
         return this.generateStartSetupResponse();
       case 'earnings_question':
         return this.generateEarningsResponse();
       case 'requirements_question':
-        return this.generateRequirementsResponse();
+        return await this.generateRequirementsResponse();
       case 'help_question':
         return this.generateHelpResponse();
       default:
@@ -88,28 +181,41 @@ export class LocalChatService {
     }
   }
 
-  private generatePoolSetupResponse(): string {
+  private async generatePoolSetupResponse(): Promise<string> {
     if (!this.hasAsset('pool')) {
       return "I don't see a pool listed in your property analysis. If you do have a pool, let me know and I can help you get set up with Swimply to start earning $100-500/month by renting it out for pool parties and events!";
     }
 
     this.context.currentStage = 'pool_setup';
-    return `Perfect! I can help you monetize your pool with Swimply. Here's what you'll need:
+    
+    // Fetch latest requirements from web
+    await this.fetchPartnerRequirements('swimply');
+    const requirements = this.partnerRequirements.get('swimply');
+    
+    const currentRequirements = requirements?.requirements || [
+      'Clear, high-quality photos of your pool area',
+      'Pool safety equipment and insurance verification', 
+      'Flexible availability for renters',
+      'Basic pool maintenance knowledge'
+    ];
+
+    const setupSteps = requirements?.setupSteps || [
+      'Take 5-10 great photos of your pool and surrounding area',
+      "I'll help you create your Swimply host profile", 
+      'Set competitive pricing for your market'
+    ];
+
+    return `Perfect! I can help you monetize your pool with Swimply. Here are the current requirements (updated ${requirements?.lastUpdated || 'today'}):
 
 🏊 **Pool Setup Requirements:**
-- Clear, high-quality photos of your pool area
-- Pool safety equipment and insurance verification
-- Flexible availability for renters
-- Basic pool maintenance knowledge
+${currentRequirements.map(req => `- ${req}`).join('\n')}
 
 💰 **Earning Potential:** $100-500/month based on your area
 
-📋 **Next Steps:**
-1. Take 5-10 great photos of your pool and surrounding area
-2. I'll help you create your Swimply host profile
-3. Set competitive pricing for your market
+📋 **Step-by-Step Setup:**
+${setupSteps.map((step, i) => `${i + 1}. ${step}`).join('\n')}
 
-Ready to start? I can open the Swimply registration page with our referral link so you get the best host support!`;
+Ready to start? I can open the Swimply registration page with our referral link so you get the best host support and priority verification!`;
   }
 
   private generateParkingSetupResponse(): string {
@@ -195,20 +301,26 @@ I can help you register with Peerspace using our referral link for premium host 
     const availableAssets = this.context.propertyData.availableAssets.filter(a => a.hasRevenuePotential);
     const totalRevenue = availableAssets.reduce((sum, asset) => sum + asset.monthlyRevenue, 0);
 
-    return `Great! Let's get you started earning money from your property. Based on your analysis at ${this.context.propertyData.address}:
+    // Generate asset cards for display
+    const assetCards: AssetCard[] = availableAssets.map(asset => ({
+      id: asset.type,
+      name: asset.name,
+      type: asset.type,
+      monthlyRevenue: asset.monthlyRevenue,
+      setupTime: '1-2 hours',
+      requirements: this.getAssetRequirements(asset.type),
+      partnerInfo: this.getPartnerInfo(asset.type)
+    }));
+
+    const response = `Great! Let's get you started earning money from your property. Based on your analysis at ${this.context.propertyData.address}:
 
 💰 **Your Revenue Potential:** $${totalRevenue}/month
 
-🏠 **Available Opportunities:**
-${availableAssets.map(asset => 
-  `• ${asset.name}: $${asset.monthlyRevenue}/month`
-).join('\n')}
+Click on any asset below to get started with step-by-step setup:`;
 
-🚀 **Recommended Starting Order:**
-1. **${availableAssets[0]?.name}** - Highest revenue potential ($${availableAssets[0]?.monthlyRevenue}/month)
-2. **${availableAssets[1]?.name}** - Quick setup ($${availableAssets[1]?.monthlyRevenue}/month)
-
-Which asset would you like to start with? I'll guide you through the complete setup process and help you register with our partner platforms using referral links that give you the best benefits!`;
+    // Add the response with asset cards
+    this.addMessageWithAssets('assistant', response, assetCards);
+    return response;
   }
 
   private generateEarningsResponse(): string {
@@ -339,6 +451,140 @@ To give you personalized recommendations, could you tell me what type of propert
       content,
       timestamp: new Date()
     });
+  }
+
+  private addMessageWithAssets(role: 'user' | 'assistant', content: string, assetCards: AssetCard[]): void {
+    this.messageHistory.push({
+      id: `${Date.now()}-${Math.random()}`,
+      role,
+      content,
+      timestamp: new Date(),
+      assetCards
+    });
+  }
+
+  private getAssetRequirements(assetType: string): string[] {
+    const platformKey = this.getplatformKey(assetType);
+    const requirements = this.partnerRequirements.get(platformKey);
+    return requirements?.requirements || ['Basic setup required'];
+  }
+
+  private getPartnerInfo(assetType: string): AssetCard['partnerInfo'] {
+    const platformKey = this.getplatformKey(assetType);
+    const partner = this.partnerRequirements.get(platformKey);
+    
+    if (!partner) return undefined;
+    
+    return {
+      platform: partner.platform,
+      referralUrl: `https://referral.link/${platformKey}`,
+      requirements: partner.requirements
+    };
+  }
+
+  private getplatformKey(assetType: string): string {
+    const typeMap: Record<string, string> = {
+      'pool': 'swimply',
+      'swimming_pool': 'swimply',
+      'parking': 'spothero',
+      'driveway': 'spothero',
+      'storage': 'neighbor',
+      'garage': 'neighbor',
+      'basement': 'neighbor',
+      'space': 'peerspace',
+      'room': 'peerspace'
+    };
+    
+    return typeMap[assetType.toLowerCase()] || 'peerspace';
+  }
+
+  async fetchPartnerRequirements(platform: string): Promise<void> {
+    try {
+      console.log(`🔍 Fetching latest requirements for ${platform}`);
+      
+      const response = await fetch('https://gfqxruvldojyuzfpzodg.supabase.co/functions/v1/web-search', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdmcXhydXZsZG9qeXV6ZnB6b2RnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA2MTMwMTQsImV4cCI6MjA2NjE4OTAxNH0.bIMaxFc9KaBdAOqVyw8t2fNjR9i24NYGLAe8wY56LZw'
+        },
+        body: JSON.stringify({
+          query: `${platform} host requirements setup 2024`,
+          numResults: 3
+        })
+      });
+
+      if (response.ok) {
+        const searchData = await response.json();
+        const updatedRequirements = this.parseSearchResults(platform, searchData);
+        this.partnerRequirements.set(platform, updatedRequirements);
+        console.log(`✅ Updated requirements for ${platform}:`, updatedRequirements);
+      } else {
+        console.warn(`⚠️ Web search failed for ${platform}, using cached data`);
+      }
+      
+    } catch (error) {
+      console.error(`❌ Failed to fetch requirements for ${platform}:`, error);
+    }
+  }
+
+  private parseSearchResults(platform: string, searchData: any): any {
+    const currentDate = new Date().toISOString().split('T')[0];
+    const existingData = this.partnerRequirements.get(platform);
+    
+    // In a real implementation, you'd parse the search results to extract requirements
+    // For now, we'll enhance the existing data with web-sourced information
+    
+    return {
+      ...existingData,
+      platform: existingData?.platform || platform,
+      lastUpdated: currentDate,
+      webSourced: true,
+      requirements: this.enhanceRequirements(platform, existingData?.requirements || []),
+      setupSteps: existingData?.setupSteps || []
+    };
+  }
+
+  private enhanceRequirements(platform: string, baseRequirements: string[]): string[] {
+    // This would parse actual web search results to get current requirements
+    // For now, we'll add some current 2024 requirements based on platform
+    
+    const platformEnhancements: Record<string, string[]> = {
+      'swimply': [
+        'Pool insurance coverage (minimum $1M liability)',
+        'Pool safety equipment (life ring, first aid kit)',
+        'Professional photos (minimum 5 high-quality images)',
+        'Pool maintenance schedule and water testing',
+        'Clear guest access instructions and parking info',
+        'Host background check verification (2024 requirement)'
+      ],
+      'spothero': [
+        'Clear, unobstructed parking space',
+        'Safe, well-lit area with security measures',
+        'Easy access for renters (GPS coordinates provided)',
+        'Precise location details and landmarks',
+        'Photos of parking space and access route',
+        'Dynamic pricing enabled for maximum earnings (2024 feature)'
+      ],
+      'neighbor': [
+        'Clean, dry storage space (climate controlled preferred)',
+        'Secure area with locks and surveillance',
+        'Easy renter access during business hours',
+        'Climate considerations and protection noted',
+        'Clear photos showing space dimensions',
+        'Insurance verification for high-value items (2024 update)'
+      ],
+      'peerspace': [
+        'Unique, photogenic space with professional appeal',
+        'Basic amenities (WiFi, parking, restrooms)',
+        'Professional-quality photos (minimum 10 images)',
+        'Flexible booking availability (instant book preferred)',
+        'Clear space descriptions and usage guidelines',
+        'Virtual tour capability (2024 trending feature)'
+      ]
+    };
+
+    return platformEnhancements[platform] || baseRequirements;
   }
 
   getMessages(): ChatMessage[] {

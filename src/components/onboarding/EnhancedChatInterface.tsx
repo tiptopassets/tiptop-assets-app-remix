@@ -10,7 +10,8 @@ import { PropertyAnalysisData } from '@/hooks/useUserPropertyAnalysis';
 import { PartnerIntegrationService } from '@/services/partnerIntegrationService';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { AlertCircle, Wifi, Bot, User, Send, ExternalLink } from 'lucide-react';
+import { AlertCircle, Wifi, Bot, User, Send, ExternalLink, DollarSign, Clock, CheckCircle } from 'lucide-react';
+import { AssetCard } from '@/services/localChatService';
 
 interface EnhancedChatInterfaceProps {
   onAssetDetected: (assets: string[]) => void;
@@ -237,12 +238,73 @@ const EnhancedChatInterface = ({
                     : 'bg-primary text-primary-foreground ml-auto'
                 }`}>
                   <p className="text-sm whitespace-pre-wrap">{message.content}</p>
-                  <div className={`text-xs mt-1 opacity-70`}>
+                  
+                  {/* Asset Cards Display */}
+                  {message.assetCards && message.assetCards.length > 0 && (
+                    <div className="mt-4 space-y-3">
+                      {message.assetCards.map((asset) => (
+                        <Card 
+                          key={asset.id} 
+                          className="cursor-pointer hover:shadow-md transition-all duration-200 hover:border-primary/30"
+                          onClick={() => handleSuggestedAction(`Set up my ${asset.name.toLowerCase()}`)}
+                        >
+                          <CardContent className="p-4">
+                            <div className="flex items-center justify-between mb-2">
+                              <h4 className="font-semibold text-sm">{asset.name}</h4>
+                              <Badge variant="secondary" className="text-xs">
+                                <DollarSign className="w-3 h-3 mr-1" />
+                                ${asset.monthlyRevenue}/month potential
+                              </Badge>
+                            </div>
+                            
+                            <div className="flex items-center text-xs text-muted-foreground mb-3">
+                              <Clock className="w-3 h-3 mr-1" />
+                              {asset.setupTime} setup time
+                            </div>
+
+                            {asset.partnerInfo && (
+                              <div className="mb-3">
+                                <p className="text-xs font-medium text-muted-foreground mb-1">
+                                  Platform: {asset.partnerInfo.platform}
+                                </p>
+                                <div className="text-xs text-muted-foreground">
+                                  <p className="mb-1">Requirements:</p>
+                                  <ul className="list-disc list-inside space-y-0.5 ml-2">
+                                    {asset.requirements.slice(0, 3).map((req, idx) => (
+                                      <li key={idx}>{req}</li>
+                                    ))}
+                                    {asset.requirements.length > 3 && (
+                                      <li className="text-primary">...and {asset.requirements.length - 3} more</li>
+                                    )}
+                                  </ul>
+                                </div>
+                              </div>
+                            )}
+
+                            <Button 
+                              size="sm" 
+                              className="w-full" 
+                              variant="outline"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleSuggestedAction(`Set up my ${asset.name.toLowerCase()}`);
+                              }}
+                            >
+                              <CheckCircle className="w-3 h-3 mr-1" />
+                              Start Setup
+                            </Button>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  )}
+
+                  <div className={`text-xs mt-2 opacity-70`}>
                     {message.timestamp.toLocaleTimeString()}
                   </div>
                   
                   {/* Add partner referral buttons for assistant messages */}
-                  {message.role === 'assistant' && message.content.includes('Ready to start') && (
+                  {message.role === 'assistant' && message.content.includes('Ready to start') && !message.assetCards && (
                     <div className="mt-3 space-y-2">
                       {PartnerIntegrationService.getAllPlatforms().map(platform => (
                         <Button
