@@ -186,10 +186,23 @@ const EnhancedOnboardingChatbot = () => {
     setMessageCount(prev => prev + 1);
   };
 
-  // Loading state - wait for auth and data
-  const isLoading = authLoading || (propertyLoading && journeyLoading && !unifiedPropertyData);
+  // Loading state - wait for auth and at least one data source to finish loading
+  const isLoading = authLoading || (propertyLoading && journeyLoading) || (propertyLoading && !journeyData && !propertyData);
+  
+  console.log('🔄 [CHATBOT] Loading state check:', {
+    authLoading,
+    propertyLoading,
+    journeyLoading,
+    assetsLoading,
+    hasJourneyData: !!journeyData,
+    hasPropertyData: !!propertyData,
+    hasUnifiedData: !!unifiedPropertyData,
+    isLoading,
+    user: !!user
+  });
 
   if (isLoading) {
+    console.log('📊 [CHATBOT] Still loading, showing loading state');
     return (
       <ChatbotLoadingState 
         isAuthLoading={authLoading}
@@ -199,8 +212,9 @@ const EnhancedOnboardingChatbot = () => {
     );
   }
 
-  // Show error state if no data after loading
-  if (!unifiedPropertyData && !propertyLoading && !journeyLoading) {
+  // Show error state if no data after loading and user is authenticated
+  if (user && !authLoading && !unifiedPropertyData && !propertyLoading && !journeyLoading) {
+    console.log('⚠️ [CHATBOT] No data available after loading completed');
     return <ChatbotErrorState analysisId={analysisId} />;
   }
 
