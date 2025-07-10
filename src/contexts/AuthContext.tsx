@@ -278,9 +278,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                   // Trigger analysis recovery with enhanced data consistency
                   handleAnalysisRecovery(currentSession.user.id);
                   
-                  // Always redirect to dashboard when user signs in
-                  console.log('🔄 [AUTH] Redirecting to dashboard...');
-                  navigate('/dashboard');
+                  // Only redirect to dashboard if user is on auth page or homepage
+                  // This prevents redirecting away from chatbot when tab comes back into focus
+                  const currentPath = window.location.pathname;
+                  const shouldRedirectToDashboard = currentPath === '/' || currentPath === '/auth' || currentPath.startsWith('/auth');
+                  
+                  if (shouldRedirectToDashboard) {
+                    console.log('🔄 [AUTH] Redirecting to dashboard from:', currentPath);
+                    navigate('/dashboard');
+                  } else {
+                    console.log('🔄 [AUTH] Staying on current page:', currentPath);
+                  }
                 }
               }, 100);
             }
