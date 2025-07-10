@@ -331,7 +331,8 @@ async function getAssistant(requestId: string) {
   console.log(`🤖 [${requestId}] Getting assistant: ${OPENAI_ASSISTANT_ID}`);
   
   if (!OPENAI_ASSISTANT_ID) {
-    throw new Error('OpenAI Assistant ID not configured');
+    console.error(`❌ [${requestId}] OPENAI_ASSISTANT_ID is missing`);
+    return errorResponse('Assistant ID not configured in secrets', 400, requestId);
   }
   
   try {
@@ -341,6 +342,7 @@ async function getAssistant(requestId: string) {
       apiKey: OPENAI_API_KEY
     });
 
+    console.log(`🔍 [${requestId}] Attempting to retrieve assistant: ${OPENAI_ASSISTANT_ID}`);
     const assistant = await openai.beta.assistants.retrieve(OPENAI_ASSISTANT_ID);
     
     console.log(`✅ [${requestId}] Assistant verified:`, {
@@ -359,20 +361,28 @@ async function getAssistant(requestId: string) {
     }, requestId);
   } catch (error: any) {
     console.error(`❌ [${requestId}] Assistant verification failed:`, {
+      assistantId: OPENAI_ASSISTANT_ID,
       message: error.message,
       status: error.status,
-      code: error.code
+      code: error.code,
+      response: error.response?.data || 'No response data'
     });
     
     if (error.status === 404 || error.message.includes('not found')) {
-      throw new Error(`Assistant with ID ${OPENAI_ASSISTANT_ID} not found. Please check the assistant ID.`);
+      const errorMsg = `Assistant with ID ${OPENAI_ASSISTANT_ID} not found. Please check the assistant ID in secrets.`;
+      console.error(`❌ [${requestId}] ${errorMsg}`);
+      return errorResponse(errorMsg, 404, requestId);
     }
     
     if (error.status === 401) {
-      throw new Error('OpenAI API key is invalid or missing permissions');
+      const errorMsg = 'OpenAI API key is invalid or missing permissions for Assistant API';
+      console.error(`❌ [${requestId}] ${errorMsg}`);
+      return errorResponse(errorMsg, 401, requestId);
     }
     
-    throw new Error(`Assistant verification failed: ${error.message}`);
+    const errorMsg = `Assistant verification failed: ${error.message}`;
+    console.error(`❌ [${requestId}] ${errorMsg}`);
+    return errorResponse(errorMsg, 500, requestId);
   }
 }
 
