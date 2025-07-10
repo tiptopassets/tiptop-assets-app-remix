@@ -26,7 +26,7 @@ const SelectedAssetsCarousel: React.FC<SelectedAssetsCarouselProps> = ({
     
     const asset = propertyData.availableAssets.find(a => a.type === assetType);
     if (asset && asset.name) {
-      onAssetSelect(`Set up my ${asset.name.toLowerCase()}`);
+      onAssetSelect(`Set up my ${asset.name?.toLowerCase() || 'asset'}`);
     }
   };
 
