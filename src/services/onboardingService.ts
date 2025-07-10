@@ -133,11 +133,16 @@ export const updateOnboardingProgress = async (
       .eq('id', onboardingId)
       .eq('user_id', user.id) // Ensure user can only update their own data
       .select()
-      .single();
+      .maybeSingle();
 
     if (error) {
       console.error('❌ Error updating onboarding:', error);
       throw error;
+    }
+
+    if (!data) {
+      console.warn('⚠️ No onboarding record found to update');
+      throw new Error('Onboarding record not found or access denied');
     }
 
     console.log('✅ Onboarding updated successfully');
@@ -168,7 +173,7 @@ export const addOnboardingMessage = async (
       .from('user_onboarding')
       .select('user_id')
       .eq('id', onboardingId)
-      .single();
+      .maybeSingle();
     
     if (checkError || !onboardingData || onboardingData.user_id !== user.id) {
       throw new Error('Access denied: onboarding session not found or not owned by user');

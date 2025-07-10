@@ -419,29 +419,59 @@ async function createThread(data: any, supabase: any, requestId: string) {
       try {
         console.log(`💾 [${requestId}] Saving onboarding record for user: ${userId}`);
         
-        const { error } = await supabase
+        // First check if user already has an onboarding record
+        const { data: existingOnboarding } = await supabase
           .from('user_onboarding')
-          .upsert({
-            id: thread.id,
-            user_id: userId,
-            selected_option: 'concierge',
-            status: 'in_progress',
-            current_step: 1,
-            total_steps: 5,
-            progress_data: {
-              assistant_thread_id: thread.id,
-              assistant_id: OPENAI_ASSISTANT_ID,
-              created_via: 'openai_assistant',
-              metadata: cleanMetadata,
-              created_at: new Date().toISOString()
-            }
-          }, { onConflict: 'id' });
+          .select('id')
+          .eq('user_id', userId)
+          .maybeSingle();
 
-        if (error) {
-          console.warn(`⚠️ [${requestId}] Onboarding save failed:`, error.message);
+        if (existingOnboarding) {
+          // Update existing record with thread info
+          const { error } = await supabase
+            .from('user_onboarding')
+            .update({
+              progress_data: {
+                assistant_thread_id: thread.id,
+                assistant_id: OPENAI_ASSISTANT_ID,
+                created_via: 'openai_assistant',
+                metadata: cleanMetadata,
+                updated_at: new Date().toISOString()
+              }
+            })
+            .eq('id', existingOnboarding.id);
+
+          if (error) {
+            console.warn(`⚠️ [${requestId}] Onboarding update failed:`, error.message);
+          } else {
+            console.log(`✅ [${requestId}] Onboarding record updated with thread info`);
+          }
         } else {
-          console.log(`✅ [${requestId}] Onboarding record saved`);
+          // Create new onboarding record
+          const { error } = await supabase
+            .from('user_onboarding')
+            .insert({
+              user_id: userId,
+              selected_option: 'concierge',
+              status: 'in_progress',
+              current_step: 1,
+              total_steps: 5,
+              progress_data: {
+                assistant_thread_id: thread.id,
+                assistant_id: OPENAI_ASSISTANT_ID,
+                created_via: 'openai_assistant',
+                metadata: cleanMetadata,
+                created_at: new Date().toISOString()
+              }
+            });
+
+          if (error) {
+            console.warn(`⚠️ [${requestId}] Onboarding creation failed:`, error.message);
+          } else {
+            console.log(`✅ [${requestId}] New onboarding record created`);
+          }
         }
+
       } catch (dbError) {
         console.warn(`⚠️ [${requestId}] Database error:`, dbError.message);
       }
