@@ -267,15 +267,20 @@ export const useOpenAIAssistant = (propertyData: PropertyAnalysisData | null) =>
 
       if (threadError) {
         console.error('❌ [ASSISTANT] Thread creation failed:', threadError);
-        throw new Error(`Thread creation failed: ${threadError.message}`);
+        throw new Error(`Thread creation failed: ${threadError.message || 'Unknown error'}`);
       }
 
-      if (!threadData.success) {
-        console.error('❌ [ASSISTANT] Thread creation failed:', threadData);
-        throw new Error(`Thread creation failed: ${threadData.error}`);
+      if (!threadData?.success || !threadData?.thread?.id) {
+        console.error('❌ [ASSISTANT] Invalid thread response:', threadData);
+        throw new Error(`Thread creation failed: ${threadData?.error || 'Invalid response'}`);
       }
 
       const newThreadId = threadData.thread.id;
+      if (!newThreadId || typeof newThreadId !== 'string') {
+        console.error('❌ [ASSISTANT] Invalid thread ID:', newThreadId);
+        throw new Error('Thread creation failed: Invalid thread ID');
+      }
+      
       console.log('✅ [ASSISTANT] Thread created:', newThreadId);
 
       // Step 6: Set state and show welcome
@@ -284,14 +289,18 @@ export const useOpenAIAssistant = (propertyData: PropertyAnalysisData | null) =>
       setState('ready');
       retryCountRef.current = 0;
 
-      // Generate welcome message
-      const welcomeMessage = generateWelcomeMessage(context);
-      setMessages([{
-        id: 'welcome',
-        role: 'assistant',
-        content: welcomeMessage,
-        timestamp: new Date()
-      }]);
+      // Generate welcome message only if thread was created successfully
+      if (newThreadId) {
+        const welcomeMessage = generateWelcomeMessage(context);
+        if (welcomeMessage) {
+          setMessages([{
+            id: 'welcome',
+            role: 'assistant',
+            content: welcomeMessage,
+            timestamp: new Date()
+          }]);
+        }
+      }
 
       console.log('🎉 [ASSISTANT] Initialization complete');
 

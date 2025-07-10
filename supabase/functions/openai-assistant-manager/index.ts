@@ -197,7 +197,6 @@ async function openAIRequest(endpoint: string, options: any, requestId: string) 
       ...options,
       headers: {
         'Authorization': `Bearer ${OPENAI_API_KEY}`,
-        'OpenAI-Beta': 'assistants=v2',
         'Content-Type': 'application/json',
         ...options.headers
       }
@@ -359,7 +358,7 @@ async function getAssistant(requestId: string) {
   }
 }
 
-// STEP 1: Create Thread (OpenAI official workflow - NO assistant_id)
+// Fixed: Create Thread using OpenAI SDK instead of manual requests
 async function createThread(data: any, supabase: any, requestId: string) {
   console.log(`🧵 [${requestId}] Creating thread (OpenAI Step 1)...`);
   
@@ -377,15 +376,17 @@ async function createThread(data: any, supabase: any, requestId: string) {
 
     console.log(`📋 [${requestId}] Clean metadata:`, cleanMetadata);
 
-    // STEP 1: Create thread WITHOUT assistant_id (OpenAI official workflow)
+    // Use OpenAI SDK for thread creation
+    const OpenAI = (await import('https://deno.land/x/openai@v4.24.0/mod.ts')).default;
+    const openai = new OpenAI({
+      apiKey: OPENAI_API_KEY
+    });
+
+    // Create thread using OpenAI SDK - no assistant_id here
     const threadPayload = Object.keys(cleanMetadata).length > 0 ? { metadata: cleanMetadata } : {};
-    
     console.log(`🚀 [${requestId}] Creating thread with payload:`, threadPayload);
 
-    const thread = await openAIRequest('threads', {
-      method: 'POST',
-      body: JSON.stringify(threadPayload)
-    }, requestId);
+    const thread = await openai.beta.threads.create(threadPayload);
 
     console.log(`✅ [${requestId}] Thread created successfully:`, {
       id: thread.id,
