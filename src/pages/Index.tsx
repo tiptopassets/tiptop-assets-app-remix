@@ -10,6 +10,7 @@ import ModelGenerationSheet from '@/components/ModelGenerationSheet';
 import HomeModelViewer from '@/components/home-model-viewer';
 import DataSyncNotification from '@/components/DataSyncNotification';
 import JourneyTracker from '@/components/JourneyTracker';
+import { OpenAIConnectionTest } from '@/components/OpenAIConnectionTest';
 import { useGoogleMap } from '@/contexts/GoogleMapContext';
 import { useModelGeneration } from '@/contexts/ModelGeneration';
 import { Settings } from 'lucide-react';
@@ -18,6 +19,8 @@ import FooterCarousel from '@/components/FooterCarousel';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAdmin } from '@/hooks/useAdmin';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 
 const Index = () => {
   const { isAnalyzing, analysisComplete, address, analysisResults } = useGoogleMap();
@@ -69,14 +72,33 @@ const Index = () => {
           </Link>
           <div className="flex gap-2 sm:gap-3 md:gap-4">
             {isAdmin && (
-              <Link
-                to="/dashboard/admin"
-                className="glass-effect px-2 py-1 sm:px-3 sm:py-2 md:px-4 md:py-2 rounded-full flex items-center gap-1 sm:gap-2 text-white hover:scale-105 transition-transform text-xs sm:text-sm md:text-base relative"
-              >
-                <Settings size={isMobile ? 12 : 16} className="sm:w-4 sm:h-4 md:w-5 md:h-5" />
-                <span className="text-gray-100">Admin</span>
-                <div className="absolute -inset-0.5 bg-gradient-to-r from-red-500/20 to-orange-500/20 rounded-full blur-sm -z-10"></div>
-              </Link>
+              <>
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      className="glass-effect px-2 py-1 sm:px-3 sm:py-2 rounded-full flex items-center gap-1 sm:gap-2 text-white hover:scale-105 transition-transform text-xs sm:text-sm border-orange-500/50"
+                    >
+                      🔧 Test
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+                    <DialogHeader>
+                      <DialogTitle>OpenAI Connection Test</DialogTitle>
+                    </DialogHeader>
+                    <OpenAIConnectionTest />
+                  </DialogContent>
+                </Dialog>
+                <Link
+                  to="/dashboard/admin"
+                  className="glass-effect px-2 py-1 sm:px-3 sm:py-2 md:px-4 md:py-2 rounded-full flex items-center gap-1 sm:gap-2 text-white hover:scale-105 transition-transform text-xs sm:text-sm md:text-base relative"
+                >
+                  <Settings size={isMobile ? 12 : 16} className="sm:w-4 sm:h-4 md:w-5 md:h-5" />
+                  <span className="text-gray-100">Admin</span>
+                  <div className="absolute -inset-0.5 bg-gradient-to-r from-red-500/20 to-orange-500/20 rounded-full blur-sm -z-10"></div>
+                </Link>
+              </>
             )}
             <Link 
               to={user ? "/dashboard" : "/auth"} 
