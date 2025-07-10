@@ -37,114 +37,50 @@ const ChatbotSidebar: React.FC<ChatbotSidebarProps> = ({
 
   return (
     <div className="lg:col-span-4 space-y-6">
-      {/* Property Summary */}
-      {hasPropertyData && (
+      {/* Quick Actions - Moved to top and horizontal */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg flex items-center gap-2">
+            <Settings2 className="h-5 w-5 text-tiptop-purple" />
+            Quick Actions
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+            <Button
+              variant="outline"
+              className="w-full justify-center text-xs px-2 py-2 h-auto"
+              onClick={() => navigate('/submit-property')}
+            >
+              Analyze Another Property
+            </Button>
+            <Button
+              variant="outline"
+              className="w-full justify-center text-xs px-2 py-2 h-auto"
+              onClick={() => navigate('/dashboard')}
+            >
+              View My Dashboard
+            </Button>
+            <Button
+              variant="default"
+              className="w-full justify-center text-xs px-2 py-2 h-auto bg-tiptop-purple hover:bg-tiptop-purple/90 text-white font-medium"
+              onClick={() => window.open('https://calendly.com/tiptop-concierge', '_blank')}
+            >
+              Schedule Concierge Call
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Property Analysis Card - Hidden as requested */}
+      {/* {hasPropertyData && (
         <motion.div
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
         >
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg flex items-center gap-2">
-                <Settings2 className="h-5 w-5 text-tiptop-purple" />
-                Your Property Analysis
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                <div>
-                  <p className="text-sm font-medium text-gray-700">Address</p>
-                  <p className="text-sm text-gray-600">{propertyData?.address}</p>
-                </div>
-                {analysisId && (
-                  <div>
-                    <p className="text-sm font-medium text-gray-700">Analysis ID</p>
-                    <p className="text-xs text-gray-500 font-mono">{analysisId}</p>
-                  </div>
-                )}
-                <div>
-                  <p className="text-sm font-medium text-gray-700">Total Monthly Potential</p>
-                  <p className="text-lg font-bold text-green-600">${propertyData?.totalMonthlyRevenue}/month</p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-700">Available Assets ({propertyData?.availableAssets.length})</p>
-                  <div className="flex flex-wrap gap-1 mt-1">
-                    {propertyData?.availableAssets.map((asset) => (
-                      <Badge 
-                        key={asset.type} 
-                        variant="outline" 
-                        className="text-xs cursor-pointer hover:bg-tiptop-purple hover:text-white transition-colors" 
-                        onClick={() => {
-                          const params = new URLSearchParams();
-                          if (analysisId) {
-                            params.set('analysisId', analysisId);
-                          }
-                          params.set('asset', asset.type);
-                          window.location.href = `/dashboard/onboarding?${params.toString()}`;
-                        }}
-                      >
-                        {asset.name} (${asset.monthlyRevenue}/mo)
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-                {targetAsset && (
-                  <div>
-                    <p className="text-sm font-medium text-gray-700">Current Focus</p>
-                    <Badge className="bg-tiptop-purple text-white">
-                      {targetAsset.replace('_', ' ')} Setup
-                    </Badge>
-                  </div>
-                )}
-                {propertyData?.selectedAssets && propertyData.selectedAssets.length > 0 && (
-                  <div>
-                    {(() => {
-                      // Deduplicate selected assets - keep only the most recent selection for each asset type
-                      const uniqueAssets = propertyData.selectedAssets.reduce((acc: any[], selection: any) => {
-                        const existingIndex = acc.findIndex(existing => 
-                          existing.asset_type.toLowerCase() === selection.asset_type.toLowerCase()
-                        );
-                        
-                        if (existingIndex === -1) {
-                          // Asset type not found, add it
-                          acc.push(selection);
-                        } else {
-                          // Asset type exists, keep the more recent one
-                          const existingDate = new Date(acc[existingIndex].selected_at);
-                          const currentDate = new Date(selection.selected_at);
-                          
-                          if (currentDate > existingDate) {
-                            acc[existingIndex] = selection;
-                          }
-                        }
-                        
-                        return acc;
-                      }, []);
-
-                      return (
-                        <>
-                          <p className="text-sm font-medium text-gray-700">Selected Assets ({uniqueAssets.length})</p>
-                          <div className="flex flex-wrap gap-1 mt-1">
-                            {uniqueAssets.map((selection: any) => (
-                              <Badge 
-                                key={selection.id} 
-                                variant="secondary" 
-                                className="text-xs bg-green-100 text-green-800 border-green-200"
-                              >
-                                {selection.asset_type.replace('_', ' ')} (${selection.monthly_revenue}/mo)
-                              </Badge>
-                            ))}
-                          </div>
-                        </>
-                      );
-                    })()}
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+          ... Property Analysis Card Content ...
         </motion.div>
-      )}
+      )} */}
 
       {/* Conversation Analytics */}
       {showAnalytics && (
@@ -155,39 +91,6 @@ const ChatbotSidebar: React.FC<ChatbotSidebarProps> = ({
           <ConversationAnalytics analytics={analytics} />
         </motion.div>
       )}
-
-      {/* Quick Actions */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg flex items-center gap-2">
-            <Settings2 className="h-5 w-5 text-tiptop-purple" />
-            Quick Actions
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-2">
-          <Button
-            variant="outline"
-            className="w-full justify-start"
-            onClick={() => navigate('/submit-property')}
-          >
-            Analyze Another Property
-          </Button>
-          <Button
-            variant="outline"
-            className="w-full justify-start"
-            onClick={() => navigate('/dashboard')}
-          >
-            View My Dashboard
-          </Button>
-          <Button
-            variant="outline"
-            className="w-full justify-start"
-            onClick={() => window.open('https://calendly.com/tiptop-concierge', '_blank')}
-          >
-            Schedule Concierge Call
-          </Button>
-        </CardContent>
-      </Card>
 
     </div>
   );
