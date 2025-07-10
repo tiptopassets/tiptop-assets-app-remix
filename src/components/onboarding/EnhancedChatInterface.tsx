@@ -5,11 +5,11 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { useOpenAIAssistant } from '@/hooks/useOpenAIAssistant';
+import { useOpenAIChat } from '@/hooks/useOpenAIChat';
 import { PropertyAnalysisData } from '@/hooks/useUserPropertyAnalysis';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { AlertCircle, Wifi, WifiOff, RefreshCw } from 'lucide-react';
+import { AlertCircle, Wifi, Bot, User, Send } from 'lucide-react';
 
 interface EnhancedChatInterfaceProps {
   onAssetDetected: (assets: string[]) => void;
@@ -31,27 +31,19 @@ const EnhancedChatInterface = ({
   const [showSuggestions, setShowSuggestions] = useState(true);
 
   const {
-    initializeAssistant,
-    sendMessage,
     messages: assistantMessages,
     isLoading: aiLoading,
-    isProcessing,
-    isReady,
-    isInitialized,
-    isReconnecting,
     error: assistantError,
-    authError,
-    userContext,
-    clearError,
-    resetConversation
-  } = useOpenAIAssistant(propertyData);
+    sendMessage,
+    clearChat
+  } = useOpenAIChat();
 
   // Provide sendMessage function to parent component once ready
   useEffect(() => {
-    if (onSendMessageReady && isReady) {
+    if (onSendMessageReady) {
       onSendMessageReady(sendMessage);
     }
-  }, [onSendMessageReady, sendMessage, isReady]);
+  }, [onSendMessageReady, sendMessage]);
 
   // Scroll to bottom when messages change
   useEffect(() => {
@@ -63,7 +55,7 @@ const EnhancedChatInterface = ({
 
   // Enhanced message handling with debouncing
   const handleSendMessage = useCallback(async () => {
-    if (!inputMessage.trim() || !isReady || isProcessing) return;
+    if (!inputMessage.trim() || aiLoading) return;
 
     const message = inputMessage.trim();
     setInputMessage('');
@@ -77,10 +69,10 @@ const EnhancedChatInterface = ({
     } catch (error) {
       console.error('❌ [CHAT] Error sending message:', error);
     }
-  }, [inputMessage, isReady, isProcessing, sendMessage, onConversationStageChange]);
+  }, [inputMessage, aiLoading, sendMessage, onConversationStageChange]);
 
   const handleSuggestedAction = useCallback(async (action: string) => {
-    if (!isReady || isProcessing) return;
+    if (aiLoading) return;
     
     console.log('🎯 [CHAT] Suggested action selected:', action);
     setShowSuggestions(false);
@@ -91,7 +83,7 @@ const EnhancedChatInterface = ({
     } catch (error) {
       console.error('❌ [CHAT] Error with suggested action:', error);
     }
-  }, [isReady, isProcessing, sendMessage, onConversationStageChange]);
+  }, [aiLoading, sendMessage, onConversationStageChange]);
 
   const handleKeyPress = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -101,16 +93,14 @@ const EnhancedChatInterface = ({
   }, [handleSendMessage]);
 
   // Enhanced loading state detection
-  const showLoadingState = aiLoading || (!userContext.isLoaded && !assistantError);
-  const showReadyState = isInitialized && isReady && userContext.isLoaded;
-  const showReconnectingState = isReconnecting;
+  const showLoadingState = aiLoading;
+  const showReadyState = !aiLoading && !assistantError;
 
   // Connection status indicator
   const getConnectionStatus = () => {
-    if (showReconnectingState) return { icon: RefreshCw, label: 'Reconnecting...', color: 'text-yellow-600 border-yellow-200' };
-    if (showReadyState) return { icon: Wifi, label: 'Connected', color: 'text-green-600 border-green-200' };
-    if (assistantError) return { icon: WifiOff, label: 'Connection Error', color: 'text-red-600 border-red-200' };
-    return { icon: RefreshCw, label: 'Connecting...', color: 'text-blue-600 border-blue-200' };
+    if (showReadyState) return { icon: Wifi, label: 'Ready', color: 'text-green-600 border-green-200' };
+    if (assistantError) return { icon: AlertCircle, label: 'Error', color: 'text-red-600 border-red-200' };
+    return { icon: Bot, label: 'Starting...', color: 'text-blue-600 border-blue-200' };
   };
 
   const connectionStatus = getConnectionStatus();
@@ -156,7 +146,7 @@ const EnhancedChatInterface = ({
           </div>
           <div className="flex items-center space-x-2">
             <Badge variant="outline" className={connectionStatus.color}>
-              <connectionStatus.icon className={`w-2 h-2 mr-1 ${showReconnectingState ? 'animate-spin' : ''}`} />
+              <connectionStatus.icon className="w-2 h-2 mr-1" />
               {connectionStatus.label}
             </Badge>
             {!user && (
@@ -175,38 +165,16 @@ const EnhancedChatInterface = ({
 
       {/* Messages Area */}
       <div className="flex-1 overflow-y-auto p-4">
-        {/* Enhanced Loading state */}
-        {showLoadingState && (
-          <div className="flex justify-center items-center h-full">
-            <div className="flex flex-col items-center space-y-3">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-              <div className="text-center">
-                <span className="text-sm text-muted-foreground">
-                  {userContext.isLoaded ? 'Initializing AI assistant...' : 'Loading your data...'}
-                </span>
-                {propertyData && (
-                  <div className="text-xs text-gray-500 mt-1">
-                    Preparing assistant for {propertyData.address}
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Reconnecting state */}
-        {showReconnectingState && (
-          <div className="flex justify-center mb-4">
-            <div className="bg-yellow-50 text-yellow-800 rounded-lg px-4 py-3 border border-yellow-200 max-w-md text-center">
-              <RefreshCw className="w-4 h-4 animate-spin mx-auto mb-2" />
-              <div className="text-sm font-medium mb-1">Reconnecting...</div>
-              <div className="text-sm">Attempting to restore connection</div>
-            </div>
+        {assistantMessages.length === 0 && !showLoadingState && (
+          <div className="text-center text-muted-foreground py-8">
+            <Bot className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
+            <p>Hi! I'm your property assistant. I can help you understand your property's monetization potential.</p>
+            <p className="text-sm mt-2">Ask me about solar panels, EV charging, internet sharing, or any other opportunities!</p>
           </div>
         )}
 
         {/* Enhanced Error state with retry options */}
-        {assistantError && !showReconnectingState && (
+        {assistantError && (
           <div className="flex justify-center mb-4">
             <div className="bg-destructive/10 text-destructive rounded-lg px-4 py-3 border border-destructive/20 max-w-md">
               <div className="flex items-center mb-2">
@@ -216,18 +184,12 @@ const EnhancedChatInterface = ({
               <div className="text-sm mb-3 whitespace-pre-line">{assistantError}</div>
               <div className="flex gap-2">
                 <button 
-                  onClick={clearError}
+                  onClick={clearChat}
                   className="text-xs underline"
                 >
-                  Dismiss
+                  Clear Chat
                 </button>
-                <button 
-                  onClick={resetConversation}
-                  className="text-xs underline ml-2"
-                >
-                  Reset & Retry
-                </button>
-                {authError && !user && (
+                {!user && (
                   <button 
                     onClick={() => navigate('/auth')}
                     className="text-xs underline ml-2"
@@ -249,58 +211,48 @@ const EnhancedChatInterface = ({
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
                 transition={{ duration: 0.3 }}
-                className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                className={`flex items-start gap-3 ${
+                  message.role === 'assistant' ? 'justify-start' : 'justify-end'
+                }`}
               >
-                <div className={`max-w-[80%] ${message.role === 'user' ? 'order-2' : 'order-1'}`}>
-                  <Card className={`${
-                    message.role === 'user' 
-                      ? 'bg-tiptop-purple text-white' 
-                      : 'bg-white border-gray-200'
-                  }`}>
-                    <CardContent className="p-3">
-                      <div 
-                        className="text-sm prose prose-sm max-w-none"
-                        dangerouslySetInnerHTML={{ 
-                          __html: message.content.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br/>') 
-                        }}
-                      />
-                      
-                      {/* Function calls indicator */}
-                      {message.functionCalls && message.functionCalls.length > 0 && (
-                        <div className="mt-2 text-xs opacity-70">
-                          <div className="flex items-center space-x-1">
-                            <div className="animate-pulse w-2 h-2 bg-primary rounded-full"></div>
-                            <span>Processing {message.functionCalls.length} function call(s)...</span>
-                          </div>
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                  
-                  <div className={`text-xs text-gray-500 mt-1 ${
-                    message.role === 'user' ? 'text-right' : 'text-left'
-                  }`}>
+                {message.role === 'assistant' && (
+                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                    <Bot className="h-4 w-4 text-primary" />
+                  </div>
+                )}
+                
+                <div className={`max-w-[80%] rounded-lg p-3 ${
+                  message.role === 'assistant'
+                    ? 'bg-muted text-foreground'
+                    : 'bg-primary text-primary-foreground ml-auto'
+                }`}>
+                  <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                  <div className={`text-xs mt-1 opacity-70`}>
                     {message.timestamp.toLocaleTimeString()}
                   </div>
                 </div>
+                
+                {message.role === 'user' && (
+                  <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
+                    <User className="h-4 w-4 text-primary-foreground" />
+                  </div>
+                )}
               </motion.div>
             ))}
           </AnimatePresence>
           
-          {isProcessing && (
+          {aiLoading && (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="flex justify-start"
+              className="flex items-start gap-3"
             >
-              <Card className="bg-white border-gray-200">
-                <CardContent className="p-3">
-                  <div className="flex items-center space-x-2">
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
-                    <span className="text-sm text-gray-600">AI assistant is working...</span>
-                  </div>
-                </CardContent>
-              </Card>
+              <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                <Bot className="h-4 w-4 text-primary" />
+              </div>
+              <div className="bg-muted rounded-lg p-3">
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+              </div>
             </motion.div>
           )}
 
@@ -327,7 +279,7 @@ const EnhancedChatInterface = ({
                       variant="outline"
                       className="h-auto p-3 justify-start hover:bg-tiptop-purple hover:text-white transition-colors"
                       onClick={() => handleSuggestedAction(`I want to set up ${asset.name.toLowerCase()} at my property. What do I need to get started?`)}
-                      disabled={!showReadyState || isProcessing}
+                      disabled={!showReadyState || aiLoading}
                     >
                       <div className="text-left">
                         <div className="font-medium">{asset.name}</div>
@@ -360,15 +312,15 @@ const EnhancedChatInterface = ({
                     ? "Assistant error - please retry"
                     : "Assistant not available"
             }
-            disabled={!showReadyState || isProcessing}
+            disabled={!showReadyState || aiLoading}
             className="flex-1"
           />
           <Button 
             onClick={handleSendMessage}
-            disabled={!inputMessage.trim() || !showReadyState || isProcessing}
-            className="px-6"
+            disabled={!inputMessage.trim() || !showReadyState || aiLoading}
+            size="icon"
           >
-            Send
+            <Send className="h-4 w-4" />
           </Button>
         </div>
         
@@ -381,7 +333,7 @@ const EnhancedChatInterface = ({
                 variant="outline"
                 size="sm"
                 onClick={() => handleSuggestedAction(suggestion)}
-                disabled={!showReadyState || isProcessing}
+                disabled={!showReadyState || aiLoading}
                 className="text-xs"
               >
                 {suggestion}
@@ -391,30 +343,23 @@ const EnhancedChatInterface = ({
         )}
         
         {/* Enhanced context indicators */}
-        {userContext.isLoaded && (
-          <div className="mt-2 flex flex-wrap gap-1 text-xs text-gray-500">
-            {userContext.propertyData && (
-              <Badge variant="secondary" className="text-xs">
-                Property: {userContext.propertyData.address}
-              </Badge>
-            )}
-            {userContext.serviceProviders.length > 0 && (
-              <Badge variant="secondary" className="text-xs">
-                {userContext.serviceProviders.length} Partners Available
-              </Badge>
-            )}
-            {user && (
-              <Badge variant="secondary" className="text-xs">
-                Signed In: Full Features
-              </Badge>
-            )}
-            {showReadyState && (
-              <Badge variant="secondary" className="text-xs bg-green-50 text-green-700">
-                Assistant Ready
-              </Badge>
-            )}
-          </div>
-        )}
+        <div className="mt-2 flex flex-wrap gap-1 text-xs text-gray-500">
+          {propertyData && (
+            <Badge variant="secondary" className="text-xs">
+              Property: {propertyData.address}
+            </Badge>
+          )}
+          {user && (
+            <Badge variant="secondary" className="text-xs">
+              Signed In: Full Features
+            </Badge>
+          )}
+          {showReadyState && (
+            <Badge variant="secondary" className="text-xs bg-green-50 text-green-700">
+              Assistant Ready
+            </Badge>
+          )}
+        </div>
       </div>
     </div>
   );
