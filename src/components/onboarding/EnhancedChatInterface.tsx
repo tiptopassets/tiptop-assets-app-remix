@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent } from '@/components/ui/card';
@@ -10,8 +9,8 @@ import { PropertyAnalysisData } from '@/hooks/useUserPropertyAnalysis';
 import { PartnerIntegrationService } from '@/services/partnerIntegrationService';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { AlertCircle, Wifi, Bot, User, Send, ExternalLink, DollarSign, Clock, CheckCircle } from 'lucide-react';
-import { AssetCard } from '@/services/localChatService';
+import { AlertCircle, Wifi, Bot, User, Send, ExternalLink, DollarSign, Clock, CheckCircle, Star } from 'lucide-react';
+import { AssetCard, PartnerOption } from '@/services/localChatService';
 
 interface EnhancedChatInterfaceProps {
   onAssetDetected: (assets: string[]) => void;
@@ -299,12 +298,74 @@ const EnhancedChatInterface = ({
                     </div>
                   )}
 
+                  {/* Partner Options Display */}
+                  {message.partnerOptions && message.partnerOptions.length > 0 && (
+                    <div className="mt-4 space-y-3">
+                      {message.partnerOptions.map((partner) => (
+                        <Card 
+                          key={partner.id} 
+                          className="cursor-pointer hover:shadow-md transition-all duration-200 hover:border-primary/30"
+                          onClick={() => handlePartnerReferral(partner.id)}
+                        >
+                          <CardContent className="p-4">
+                            <div className="flex items-center justify-between mb-2">
+                              <div className="flex items-center gap-2">
+                                <h4 className="font-semibold text-sm">{partner.name}</h4>
+                                {partner.priority === 1 && (
+                                  <Badge variant="default" className="text-xs bg-yellow-100 text-yellow-800 border-yellow-200">
+                                    <Star className="w-3 h-3 mr-1 fill-current" />
+                                    Recommended
+                                  </Badge>
+                                )}
+                              </div>
+                              <Badge variant="secondary" className="text-xs">
+                                <DollarSign className="w-3 h-3 mr-1" />
+                                ${partner.earningRange.min}-${partner.earningRange.max}/month
+                              </Badge>
+                            </div>
+                            
+                            <p className="text-xs text-muted-foreground mb-3">{partner.description}</p>
+                            
+                            <div className="flex items-center text-xs text-muted-foreground mb-3">
+                              <Clock className="w-3 h-3 mr-1" />
+                              {partner.setupTime} setup time
+                            </div>
+
+                            <div className="mb-3">
+                              <p className="text-xs font-medium text-muted-foreground mb-1">Key Requirements:</p>
+                              <ul className="list-disc list-inside space-y-0.5 ml-2 text-xs text-muted-foreground">
+                                {partner.requirements.slice(0, 3).map((req, idx) => (
+                                  <li key={idx}>{req}</li>
+                                ))}
+                                {partner.requirements.length > 3 && (
+                                  <li className="text-primary">...and {partner.requirements.length - 3} more</li>
+                                )}
+                              </ul>
+                            </div>
+
+                            <Button 
+                              size="sm" 
+                              className="w-full" 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handlePartnerReferral(partner.id);
+                              }}
+                            >
+                              <ExternalLink className="w-3 h-3 mr-1" />
+                              Start with {partner.name}
+                            </Button>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  )}
+
                   <div className={`text-xs mt-2 opacity-70`}>
                     {message.timestamp.toLocaleTimeString()}
                   </div>
                   
                   {/* Add partner referral buttons for assistant messages */}
-                  {message.role === 'assistant' && message.content.includes('Ready to start') && !message.assetCards && (
+                  {message.role === 'assistant' && message.content.includes('Ready to start') && !message.assetCards && !message.partnerOptions && (
                     <div className="mt-3 space-y-2">
                       {PartnerIntegrationService.getAllPlatforms().map(platform => (
                         <Button

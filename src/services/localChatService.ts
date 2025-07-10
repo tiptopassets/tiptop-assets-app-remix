@@ -1,5 +1,5 @@
-
 import { PropertyAnalysisData } from '@/hooks/useUserPropertyAnalysis';
+import { PartnerIntegrationService } from './partnerIntegrationService';
 
 export interface ChatMessage {
   id: string;
@@ -8,6 +8,7 @@ export interface ChatMessage {
   timestamp: Date;
   metadata?: any;
   assetCards?: AssetCard[];
+  partnerOptions?: PartnerOption[];
 }
 
 export interface AssetCard {
@@ -23,6 +24,18 @@ export interface AssetCard {
     referralUrl: string;
     requirements: string[];
   };
+}
+
+export interface PartnerOption {
+  id: string;
+  name: string;
+  description: string;
+  referralLink: string;
+  earningRange: { min: number; max: number };
+  setupTime: string;
+  requirements: string[];
+  setupSteps: string[];
+  priority?: number;
 }
 
 export interface ConversationContext {
@@ -122,11 +135,54 @@ export class LocalChatService {
         'Complete business verification'
       ]
     });
+
+    // Add internet bandwidth sharing partners
+    this.partnerRequirements.set('grass', {
+      platform: 'Grass.io',
+      requirements: [
+        'Stable internet connection (minimum 10 Mbps)',
+        'Computer or device running 24/7',
+        'Unlimited internet plan recommended',
+        'Basic technical setup knowledge'
+      ],
+      setupSteps: [
+        'Register using referral link for bonus rewards',
+        'Download and install Grass desktop application',
+        'Complete account verification process',
+        'Configure bandwidth sharing settings',
+        'Start earning from unused bandwidth'
+      ]
+    });
+
+    this.partnerRequirements.set('honeygain', {
+      platform: 'Honeygain',
+      requirements: [
+        'Stable internet connection',
+        'Device running continuously',
+        'Minimum 10 GB monthly bandwidth',
+        'Residential IP address'
+      ],
+      setupSteps: [
+        'Sign up using referral link for $5 bonus',
+        'Download Honeygain app on devices',
+        'Install and run the application',
+        'Monitor earnings in dashboard',
+        'Cash out at minimum threshold'
+      ]
+    });
   }
 
   async processMessage(userMessage: string): Promise<string> {
     // Add user message to history
     this.addMessage('user', userMessage);
+
+    // Check if user is asking to start setup for a specific asset
+    if (userMessage.toLowerCase().includes('start setup') || userMessage.toLowerCase().includes('set up my')) {
+      const assetType = this.detectAssetFromMessage(userMessage);
+      if (assetType) {
+        return await this.generatePartnerOptionsResponse(assetType);
+      }
+    }
 
     // Analyze user intent
     const intent = this.analyzeIntent(userMessage);
@@ -140,6 +196,72 @@ export class LocalChatService {
     return response;
   }
 
+  private detectAssetFromMessage(message: string): string | null {
+    const lowerMessage = message.toLowerCase();
+    
+    if (lowerMessage.includes('internet') || lowerMessage.includes('bandwidth') || lowerMessage.includes('wifi')) return 'internet';
+    if (lowerMessage.includes('pool') || lowerMessage.includes('swim')) return 'pool';
+    if (lowerMessage.includes('parking') || lowerMessage.includes('driveway')) return 'parking';
+    if (lowerMessage.includes('storage') || lowerMessage.includes('basement') || lowerMessage.includes('garage')) return 'storage';
+    if (lowerMessage.includes('space') && (lowerMessage.includes('event') || lowerMessage.includes('photo'))) return 'event_space';
+    
+    return null;
+  }
+
+  private async generatePartnerOptionsResponse(assetType: string): Promise<string> {
+    this.context.currentStage = `${assetType}_partner_selection`;
+    
+    // Get available partners for this asset type
+    const partners = PartnerIntegrationService.getPlatformsByAsset(assetType);
+    
+    if (partners.length === 0) {
+      return `I don't have specific partner recommendations for ${assetType} yet, but I can help you explore general monetization options. What would you like to know?`;
+    }
+
+    // Convert to PartnerOption format
+    const partnerOptions: PartnerOption[] = partners.map(partner => ({
+      id: partner.id,
+      name: partner.name,
+      description: partner.description,
+      referralLink: partner.referralLink,
+      earningRange: partner.earningRange,
+      setupTime: partner.setupTime,
+      requirements: partner.requirements,
+      setupSteps: partner.setupSteps,
+      priority: partner.priority
+    }));
+
+    const assetDisplayName = this.getAssetDisplayName(assetType);
+    const response = `Perfect! Here are the best platforms for monetizing your ${assetDisplayName.toLowerCase()}:
+
+💰 **Available Partners for ${assetDisplayName}:**
+
+${partners.map((partner, index) => 
+  `${index + 1}. **${partner.name}** ${partner.priority === 1 ? '⭐ (Recommended)' : ''}
+   - Earning potential: $${partner.earningRange.min}-${partner.earningRange.max}/month
+   - Setup time: ${partner.setupTime}
+   - ${partner.description}`
+).join('\n\n')}
+
+Click on any partner below to get started with step-by-step setup instructions and use our referral link for the best benefits!`;
+
+    // Add the response with partner options
+    this.addMessageWithPartners('assistant', response, partnerOptions);
+    return response;
+  }
+
+  private getAssetDisplayName(assetType: string): string {
+    const displayNames: Record<string, string> = {
+      'internet': 'Internet Bandwidth Sharing',
+      'pool': 'Swimming Pool',
+      'parking': 'Parking Space',
+      'storage': 'Storage Space',
+      'event_space': 'Event Space'
+    };
+    
+    return displayNames[assetType] || assetType;
+  }
+
   private analyzeIntent(message: string): string {
     const lowerMessage = message.toLowerCase();
     
@@ -148,6 +270,7 @@ export class LocalChatService {
     if (lowerMessage.includes('parking') || lowerMessage.includes('driveway')) return 'parking_setup';
     if (lowerMessage.includes('storage') || lowerMessage.includes('basement') || lowerMessage.includes('garage')) return 'storage_setup';
     if (lowerMessage.includes('space') && (lowerMessage.includes('event') || lowerMessage.includes('photo'))) return 'space_rental_setup';
+    if (lowerMessage.includes('internet') || lowerMessage.includes('bandwidth')) return 'internet_setup';
     
     // General intents
     if (lowerMessage.includes('start') || lowerMessage.includes('begin') || lowerMessage.includes('setup')) return 'start_setup';
@@ -160,6 +283,8 @@ export class LocalChatService {
 
   private async generateResponse(intent: string, userMessage: string): Promise<string> {
     switch (intent) {
+      case 'internet_setup':
+        return await this.generateInternetSetupResponse();
       case 'pool_setup':
         return await this.generatePoolSetupResponse();
       case 'parking_setup':
@@ -179,6 +304,10 @@ export class LocalChatService {
       default:
         return this.generateContextualResponse(userMessage);
     }
+  }
+
+  private async generateInternetSetupResponse(): Promise<string> {
+    return await this.generatePartnerOptionsResponse('internet');
   }
 
   private async generatePoolSetupResponse(): Promise<string> {
@@ -353,6 +482,10 @@ These numbers are based on real market data for your area. Ready to start with t
   private generateRequirementsResponse(): string {
     return `Here are the general requirements for our top partner platforms:
 
+🌐 **Internet Bandwidth Sharing:**
+- Grass.io ⭐: Stable internet (10+ Mbps), 24/7 device
+- Honeygain: Residential IP, continuous connection
+
 🏊 **Swimply (Pool Rental):**
 - Pool insurance and safety equipment
 - High-quality photos
@@ -416,6 +549,7 @@ What specific area would you like help with? Just tell me what you'd like to set
 I can see you have ${this.context.detectedAssets.length} potential income opportunities worth up to $${this.context.propertyData.totalMonthlyRevenue}/month!
 
 What would you like to start with? I can help you set up any of these platforms:
+• Internet bandwidth sharing (Grass.io, Honeygain)
 • Pool rental (Swimply)
 • Parking rental (SpotHero) 
 • Storage rental (Neighbor.com)
@@ -426,6 +560,7 @@ Just tell me which asset interests you most, and I'll guide you through the comp
         return `Hi! I'm your property monetization assistant. I help property owners like you turn unused assets into consistent monthly income.
 
 I can help you set up:
+🌐 Internet bandwidth sharing ($20-60/month)
 🏊 Pool rentals ($100-500/month)
 🚗 Parking spaces ($150-400/month)
 📦 Storage rentals ($50-300/month)
@@ -463,6 +598,16 @@ To give you personalized recommendations, could you tell me what type of propert
     });
   }
 
+  private addMessageWithPartners(role: 'user' | 'assistant', content: string, partnerOptions: PartnerOption[]): void {
+    this.messageHistory.push({
+      id: `${Date.now()}-${Math.random()}`,
+      role,
+      content,
+      timestamp: new Date(),
+      partnerOptions
+    });
+  }
+
   private getAssetRequirements(assetType: string): string[] {
     const platformKey = this.getplatformKey(assetType);
     const requirements = this.partnerRequirements.get(platformKey);
@@ -484,6 +629,9 @@ To give you personalized recommendations, could you tell me what type of propert
 
   private getplatformKey(assetType: string): string {
     const typeMap: Record<string, string> = {
+      'internet': 'grass',
+      'bandwidth': 'grass',
+      'wifi': 'grass',
       'pool': 'swimply',
       'swimming_pool': 'swimply',
       'parking': 'spothero',
@@ -581,6 +729,22 @@ To give you personalized recommendations, could you tell me what type of propert
         'Flexible booking availability (instant book preferred)',
         'Clear space descriptions and usage guidelines',
         'Virtual tour capability (2024 trending feature)'
+      ],
+      'grass': [
+        'Stable internet connection (minimum 10 Mbps)',
+        'Computer or device running 24/7',
+        'Unlimited internet plan recommended',
+        'Basic technical setup knowledge',
+        'Updated Grass desktop application',
+        'Account verification completed (2024 requirement)'
+      ],
+      'honeygain': [
+        'Stable internet connection (residential IP)',
+        'Device running continuously',
+        'Minimum 10 GB monthly bandwidth available',
+        'Updated Honeygain application',
+        'Account verification with valid email',
+        'Compatible device (Windows/Mac/Android) (2024 update)'
       ]
     };
 

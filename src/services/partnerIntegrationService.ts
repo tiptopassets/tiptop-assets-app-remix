@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 export interface PartnerPlatform {
@@ -11,15 +10,62 @@ export interface PartnerPlatform {
   earningRange: { min: number; max: number };
   setupTime: string;
   description: string;
+  priority?: number;
 }
 
 export class PartnerIntegrationService {
   private static platforms: PartnerPlatform[] = [
     {
+      id: 'grass',
+      name: 'Grass.io',
+      referralLink: 'https://app.grass.io/register/?referralCode=nmGzz16893s4u-R',
+      assetTypes: ['internet', 'bandwidth', 'wifi'],
+      requirements: [
+        'Stable internet connection (minimum 10 Mbps)',
+        'Computer or device running 24/7',
+        'Unlimited internet plan recommended',
+        'Basic technical setup knowledge'
+      ],
+      setupSteps: [
+        'Register using our referral link for bonus rewards',
+        'Download and install Grass desktop application',
+        'Complete account verification process',
+        'Configure bandwidth sharing settings',
+        'Start earning from your unused bandwidth'
+      ],
+      earningRange: { min: 20, max: 60 },
+      setupTime: '30 minutes',
+      description: 'Share your unused internet bandwidth and earn passive income',
+      priority: 1
+    },
+    {
+      id: 'honeygain',
+      name: 'Honeygain',
+      referralLink: 'https://r.honeygain.me/TIPTO9E10F',
+      assetTypes: ['internet', 'bandwidth', 'wifi'],
+      requirements: [
+        'Stable internet connection',
+        'Device running continuously',
+        'Minimum 10 GB monthly bandwidth',
+        'Residential IP address'
+      ],
+      setupSteps: [
+        'Sign up using our referral link for $5 bonus',
+        'Download Honeygain app on your devices',
+        'Install and run the application',
+        'Monitor your earnings in the dashboard',
+        'Cash out when you reach minimum threshold'
+      ],
+      earningRange: { min: 15, max: 45 },
+      setupTime: '20 minutes',
+      description: 'Monetize your unused internet bandwidth effortlessly',
+      priority: 2
+    },
+    {
       id: 'swimply',
       name: 'Swimply',
-      referralLink: 'https://swimply.com/host?ref=tiptop',
-      assetTypes: ['pool'],
+      referralLink: 'https://swimply.com/referral?ref=MjQ0MTUyMw==&r=g&utm_medium=referral&utm_source=link&utm_campaign=2441523',
+      assetTypes: ['pool', 'swimming_pool'],
       requirements: [
         'Swimming pool in good condition',
         'Pool insurance coverage',
@@ -41,8 +87,8 @@ export class PartnerIntegrationService {
     {
       id: 'spothero',
       name: 'SpotHero',
-      referralLink: 'https://spothero.com/partners?ref=tiptop',
-      assetTypes: ['parking'],
+      referralLink: 'https://spothero.com/developers',
+      assetTypes: ['parking', 'driveway'],
       requirements: [
         'Available parking space (driveway, garage, or lot)',
         'Clear, unobstructed access',
@@ -110,12 +156,15 @@ export class PartnerIntegrationService {
   ];
 
   static getPlatformsByAsset(assetType: string): PartnerPlatform[] {
-    return this.platforms.filter(platform => 
+    const platforms = this.platforms.filter(platform => 
       platform.assetTypes.some(type => 
         type.toLowerCase().includes(assetType.toLowerCase()) ||
         assetType.toLowerCase().includes(type.toLowerCase())
       )
     );
+    
+    // Sort by priority (lowest number = highest priority)
+    return platforms.sort((a, b) => (a.priority || 999) - (b.priority || 999));
   }
 
   static getPlatformById(id: string): PartnerPlatform | null {
