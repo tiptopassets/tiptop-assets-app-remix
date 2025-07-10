@@ -206,9 +206,6 @@ async function openAIRequest(endpoint: string, options: any, requestId: string) 
       
       // Enhanced error messaging for specific OpenAI errors
       let errorMessage = errorData.error?.message || `OpenAI API error: ${response.status}`;
-      if (errorMessage.includes('assistant_id')) {
-        errorMessage = `OpenAI rejected request with assistant_id parameter. Endpoint: ${endpoint}`;
-      }
       
       throw new Error(errorMessage);
     }
@@ -310,25 +307,17 @@ async function getAssistant(requestId: string) {
   }
 }
 
-// ENHANCED: Thread creation with comprehensive error handling and debugging
+// STEP 1: Create Thread (following official OpenAI workflow)
 async function createThread(data: any, supabase: any, requestId: string) {
-  console.log(`🧵 [${requestId}] Creating thread...`);
+  console.log(`🧵 [${requestId}] Creating thread following OpenAI workflow...`);
   
   try {
-    // Validate required fields
-    if (!OPENAI_ASSISTANT_ID) {
-      const error = 'Assistant ID not configured in environment variables';
-      console.error(`❌ [${requestId}] ${error}`);
-      throw new Error(error);
-    }
-
     const userId = data?.metadata?.userId;
     const propertyAddress = data?.metadata?.propertyAddress;
     const analysisId = data?.metadata?.analysisId;
     const partnersAvailable = data?.metadata?.partnersAvailable;
 
-    console.log(`🧪 [${requestId}] Creating thread for assistant:`, OPENAI_ASSISTANT_ID);
-    console.log(`🧪 [${requestId}] Metadata:`, {
+    console.log(`📋 [${requestId}] Thread metadata:`, {
       userId: userId || 'anonymous',
       propertyAddress: propertyAddress || 'not_provided',
       analysisId: analysisId || 'not_provided',
@@ -351,14 +340,12 @@ async function createThread(data: any, supabase: any, requestId: string) {
       cleanMetadata.partnersAvailable = String(partnersAvailable);
     }
 
-    console.log(`🧪 [${requestId}] Clean metadata for OpenAI:`, cleanMetadata);
-
-    // CRITICAL: Create thread WITHOUT assistant_id (OpenAI API doesn't support this parameter)
+    // STEP 1: Create thread WITHOUT assistant_id (OpenAI official workflow)
     const threadPayload = {
       metadata: cleanMetadata
     };
 
-    console.log(`🔥 [${requestId}] Thread creation payload:`, JSON.stringify(threadPayload, null, 2));
+    console.log(`🚀 [${requestId}] Creating thread with payload:`, JSON.stringify(threadPayload, null, 2));
 
     const thread = await openAIRequest('threads', {
       method: 'POST',
@@ -366,8 +353,7 @@ async function createThread(data: any, supabase: any, requestId: string) {
     }, requestId);
 
     const threadId = thread.id;
-    console.log(`✅ [${requestId}] OpenAI thread created: ${threadId}`);
-    console.log(`🔗 [${requestId}] Will be linked to assistant: ${OPENAI_ASSISTANT_ID} when runs are created`);
+    console.log(`✅ [${requestId}] Thread created successfully: ${threadId}`);
 
     // Verify thread creation
     try {
@@ -422,42 +408,31 @@ async function createThread(data: any, supabase: any, requestId: string) {
       }
     }
 
-    const successData = { 
+    return successResponse({ 
       thread: {
-        ...thread,
-        assistant_will_be_linked: OPENAI_ASSISTANT_ID,
-        linkage_method: 'via_runs'
+        id: threadId,
+        object: thread.object,
+        created_at: thread.created_at,
+        metadata: thread.metadata,
+        tool_resources: thread.tool_resources
       }
-    };
-    
-    console.log(`🎉 [${requestId}] Thread creation successful, returning:`, successData);
-    return successResponse(successData, requestId);
+    }, requestId);
     
   } catch (error) {
     console.error(`❌ [${requestId}] Thread creation failed:`, {
       error: error.message,
-      stack: error.stack,
-      assistantId: OPENAI_ASSISTANT_ID
+      stack: error.stack
     });
     
-    // Enhanced error messaging for OpenAI API errors
-    let errorMessage = error.message || 'Thread creation failed';
-    if (errorMessage.includes('assistant_id')) {
-      errorMessage = 'OpenAI API rejected thread creation with assistant_id parameter. This should now be fixed.';
-    } else if (errorMessage.includes('Invalid request')) {
-      errorMessage = `Invalid request to OpenAI API: ${error.message}`;
-    } else if (errorMessage.includes('Authentication')) {
-      errorMessage = 'OpenAI API authentication failed. Check API key.';
-    }
-    
-    return errorResponse(`Thread creation failed: ${errorMessage}`, 500, requestId);
+    return errorResponse(`Thread creation failed: ${error.message}`, 500, requestId);
   }
 }
 
+// STEP 2: Add Message to Thread (following official OpenAI workflow)
 async function sendMessage(data: any, supabase: any, requestId: string) {
   const { threadId, message, userId, userContext } = data;
 
-  console.log(`💬 [${requestId}] Sending message to thread: ${threadId}`);
+  console.log(`💬 [${requestId}] STEP 2: Adding message to thread: ${threadId}`);
 
   if (!threadId || !message?.trim()) {
     throw new Error('threadId and message are required');
@@ -475,6 +450,7 @@ async function sendMessage(data: any, supabase: any, requestId: string) {
       console.log(`💬 [${requestId}] Added property context`);
     }
 
+    // STEP 2: Add message to thread (OpenAI official workflow)
     const messageData = await openAIRequest(`threads/${threadId}/messages`, {
       method: 'POST',
       body: JSON.stringify({
@@ -483,7 +459,7 @@ async function sendMessage(data: any, supabase: any, requestId: string) {
       })
     }, requestId);
 
-    console.log(`✅ [${requestId}] Message sent to OpenAI: ${messageData.id}`);
+    console.log(`✅ [${requestId}] Message added to thread successfully: ${messageData.id}`);
 
     // Save to database for authenticated users (non-blocking)
     if (isAuthenticated) {
@@ -512,10 +488,11 @@ async function sendMessage(data: any, supabase: any, requestId: string) {
   }
 }
 
+// STEP 3: Create Run (following official OpenAI workflow)
 async function runAssistant(data: any, requestId: string) {
   const { threadId, assistantId } = data;
 
-  console.log(`🏃 [${requestId}] Running assistant: ${assistantId || OPENAI_ASSISTANT_ID} on thread: ${threadId}`);
+  console.log(`🏃 [${requestId}] STEP 3: Creating run with assistant: ${assistantId || OPENAI_ASSISTANT_ID} on thread: ${threadId}`);
 
   if (!threadId) {
     throw new Error('threadId is required');
@@ -529,6 +506,7 @@ async function runAssistant(data: any, requestId: string) {
   }
 
   try {
+    // STEP 3: Create run with assistant_id (OpenAI official workflow)
     const run = await openAIRequest(`threads/${threadId}/runs`, {
       method: 'POST',
       body: JSON.stringify({
@@ -536,14 +514,20 @@ async function runAssistant(data: any, requestId: string) {
       })
     }, requestId);
 
-    console.log(`✅ [${requestId}] Assistant run started: ${run.id}`);
+    console.log(`✅ [${requestId}] Run created successfully: ${run.id}`, {
+      status: run.status,
+      threadId: run.thread_id,
+      assistantId: run.assistant_id
+    });
+    
     return successResponse({ run }, requestId);
   } catch (error) {
-    console.error(`❌ [${requestId}] Run assistant failed:`, error.message);
-    throw new Error(`Run assistant failed: ${error.message}`);
+    console.error(`❌ [${requestId}] Run creation failed:`, error.message);
+    throw new Error(`Run creation failed: ${error.message}`);
   }
 }
 
+// STEP 4: Poll Run Status (following official OpenAI workflow)
 async function getRunStatus(data: any, requestId: string) {
   const { threadId, runId } = data;
 
@@ -558,7 +542,12 @@ async function getRunStatus(data: any, requestId: string) {
       method: 'GET'
     }, requestId);
 
-    console.log(`📊 [${requestId}] Run status: ${run.status}`);
+    console.log(`📊 [${requestId}] Run status: ${run.status}`, {
+      runId: run.id,
+      status: run.status,
+      startedAt: run.started_at,
+      completedAt: run.completed_at
+    });
 
     let messages = null;
     if (run.status === 'completed') {

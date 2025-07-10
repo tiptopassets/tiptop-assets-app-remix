@@ -137,7 +137,7 @@ export const useOpenAIAssistant = (propertyData: PropertyAnalysisData | null) =>
     }
   }, [user?.id, propertyData]);
 
-  // ENHANCED: Assistant initialization with comprehensive error handling
+  // ENHANCED: Assistant initialization following OpenAI official workflow
   const initializeAssistant = useCallback(async () => {
     if (initializationRef.current || state !== 'idle') {
       console.log('🛑 [ASSISTANT] Already initializing or not idle, state:', state);
@@ -145,7 +145,7 @@ export const useOpenAIAssistant = (propertyData: PropertyAnalysisData | null) =>
     }
 
     initializationRef.current = true;
-    console.log('🚀 [ASSISTANT] Starting initialization...');
+    console.log('🚀 [ASSISTANT] Starting initialization following OpenAI workflow...');
 
     // Create new abort controller for this initialization
     if (abortControllerRef.current) {
@@ -204,7 +204,7 @@ export const useOpenAIAssistant = (propertyData: PropertyAnalysisData | null) =>
       const newAssistantId = assistantData.assistant.id;
       console.log('✅ [ASSISTANT] Got assistant:', newAssistantId);
 
-      // Step 4: Create thread with enhanced metadata
+      // Step 4: Create thread (OpenAI Official Workflow - NO assistant_id)
       const threadMetadata = {
         userId: user?.id || 'anonymous',
         propertyAddress: context.propertyData?.address || 'not_provided',
@@ -216,7 +216,7 @@ export const useOpenAIAssistant = (propertyData: PropertyAnalysisData | null) =>
         url: window.location.href
       };
 
-      console.log('🧵 [ASSISTANT] Creating thread with metadata:', {
+      console.log('🧵 [ASSISTANT] Creating thread following OpenAI workflow...', {
         userId: threadMetadata.userId,
         propertyAddress: threadMetadata.propertyAddress,
         partnersAvailable: threadMetadata.partnersAvailable
@@ -240,7 +240,7 @@ export const useOpenAIAssistant = (propertyData: PropertyAnalysisData | null) =>
       }
 
       const newThreadId = threadData.thread.id;
-      console.log('✅ [ASSISTANT] Thread created:', newThreadId);
+      console.log('✅ [ASSISTANT] Thread created successfully:', newThreadId);
 
       // Step 5: Set state and show welcome message
       setAssistantId(newAssistantId);
@@ -257,7 +257,7 @@ export const useOpenAIAssistant = (propertyData: PropertyAnalysisData | null) =>
         timestamp: new Date()
       }]);
 
-      console.log('🎉 [ASSISTANT] Initialization complete');
+      console.log('🎉 [ASSISTANT] Initialization complete following OpenAI workflow');
 
     } catch (error: any) {
       console.error('❌ [ASSISTANT] Initialization failed:', error);
@@ -345,7 +345,7 @@ Would you like to start with a specific asset, or would you prefer me to recomme
     }
   }, [initializeAssistant, state]);
 
-  // Enhanced send message with better error handling and retry logic
+  // Enhanced send message following OpenAI workflow: Step 2 (add message) + Step 3 (create run)
   const sendMessage = useCallback(async (message: string) => {
     if (!assistantId || !threadId || state !== 'ready') {
       console.warn('⚠️ [MESSAGE] Cannot send message - assistant not ready:', {
@@ -356,7 +356,7 @@ Would you like to start with a specific asset, or would you prefer me to recomme
       return;
     }
 
-    console.log('💬 [MESSAGE] Sending:', message.substring(0, 100) + '...');
+    console.log('💬 [MESSAGE] Starting OpenAI workflow for message:', message.substring(0, 100) + '...');
     setState('chatting');
     setError(null);
 
@@ -370,7 +370,8 @@ Would you like to start with a specific asset, or would you prefer me to recomme
     setMessages(prev => [...prev, userMessage]);
 
     try {
-      // Send message with enhanced context
+      // STEP 2: Send message to thread (OpenAI Official Workflow)
+      console.log('📝 [MESSAGE] Step 2: Adding message to thread...');
       const { data: messageData, error: messageError } = await supabase.functions.invoke('openai-assistant-manager', {
         body: {
           action: 'send_message',
@@ -383,27 +384,49 @@ Would you like to start with a specific asset, or would you prefer me to recomme
         }
       });
 
-      if (messageError) throw messageError;
+      if (messageError) {
+        console.error('❌ [MESSAGE] Step 2 failed:', messageError);
+        throw messageError;
+      }
 
-      // Run assistant using the correct assistant ID
+      if (!messageData.success) {
+        console.error('❌ [MESSAGE] Step 2 failed:', messageData);
+        throw new Error(messageData.error || 'Failed to add message to thread');
+      }
+
+      console.log('✅ [MESSAGE] Step 2 complete: Message added to thread');
+
+      // STEP 3: Create run with assistant (OpenAI Official Workflow)
+      console.log('🏃 [MESSAGE] Step 3: Creating run with assistant...');
       const { data: runData, error: runError } = await supabase.functions.invoke('openai-assistant-manager', {
         body: {
           action: 'run_assistant',
           data: {
             threadId,
-            assistantId, // Use the stored assistant ID
+            assistantId,
             userId: user?.id || 'anonymous'
           }
         }
       });
 
-      if (runError) throw runError;
+      if (runError) {
+        console.error('❌ [MESSAGE] Step 3 failed:', runError);
+        throw runError;
+      }
 
-      // Start polling for completion
+      if (!runData.success) {
+        console.error('❌ [MESSAGE] Step 3 failed:', runData);
+        throw new Error(runData.error || 'Failed to create run');
+      }
+
+      console.log('✅ [MESSAGE] Step 3 complete: Run created');
+
+      // STEP 4: Start polling for completion
+      console.log('📊 [MESSAGE] Step 4: Starting polling for completion...');
       pollForCompletion(runData.run.id);
 
     } catch (error: any) {
-      console.error('❌ [MESSAGE] Send failed:', error);
+      console.error('❌ [MESSAGE] OpenAI workflow failed:', error);
       setState('ready');
       
       let errorMessage = error.message || 'Failed to send message';
