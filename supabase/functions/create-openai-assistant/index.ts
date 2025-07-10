@@ -31,7 +31,8 @@ serve(async (req) => {
     }
 
     // Parse request body
-    const { action } = await req.json();
+    const requestBody = await req.json();
+    const { action, assistantId } = requestBody;
     console.log(`🎯 [${requestId}] Action: ${action}`);
 
     let result;
@@ -43,7 +44,6 @@ serve(async (req) => {
         result = await createAssistant(requestId);
         break;
       case 'update_assistant_id':
-        const { assistantId } = await req.json();
         result = await updateAssistantId(assistantId, requestId);
         break;
       default:
@@ -109,7 +109,7 @@ async function createAssistant(requestId: string) {
 
     const assistant = await openai.beta.assistants.create({
       name: "Tiptop Property Monetization Assistant",
-      model: "gpt-4o-mini",
+      model: "gpt-4.1-2025-04-14",
       instructions: `You are Tiptop's AI property monetization assistant. Your role is to help users discover and set up income-generating opportunities from their properties.
 
 CORE CAPABILITIES:
