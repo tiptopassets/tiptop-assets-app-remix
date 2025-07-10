@@ -5,11 +5,12 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { useOpenAIChat } from '@/hooks/useOpenAIChat';
+import { useLocalChat } from '@/hooks/useLocalChat';
 import { PropertyAnalysisData } from '@/hooks/useUserPropertyAnalysis';
+import { PartnerIntegrationService } from '@/services/partnerIntegrationService';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { AlertCircle, Wifi, Bot, User, Send } from 'lucide-react';
+import { AlertCircle, Wifi, Bot, User, Send, ExternalLink } from 'lucide-react';
 
 interface EnhancedChatInterfaceProps {
   onAssetDetected: (assets: string[]) => void;
@@ -31,12 +32,13 @@ const EnhancedChatInterface = ({
   const [showSuggestions, setShowSuggestions] = useState(true);
 
   const {
-    messages: assistantMessages,
-    isLoading: aiLoading,
-    error: assistantError,
+    messages,
+    isLoading,
+    error,
     sendMessage,
-    clearChat
-  } = useOpenAIChat();
+    clearChat,
+    getContext
+  } = useLocalChat(propertyData);
 
   // Provide sendMessage function to parent component once ready
   useEffect(() => {
@@ -51,39 +53,47 @@ const EnhancedChatInterface = ({
       behavior: 'smooth',
       block: 'nearest'
     });
-  }, [assistantMessages]);
+  }, [messages]);
 
-  // Enhanced message handling with debouncing
+  // Update detected assets based on chat context
+  useEffect(() => {
+    const context = getContext();
+    if (context.detectedAssets.length > 0) {
+      onAssetDetected(context.detectedAssets);
+    }
+    if (context.currentStage) {
+      onConversationStageChange(context.currentStage);
+    }
+  }, [messages, onAssetDetected, onConversationStageChange, getContext]);
+
   const handleSendMessage = useCallback(async () => {
-    if (!inputMessage.trim() || aiLoading) return;
+    if (!inputMessage.trim() || isLoading) return;
 
     const message = inputMessage.trim();
     setInputMessage('');
     setShowSuggestions(false);
 
-    console.log('💬 [CHAT] Sending message to assistant:', message);
+    console.log('💬 [CHAT] Sending message:', message);
 
     try {
       await sendMessage(message);
-      onConversationStageChange('discussion');
     } catch (error) {
       console.error('❌ [CHAT] Error sending message:', error);
     }
-  }, [inputMessage, aiLoading, sendMessage, onConversationStageChange]);
+  }, [inputMessage, isLoading, sendMessage]);
 
   const handleSuggestedAction = useCallback(async (action: string) => {
-    if (aiLoading) return;
+    if (isLoading) return;
     
     console.log('🎯 [CHAT] Suggested action selected:', action);
     setShowSuggestions(false);
     
     try {
       await sendMessage(action);
-      onConversationStageChange('discussion');
     } catch (error) {
       console.error('❌ [CHAT] Error with suggested action:', error);
     }
-  }, [aiLoading, sendMessage, onConversationStageChange]);
+  }, [isLoading, sendMessage]);
 
   const handleKeyPress = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -92,26 +102,26 @@ const EnhancedChatInterface = ({
     }
   }, [handleSendMessage]);
 
-  // Enhanced loading state detection
-  const showLoadingState = aiLoading;
-  const showReadyState = !aiLoading && !assistantError;
+  const handlePartnerReferral = useCallback((platformId: string) => {
+    PartnerIntegrationService.openReferralLink(platformId, user?.id);
+  }, [user?.id]);
 
   // Connection status indicator
   const getConnectionStatus = () => {
-    if (showReadyState) return { icon: Wifi, label: 'Ready', color: 'text-green-600 border-green-200' };
-    if (assistantError) return { icon: AlertCircle, label: 'Error', color: 'text-red-600 border-red-200' };
-    return { icon: Bot, label: 'Starting...', color: 'text-blue-600 border-blue-200' };
+    if (isLoading) return { icon: Bot, label: 'Thinking...', color: 'text-blue-600 border-blue-200' };
+    if (error) return { icon: AlertCircle, label: 'Error', color: 'text-red-600 border-red-200' };
+    return { icon: Wifi, label: 'Ready', color: 'text-green-600 border-green-200' };
   };
 
   const connectionStatus = getConnectionStatus();
 
-  // Quick start suggestions based on property data and authentication status
+  // Quick start suggestions based on property data
   const quickStartSuggestions = React.useMemo(() => {
     if (!propertyData || !propertyData.availableAssets.length) {
       return [
         'Tell me about property monetization',
         'What services are available?',
-        'How can I earn money from my property?'
+        'How can I start earning money?'
       ];
     }
 
@@ -120,7 +130,7 @@ const EnhancedChatInterface = ({
       .slice(0, 3);
 
     return topAssets.length > 0 
-      ? topAssets.map(asset => `Tell me about ${asset.name} setup`)
+      ? topAssets.map(asset => `Set up my ${asset.name.toLowerCase()}`)
       : [
           'What are my options?',
           'How do I get started?',
@@ -130,11 +140,11 @@ const EnhancedChatInterface = ({
 
   return (
     <div className="flex flex-col h-full bg-gradient-to-br from-gray-50 to-purple-50">
-      {/* Enhanced Header with better status indicators */}
+      {/* Enhanced Header */}
       <div className="bg-white border-b border-gray-200 px-4 py-3">
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="font-semibold text-gray-900">AI Assistant</h3>
+            <h3 className="font-semibold text-gray-900">Property Assistant</h3>
             <p className="text-sm text-gray-600">
               {propertyData ? `Helping you monetize ${propertyData.address}` : 'Ready to help with property monetization'}
               {!user && (
@@ -165,23 +175,23 @@ const EnhancedChatInterface = ({
 
       {/* Messages Area */}
       <div className="flex-1 overflow-y-auto p-4">
-        {assistantMessages.length === 0 && !showLoadingState && (
+        {messages.length === 0 && !isLoading && (
           <div className="text-center text-muted-foreground py-8">
             <Bot className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
-            <p>Hi! I'm your property assistant. I can help you understand your property's monetization potential.</p>
-            <p className="text-sm mt-2">Ask me about solar panels, EV charging, internet sharing, or any other opportunities!</p>
+            <p>Hi! I'm your property monetization assistant.</p>
+            <p className="text-sm mt-2">I'll help you set up partner platforms to start earning money from your property!</p>
           </div>
         )}
 
-        {/* Enhanced Error state with retry options */}
-        {assistantError && (
+        {/* Enhanced Error state */}
+        {error && (
           <div className="flex justify-center mb-4">
             <div className="bg-destructive/10 text-destructive rounded-lg px-4 py-3 border border-destructive/20 max-w-md">
               <div className="flex items-center mb-2">
                 <AlertCircle className="w-4 h-4 mr-2" />
                 <div className="text-sm font-medium">Assistant Error</div>
               </div>
-              <div className="text-sm mb-3 whitespace-pre-line">{assistantError}</div>
+              <div className="text-sm mb-3">{error}</div>
               <div className="flex gap-2">
                 <button 
                   onClick={clearChat}
@@ -204,7 +214,7 @@ const EnhancedChatInterface = ({
 
         <div className="space-y-4">
           <AnimatePresence>
-            {assistantMessages.map((message) => (
+            {messages.map((message) => (
               <motion.div
                 key={message.id}
                 initial={{ opacity: 0, y: 20 }}
@@ -230,6 +240,24 @@ const EnhancedChatInterface = ({
                   <div className={`text-xs mt-1 opacity-70`}>
                     {message.timestamp.toLocaleTimeString()}
                   </div>
+                  
+                  {/* Add partner referral buttons for assistant messages */}
+                  {message.role === 'assistant' && message.content.includes('Ready to start') && (
+                    <div className="mt-3 space-y-2">
+                      {PartnerIntegrationService.getAllPlatforms().map(platform => (
+                        <Button
+                          key={platform.id}
+                          size="sm"
+                          onClick={() => handlePartnerReferral(platform.id)}
+                          className="mr-2 mb-2"
+                          variant="outline"
+                        >
+                          <ExternalLink className="w-3 h-3 mr-1" />
+                          Open {platform.name}
+                        </Button>
+                      ))}
+                    </div>
+                  )}
                 </div>
                 
                 {message.role === 'user' && (
@@ -241,7 +269,7 @@ const EnhancedChatInterface = ({
             ))}
           </AnimatePresence>
           
-          {aiLoading && (
+          {isLoading && (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -256,8 +284,8 @@ const EnhancedChatInterface = ({
             </motion.div>
           )}
 
-          {/* Enhanced Quick Start Suggestions */}
-          {showSuggestions && assistantMessages.length <= 1 && propertyData && showReadyState && (
+          {/* Quick Start Suggestions */}
+          {showSuggestions && messages.length <= 1 && propertyData && !isLoading && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -265,10 +293,10 @@ const EnhancedChatInterface = ({
             >
               <div className="text-center">
                 <p className="text-sm text-gray-600 mb-3">
-                  Click to start asset setup:
+                  Click to start earning money:
                   {!user && (
                     <span className="block text-xs text-amber-600 mt-1">
-                      Sign in to save progress and connect with partners
+                      Sign in to save progress and track earnings
                     </span>
                   )}
                 </p>
@@ -278,8 +306,8 @@ const EnhancedChatInterface = ({
                       key={asset.type}
                       variant="outline"
                       className="h-auto p-3 justify-start hover:bg-tiptop-purple hover:text-white transition-colors"
-                      onClick={() => handleSuggestedAction(`I want to set up ${asset.name.toLowerCase()} at my property. What do I need to get started?`)}
-                      disabled={!showReadyState || aiLoading}
+                      onClick={() => handleSuggestedAction(`I want to set up my ${asset.name.toLowerCase()}. What do I need to get started?`)}
+                      disabled={isLoading}
                     >
                       <div className="text-left">
                         <div className="font-medium">{asset.name}</div>
@@ -304,20 +332,16 @@ const EnhancedChatInterface = ({
             onChange={(e) => setInputMessage(e.target.value)}
             onKeyPress={handleKeyPress}
             placeholder={
-              showReadyState 
-                ? "Ask me about your property monetization..." 
-                : showLoadingState
-                  ? "Assistant is starting up..."
-                  : assistantError
-                    ? "Assistant error - please retry"
-                    : "Assistant not available"
+              !isLoading 
+                ? "Ask me about earning money from your property..." 
+                : "Assistant is thinking..."
             }
-            disabled={!showReadyState || aiLoading}
+            disabled={isLoading}
             className="flex-1"
           />
           <Button 
             onClick={handleSendMessage}
-            disabled={!inputMessage.trim() || !showReadyState || aiLoading}
+            disabled={!inputMessage.trim() || isLoading}
             size="icon"
           >
             <Send className="h-4 w-4" />
@@ -325,7 +349,7 @@ const EnhancedChatInterface = ({
         </div>
         
         {/* Quick suggestions */}
-        {showSuggestions && assistantMessages.length === 0 && !showLoadingState && showReadyState && (
+        {showSuggestions && messages.length === 0 && !isLoading && (
           <div className="mt-3 flex flex-wrap gap-2">
             {quickStartSuggestions.map((suggestion, index) => (
               <Button
@@ -333,7 +357,7 @@ const EnhancedChatInterface = ({
                 variant="outline"
                 size="sm"
                 onClick={() => handleSuggestedAction(suggestion)}
-                disabled={!showReadyState || aiLoading}
+                disabled={isLoading}
                 className="text-xs"
               >
                 {suggestion}
@@ -354,11 +378,9 @@ const EnhancedChatInterface = ({
               Signed In: Full Features
             </Badge>
           )}
-          {showReadyState && (
-            <Badge variant="secondary" className="text-xs bg-green-50 text-green-700">
-              Assistant Ready
-            </Badge>
-          )}
+          <Badge variant="secondary" className="text-xs bg-green-50 text-green-700">
+            Local Assistant Ready
+          </Badge>
         </div>
       </div>
     </div>
