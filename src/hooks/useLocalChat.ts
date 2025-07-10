@@ -10,10 +10,7 @@ export const useLocalChat = (propertyData: PropertyAnalysisData | null) => {
   const [error, setError] = useState<string | null>(null);
 
   const sendMessage = useCallback(async (userMessage: string) => {
-    if (!userMessage || typeof userMessage !== 'string' || !userMessage.trim() || isLoading) {
-      console.warn('Invalid message or already loading:', { userMessage, isLoading });
-      return;
-    }
+    if (!userMessage.trim() || isLoading) return;
 
     setIsLoading(true);
     setError(null);
@@ -27,7 +24,7 @@ export const useLocalChat = (propertyData: PropertyAnalysisData | null) => {
       
       console.log('💬 [LOCAL CHAT] Message processed:', {
         userMessage,
-        response: response ? response.substring(0, 100) + '...' : 'No response',
+        response: response.substring(0, 100) + '...',
         messageCount: chatService.getMessages().length
       });
       

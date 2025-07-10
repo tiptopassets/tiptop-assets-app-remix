@@ -21,14 +21,6 @@ class ErrorBoundary extends Component<Props, State> {
 
   static getDerivedStateFromError(error: Error): State {
     console.error('🚨 ErrorBoundary caught an error:', error);
-    
-    // For non-critical errors like toLowerCase issues, just log and continue
-    if (error.message.includes("Cannot read properties of undefined (reading 'toLowerCase')") ||
-        error.message.includes("toLowerCase")) {
-      console.warn('⚠️ Non-critical toLowerCase error, continuing gracefully:', error.message);
-      return { hasError: false }; // Don't show error screen for these
-    }
-    
     return { hasError: true, error };
   }
 
@@ -38,14 +30,6 @@ class ErrorBoundary extends Component<Props, State> {
       errorInfo,
       componentStack: errorInfo.componentStack
     });
-    
-    // For toLowerCase errors, auto-recover after a short delay
-    if (error.message.includes("toLowerCase")) {
-      setTimeout(() => {
-        console.log('🔄 Auto-recovering from toLowerCase error');
-        this.handleReset();
-      }, 100);
-    }
   }
 
   handleReset = () => {

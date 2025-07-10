@@ -65,7 +65,7 @@ const EnhancedOnboardingChatbot = () => {
         totalOpportunities: journeyData.totalOpportunities,
         availableAssets: propertyData?.availableAssets || [],
         analysisResults: journeyData.analysisResults,
-        selectedAssets: assetSelections?.map(selection => selection.asset_type) || []
+        selectedAssets: assetSelections || []
       };
     } else if (propertyData) {
       console.log('🎯 [CHATBOT] Using property analysis data as fallback:', {
@@ -76,7 +76,7 @@ const EnhancedOnboardingChatbot = () => {
       
       return {
         ...propertyData,
-        selectedAssets: assetSelections?.map(selection => selection.asset_type) || []
+        selectedAssets: assetSelections || []
       };
     }
     return null;
@@ -103,8 +103,7 @@ const EnhancedOnboardingChatbot = () => {
         
         // Auto-start the conversation with the target asset
         setTimeout(() => {
-          const assetName = assetInfo.name?.toLowerCase() || 'asset';
-          sendInitialMessage(`I want to manage my ${assetName} setup. Can you help me with the current configuration and next steps?`);
+          sendInitialMessage(`I want to manage my ${assetInfo.name.toLowerCase()} setup. Can you help me with the current configuration and next steps?`);
         }, 1000);
         
         toast({
@@ -159,7 +158,7 @@ const EnhancedOnboardingChatbot = () => {
       if (unifiedPropertyData.analysisId) {
         insights.push(`Analysis ID: ${unifiedPropertyData.analysisId}`);
       }
-      if (unifiedPropertyData.selectedAssets && unifiedPropertyData.selectedAssets.length > 0) {
+      if (unifiedPropertyData.selectedAssets.length > 0) {
         insights.push(`${unifiedPropertyData.selectedAssets.length} assets already selected`);
       }
     }
@@ -186,24 +185,10 @@ const EnhancedOnboardingChatbot = () => {
     setMessageCount(prev => prev + 1);
   };
 
-  // Loading state - keep loading until auth is done AND we have at least one data source
-  const isLoading = authLoading || (!unifiedPropertyData && (propertyLoading || journeyLoading));
-  
-  console.log('🔄 [CHATBOT] Loading state check:', {
-    authLoading,
-    propertyLoading,
-    journeyLoading,
-    assetsLoading,
-    hasJourneyData: !!journeyData,
-    hasPropertyData: !!propertyData,
-    hasUnifiedData: !!unifiedPropertyData,
-    isLoading,
-    user: !!user,
-    loadingReason: authLoading ? 'auth' : (!unifiedPropertyData && (propertyLoading || journeyLoading)) ? 'data' : 'none'
-  });
+  // Loading state - wait for auth and data
+  const isLoading = authLoading || (propertyLoading && journeyLoading && !unifiedPropertyData);
 
   if (isLoading) {
-    console.log('📊 [CHATBOT] Still loading, showing loading state');
     return (
       <ChatbotLoadingState 
         isAuthLoading={authLoading}
@@ -213,9 +198,8 @@ const EnhancedOnboardingChatbot = () => {
     );
   }
 
-  // Show error state if no data after loading and user is authenticated
-  if (user && !authLoading && !unifiedPropertyData && !propertyLoading && !journeyLoading) {
-    console.log('⚠️ [CHATBOT] No data available after loading completed');
+  // Show error state if no data after loading
+  if (!unifiedPropertyData && !propertyLoading && !journeyLoading) {
     return <ChatbotErrorState analysisId={analysisId} />;
   }
 

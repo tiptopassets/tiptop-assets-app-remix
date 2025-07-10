@@ -3,7 +3,6 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { getRecentAnalysisId, autoRecoverUserData } from '@/services/dataRecoveryService';
-import { safeAssetName, safeAssetType } from '@/utils/safeAssetUtils';
 
 export interface AssetInfo {
   type: string;
@@ -23,7 +22,6 @@ export interface PropertyAnalysisData {
   totalMonthlyRevenue: number;
   totalOpportunities: number;
   availableAssets: AssetInfo[];
-  selectedAssets?: string[]; // Add selectedAssets property
   analysisResults: any;
 }
 
@@ -114,34 +112,16 @@ export const useUserPropertyAnalysis = (targetAnalysisId?: string) => {
           const topOpportunities = (analysisResults as any).topOpportunities;
           if (Array.isArray(topOpportunities)) {
             for (const opportunity of topOpportunities) {
-              // Use safe utility functions to prevent errors
-              const safeName = safeAssetName(opportunity.title);
-              const safeType = safeAssetType(opportunity.title);
-              
               availableAssets.push({
-                type: safeType,
-                name: safeName,
+                type: opportunity.title.toLowerCase().replace(/\s+/g, '_'),
+                name: opportunity.title,
                 monthlyRevenue: opportunity.monthlyRevenue || 0,
                 setupCost: opportunity.setupCost || 0,
-                description: opportunity.description || `Monetize your ${safeName.toLowerCase()}`,
+                description: opportunity.description || `Monetize your ${opportunity.title.toLowerCase()}`,
                 hasRevenuePotential: (opportunity.monthlyRevenue || 0) > 0,
                 isConfigured: false
               });
             }
-          }
-        }
-
-        // Fetch user asset selections to populate selectedAssets
-        let selectedAssets: string[] = [];
-        if (user?.id) {
-          const { data: assetSelections } = await supabase
-            .from('user_asset_selections')
-            .select('asset_type')
-            .eq('user_id', user.id)
-            .eq('analysis_id', analysisId);
-          
-          if (assetSelections) {
-            selectedAssets = assetSelections.map(selection => selection.asset_type);
           }
         }
 
@@ -158,7 +138,6 @@ export const useUserPropertyAnalysis = (targetAnalysisId?: string) => {
           totalMonthlyRevenue: analysisData.total_monthly_revenue || 0,
           totalOpportunities: analysisData.total_opportunities || 0,
           availableAssets,
-          selectedAssets,
           analysisResults
         };
 
