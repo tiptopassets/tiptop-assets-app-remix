@@ -11,6 +11,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { AlertCircle, Wifi, Bot, User, Send, ExternalLink, DollarSign, Clock, CheckCircle, Star } from 'lucide-react';
 import { AssetCard, PartnerOption } from '@/services/localChatService';
+import SelectedAssetsCarousel from './SelectedAssetsCarousel';
 
 interface EnhancedChatInterfaceProps {
   onAssetDetected: (assets: string[]) => void;
@@ -447,6 +448,13 @@ const EnhancedChatInterface = ({
         </div>
       </div>
 
+      {/* Selected Assets Carousel */}
+      <SelectedAssetsCarousel
+        propertyData={propertyData}
+        onAssetSelect={handleSuggestedAction}
+        isLoading={isLoading}
+      />
+
       {/* Enhanced Input Area */}
       <div className="border-t border-gray-200 bg-white p-4">
         <div className="flex space-x-2">
@@ -471,8 +479,8 @@ const EnhancedChatInterface = ({
           </Button>
         </div>
         
-        {/* Quick suggestions */}
-        {showSuggestions && messages.length === 0 && !isLoading && (
+        {/* Quick suggestions - only show when no selected assets */}
+        {showSuggestions && messages.length === 0 && !isLoading && (!propertyData?.selectedAssets || propertyData.selectedAssets.length === 0) && (
           <div className="mt-3 flex flex-wrap gap-2">
             {quickStartSuggestions.map((suggestion, index) => (
               <Button
