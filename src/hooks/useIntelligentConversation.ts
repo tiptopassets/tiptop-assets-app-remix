@@ -72,7 +72,7 @@ export const useIntelligentConversation = (propertyData: PropertyAnalysisData | 
     if (currentAsset) {
       const asset = availableAssets.find(a => a.type === currentAsset);
       if (asset) {
-        return `Hi ${userName}! I see you want to set up your ${asset.name.toLowerCase()} for monetization. Based on your property analysis at ${propertyAddress}, this could generate $${asset.monthlyRevenue}/month. Let's get started with the configuration!`;
+        return `Hi ${userName}! I see you want to set up your ${asset.name?.toLowerCase() || 'asset'} for monetization. Based on your property analysis at ${propertyAddress}, this could generate $${asset.monthlyRevenue}/month. Let's get started with the configuration!`;
       }
     }
 
@@ -135,7 +135,7 @@ export const useIntelligentConversation = (propertyData: PropertyAnalysisData | 
     };
 
     return responses[assetType as keyof typeof responses] || 
-           `I can help you set up your ${asset.name.toLowerCase()} to generate $${asset.monthlyRevenue}/month based on your property analysis. This asset has good earning potential and I'll connect you with the right service providers to get started.`;
+           `I can help you set up your ${asset.name?.toLowerCase() || 'asset'} to generate $${asset.monthlyRevenue}/month based on your property analysis. This asset has good earning potential and I'll connect you with the right service providers to get started.`;
   }, [getAssetInfo]);
 
   return {

@@ -61,7 +61,7 @@ export const useOpenAIConversation = (propertyData: PropertyAnalysisData | null)
 
 I found a great monetization opportunity with your **${asset.name}**, which could generate **$${asset.monthlyRevenue}/month**.
 
-Your total earning potential is **$${totalMonthlyRevenue}/month**. I'm here to help you set up ${asset.name.toLowerCase()} monetization and guide you through the entire process. What would you like to know?`;
+Your total earning potential is **$${totalMonthlyRevenue}/month**. I'm here to help you set up ${asset.name?.toLowerCase() || 'asset'} monetization and guide you through the entire process. What would you like to know?`;
     }
 
     const assetList = topAssets

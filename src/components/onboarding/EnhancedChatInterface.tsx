@@ -131,7 +131,7 @@ const EnhancedChatInterface = ({
       .slice(0, 3);
 
     return topAssets.length > 0 
-      ? topAssets.map(asset => `Set up my ${asset.name.toLowerCase()}`)
+      ? topAssets.map(asset => `Set up my ${asset.name?.toLowerCase() || 'asset'}`)
       : [
           'What are my options?',
           'How do I get started?',
@@ -246,7 +246,7 @@ const EnhancedChatInterface = ({
                         <Card 
                           key={asset.id} 
                           className="cursor-pointer hover:shadow-md transition-all duration-200 hover:border-primary/30"
-                          onClick={() => handleSuggestedAction(`Set up my ${asset.name.toLowerCase()}`)}
+                          onClick={() => handleSuggestedAction(`Set up my ${asset.name?.toLowerCase() || 'asset'}`)}
                         >
                           <CardContent className="p-4">
                             <div className="flex items-center justify-between mb-2">
@@ -287,7 +287,7 @@ const EnhancedChatInterface = ({
                               variant="outline"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                handleSuggestedAction(`Set up my ${asset.name.toLowerCase()}`);
+                                handleSuggestedAction(`Set up my ${asset.name?.toLowerCase() || 'asset'}`);
                               }}
                             >
                               <CheckCircle className="w-3 h-3 mr-1" />
@@ -430,7 +430,7 @@ const EnhancedChatInterface = ({
                       key={asset.type}
                       variant="outline"
                       className="h-auto p-3 justify-start hover:bg-tiptop-purple hover:text-white transition-colors"
-                      onClick={() => handleSuggestedAction(`I want to set up my ${asset.name.toLowerCase()}. What do I need to get started?`)}
+                      onClick={() => handleSuggestedAction(`I want to set up my ${asset.name?.toLowerCase() || 'asset'}. What do I need to get started?`)}
                       disabled={isLoading}
                     >
                       <div className="text-left">
