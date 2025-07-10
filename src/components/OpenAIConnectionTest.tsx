@@ -2,7 +2,9 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
+import { OpenAIAssistantManager } from './OpenAIAssistantManager';
 
 interface TestResult {
   name: string;
@@ -180,57 +182,70 @@ export const OpenAIConnectionTest = () => {
   };
 
   return (
-    <Card className="w-full max-w-4xl mx-auto">
-      <CardHeader>
-        <CardTitle>OpenAI & Supabase Connection Test</CardTitle>
-        <CardDescription>
-          Test the integration between our Supabase Edge Function and OpenAI Assistant API
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <Button 
-          onClick={runTests} 
-          disabled={isRunning}
-          className="w-full"
-        >
-          {isRunning ? 'Running Tests...' : 'Run Connection Tests'}
-        </Button>
+    <Tabs defaultValue="test" className="w-full">
+      <TabsList className="grid w-full grid-cols-2">
+        <TabsTrigger value="test">Connection Test</TabsTrigger>
+        <TabsTrigger value="manage">Manage Assistants</TabsTrigger>
+      </TabsList>
+      
+      <TabsContent value="test" className="space-y-4">
+        <Card className="w-full max-w-4xl mx-auto">
+          <CardHeader>
+            <CardTitle>OpenAI & Supabase Connection Test</CardTitle>
+            <CardDescription>
+              Test the integration between our Supabase Edge Function and OpenAI Assistant API
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <Button 
+              onClick={runTests} 
+              disabled={isRunning}
+              className="w-full"
+            >
+              {isRunning ? 'Running Tests...' : 'Run Connection Tests'}
+            </Button>
 
-        {results.length > 0 && (
-          <div className="space-y-3">
-            <h3 className="text-lg font-semibold">Test Results:</h3>
-            {results.map((result) => (
-              <div key={result.name} className="flex items-center justify-between p-3 border rounded-lg">
-                <div className="flex items-center gap-3">
-                  <span className="text-lg">{getStatusIcon(result.status)}</span>
-                  <div>
-                    <div className="font-medium">{result.name}</div>
-                    {result.message && (
-                      <div className="text-sm text-muted-foreground mt-1">
-                        {result.message}
+            {results.length > 0 && (
+              <div className="space-y-3">
+                <h3 className="text-lg font-semibold">Test Results:</h3>
+                {results.map((result) => (
+                  <div key={result.name} className="flex items-center justify-between p-3 border rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <span className="text-lg">{getStatusIcon(result.status)}</span>
+                      <div>
+                        <div className="font-medium">{result.name}</div>
+                        {result.message && (
+                          <div className="text-sm text-muted-foreground mt-1">
+                            {result.message}
+                          </div>
+                        )}
                       </div>
-                    )}
+                    </div>
+                    <Badge variant={getStatusColor(result.status)}>
+                      {result.status}
+                    </Badge>
                   </div>
-                </div>
-                <Badge variant={getStatusColor(result.status)}>
-                  {result.status}
-                </Badge>
+                ))}
               </div>
-            ))}
-          </div>
-        )}
+            )}
 
-        <div className="mt-6 p-4 bg-muted rounded-lg">
-          <h4 className="font-semibold mb-2">Implementation Notes (Based on OpenAI Docs):</h4>
-          <ul className="text-sm space-y-1">
-            <li>✅ Threads are created independently without assistant_id</li>
-            <li>✅ Assistant is only linked during runs.create()</li>
-            <li>✅ Using OpenAI SDK consistently throughout</li>
-            <li>✅ Proper error handling and logging</li>
-            <li>✅ Following official OpenAI workflow: Thread → Messages → Run → Poll</li>
-          </ul>
-        </div>
-      </CardContent>
-    </Card>
+            <div className="mt-6 p-4 bg-muted rounded-lg">
+              <h4 className="font-semibold mb-2">Implementation Notes (Based on OpenAI Docs):</h4>
+              <ul className="text-sm space-y-1">
+                <li>✅ Threads are created independently without assistant_id</li>
+                <li>✅ Assistant is only linked during runs.create()</li>
+                <li>✅ Using OpenAI SDK consistently throughout</li>
+                <li>✅ Proper error handling and logging</li>
+                <li>✅ Following official OpenAI workflow: Thread → Messages → Run → Poll</li>
+              </ul>
+            </div>
+          </CardContent>
+        </Card>
+      </TabsContent>
+      
+      <TabsContent value="manage">
+        <OpenAIAssistantManager />
+      </TabsContent>
+    </Tabs>
   );
 };
