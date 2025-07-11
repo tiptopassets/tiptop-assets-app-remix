@@ -250,6 +250,15 @@ const EnhancedOnboardingChatbot = () => {
     await handleSendMessage(action);
   }, [handleSendMessage]);
 
+  // Handle asset bubble clicks
+  const handleAssetBubbleClick = useCallback(async (assetType: string, assetName: string) => {
+    console.log('🎯 [ONBOARDING] Asset bubble clicked:', { assetType, assetName });
+    
+    const configurationMessage = `I want to configure my ${assetName.toLowerCase()} for monetization. Please show me the available partner platforms and setup options for this asset.`;
+    
+    await handleSendMessage(configurationMessage);
+  }, [handleSendMessage]);
+
   // Callback to receive the sendMessage function from EnhancedChatInterface
   const handleSendMessageReady = useCallback((sendMessage: (message: string) => Promise<void>) => {
     console.log('✅ [ONBOARDING] Received sendMessage function from chat interface');
@@ -309,7 +318,10 @@ const EnhancedOnboardingChatbot = () => {
       </div>
 
       {/* Selected Asset Bubbles - Fixed above chat input */}
-      <SelectedAssetBubbles propertyData={unifiedPropertyData} />
+      <SelectedAssetBubbles 
+        propertyData={unifiedPropertyData} 
+        onAssetClick={handleAssetBubbleClick}
+      />
 
       {/* Fixed Chat Input - Bottom */}
       <ChatInputBox 

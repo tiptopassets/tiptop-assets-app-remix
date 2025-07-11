@@ -15,9 +15,10 @@ interface ExtendedPropertyData extends PropertyAnalysisData {
 
 interface SelectedAssetBubblesProps {
   propertyData: ExtendedPropertyData | null;
+  onAssetClick?: (assetType: string, assetName: string) => void;
 }
 
-const SelectedAssetBubbles = ({ propertyData }: SelectedAssetBubblesProps) => {
+const SelectedAssetBubbles = ({ propertyData, onAssetClick }: SelectedAssetBubblesProps) => {
   // Get selected assets from property data
   const selectedAssets = propertyData?.selectedAssets || [];
 
@@ -29,6 +30,15 @@ const SelectedAssetBubbles = ({ propertyData }: SelectedAssetBubblesProps) => {
     assetsCount: selectedAssets.length,
     assets: selectedAssets.map(a => ({ type: a.asset_type, revenue: a.monthly_revenue }))
   });
+
+  const handleAssetClick = (asset: any) => {
+    const assetName = asset.asset_type.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase());
+    console.log('🎯 [SELECTED_ASSETS] Asset clicked:', { type: asset.asset_type, name: assetName });
+    
+    if (onAssetClick) {
+      onAssetClick(asset.asset_type, assetName);
+    }
+  };
 
   return (
     <motion.div 
@@ -45,10 +55,13 @@ const SelectedAssetBubbles = ({ propertyData }: SelectedAssetBubblesProps) => {
                 initial={{ opacity: 0, scale: 0.8 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: index * 0.1 }}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
               >
                 <Badge
                   variant="secondary"
-                  className="bg-background/90 backdrop-blur-sm border-primary/20 hover:border-[hsl(267,83%,60%)] text-sm px-4 py-2 rounded-full shadow-lg transition-all duration-200 cursor-default"
+                  className="bg-background/90 backdrop-blur-sm border-primary/20 hover:border-[hsl(267,83%,60%)] text-sm px-4 py-2 rounded-full shadow-lg transition-all duration-200 cursor-pointer hover:shadow-xl hover:bg-background/95"
+                  onClick={() => handleAssetClick(asset)}
                 >
                   <span className="font-medium">
                     {asset.asset_type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
