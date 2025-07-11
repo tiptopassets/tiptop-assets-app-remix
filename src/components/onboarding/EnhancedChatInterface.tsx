@@ -1,369 +1,196 @@
-
-import React, { useEffect, useRef, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Card, CardContent } from '@/components/ui/card';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { useLocalChat } from '@/hooks/useLocalChat';
-import { PropertyAnalysisData } from '@/hooks/useUserPropertyAnalysis';
-import { PartnerIntegrationService } from '@/services/partnerIntegrationService';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Bot, User, ExternalLink, Sparkles, Clock, DollarSign, Star, AlertCircle } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
-import { useNavigate } from 'react-router-dom';
-import { AlertCircle, User, ExternalLink, DollarSign, Clock, CheckCircle, Star } from 'lucide-react';
-
-interface ExtendedPropertyData extends PropertyAnalysisData {
-  selectedAssets?: Array<{
-    asset_type: string;
-    asset_data: any;
-  }>;
-}
+import { PropertyAnalysisData } from '@/hooks/useUserPropertyAnalysis';
+import { useOpenAIConversation } from '@/hooks/useOpenAIConversation';
+import { generatePartnerRecommendations, initializePartnerIntegration } from '@/services/partnerRecommendationService';
+import PartnerRecommendationCard from './PartnerRecommendationCard';
+import AssetPartnerCarousel from './AssetPartnerCarousel';
+import type { PartnerRecommendation } from '@/services/partnerRecommendationService';
 
 interface EnhancedChatInterfaceProps {
-  onAssetDetected: (assets: string[]) => void;
-  onConversationStageChange: (stage: string) => void;
-  propertyData: ExtendedPropertyData | null;
+  onAssetDetected?: (assets: string[]) => void;
+  onConversationStageChange?: (stage: string) => void;
+  propertyData?: PropertyAnalysisData | null;
   onSendMessageReady?: (sendMessage: (message: string) => Promise<void>) => void;
 }
 
 const EnhancedChatInterface = ({ 
   onAssetDetected, 
-  onConversationStageChange, 
+  onConversationStageChange,
   propertyData,
-  onSendMessageReady 
+  onSendMessageReady
 }: EnhancedChatInterfaceProps) => {
   const { user } = useAuth();
-  const navigate = useNavigate();
+  const { toast } = useToast();
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  
+  const [recommendations, setRecommendations] = useState<PartnerRecommendation[]>([]);
+  const [integratingPartners, setIntegratingPartners] = useState<Set<string>>(new Set());
+  const [completedIntegrations, setCompletedIntegrations] = useState<Set<string>>(new Set());
 
   const {
     messages,
-    isLoading,
-    error,
-    sendMessage,
-    clearChat,
-    getContext
-  } = useLocalChat(propertyData);
-
-  console.log('🎯 [CHAT_INTERFACE] Component rendered with:', {
-    messageCount: messages.length,
-    isLoading,
-    hasError: !!error,
-    hasSendMessage: !!sendMessage,
-    hasPropertyData: !!propertyData
+    input,
+    setInput,
+    handleSendMessage,
+    loading: chatLoading,
+    error: chatError,
+  } = useOpenAIConversation({
+    onAssetDetected: (assets: string[]) => {
+      console.log('Assets detected in chat:', assets);
+      onAssetDetected?.(assets);
+    },
+    onConversationStageChange: (stage: string) => {
+      console.log('Conversation stage changed:', stage);
+      onConversationStageChange?.(stage);
+    },
+    propertyData: propertyData,
+    onRecommendationsGenerated: (recs: PartnerRecommendation[]) => {
+      console.log('Recommendations generated:', recs);
+      setRecommendations(recs);
+    }
   });
 
-  // Provide sendMessage function to parent component once ready
   useEffect(() => {
-    console.log('🔄 [CHAT_INTERFACE] Setting up sendMessage callback:', {
-      hasCallback: !!onSendMessageReady,
-      hasSendMessage: !!sendMessage,
-      readyToConnect: !!(onSendMessageReady && sendMessage)
-    });
-    
-    if (onSendMessageReady && sendMessage) {
-      console.log('✅ [CHAT_INTERFACE] Providing sendMessage to parent');
-      onSendMessageReady(sendMessage);
+    if (onSendMessageReady) {
+      onSendMessageReady(handleSendMessage);
     }
-  }, [onSendMessageReady, sendMessage]);
+  }, [handleSendMessage, onSendMessageReady]);
 
-  // Scroll to bottom when messages change
+  const scrollToBottom = useCallback(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
+  }, []);
+
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ 
-      behavior: 'smooth',
-      block: 'nearest'
-    });
-  }, [messages]);
+    scrollToBottom();
+  }, [messages, scrollToBottom]);
 
-  // Update detected assets based on chat context
-  useEffect(() => {
-    const context = getContext();
-    if (context.detectedAssets.length > 0) {
-      onAssetDetected(context.detectedAssets);
-    }
-    if (context.currentStage) {
-      onConversationStageChange(context.currentStage);
-    }
-  }, [messages, onAssetDetected, onConversationStageChange, getContext]);
+  const formatTimestamp = (timestamp: string): string => {
+    const date = new Date(timestamp);
+    const hours = date.getHours().toString().padStart(2, '0');
+    const minutes = date.getMinutes().toString().padStart(2, '0');
+    return `${hours}:${minutes}`;
+  };
 
-  const handlePartnerReferral = useCallback((platformId: string) => {
-    PartnerIntegrationService.openReferralLink(platformId, user?.id);
-  }, [user?.id]);
+  const handlePartnerIntegration = async (partnerName: string, referralLink: string) => {
+    if (!user?.id || !propertyData?.analysisId) {
+      toast({
+        title: "Authentication Required",
+        description: "Please log in to integrate with partners.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIntegratingPartners(prev => new Set([...prev, partnerName]));
+
+    try {
+      const result = await initializePartnerIntegration(
+        user.id,
+        propertyData.analysisId,
+        partnerName,
+        referralLink
+      );
+
+      if (result) {
+        setCompletedIntegrations(prev => new Set([...prev, partnerName]));
+        toast({
+          title: "Integration Started",
+          description: `Successfully initiated setup for ${partnerName}. Check your email for next steps.`,
+        });
+
+        // Open the referral link
+        window.open(referralLink, '_blank', 'noopener,noreferrer');
+      } else {
+        throw new Error('Failed to initialize integration');
+      }
+    } catch (error) {
+      console.error('Partner integration error:', error);
+      toast({
+        title: "Integration Error",
+        description: `Failed to start integration with ${partnerName}. Please try again.`,
+        variant: "destructive"
+      });
+    } finally {
+      setIntegratingPartners(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(partnerName);
+        return newSet;
+      });
+    }
+  };
 
   return (
-    <div className="flex flex-col h-full bg-gradient-to-br from-background/80 to-background/60 backdrop-blur-xl relative overflow-hidden">
-      {/* Ambient background effects */}
-      <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-accent/5" />
-      <div className="absolute top-0 left-1/4 w-64 h-64 bg-primary/10 rounded-full blur-3xl opacity-20" />
-      <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-accent/10 rounded-full blur-3xl opacity-20" />
-      
-
-      {/* Messages Area - Clean scrollable zone with padding for fixed components */}
-      <div className="flex-1 overflow-y-auto px-3 md:px-6 pt-6 md:pt-8 pb-40 md:pb-48 relative z-10">
-        {messages.length === 0 && !isLoading && (
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-center py-12"
-          >
-            <div className="p-4 rounded-3xl glass-effect glow-effect w-fit mx-auto mb-6">
-              <img 
-                src="/lovable-uploads/e24798be-80af-43c7-98ff-618e9adc0ee4.png" 
-                alt="AI Assistant" 
-                className="h-12 w-12 rounded-full object-cover"
-              />
-            </div>
-            <h3 className="text-xl font-semibold mb-2 bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
-              What asset do you want to start monetizing?
-            </h3>
-            <p className="text-muted-foreground/80 text-sm max-w-md mx-auto">
-              I'll help you maximize earnings from your property assets through smart partnerships.
-            </p>
-          </motion.div>
-        )}
-
-        {/* Modern Error state */}
-        {error && (
-          <motion.div 
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="flex justify-center mb-6"
-          >
-            <div className="glass-effect border border-red-200/30 text-red-600 rounded-2xl px-6 py-4 max-w-md backdrop-blur-lg">
-              <div className="flex items-center mb-3">
-                <div className="p-2 rounded-xl bg-red-100/20 mr-3">
-                  <AlertCircle className="w-4 h-4" />
-                </div>
-                <div className="font-medium">Connection Issue</div>
-              </div>
-              <div className="text-sm mb-4 opacity-90">{error}</div>
-              <div className="flex gap-3">
-                <button 
-                  onClick={clearChat}
-                  className="text-sm font-medium hover:opacity-70 transition-opacity"
-                >
-                  Clear Chat
-                </button>
-                {!user && (
-                  <button 
-                    onClick={() => navigate('/auth')}
-                    className="text-sm font-medium hover:opacity-70 transition-opacity"
-                  >
-                    Sign In
-                  </button>
+    <div className="flex flex-col h-full">
+      <ScrollArea className="flex-1 px-4">
+        <div className="max-w-4xl mx-auto space-y-4 py-4">
+          {messages.map((message, index) => (
+            <div key={index} className="flex flex-col">
+              <div className={`flex items-start gap-3 ${message.role === 'user' ? 'self-end' : 'self-start'}`}>
+                {message.role === 'bot' && (
+                  <Bot className="w-5 h-5 text-tiptop-purple flex-shrink-0" />
                 )}
-              </div>
-            </div>
-          </motion.div>
-        )}
-
-        <div className="space-y-3 md:space-y-4">
-          <AnimatePresence>
-            {messages.map((message) => (
-              <motion.div
-                key={message.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                transition={{ duration: 0.3 }}
-                className={`flex items-start gap-2 md:gap-3 ${
-                  message.role === 'assistant' ? 'justify-start' : 'justify-end'
-                }`}
-              >
-                {message.role === 'assistant' && (
-                  <div className="w-8 h-8 md:w-10 md:h-10 rounded-xl md:rounded-2xl glass-effect glow-effect flex items-center justify-center flex-shrink-0 border border-primary/20">
-                    <img 
-                      src="/lovable-uploads/e24798be-80af-43c7-98ff-618e9adc0ee4.png" 
-                      alt="AI Assistant" 
-                      className="h-4 w-4 md:h-6 md:w-6 rounded-full object-cover"
-                    />
-                  </div>
-                )}
-                
-                <div className={`max-w-[85%] md:max-w-[80%] rounded-xl md:rounded-2xl p-3 md:p-4 ${
-                  message.role === 'assistant'
-                    ? 'bg-background/40 backdrop-blur-xl border border-border/20 text-foreground shadow-sm'
-                    : 'bg-primary/90 backdrop-blur-xl text-primary-foreground ml-auto shadow-lg border border-primary/30'
-                }`}>
-                  <p className="text-xs md:text-sm whitespace-pre-wrap">{message.content}</p>
-                  
-                  {/* Asset Cards Display */}
-                  {message.assetCards && message.assetCards.length > 0 && (
-                    <div className="mt-4 space-y-3">
-                      {message.assetCards.map((asset) => (
-                        <Card 
-                          key={asset.id} 
-                          className="cursor-pointer hover:shadow-md transition-all duration-200 hover:border-primary/30"
-                        >
-                          <CardContent className="p-4">
-                            <div className="flex items-center justify-between mb-2">
-                              <h4 className="font-semibold text-sm">{asset.name}</h4>
-                              <Badge variant="secondary" className="text-xs">
-                                <DollarSign className="w-3 h-3 mr-1" />
-                                ${asset.monthlyRevenue}/month potential
-                              </Badge>
-                            </div>
-                            
-                            <div className="flex items-center text-xs text-muted-foreground mb-3">
-                              <Clock className="w-3 h-3 mr-1" />
-                              {asset.setupTime} setup time
-                            </div>
-
-                            {asset.partnerInfo && (
-                              <div className="mb-3">
-                                <p className="text-xs font-medium text-muted-foreground mb-1">
-                                  Platform: {asset.partnerInfo.platform}
-                                </p>
-                                <div className="text-xs text-muted-foreground">
-                                  <p className="mb-1">Requirements:</p>
-                                  <ul className="list-disc list-inside space-y-0.5 ml-2">
-                                    {asset.requirements.slice(0, 3).map((req, idx) => (
-                                      <li key={idx}>{req}</li>
-                                    ))}
-                                    {asset.requirements.length > 3 && (
-                                      <li className="text-primary">...and {asset.requirements.length - 3} more</li>
-                                    )}
-                                  </ul>
-                                </div>
-                              </div>
-                            )}
-
-                            <Button 
-                              size="sm" 
-                              className="w-full" 
-                              variant="outline"
-                            >
-                              <CheckCircle className="w-3 h-3 mr-1" />
-                              Start Setup
-                            </Button>
-                          </CardContent>
-                        </Card>
-                      ))}
-                    </div>
-                  )}
-
-                  {/* Partner Options Display */}
-                  {message.partnerOptions && message.partnerOptions.length > 0 && (
-                    <div className="mt-4 space-y-3">
-                      {message.partnerOptions.map((partner) => (
-                        <Card 
-                          key={partner.id} 
-                          className="cursor-pointer hover:shadow-md transition-all duration-200 hover:border-primary/30"
-                          onClick={() => handlePartnerReferral(partner.id)}
-                        >
-                          <CardContent className="p-4">
-                            <div className="flex items-center justify-between mb-2">
-                              <div className="flex items-center gap-2">
-                                <h4 className="font-semibold text-sm">{partner.name}</h4>
-                                {partner.priority === 1 && (
-                                  <Badge variant="default" className="text-xs bg-yellow-100 text-yellow-800 border-yellow-200">
-                                    <Star className="w-3 h-3 mr-1 fill-current" />
-                                    Recommended
-                                  </Badge>
-                                )}
-                              </div>
-                              <Badge variant="secondary" className="text-xs">
-                                <DollarSign className="w-3 h-3 mr-1" />
-                                ${partner.earningRange.min}-${partner.earningRange.max}/month
-                              </Badge>
-                            </div>
-                            
-                            <p className="text-xs text-muted-foreground mb-3">{partner.description}</p>
-                            
-                            <div className="flex items-center text-xs text-muted-foreground mb-3">
-                              <Clock className="w-3 h-3 mr-1" />
-                              {partner.setupTime} setup time
-                            </div>
-
-                            <div className="mb-3">
-                              <p className="text-xs font-medium text-muted-foreground mb-1">Key Requirements:</p>
-                              <ul className="list-disc list-inside space-y-0.5 ml-2 text-xs text-muted-foreground">
-                                {partner.requirements.slice(0, 3).map((req, idx) => (
-                                  <li key={idx}>{req}</li>
-                                ))}
-                                {partner.requirements.length > 3 && (
-                                  <li className="text-primary">...and {partner.requirements.length - 3} more</li>
-                                )}
-                              </ul>
-                            </div>
-
-                            <Button 
-                              size="sm" 
-                              className="w-full" 
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handlePartnerReferral(partner.id);
-                              }}
-                            >
-                              <ExternalLink className="w-3 h-3 mr-1" />
-                              Start with {partner.name}
-                            </Button>
-                          </CardContent>
-                        </Card>
-                      ))}
-                    </div>
-                  )}
-
-                  <div className={`text-xs mt-2 opacity-70`}>
-                    {message.timestamp.toLocaleTimeString()}
-                  </div>
-                  
-                  {/* Add partner referral buttons for assistant messages */}
-                  {message.role === 'assistant' && message.content.includes('Ready to start') && !message.assetCards && !message.partnerOptions && (
-                    <div className="mt-3 space-y-2">
-                      {PartnerIntegrationService.getAllPlatforms().map(platform => (
-                        <Button
-                          key={platform.id}
-                          size="sm"
-                          onClick={() => handlePartnerReferral(platform.id)}
-                          className="mr-2 mb-2"
-                          variant="outline"
-                        >
-                          <ExternalLink className="w-3 h-3 mr-1" />
-                          Open {platform.name}
-                        </Button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-                
                 {message.role === 'user' && (
-                  <div className="w-8 h-8 md:w-10 md:h-10 rounded-xl md:rounded-2xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center flex-shrink-0 shadow-lg">
-                    <User className="h-4 w-4 md:h-5 md:w-5 text-primary-foreground" />
-                  </div>
+                  <User className="w-5 h-5 text-blue-500 flex-shrink-0" />
                 )}
-              </motion.div>
-            ))}
-          </AnimatePresence>
-          
-          {isLoading && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="flex items-start gap-2 md:gap-3"
-            >
-              <div className="w-8 h-8 md:w-10 md:h-10 rounded-xl md:rounded-2xl glass-effect glow-effect flex items-center justify-center flex-shrink-0 border border-primary/20">
-                <img 
-                  src="/lovable-uploads/e24798be-80af-43c7-98ff-618e9adc0ee4.png" 
-                  alt="AI Assistant" 
-                  className="h-4 w-4 md:h-6 md:w-6 rounded-full object-cover"
-                />
+                <Card className={`w-fit max-w-[80%] break-words border-0 shadow-md ${message.role === 'user' ? 'bg-blue-500 text-white' : 'bg-gray-800 text-gray-100'}`}>
+                  <CardContent className="p-3">
+                    <p className="text-sm">{message.content}</p>
+                    <div className="text-xs text-gray-400 mt-1 text-right">{formatTimestamp(message.timestamp)}</div>
+                  </CardContent>
+                </Card>
               </div>
-              <div className="glass-effect rounded-xl md:rounded-2xl p-3 md:p-4 border border-border/30">
-                <div className="flex items-center space-x-2">
-                  <div className="animate-pulse flex space-x-1">
-                    <div className="w-2 h-2 bg-primary/60 rounded-full animate-bounce"></div>
-                    <div className="w-2 h-2 bg-primary/60 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                    <div className="w-2 h-2 bg-primary/60 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-                  </div>
-                  <span className="text-xs text-muted-foreground">Thinking...</span>
+            </div>
+          ))}
+          
+          {recommendations.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="space-y-4"
+            >
+              <div className="text-center">
+                <h3 className="text-lg font-semibold text-white mb-2">
+                  Recommended Partner Platforms
+                </h3>
+                <p className="text-gray-400 text-sm">
+                  Based on your property analysis, here are the best monetization options:
+                </p>
+              </div>
+              
+              <div className="overflow-x-auto pb-4">
+                <div className="flex gap-4 min-w-max px-2">
+                  {recommendations.map((recommendation) => (
+                    <div key={recommendation.id} className="flex-shrink-0 w-80">
+                      <PartnerRecommendationCard
+                        recommendation={recommendation}
+                        onIntegrate={handlePartnerIntegration}
+                        isIntegrating={integratingPartners.has(recommendation.partner_name)}
+                        isCompleted={completedIntegrations.has(recommendation.partner_name)}
+                      />
+                    </div>
+                  ))}
                 </div>
               </div>
             </motion.div>
           )}
 
-          <div ref={messagesEndRef} />
+          {propertyData?.selectedAssets && propertyData.selectedAssets.length > 0 && (
+            <AssetPartnerCarousel
+              selectedAssets={propertyData.selectedAssets}
+              onPartnerClick={handlePartnerIntegration}
+            />
+          )}
         </div>
-      </div>
+        <div ref={messagesEndRef} />
+      </ScrollArea>
     </div>
   );
 };
