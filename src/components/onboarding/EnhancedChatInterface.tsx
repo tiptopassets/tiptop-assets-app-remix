@@ -155,7 +155,7 @@ const EnhancedChatInterface = ({
       
 
       {/* Messages Area - Clean scrollable zone with bottom padding for fixed input */}
-      <div className="flex-1 overflow-y-auto px-6 pt-6 pb-52 relative z-10">
+      <div className="flex-1 overflow-y-auto px-3 md:px-6 pt-3 md:pt-6 pb-40 md:pb-52 relative z-10">
         {messages.length === 0 && !isLoading && (
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
@@ -213,7 +213,7 @@ const EnhancedChatInterface = ({
           </motion.div>
         )}
 
-        <div className="space-y-4">
+        <div className="space-y-3 md:space-y-4">
           <AnimatePresence>
             {messages.map((message) => (
               <motion.div
@@ -222,26 +222,26 @@ const EnhancedChatInterface = ({
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
                 transition={{ duration: 0.3 }}
-                className={`flex items-start gap-3 ${
+                className={`flex items-start gap-2 md:gap-3 ${
                   message.role === 'assistant' ? 'justify-start' : 'justify-end'
                 }`}
               >
                 {message.role === 'assistant' && (
-                  <div className="w-10 h-10 rounded-2xl glass-effect glow-effect flex items-center justify-center flex-shrink-0 border border-primary/20">
+                  <div className="w-8 h-8 md:w-10 md:h-10 rounded-xl md:rounded-2xl glass-effect glow-effect flex items-center justify-center flex-shrink-0 border border-primary/20">
                     <img 
                       src="/lovable-uploads/e24798be-80af-43c7-98ff-618e9adc0ee4.png" 
                       alt="AI Assistant" 
-                      className="h-6 w-6 rounded-full object-cover"
+                      className="h-4 w-4 md:h-6 md:w-6 rounded-full object-cover"
                     />
                   </div>
                 )}
                 
-                <div className={`max-w-[80%] rounded-2xl p-4 ${
+                <div className={`max-w-[85%] md:max-w-[80%] rounded-xl md:rounded-2xl p-3 md:p-4 ${
                   message.role === 'assistant'
                     ? 'bg-background/40 backdrop-blur-xl border border-border/20 text-foreground shadow-sm'
                     : 'bg-primary/90 backdrop-blur-xl text-primary-foreground ml-auto shadow-lg border border-primary/30'
                 }`}>
-                  <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                  <p className="text-xs md:text-sm whitespace-pre-wrap">{message.content}</p>
                   
                   {/* Asset Cards Display */}
                   {message.assetCards && message.assetCards.length > 0 && (
@@ -464,10 +464,10 @@ const EnhancedChatInterface = ({
       </div>
 
       {/* Modern Input Area - Fixed at bottom like ChatGPT */}
-      <div className="fixed bottom-0 left-0 right-0 z-[100] bg-background/80 backdrop-blur-xl border-t border-border/20 p-6">
+      <div className="fixed bottom-0 left-0 right-0 z-[100] bg-background/80 backdrop-blur-xl border-t border-border/20 p-3 md:p-6">
         {/* Floating input container with enhanced glass effect */}
-        <div className="bg-background/60 backdrop-blur-xl rounded-3xl border border-border/20 shadow-lg hover:shadow-xl transition-all duration-200 max-w-4xl mx-auto">
-          <div className="flex items-center p-3">
+        <div className="bg-background/60 backdrop-blur-xl rounded-2xl md:rounded-3xl border border-border/20 shadow-lg hover:shadow-xl transition-all duration-200 max-w-4xl mx-auto">
+          <div className="flex items-center p-2 md:p-3">
             <Input
               value={inputMessage}
               onChange={(e) => setInputMessage(e.target.value)}
@@ -478,15 +478,15 @@ const EnhancedChatInterface = ({
                   : "Thinking..."
               }
               disabled={isLoading}
-              className="flex-1 border-0 bg-transparent focus-visible:ring-0 text-base placeholder:text-muted-foreground/60 px-4 py-3"
+              className="flex-1 border-0 bg-transparent focus-visible:ring-0 text-sm md:text-base placeholder:text-muted-foreground/60 px-2 md:px-4 py-2 md:py-3"
             />
             <Button 
               onClick={handleSendMessage}
               disabled={!inputMessage.trim() || isLoading}
               size="icon"
-              className="rounded-2xl bg-[hsl(267,83%,60%)] hover:bg-[hsl(267,83%,55%)] backdrop-blur-sm shadow-md hover:shadow-lg transition-all duration-200 mx-2"
+              className="rounded-xl md:rounded-2xl bg-[hsl(267,83%,60%)] hover:bg-[hsl(267,83%,55%)] backdrop-blur-sm shadow-md hover:shadow-lg transition-all duration-200 mx-1 md:mx-2 h-8 w-8 md:h-10 md:w-10"
             >
-              <Send className="h-4 w-4 text-white" />
+              <Send className="h-3 w-3 md:h-4 md:w-4 text-white" />
             </Button>
           </div>
         </div>
