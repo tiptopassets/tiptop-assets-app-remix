@@ -495,26 +495,48 @@ const EnhancedChatInterface = ({
               </Button>
             ))}
             
-            {/* Partner bubbles for selected assets */}
-            {propertyData?.selectedAssets && propertyData.selectedAssets.map((selection, selectionIndex) => {
-              const assetType = selection.asset_type;
-              const getAssetDisplayName = (type: string): string => {
-                const cleanType = type?.toLowerCase?.() || 'asset';
-                const displayNames: Record<string, string> = {
-                  'internet': 'Internet Bandwidth Sharing',
-                  'bandwidth': 'Internet Bandwidth Sharing',
-                  'wifi': 'Internet Bandwidth Sharing',
-                  'pool': 'Swimming Pool',
-                  'swimming_pool': 'Swimming Pool',
-                  'parking': 'Parking Space',
-                  'driveway': 'Parking Space', 
-                  'storage': 'Storage Space',
-                  'garage': 'Storage Space',
-                  'basement': 'Storage Space'
+            {/* Partner bubbles for selected assets - grouped by asset type */}
+            {propertyData?.selectedAssets && (() => {
+              // Group assets by type to avoid duplicates  
+              const assetGroups = propertyData.selectedAssets.reduce((groups, selection) => {
+                const assetType = selection.asset_type;
+                const getAssetDisplayName = (type: string): string => {
+                  const cleanType = type?.toLowerCase?.() || 'asset';
+                  const displayNames: Record<string, string> = {
+                    'internet': 'Internet Bandwidth Sharing',
+                    'bandwidth': 'Internet Bandwidth Sharing',
+                    'wifi': 'Internet Bandwidth Sharing',
+                    'pool': 'Swimming Pool',
+                    'swimming_pool': 'Swimming Pool',
+                    'parking': 'Parking Space',
+                    'driveway': 'Parking Space', 
+                    'storage': 'Storage Space',
+                    'garage': 'Storage Space',
+                    'basement': 'Storage Space'
+                  };
+                  return displayNames[cleanType] || cleanType.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
                 };
-                return displayNames[cleanType] || cleanType.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
-              };
-              
+
+                const displayName = getAssetDisplayName(assetType);
+                
+                // Group internet-related assets together
+                const groupKey = assetType?.toLowerCase?.()?.includes('internet') || 
+                               assetType?.toLowerCase?.()?.includes('bandwidth') || 
+                               assetType?.toLowerCase?.()?.includes('wifi')
+                  ? 'internet'
+                  : assetType;
+
+                if (!groups[groupKey]) {
+                  groups[groupKey] = {
+                    displayName,
+                    assetType,
+                    selections: []
+                  };
+                }
+                groups[groupKey].selections.push(selection);
+                return groups;
+              }, {} as Record<string, any>);
+
               const getPartnersForAsset = (type: string) => {
                 const cleanType = type?.toLowerCase?.() || 'asset';
                 let platforms = PartnerIntegrationService.getPlatformsByAsset(cleanType);
@@ -534,25 +556,43 @@ const EnhancedChatInterface = ({
                 
                 return platforms;
               };
-              
-              const displayName = getAssetDisplayName(assetType);
-              const partners = getPartnersForAsset(assetType);
-              
-              return partners.map((partner, partnerIndex) => (
-                <Button
-                  key={`partner-${selectionIndex}-${partnerIndex}`}
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleSuggestedAction(`Set up my ${displayName.toLowerCase()} with ${partner.name}`)}
-                  disabled={isLoading}
-                  className="text-xs bg-primary/5 border-primary/30 hover:bg-primary/10"
-                >
-                  <span className="mr-1">{displayName}</span>
-                  <span className="text-primary font-medium">{partner.name}</span>
-                  {partner.priority === 1 && <span className="ml-1">⭐</span>}
-                </Button>
-              ));
-            })}
+
+              return Object.values(assetGroups).map((group: any, groupIndex) => {
+                const partners = getPartnersForAsset(group.assetType);
+                
+                // If there are multiple partners, show one bubble that expands to show partner cards
+                if (partners.length > 1) {
+                  return (
+                    <Button
+                      key={`asset-group-${groupIndex}`}
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleSuggestedAction(`Set up my ${group.displayName.toLowerCase()}`)}
+                      disabled={isLoading}
+                      className="text-xs bg-primary/5 border-primary/30 hover:bg-primary/10"
+                    >
+                      Set up my {group.displayName.toLowerCase()}
+                    </Button>
+                  );
+                }
+                
+                // If only one partner, show the specific partner button
+                return partners.map((partner, partnerIndex) => (
+                  <Button
+                    key={`partner-${groupIndex}-${partnerIndex}`}
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleSuggestedAction(`Set up my ${group.displayName.toLowerCase()} with ${partner.name}`)}
+                    disabled={isLoading}
+                    className="text-xs bg-primary/5 border-primary/30 hover:bg-primary/10"
+                  >
+                    <span className="mr-1">{group.displayName}</span>
+                    <span className="text-primary font-medium">{partner.name}</span>
+                    {partner.priority === 1 && <span className="ml-1">⭐</span>}
+                  </Button>
+                ));
+              }).flat();
+            })()}
           </div>
         )}
         
