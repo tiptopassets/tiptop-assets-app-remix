@@ -147,77 +147,105 @@ const EnhancedChatInterface = ({
   }, [propertyData]);
 
   return (
-    <div className="flex flex-col h-full bg-gradient-to-br from-gray-50 to-purple-50">
-      {/* Enhanced Header */}
-      <div className="bg-white border-b border-gray-200 px-4 py-3">
+    <div className="flex flex-col h-full bg-gradient-to-br from-background/80 to-background/60 backdrop-blur-xl relative overflow-hidden">
+      {/* Ambient background effects */}
+      <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-accent/5" />
+      <div className="absolute top-0 left-1/4 w-64 h-64 bg-primary/10 rounded-full blur-3xl opacity-20" />
+      <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-accent/10 rounded-full blur-3xl opacity-20" />
+      
+      {/* Minimal Floating Header */}
+      <div className="relative z-10 p-6">
         <div className="flex items-center justify-between">
-          <div>
-            <h3 className="font-semibold text-gray-900">Property Assistant</h3>
-            <p className="text-sm text-gray-600">
-              {propertyData ? `Helping you monetize ${propertyData.address}` : 'Ready to help with property monetization'}
-              {!user && (
-                <span className="ml-2 text-xs text-amber-600">
-                  • Sign in for full features
-                </span>
+          <div className="flex items-center space-x-4">
+            <div className="p-3 rounded-2xl glass-effect glow-effect">
+              <Bot className="h-6 w-6 text-primary" />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
+                Property Assistant
+              </h2>
+              {propertyData?.address && (
+                <p className="text-sm text-muted-foreground/80 font-medium">
+                  {propertyData.address}
+                </p>
               )}
-            </p>
+            </div>
           </div>
-          <div className="flex items-center space-x-2">
-            <Badge variant="outline" className={connectionStatus.color}>
-              <connectionStatus.icon className="w-2 h-2 mr-1" />
-              {connectionStatus.label}
-            </Badge>
+          
+          <div className="flex items-center space-x-3">
+            {/* Elegant Status Indicator */}
+            <div className="flex items-center space-x-2 px-3 py-1.5 rounded-full glass-effect">
+              <div className={`w-2 h-2 rounded-full ${
+                isLoading ? 'bg-yellow-400 animate-pulse' : 
+                error ? 'bg-red-400' : 'bg-green-400'
+              } glow-effect`} />
+              <span className="text-xs font-medium text-muted-foreground">
+                {isLoading ? 'Thinking...' : error ? 'Reconnecting' : 'Ready'}
+              </span>
+            </div>
+            
             {!user && (
-              <Button 
-                onClick={() => navigate('/auth')} 
-                size="sm" 
-                variant="outline"
-                className="text-xs"
-              >
-                Sign In
+              <Button variant="ghost" size="sm" className="glass-effect hover:glow-effect rounded-xl" asChild>
+                <div onClick={() => navigate('/auth')}>Sign In</div>
               </Button>
             )}
           </div>
         </div>
       </div>
 
-      {/* Messages Area */}
-      <div className="flex-1 overflow-y-auto p-4">
+      {/* Messages Area - Clean scrollable zone */}
+      <div className="flex-1 overflow-y-auto px-6 pb-6 relative z-10">
         {messages.length === 0 && !isLoading && (
-          <div className="text-center text-muted-foreground py-8">
-            <Bot className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
-            <p>Hi! I'm your property monetization assistant.</p>
-            <p className="text-sm mt-2">I'll help you set up partner platforms to start earning money from your property!</p>
-          </div>
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="text-center py-12"
+          >
+            <div className="p-4 rounded-3xl glass-effect glow-effect w-fit mx-auto mb-6">
+              <Bot className="h-12 w-12 text-primary" />
+            </div>
+            <h3 className="text-xl font-semibold mb-2 bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
+              What's on your mind today?
+            </h3>
+            <p className="text-muted-foreground/80 text-sm max-w-md mx-auto">
+              I'll help you maximize earnings from your property assets through smart partnerships.
+            </p>
+          </motion.div>
         )}
 
-        {/* Enhanced Error state */}
+        {/* Modern Error state */}
         {error && (
-          <div className="flex justify-center mb-4">
-            <div className="bg-destructive/10 text-destructive rounded-lg px-4 py-3 border border-destructive/20 max-w-md">
-              <div className="flex items-center mb-2">
-                <AlertCircle className="w-4 h-4 mr-2" />
-                <div className="text-sm font-medium">Assistant Error</div>
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="flex justify-center mb-6"
+          >
+            <div className="glass-effect border border-red-200/30 text-red-600 rounded-2xl px-6 py-4 max-w-md backdrop-blur-lg">
+              <div className="flex items-center mb-3">
+                <div className="p-2 rounded-xl bg-red-100/20 mr-3">
+                  <AlertCircle className="w-4 h-4" />
+                </div>
+                <div className="font-medium">Connection Issue</div>
               </div>
-              <div className="text-sm mb-3">{error}</div>
-              <div className="flex gap-2">
+              <div className="text-sm mb-4 opacity-90">{error}</div>
+              <div className="flex gap-3">
                 <button 
                   onClick={clearChat}
-                  className="text-xs underline"
+                  className="text-sm font-medium hover:opacity-70 transition-opacity"
                 >
                   Clear Chat
                 </button>
                 {!user && (
                   <button 
                     onClick={() => navigate('/auth')}
-                    className="text-xs underline ml-2"
+                    className="text-sm font-medium hover:opacity-70 transition-opacity"
                   >
                     Sign In
                   </button>
                 )}
               </div>
             </div>
-          </div>
+          </motion.div>
         )}
 
         <div className="space-y-4">
@@ -234,15 +262,15 @@ const EnhancedChatInterface = ({
                 }`}
               >
                 {message.role === 'assistant' && (
-                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                    <Bot className="h-4 w-4 text-primary" />
+                  <div className="w-10 h-10 rounded-2xl glass-effect glow-effect flex items-center justify-center flex-shrink-0 border border-primary/20">
+                    <Bot className="h-5 w-5 text-primary" />
                   </div>
                 )}
                 
-                <div className={`max-w-[80%] rounded-lg p-3 ${
+                <div className={`max-w-[80%] rounded-2xl p-4 backdrop-blur-lg ${
                   message.role === 'assistant'
-                    ? 'bg-muted text-foreground'
-                    : 'bg-primary text-primary-foreground ml-auto'
+                    ? 'glass-effect text-foreground border border-border/30'
+                    : 'bg-gradient-to-r from-primary to-primary/90 text-primary-foreground ml-auto shadow-lg'
                 }`}>
                   <p className="text-sm whitespace-pre-wrap">{message.content}</p>
                   
@@ -392,8 +420,8 @@ const EnhancedChatInterface = ({
                 </div>
                 
                 {message.role === 'user' && (
-                  <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
-                    <User className="h-4 w-4 text-primary-foreground" />
+                  <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center flex-shrink-0 shadow-lg">
+                    <User className="h-5 w-5 text-primary-foreground" />
                   </div>
                 )}
               </motion.div>
@@ -406,11 +434,18 @@ const EnhancedChatInterface = ({
               animate={{ opacity: 1 }}
               className="flex items-start gap-3"
             >
-              <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                <Bot className="h-4 w-4 text-primary" />
+              <div className="w-10 h-10 rounded-2xl glass-effect glow-effect flex items-center justify-center flex-shrink-0 border border-primary/20">
+                <Bot className="h-5 w-5 text-primary" />
               </div>
-              <div className="bg-muted rounded-lg p-3">
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+              <div className="glass-effect rounded-2xl p-4 border border-border/30">
+                <div className="flex items-center space-x-2">
+                  <div className="animate-pulse flex space-x-1">
+                    <div className="w-2 h-2 bg-primary/60 rounded-full animate-bounce"></div>
+                    <div className="w-2 h-2 bg-primary/60 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                    <div className="w-2 h-2 bg-primary/60 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                  </div>
+                  <span className="text-xs text-muted-foreground">Thinking...</span>
+                </div>
               </div>
             </motion.div>
           )}
@@ -455,44 +490,50 @@ const EnhancedChatInterface = ({
         </div>
       </div>
 
-      {/* Enhanced Input Area */}
-      <div className="border-t border-gray-200 bg-white p-4">
-        <div className="flex space-x-2">
-          <Input
-            value={inputMessage}
-            onChange={(e) => setInputMessage(e.target.value)}
-            onKeyPress={handleKeyPress}
-            placeholder={
-              !isLoading 
-                ? "Ask me about earning money from your property..." 
-                : "Assistant is thinking..."
-            }
-            disabled={isLoading}
-            className="flex-1"
-          />
-          <Button 
-            onClick={handleSendMessage}
-            disabled={!inputMessage.trim() || isLoading}
-            size="icon"
-          >
-            <Send className="h-4 w-4" />
-          </Button>
+      {/* Modern Input Area */}
+      <div className="relative z-10 p-6 pt-4">
+        {/* Floating input container */}
+        <div className="glass-effect rounded-3xl p-4 border border-border/30 backdrop-blur-lg">
+          <div className="flex items-center space-x-3">
+            <Input
+              value={inputMessage}
+              onChange={(e) => setInputMessage(e.target.value)}
+              onKeyPress={handleKeyPress}
+              placeholder={
+                !isLoading 
+                  ? "Ask anything..." 
+                  : "Thinking..."
+              }
+              disabled={isLoading}
+              className="flex-1 border-0 bg-transparent focus-visible:ring-0 text-base placeholder:text-muted-foreground/60"
+            />
+            <Button 
+              onClick={handleSendMessage}
+              disabled={!inputMessage.trim() || isLoading}
+              size="icon"
+              className="rounded-xl bg-primary hover:bg-primary/90 shadow-lg"
+            >
+              <Send className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
         
-        {/* Quick suggestions and partner bubbles */}
+        {/* Suggestion Pills */}
         {showSuggestions && !isLoading && (
-          <div className="mt-3 flex flex-wrap gap-2">
+          <motion.div 
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mt-4 flex flex-wrap gap-2"
+          >
             {quickStartSuggestions.map((suggestion, index) => (
-              <Button
+              <button
                 key={index}
-                variant="outline"
-                size="sm"
                 onClick={() => handleSuggestedAction(suggestion)}
                 disabled={isLoading}
-                className="text-xs"
+                className="px-4 py-2 rounded-2xl glass-effect border border-border/30 text-sm font-medium text-foreground/80 hover:text-foreground hover:border-primary/30 hover:glow-effect transition-all duration-200 backdrop-blur-lg"
               >
                 {suggestion}
-              </Button>
+              </button>
             ))}
             
             {/* Partner bubbles for selected assets - grouped by asset type */}
@@ -574,36 +615,32 @@ const EnhancedChatInterface = ({
                 // If there are multiple partners, show one bubble that expands to show partner cards
                 if (partners.length > 1) {
                   return (
-                    <Button
+                    <button
                       key={`asset-group-${groupIndex}`}
-                      variant="outline"
-                      size="sm"
                       onClick={() => handleSuggestedAction(`Set up my ${group.displayName.toLowerCase()}`)}
                       disabled={isLoading}
-                      className="text-xs bg-primary/5 border-primary/30 hover:bg-primary/10"
+                      className="px-4 py-2 rounded-2xl glass-effect border border-primary/30 text-sm font-medium text-primary/90 hover:text-primary hover:border-primary/50 hover:glow-effect transition-all duration-200 backdrop-blur-lg bg-primary/5"
                     >
                       Set up my {group.displayName.toLowerCase()}
-                    </Button>
+                    </button>
                   );
                 }
                 
                 // If only one partner, show simplified button without partner name
                 return partners.map((partner, partnerIndex) => (
-                  <Button
+                  <button
                     key={`partner-${groupIndex}-${partnerIndex}`}
-                    variant="outline"
-                    size="sm"
                     onClick={() => handleSuggestedAction(`Set up my ${group.displayName.toLowerCase()}`)}
                     disabled={isLoading}
-                    className="text-xs bg-primary/5 border-primary/30 hover:bg-primary/10"
+                    className="px-4 py-2 rounded-2xl glass-effect border border-primary/30 text-sm font-medium text-primary/90 hover:text-primary hover:border-primary/50 hover:glow-effect transition-all duration-200 backdrop-blur-lg bg-primary/5 flex items-center"
                   >
                     Set up my {group.displayName.toLowerCase()}
                     {partner.priority === 1 && <span className="ml-1">⭐</span>}
-                  </Button>
+                  </button>
                 ));
               }).flat();
-            })()}
-          </div>
+             })()}
+          </motion.div>
         )}
         
         {/* Enhanced context indicators - Hidden per user request */}
