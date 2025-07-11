@@ -82,7 +82,7 @@ const EnhancedChatInterface = ({
       
 
       {/* Messages Area - Clean scrollable zone with padding for fixed components */}
-      <div className="flex-1 overflow-y-auto px-3 md:px-6 pt-24 md:pt-28 pb-20 md:pb-24 relative z-10">
+      <div className="flex-1 overflow-y-auto px-3 md:px-6 pt-32 md:pt-36 pb-32 md:pb-36 relative z-10">
         {messages.length === 0 && !isLoading && (
           <motion.div 
             initial={{ opacity: 0, y: 20 }}

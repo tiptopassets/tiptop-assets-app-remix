@@ -129,7 +129,7 @@ const ChatbotHeader: React.FC<ChatbotHeaderProps> = ({
                     )}
                   </div>
                 </div>
-                <QuickActionsBar />
+                
               </>
             )}
           </div>
@@ -159,7 +159,7 @@ const ChatbotHeader: React.FC<ChatbotHeaderProps> = ({
                   </Badge>
                 )}
               </div>
-              <QuickActionsBar isMobile={true} />
+              
             </div>
           )}
         </div>

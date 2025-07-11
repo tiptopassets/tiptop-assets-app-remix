@@ -49,7 +49,7 @@ const QuickActionsBar: React.FC<QuickActionsBarProps> = ({ isMobile = false }) =
   }
 
   return (
-    <div className="fixed right-6 top-1/2 -translate-y-1/2 z-[70] flex flex-col gap-2">
+    <div className="fixed right-6 top-1/2 -translate-y-1/2 z-[80] flex flex-col gap-2">
       <div className="text-center mb-2">
         <h3 className="text-xs font-semibold text-[hsl(267,83%,60%)] tracking-wide uppercase">Quick Actions</h3>
       </div>
