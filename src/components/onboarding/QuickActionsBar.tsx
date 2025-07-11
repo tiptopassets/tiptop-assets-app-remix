@@ -1,46 +1,43 @@
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Settings2 } from 'lucide-react';
+import { Home, BarChart3, Calendar } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const QuickActionsBar: React.FC = () => {
   const navigate = useNavigate();
 
   return (
-    <Card className="mb-4">
-      <CardHeader className="pb-3">
-        <CardTitle className="text-lg flex items-center gap-2">
-          <Settings2 className="h-5 w-5 text-tiptop-purple" />
-          Quick Actions
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-          <Button
-            variant="outline"
-            className="w-full justify-center text-xs px-2 py-2 h-auto"
-            onClick={() => navigate('/')}
-          >
-            Analyze Another Property
-          </Button>
-          <Button
-            variant="outline"
-            className="w-full justify-center text-xs px-2 py-2 h-auto"
-            onClick={() => navigate('/dashboard')}
-          >
-            View My Dashboard
-          </Button>
-          <Button
-            variant="default"
-            className="w-full justify-center text-xs px-2 py-2 h-auto bg-tiptop-purple hover:bg-tiptop-purple/90 text-white font-medium"
-            onClick={() => window.open('https://calendly.com/tiptop-concierge', '_blank')}
-          >
-            Schedule Concierge Call
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
+    <div className="fixed right-4 top-1/2 -translate-y-1/2 z-50 flex flex-col gap-3">
+      <Button
+        variant="outline"
+        size="icon"
+        className="w-12 h-12 glass-effect border border-border/20 hover:bg-background/80 group"
+        onClick={() => navigate('/')}
+        title="Analyze Another Property"
+      >
+        <Home className="h-5 w-5 text-primary group-hover:scale-110 transition-transform" />
+      </Button>
+      
+      <Button
+        variant="outline"
+        size="icon"
+        className="w-12 h-12 glass-effect border border-border/20 hover:bg-background/80 group"
+        onClick={() => navigate('/dashboard')}
+        title="View My Dashboard"
+      >
+        <BarChart3 className="h-5 w-5 text-primary group-hover:scale-110 transition-transform" />
+      </Button>
+      
+      <Button
+        variant="default"
+        size="icon"
+        className="w-12 h-12 bg-primary/20 backdrop-blur-sm border border-primary/30 text-primary hover:bg-primary/30 group"
+        onClick={() => window.open('https://calendly.com/tiptop-concierge', '_blank')}
+        title="Schedule Concierge Call"
+      >
+        <Calendar className="h-5 w-5 group-hover:scale-110 transition-transform" />
+      </Button>
+    </div>
   );
 };
 
