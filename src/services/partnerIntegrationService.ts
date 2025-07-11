@@ -156,7 +156,7 @@ export class PartnerIntegrationService {
     {
       id: 'sniffspot',
       name: 'Sniffspot',
-      referralLink: 'https://www.sniffspot.com/host',
+      referralLink: 'https://www.sniffspot.com/to/lApGtMn8',
       assetTypes: ['garden', 'yard', 'outdoor_space'],
       requirements: [
         'Secure, fenced area',
