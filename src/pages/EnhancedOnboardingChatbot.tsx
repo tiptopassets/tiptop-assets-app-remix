@@ -10,6 +10,7 @@ import { useJourneyTracking } from '@/hooks/useJourneyTracking';
 import EnhancedChatInterface from '@/components/onboarding/EnhancedChatInterface';
 import ChatInputBox from '@/components/onboarding/ChatInputBox';
 import SuggestionBubbles from '@/components/onboarding/SuggestionBubbles';
+import SelectedAssetBubbles from '@/components/onboarding/SelectedAssetBubbles';
 import ChatbotLoadingState from '@/components/onboarding/ChatbotLoadingState';
 import ChatbotErrorState from '@/components/onboarding/ChatbotErrorState';
 import ChatbotHeader from '@/components/onboarding/ChatbotHeader';
@@ -306,6 +307,9 @@ const EnhancedOnboardingChatbot = () => {
           </div>
         </div>
       </div>
+
+      {/* Selected Asset Bubbles - Fixed above chat input */}
+      <SelectedAssetBubbles propertyData={unifiedPropertyData} />
 
       {/* Fixed Chat Input - Bottom */}
       <ChatInputBox 
