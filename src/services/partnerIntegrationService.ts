@@ -152,6 +152,53 @@ export class PartnerIntegrationService {
       earningRange: { min: 300, max: 2000 },
       setupTime: '3-4 hours',
       description: 'Rent unique spaces for events, meetings, and creative projects'
+    },
+    {
+      id: 'sniffspot',
+      name: 'Sniffspot',
+      referralLink: 'https://www.sniffspot.com/host',
+      assetTypes: ['garden', 'yard', 'outdoor_space'],
+      requirements: [
+        'Secure, fenced area',
+        'Safe environment for dogs',
+        'Clean water access',
+        'Waste disposal availability',
+        'Basic safety equipment'
+      ],
+      setupSteps: [
+        'Assess yard safety and security',
+        'Take attractive photos of space',
+        'Set competitive hourly rates',
+        'Create detailed space description',
+        'Configure availability calendar'
+      ],
+      earningRange: { min: 100, max: 500 },
+      setupTime: '2-3 hours',
+      description: 'Rent your yard as a private dog park space',
+      priority: 1
+    },
+    {
+      id: 'giggster',
+      name: 'Giggster',
+      referralLink: 'https://giggster.com/become-host',
+      assetTypes: ['garden', 'yard', 'outdoor_space', 'event_space'],
+      requirements: [
+        'Visually appealing outdoor space',
+        'Good lighting (natural/artificial)',
+        'Accessible location',
+        'Photo/video friendly environment',
+        'Parking availability'
+      ],
+      setupSteps: [
+        'Enhance space visual appeal',
+        'Professional photography session',
+        'Write compelling location description',
+        'Set up equipment/prop storage',
+        'Configure booking system'
+      ],
+      earningRange: { min: 200, max: 1000 },
+      setupTime: '4-6 hours',
+      description: 'Rent garden/yard space for photo shoots and video productions'
     }
   ];
 

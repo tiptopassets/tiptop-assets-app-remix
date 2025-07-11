@@ -576,18 +576,17 @@ const EnhancedChatInterface = ({
                   );
                 }
                 
-                // If only one partner, show the specific partner button
+                // If only one partner, show simplified button without partner name
                 return partners.map((partner, partnerIndex) => (
                   <Button
                     key={`partner-${groupIndex}-${partnerIndex}`}
                     variant="outline"
                     size="sm"
-                    onClick={() => handleSuggestedAction(`Set up my ${group.displayName.toLowerCase()} with ${partner.name}`)}
+                    onClick={() => handleSuggestedAction(`Set up my ${group.displayName.toLowerCase()}`)}
                     disabled={isLoading}
                     className="text-xs bg-primary/5 border-primary/30 hover:bg-primary/10"
                   >
-                    <span className="mr-1">{group.displayName}</span>
-                    <span className="text-primary font-medium">{partner.name}</span>
+                    Set up my {group.displayName.toLowerCase()}
                     {partner.priority === 1 && <span className="ml-1">⭐</span>}
                   </Button>
                 ));
