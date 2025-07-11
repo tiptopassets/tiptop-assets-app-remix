@@ -1,5 +1,4 @@
 
-
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -52,39 +51,41 @@ const PartnerRecommendationCard: React.FC<PartnerRecommendationCardProps> = ({
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="w-full max-w-sm"
+      className="w-full"
     >
-      <Card className={`glassmorphism-card border-white/20 h-full ${isCompleted ? 'border-green-500/50 bg-green-500/5' : 'hover:border-tiptop-purple/50'} transition-all duration-300`}>
-        <CardHeader className="pb-2">
-          <div className="flex items-start justify-between mb-2">
-            <CardTitle className="text-white flex items-center gap-2 text-base">
-              {recommendation.partner_name}
-              {isCompleted && <CheckCircle className="w-4 h-4 text-green-500" />}
-            </CardTitle>
-            <div className="flex items-center gap-1">
-              {getPriorityStars(recommendation.priority_score)}
+      <Card className={`glassmorphism-card border-white/20 ${isCompleted ? 'border-green-500/50 bg-green-500/5' : 'hover:border-tiptop-purple/50'} transition-all duration-300`}>
+        <CardHeader className="pb-3">
+          <div className="flex items-start justify-between">
+            <div className="flex-1">
+              <CardTitle className="text-white flex items-center gap-2 text-lg">
+                {recommendation.partner_name}
+                {isCompleted && <CheckCircle className="w-5 h-5 text-green-500" />}
+              </CardTitle>
+              <p className="text-gray-400 text-sm mt-1">{recommendation.recommendation_reason}</p>
+            </div>
+            <div className="flex flex-col items-end gap-1">
+              <div className="flex items-center gap-1">
+                {getPriorityStars(recommendation.priority_score)}
+              </div>
+              <Badge className="text-xs capitalize">
+                {recommendation.asset_type}
+              </Badge>
             </div>
           </div>
-          
-          <Badge className="text-xs capitalize self-start">
-            {recommendation.asset_type}
-          </Badge>
-          
-          <p className="text-gray-400 text-xs mt-1 line-clamp-2">{recommendation.recommendation_reason}</p>
         </CardHeader>
 
-        <CardContent className="pt-0 flex flex-col justify-between flex-1">
+        <CardContent className="pt-0">
           <div className="space-y-3">
-            {/* Key metrics - stacked vertically for narrow layout */}
-            <div className="space-y-2">
-              <div className="flex items-center gap-2 text-xs">
-                <DollarSign className="w-3 h-3 text-green-500" />
+            {/* Key metrics */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="flex items-center gap-2 text-sm">
+                <DollarSign className="w-4 h-4 text-green-500" />
                 <span className="text-gray-300">
                   ~${Math.round(recommendation.estimated_monthly_earnings)}/month
                 </span>
               </div>
-              <div className="flex items-center gap-2 text-xs">
-                <Clock className="w-3 h-3 text-blue-500" />
+              <div className="flex items-center gap-2 text-sm">
+                <Clock className="w-4 h-4 text-blue-500" />
                 <Badge 
                   variant="outline" 
                   className={`text-xs ${getComplexityColor(recommendation.setup_complexity)}`}
@@ -94,24 +95,24 @@ const PartnerRecommendationCard: React.FC<PartnerRecommendationCardProps> = ({
               </div>
             </div>
 
-            {/* Action buttons - stacked vertically */}
-            <div className="space-y-2">
+            {/* Action button */}
+            <div className="flex gap-2">
               {!isCompleted && (
                 <Button
                   onClick={handleIntegrate}
                   disabled={isIntegrating || !recommendation.referral_link}
-                  className="w-full bg-tiptop-purple hover:bg-purple-700 text-white text-xs h-8"
+                  className="flex-1 bg-tiptop-purple hover:bg-purple-700 text-white"
                   size="sm"
                 >
                   {isIntegrating ? (
                     <>
-                      <Loader2 className="w-3 h-3 animate-spin mr-1" />
+                      <Loader2 className="w-4 h-4 animate-spin mr-2" />
                       Setting up...
                     </>
                   ) : (
                     <>
                       Start Integration
-                      <ExternalLink className="w-3 h-3 ml-1" />
+                      <ExternalLink className="w-4 h-4 ml-2" />
                     </>
                   )}
                 </Button>
@@ -121,7 +122,7 @@ const PartnerRecommendationCard: React.FC<PartnerRecommendationCardProps> = ({
                 variant="outline"
                 size="sm"
                 onClick={() => setIsExpanded(!isExpanded)}
-                className="w-full border-gray-600 text-gray-300 hover:bg-gray-700 text-xs h-7"
+                className="border-gray-600 text-gray-300 hover:bg-gray-700"
               >
                 {isExpanded ? 'Less' : 'Details'}
               </Button>
@@ -135,7 +136,7 @@ const PartnerRecommendationCard: React.FC<PartnerRecommendationCardProps> = ({
                 exit={{ opacity: 0, height: 0 }}
                 className="border-t border-gray-700 pt-3 mt-3"
               >
-                <div className="text-xs text-gray-400 space-y-2">
+                <div className="text-sm text-gray-400 space-y-2">
                   <div>
                     <span className="font-medium text-gray-300">Priority Score:</span> {recommendation.priority_score}/10
                   </div>
@@ -167,4 +168,3 @@ const PartnerRecommendationCard: React.FC<PartnerRecommendationCardProps> = ({
 };
 
 export default PartnerRecommendationCard;
-
