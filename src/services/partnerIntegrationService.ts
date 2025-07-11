@@ -180,7 +180,7 @@ export class PartnerIntegrationService {
     {
       id: 'giggster',
       name: 'Giggster',
-      referralLink: 'https://giggster.com/become-host',
+      referralLink: 'https://giggster.com/r/tiptop-s4fkj',
       assetTypes: ['garden', 'yard', 'outdoor_space', 'event_space'],
       requirements: [
         'Visually appealing outdoor space',
