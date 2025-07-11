@@ -45,7 +45,8 @@ const EnhancedChatInterface = ({
 
   // Provide sendMessage function to parent component once ready
   useEffect(() => {
-    if (onSendMessageReady) {
+    console.log('🔄 [CHAT_INTERFACE] Providing sendMessage to parent:', !!sendMessage);
+    if (onSendMessageReady && sendMessage) {
       onSendMessageReady(sendMessage);
     }
   }, [onSendMessageReady, sendMessage]);

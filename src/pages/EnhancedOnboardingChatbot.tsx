@@ -93,6 +93,13 @@ const EnhancedOnboardingChatbot = () => {
 
   // Initialize conversation with target asset if provided
   useEffect(() => {
+    console.log('🎯 [ONBOARDING] Target asset initialization effect:', {
+      hasUnifiedData: !!unifiedPropertyData,
+      targetAsset,
+      propertyLoading,
+      journeyLoading,
+      hasSendFunction: !!sendInitialMessage
+    });
     if (unifiedPropertyData && targetAsset && !propertyLoading && !journeyLoading && sendInitialMessage) {
       console.log('🎯 [ONBOARDING] Initializing with target asset:', {
         targetAsset,
@@ -206,15 +213,24 @@ const EnhancedOnboardingChatbot = () => {
   };
 
   const handleSendMessage = async (message: string) => {
-    if (!sendInitialMessage) return;
+    console.log('🔄 [ONBOARDING] HandleSendMessage called with:', message);
+    console.log('🔄 [ONBOARDING] sendInitialMessage available:', !!sendInitialMessage);
+    
+    if (!sendInitialMessage) {
+      console.error('❌ [ONBOARDING] sendInitialMessage not available yet');
+      setChatError('Chat is not ready yet. Please wait a moment and try again.');
+      return;
+    }
     
     setChatLoading(true);
-    setShowSuggestions(false);
+    // Don't hide suggestions immediately - keep them visible
     setChatError(null);
     
     try {
       await sendInitialMessage(message);
+      console.log('✅ [ONBOARDING] Message sent successfully');
     } catch (err) {
+      console.error('❌ [ONBOARDING] Error sending message:', err);
       setChatError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
       setChatLoading(false);
