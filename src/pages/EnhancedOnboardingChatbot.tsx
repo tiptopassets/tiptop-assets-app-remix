@@ -1,5 +1,4 @@
-
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
@@ -88,8 +87,16 @@ const EnhancedOnboardingChatbot = () => {
     return null;
   }, [journeyData, propertyData, assetSelections, analysisId]);
 
-  // Store reference to send initial message function
-  const [sendInitialMessage, setSendInitialMessage] = useState<((message: string) => Promise<void>) | null>(null);
+  // Store reference to send message function - THIS IS THE KEY FIX
+  const [sendMessageFunction, setSendMessageFunction] = useState<((message: string) => Promise<void>) | null>(null);
+
+  console.log('🔍 [ONBOARDING] Current state:', {
+    hasUnifiedData: !!unifiedPropertyData,
+    hasSendFunction: !!sendMessageFunction,
+    chatLoading,
+    chatError,
+    showSuggestions
+  });
 
   // Initialize conversation with target asset if provided
   useEffect(() => {
@@ -98,9 +105,9 @@ const EnhancedOnboardingChatbot = () => {
       targetAsset,
       propertyLoading,
       journeyLoading,
-      hasSendFunction: !!sendInitialMessage
+      hasSendFunction: !!sendMessageFunction
     });
-    if (unifiedPropertyData && targetAsset && !propertyLoading && !journeyLoading && sendInitialMessage) {
+    if (unifiedPropertyData && targetAsset && !propertyLoading && !journeyLoading && sendMessageFunction) {
       console.log('🎯 [ONBOARDING] Initializing with target asset:', {
         targetAsset,
         analysisId: unifiedPropertyData.analysisId,
@@ -121,7 +128,7 @@ const EnhancedOnboardingChatbot = () => {
         
         // Auto-start the conversation with the target asset and immediately show partner cards
         setTimeout(() => {
-          sendInitialMessage(`I want to manage my ${assetName.toLowerCase()} setup. Please show me the available partner platforms and configuration options.`);
+          sendMessageFunction(`I want to manage my ${assetName.toLowerCase()} setup. Please show me the available partner platforms and configuration options.`);
         }, 1000);
         
         const revenue = selectedAsset?.monthly_revenue || assetInfo?.monthlyRevenue || 0;
@@ -141,7 +148,7 @@ const EnhancedOnboardingChatbot = () => {
         setConversationStage('asset_configuration');
         
         setTimeout(() => {
-          sendInitialMessage(`I want to set up my ${targetAsset} for monetization. Please show me the available partner platforms and configuration options.`);
+          sendMessageFunction(`I want to set up my ${targetAsset} for monetization. Please show me the available partner platforms and configuration options.`);
         }, 1000);
         
         toast({
@@ -150,7 +157,7 @@ const EnhancedOnboardingChatbot = () => {
         });
       }
     }
-  }, [unifiedPropertyData, targetAsset, propertyLoading, journeyLoading, toast, sendInitialMessage]);
+  }, [unifiedPropertyData, targetAsset, propertyLoading, journeyLoading, toast, sendMessageFunction]);
 
   const [analytics, setAnalytics] = useState({
     totalMessages: 0,
@@ -212,34 +219,42 @@ const EnhancedOnboardingChatbot = () => {
     setMessageCount(prev => prev + 1);
   };
 
-  const handleSendMessage = async (message: string) => {
+  // This is the key fix - connect the sendMessage properly
+  const handleSendMessage = useCallback(async (message: string) => {
     console.log('🔄 [ONBOARDING] HandleSendMessage called with:', message);
-    console.log('🔄 [ONBOARDING] sendInitialMessage available:', !!sendInitialMessage);
+    console.log('🔄 [ONBOARDING] sendMessageFunction available:', !!sendMessageFunction);
     
-    if (!sendInitialMessage) {
-      console.error('❌ [ONBOARDING] sendInitialMessage not available yet');
+    if (!sendMessageFunction) {
+      console.error('❌ [ONBOARDING] sendMessageFunction not available yet');
       setChatError('Chat is not ready yet. Please wait a moment and try again.');
       return;
     }
     
     setChatLoading(true);
-    // Don't hide suggestions immediately - keep them visible
     setChatError(null);
     
     try {
-      await sendInitialMessage(message);
+      await sendMessageFunction(message);
       console.log('✅ [ONBOARDING] Message sent successfully');
+      // Don't hide suggestions immediately - let them stay visible
     } catch (err) {
       console.error('❌ [ONBOARDING] Error sending message:', err);
       setChatError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
       setChatLoading(false);
     }
-  };
+  }, [sendMessageFunction]);
 
-  const handleSuggestedAction = async (action: string) => {
+  const handleSuggestedAction = useCallback(async (action: string) => {
+    console.log('💡 [ONBOARDING] Suggestion clicked:', action);
     await handleSendMessage(action);
-  };
+  }, [handleSendMessage]);
+
+  // Callback to receive the sendMessage function from EnhancedChatInterface
+  const handleSendMessageReady = useCallback((sendMessage: (message: string) => Promise<void>) => {
+    console.log('✅ [ONBOARDING] Received sendMessage function from chat interface');
+    setSendMessageFunction(() => sendMessage);
+  }, []);
 
   // Loading state - wait for auth and data
   const isLoading = authLoading || (propertyLoading && journeyLoading && !unifiedPropertyData);
@@ -274,8 +289,6 @@ const EnhancedOnboardingChatbot = () => {
         />
       </div>
 
-
-
       {/* Floating Quick Actions Sidebar */}
       <QuickActionsBar />
 
@@ -288,7 +301,7 @@ const EnhancedOnboardingChatbot = () => {
                 onAssetDetected={handleAssetDetected}
                 onConversationStageChange={handleConversationStageChange}
                 propertyData={unifiedPropertyData}
-                onSendMessageReady={setSendInitialMessage}
+                onSendMessageReady={handleSendMessageReady}
               />
             </div>
           </div>
@@ -302,10 +315,10 @@ const EnhancedOnboardingChatbot = () => {
         error={chatError}
       />
 
-      {/* Fixed Suggestion Bubbles - Above Input */}
+      {/* Fixed Suggestion Bubbles - Above Input - ALWAYS VISIBLE FOR DEBUGGING */}
       <SuggestionBubbles 
         propertyData={unifiedPropertyData}
-        showSuggestions={showSuggestions}
+        showSuggestions={true}
         onSuggestedAction={handleSuggestedAction}
         isLoading={chatLoading}
       />

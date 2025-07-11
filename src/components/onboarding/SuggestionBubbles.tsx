@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
@@ -46,11 +47,18 @@ const SuggestionBubbles = ({
         ];
   }, [propertyData]);
 
+  console.log('🎈 [SUGGESTION_BUBBLES] Rendering with:', {
+    showSuggestions,
+    suggestionsCount: quickStartSuggestions.length,
+    isLoading,
+    hasPropertyData: !!propertyData
+  });
+
   return (
     <motion.div 
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="fixed bottom-32 left-0 right-0 z-[95] px-3 md:px-6"
+      className="fixed bottom-32 left-0 right-0 z-[98] px-3 md:px-6 pointer-events-none"
     >
       <div className="flex justify-center">
         <div className="w-full max-w-4xl">
@@ -60,7 +68,7 @@ const SuggestionBubbles = ({
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 20 }}
-                className="glass-effect backdrop-blur-xl border border-border/20 rounded-2xl p-3 md:p-4 shadow-lg"
+                className="glass-effect backdrop-blur-xl border border-border/20 rounded-2xl p-3 md:p-4 shadow-lg pointer-events-auto"
               >
                 <div className="flex flex-wrap gap-2 justify-center">
                   {quickStartSuggestions.map((suggestion, index) => (
@@ -73,7 +81,10 @@ const SuggestionBubbles = ({
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => onSuggestedAction(suggestion)}
+                        onClick={() => {
+                          console.log('🎈 [SUGGESTION_BUBBLES] Button clicked:', suggestion);
+                          onSuggestedAction(suggestion);
+                        }}
                         disabled={isLoading}
                         className="bg-background/50 backdrop-blur-sm border-primary/20 hover:border-[hsl(267,83%,60%)] hover:bg-[hsl(267,83%,60%)]/10 text-xs md:text-sm px-3 py-2 rounded-xl transition-all duration-200 whitespace-nowrap"
                       >

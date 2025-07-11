@@ -1,3 +1,4 @@
+
 import React, { useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent } from '@/components/ui/card';
@@ -43,10 +44,24 @@ const EnhancedChatInterface = ({
     getContext
   } = useLocalChat(propertyData);
 
+  console.log('🎯 [CHAT_INTERFACE] Component rendered with:', {
+    messageCount: messages.length,
+    isLoading,
+    hasError: !!error,
+    hasSendMessage: !!sendMessage,
+    hasPropertyData: !!propertyData
+  });
+
   // Provide sendMessage function to parent component once ready
   useEffect(() => {
-    console.log('🔄 [CHAT_INTERFACE] Providing sendMessage to parent:', !!sendMessage);
+    console.log('🔄 [CHAT_INTERFACE] Setting up sendMessage callback:', {
+      hasCallback: !!onSendMessageReady,
+      hasSendMessage: !!sendMessage,
+      readyToConnect: !!(onSendMessageReady && sendMessage)
+    });
+    
     if (onSendMessageReady && sendMessage) {
+      console.log('✅ [CHAT_INTERFACE] Providing sendMessage to parent');
       onSendMessageReady(sendMessage);
     }
   }, [onSendMessageReady, sendMessage]);

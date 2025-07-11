@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { Input } from '@/components/ui/input';
@@ -15,15 +16,20 @@ const ChatInputBox = ({ onSendMessage, isLoading, error }: ChatInputBoxProps) =>
   const [inputMessage, setInputMessage] = useState('');
 
   const handleSendMessage = useCallback(async () => {
-    if (!inputMessage.trim() || isLoading) return;
+    if (!inputMessage.trim() || isLoading) {
+      console.log('⚠️ [CHAT_INPUT] Message rejected - empty or loading');
+      return;
+    }
 
     const message = inputMessage.trim();
+    console.log('📨 [CHAT_INPUT] Sending message:', message);
     setInputMessage('');
 
     try {
       await onSendMessage(message);
+      console.log('✅ [CHAT_INPUT] Message sent successfully');
     } catch (error) {
-      console.error('❌ [CHAT] Error sending message:', error);
+      console.error('❌ [CHAT_INPUT] Error sending message:', error);
     }
   }, [inputMessage, isLoading, onSendMessage]);
 
@@ -43,6 +49,13 @@ const ChatInputBox = ({ onSendMessage, isLoading, error }: ChatInputBoxProps) =>
 
   const connectionStatus = getConnectionStatus();
 
+  console.log('💬 [CHAT_INPUT] Rendering with:', {
+    hasMessage: !!inputMessage.trim(),
+    isLoading,
+    hasError: !!error,
+    canSend: !isLoading && inputMessage.trim()
+  });
+
   return (
     <motion.div 
       initial={{ opacity: 0, y: 20 }}
@@ -61,6 +74,11 @@ const ChatInputBox = ({ onSendMessage, isLoading, error }: ChatInputBoxProps) =>
                 <connectionStatus.icon className="w-3 h-3 mr-1" />
                 {connectionStatus.label}
               </Badge>
+              {error && (
+                <div className="text-xs text-red-600 max-w-xs truncate">
+                  {error}
+                </div>
+              )}
             </div>
 
             {/* Input Area */}

@@ -10,26 +10,34 @@ export const useLocalChat = (propertyData: PropertyAnalysisData | null) => {
   const [error, setError] = useState<string | null>(null);
 
   const sendMessage = useCallback(async (userMessage: string) => {
-    if (!userMessage.trim() || isLoading) return;
+    console.log('📨 [USE_LOCAL_CHAT] sendMessage called with:', userMessage);
+    
+    if (!userMessage.trim() || isLoading) {
+      console.log('⚠️ [USE_LOCAL_CHAT] Message rejected - empty or loading');
+      return;
+    }
 
     setIsLoading(true);
     setError(null);
 
     try {
+      console.log('🔄 [USE_LOCAL_CHAT] Processing message through chat service...');
       // Process the message through our local chat service
       const response = await chatService.processMessage(userMessage);
       
       // Update messages state with the latest from the service
-      setMessages([...chatService.getMessages()]);
+      const updatedMessages = chatService.getMessages();
+      setMessages([...updatedMessages]);
       
-      console.log('💬 [LOCAL CHAT] Message processed:', {
+      console.log('✅ [USE_LOCAL_CHAT] Message processed successfully:', {
         userMessage,
         response: response.substring(0, 100) + '...',
-        messageCount: chatService.getMessages().length
+        messageCount: updatedMessages.length,
+        totalMessages: updatedMessages.length
       });
       
     } catch (err) {
-      console.error('❌ [LOCAL CHAT] Error processing message:', err);
+      console.error('❌ [USE_LOCAL_CHAT] Error processing message:', err);
       setError(err instanceof Error ? err.message : 'Failed to process message');
     } finally {
       setIsLoading(false);
@@ -37,6 +45,7 @@ export const useLocalChat = (propertyData: PropertyAnalysisData | null) => {
   }, [chatService, isLoading]);
 
   const clearChat = useCallback(() => {
+    console.log('🧹 [USE_LOCAL_CHAT] Clearing chat');
     setMessages([]);
     setError(null);
     // Create a new chat service instance to reset state
@@ -50,6 +59,13 @@ export const useLocalChat = (propertyData: PropertyAnalysisData | null) => {
   const updateContext = useCallback((updates: any) => {
     chatService.updateContext(updates);
   }, [chatService]);
+
+  console.log('🔍 [USE_LOCAL_CHAT] Current state:', {
+    messageCount: messages.length,
+    isLoading,
+    hasError: !!error,
+    sendMessageReady: !!sendMessage
+  });
 
   return {
     messages,
