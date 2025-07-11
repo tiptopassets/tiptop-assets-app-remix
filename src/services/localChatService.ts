@@ -176,6 +176,21 @@ export class LocalChatService {
     // Add user message to history
     this.addMessage('user', userMessage);
 
+    console.log('🔍 [CHAT] Processing message:', userMessage);
+    console.log('🔍 [CHAT] Current stage:', this.context.currentStage);
+
+    // Check if user is confirming they have an asset after we mentioned it
+    if (this.isConfirmationMessage(userMessage)) {
+      const lastAssistantMessage = this.getLastAssistantMessage();
+      if (lastAssistantMessage) {
+        const mentionedAsset = this.detectAssetFromMessage(lastAssistantMessage);
+        if (mentionedAsset) {
+          console.log('🎯 [CHAT] User confirmed they have:', mentionedAsset);
+          return await this.generatePartnerOptionsResponse(mentionedAsset);
+        }
+      }
+    }
+
     // Check if user is asking to start setup or manage a specific asset
     if (userMessage.toLowerCase().includes('start setup') || 
         userMessage.toLowerCase().includes('set up my') ||
@@ -184,12 +199,14 @@ export class LocalChatService {
         userMessage.toLowerCase().includes('partner platforms')) {
       const assetType = this.detectAssetFromMessage(userMessage);
       if (assetType) {
+        console.log('🎯 [CHAT] Direct asset setup request:', assetType);
         return await this.generatePartnerOptionsResponse(assetType);
       }
     }
 
     // Analyze user intent
     const intent = this.analyzeIntent(userMessage);
+    console.log('🎯 [CHAT] Detected intent:', intent);
     
     // Generate contextual response
     const response = await this.generateResponse(intent, userMessage);
@@ -198,6 +215,34 @@ export class LocalChatService {
     this.addMessage('assistant', response);
     
     return response;
+  }
+
+  private isConfirmationMessage(message: string): boolean {
+    const lowerMessage = message.toLowerCase().trim();
+    
+    // Check for positive confirmations
+    const positiveConfirmations = [
+      'yes', 'yeah', 'yep', 'yes i do', 'yes we do', 'we do', 'i do',
+      'correct', 'that\'s right', 'absolutely', 'definitely',
+      'sure', 'of course', 'indeed', 'affirmative'
+    ];
+    
+    return positiveConfirmations.some(confirmation => 
+      lowerMessage === confirmation || 
+      lowerMessage.startsWith(confirmation + ' ') ||
+      lowerMessage.endsWith(' ' + confirmation)
+    );
+  }
+
+  private getLastAssistantMessage(): string | null {
+    // Find the last assistant message
+    for (let i = this.messageHistory.length - 1; i >= 0; i--) {
+      const message = this.messageHistory[i];
+      if (message.role === 'assistant') {
+        return message.content;
+      }
+    }
+    return null;
   }
 
   private detectAssetFromMessage(message: string): string | null {
