@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -35,12 +36,12 @@ const OnboardingChatbot = () => {
   const [inputMessage, setInputMessage] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [detectedAssets, setDetectedAssets] = useState<string[]>([]);
-  const [partnerRecommendations, setPartnerRecommendations = useState<PartnerRecommendation[]>([]);
-  const [showRecommendations, setShowRecommendations = useState(false);
-  const [showAssetSelection, setShowAssetSelection = useState(false);
-  const [integratingPartners, setIntegratingPartners = useState<Set<string>>(new Set());
-  const [completedIntegrations, setCompletedIntegrations = useState<Set<string>>(new Set());
-  const [selectedAsset, setSelectedAsset = useState<string | null>(null);
+  const [partnerRecommendations, setPartnerRecommendations] = useState<PartnerRecommendation[]>([]);
+  const [showRecommendations, setShowRecommendations] = useState(false);
+  const [showAssetSelection, setShowAssetSelection] = useState(false);
+  const [integratingPartners, setIntegratingPartners] = useState<Set<string>>(new Set());
+  const [completedIntegrations, setCompletedIntegrations] = useState<Set<string>>(new Set());
+  const [selectedAsset, setSelectedAsset] = useState<string | null>(null);
   const { saveSelection } = useAssetSelection();
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
