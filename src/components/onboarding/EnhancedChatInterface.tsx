@@ -595,7 +595,8 @@ const EnhancedChatInterface = ({
           </div>
         )}
         
-        {/* Enhanced context indicators */}
+        {/* Enhanced context indicators - Hidden per user request */}
+        {/* 
         <div className="mt-2 flex flex-wrap gap-1 text-xs text-gray-500">
           {propertyData && (
             <Badge variant="secondary" className="text-xs">
@@ -611,6 +612,7 @@ const EnhancedChatInterface = ({
             Local Assistant Ready
           </Badge>
         </div>
+        */}
       </div>
     </div>
   );

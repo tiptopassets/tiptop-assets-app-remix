@@ -56,7 +56,8 @@ const ChatbotHeader: React.FC<ChatbotHeaderProps> = ({
               )}
             </div>
           </div>
-          
+          {/* Analytics and stage indicators hidden per user request */}
+          {/* 
           <div className="flex items-center gap-2">
             <Button
               variant="outline"
@@ -71,6 +72,7 @@ const ChatbotHeader: React.FC<ChatbotHeaderProps> = ({
               {conversationStage.charAt(0).toUpperCase() + conversationStage.slice(1)}
             </Badge>
           </div>
+          */}
         </div>
       </div>
     </div>
