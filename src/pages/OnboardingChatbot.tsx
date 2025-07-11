@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -423,14 +422,14 @@ const OnboardingChatbot = () => {
                     />
                   )}
                   
-                  {/* Partner Recommendations */}
+                  {/* Partner Recommendations - FIXED HORIZONTAL LAYOUT */}
                   {showRecommendations && partnerRecommendations.length > 0 && (
                     <motion.div
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       className="space-y-4"
                     >
-                      <div className="flex gap-4 overflow-x-auto pb-4">
+                      <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide">
                         {partnerRecommendations.map((recommendation) => (
                           <PartnerRecommendationCard
                             key={recommendation.id}
