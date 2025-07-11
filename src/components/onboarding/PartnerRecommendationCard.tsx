@@ -51,7 +51,8 @@ const PartnerRecommendationCard: React.FC<PartnerRecommendationCardProps> = ({
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="w-64 flex-shrink-0"
+      className="w-64 min-w-64 flex-shrink-0"
+      style={{ minWidth: '256px', maxWidth: '256px' }}
     >
       <Card className={`glassmorphism-card border-white/20 h-auto ${isCompleted ? 'border-green-500/50 bg-green-500/5' : 'hover:border-tiptop-purple/50'} transition-all duration-300`}>
         <CardHeader className="pb-3">

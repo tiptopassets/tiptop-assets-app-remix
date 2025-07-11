@@ -429,16 +429,27 @@ const OnboardingChatbot = () => {
                       animate={{ opacity: 1, y: 0 }}
                       className="space-y-4"
                     >
-                      <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide">
-                        {partnerRecommendations.map((recommendation) => (
-                          <PartnerRecommendationCard
-                            key={recommendation.id}
-                            recommendation={recommendation}
-                            onIntegrate={handlePartnerIntegration}
-                            isIntegrating={integratingPartners.has(recommendation.partner_name)}
-                            isCompleted={completedIntegrations.has(recommendation.partner_name)}
-                          />
-                        ))}
+                      <div className="w-full min-w-0">
+                        <div 
+                          className="flex flex-row gap-4 overflow-x-auto overflow-y-visible pb-4 scrollbar-hide"
+                          style={{ 
+                            display: 'flex',
+                            flexDirection: 'row',
+                            flexWrap: 'nowrap',
+                            minWidth: 'max-content'
+                          }}
+                        >
+                          {partnerRecommendations.map((recommendation) => (
+                            <div key={recommendation.id} className="flex-shrink-0">
+                              <PartnerRecommendationCard
+                                recommendation={recommendation}
+                                onIntegrate={handlePartnerIntegration}
+                                isIntegrating={integratingPartners.has(recommendation.partner_name)}
+                                isCompleted={completedIntegrations.has(recommendation.partner_name)}
+                              />
+                            </div>
+                          ))}
+                        </div>
                       </div>
                     </motion.div>
                   )}
