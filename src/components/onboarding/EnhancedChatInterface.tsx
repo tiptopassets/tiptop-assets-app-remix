@@ -94,7 +94,7 @@ const EnhancedChatInterface = ({
     if (isLoading) return;
     
     console.log('🎯 [CHAT] Suggested action selected:', action);
-    setShowSuggestions(false);
+    // Don't hide suggestions to keep partner bubbles visible
     
     try {
       await sendMessage(action);
@@ -480,7 +480,7 @@ const EnhancedChatInterface = ({
         </div>
         
         {/* Quick suggestions and partner bubbles */}
-        {showSuggestions && messages.length === 0 && !isLoading && (
+        {showSuggestions && !isLoading && (
           <div className="mt-3 flex flex-wrap gap-2">
             {quickStartSuggestions.map((suggestion, index) => (
               <Button
