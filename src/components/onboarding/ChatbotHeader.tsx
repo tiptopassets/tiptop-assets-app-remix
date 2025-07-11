@@ -27,7 +27,7 @@ const ChatbotHeader: React.FC<ChatbotHeaderProps> = ({
   const navigate = useNavigate();
 
   return (
-    <div className="sticky top-0 z-50 bg-gradient-to-r from-background/40 via-primary/5 to-background/40 backdrop-blur-xl border-b border-border/20">
+    <div className="sticky top-0 z-50 bg-gradient-to-r from-background/40 via-purple-500/5 to-background/40 backdrop-blur-xl border-b border-border/20">
       <div className="max-w-7xl mx-auto px-4 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
