@@ -48,10 +48,13 @@ const EnhancedOnboardingChatbot = () => {
   const [conversationStartTime] = useState(Date.now());
   const [messageCount, setMessageCount] = useState(0);
   const [showAnalytics, setShowAnalytics] = useState(false);
-  const [showSuggestions, setShowSuggestions] = useState(true);
+  const [showSuggestions, setShowSuggestions] = useState(false);
   const [chatLoading, setChatLoading] = useState(false);
   const [chatError, setChatError] = useState<string | null>(null);
   
+  // Store the sendMessage function from the chat interface
+  const [sendMessageFunction, setSendMessageFunction] = useState<((message: string) => Promise<void>) | null>(null);
+
   // Create a unified data object that prioritizes journey data (same as dashboard)
   const unifiedPropertyData = useMemo(() => {
     if (journeyData) {
@@ -86,9 +89,6 @@ const EnhancedOnboardingChatbot = () => {
     }
     return null;
   }, [journeyData, propertyData, assetSelections, analysisId]);
-
-  // Store reference to send message function - THIS IS THE KEY FIX
-  const [sendMessageFunction, setSendMessageFunction] = useState<((message: string) => Promise<void>) | null>(null);
 
   console.log('🔍 [ONBOARDING] Current state:', {
     hasUnifiedData: !!unifiedPropertyData,
@@ -219,9 +219,9 @@ const EnhancedOnboardingChatbot = () => {
     setMessageCount(prev => prev + 1);
   };
 
-  // This is the key fix - connect the sendMessage properly
+  // Handle message sending from input box
   const handleSendMessage = useCallback(async (message: string) => {
-    console.log('🔄 [ONBOARDING] HandleSendMessage called with:', message);
+    console.log('🔄 [ONBOARDING] handleSendMessage called with:', message);
     console.log('🔄 [ONBOARDING] sendMessageFunction available:', !!sendMessageFunction);
     
     if (!sendMessageFunction) {
@@ -236,7 +236,6 @@ const EnhancedOnboardingChatbot = () => {
     try {
       await sendMessageFunction(message);
       console.log('✅ [ONBOARDING] Message sent successfully');
-      // Don't hide suggestions immediately - let them stay visible
     } catch (err) {
       console.error('❌ [ONBOARDING] Error sending message:', err);
       setChatError(err instanceof Error ? err.message : 'An error occurred');
@@ -315,13 +314,15 @@ const EnhancedOnboardingChatbot = () => {
         error={chatError}
       />
 
-      {/* Fixed Suggestion Bubbles - Above Input - ALWAYS VISIBLE FOR DEBUGGING */}
-      <SuggestionBubbles 
-        propertyData={unifiedPropertyData}
-        showSuggestions={true}
-        onSuggestedAction={handleSuggestedAction}
-        isLoading={chatLoading}
-      />
+      {/* Fixed Suggestion Bubbles - Hidden */}
+      {showSuggestions && (
+        <SuggestionBubbles 
+          propertyData={unifiedPropertyData}
+          showSuggestions={showSuggestions}
+          onSuggestedAction={handleSuggestedAction}
+          isLoading={chatLoading}
+        />
+      )}
     </div>
   );
 };
