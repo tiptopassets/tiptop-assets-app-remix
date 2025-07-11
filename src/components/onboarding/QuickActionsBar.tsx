@@ -17,7 +17,7 @@ const QuickActionsBar: React.FC = () => {
         className="w-36 h-9 bg-background/80 backdrop-blur-md border border-primary/20 hover:bg-primary/5 text-primary hover:text-primary font-medium text-xs shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105"
         onClick={() => navigate('/')}
       >
-        Analyze Property
+        Analyze New Property
       </Button>
       
       <Button
@@ -26,7 +26,7 @@ const QuickActionsBar: React.FC = () => {
         className="w-36 h-9 bg-background/80 backdrop-blur-md border border-primary/20 hover:bg-primary/5 text-primary hover:text-primary font-medium text-xs shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105"
         onClick={() => navigate('/dashboard')}
       >
-        Dashboard
+        My Dashboard
       </Button>
       
       <Button
@@ -35,7 +35,7 @@ const QuickActionsBar: React.FC = () => {
         className="w-36 h-9 bg-primary/10 backdrop-blur-md border border-primary/30 text-primary hover:bg-primary/20 font-medium text-xs shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105"
         onClick={() => window.open('https://calendly.com/tiptop-concierge', '_blank')}
       >
-        Schedule Call
+        Concierge Call
       </Button>
     </div>
   );
