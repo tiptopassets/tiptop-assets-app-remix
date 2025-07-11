@@ -430,7 +430,7 @@ const OnboardingChatbot = () => {
                       animate={{ opacity: 1, y: 0 }}
                       className="space-y-4"
                     >
-                      <div className="grid gap-3">
+                      <div className="flex gap-4 overflow-x-auto pb-4">
                         {partnerRecommendations.map((recommendation) => (
                           <PartnerRecommendationCard
                             key={recommendation.id}

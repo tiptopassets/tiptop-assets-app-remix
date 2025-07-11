@@ -51,116 +51,112 @@ const PartnerRecommendationCard: React.FC<PartnerRecommendationCardProps> = ({
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="w-full"
+      className="w-80 flex-shrink-0"
     >
-      <Card className={`glassmorphism-card border-white/20 ${isCompleted ? 'border-green-500/50 bg-green-500/5' : 'hover:border-tiptop-purple/50'} transition-all duration-300`}>
-        <CardHeader className="pb-3">
-          <div className="flex items-start justify-between">
-            <div className="flex-1">
-              <CardTitle className="text-white flex items-center gap-2 text-lg">
+      <Card className={`glassmorphism-card border-white/20 h-auto ${isCompleted ? 'border-green-500/50 bg-green-500/5' : 'hover:border-tiptop-purple/50'} transition-all duration-300`}>
+        <CardHeader className="pb-2">
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-white flex items-center gap-1 text-base">
                 {recommendation.partner_name}
-                {isCompleted && <CheckCircle className="w-5 h-5 text-green-500" />}
+                {isCompleted && <CheckCircle className="w-4 h-4 text-green-500" />}
               </CardTitle>
-              <p className="text-gray-400 text-sm mt-1">{recommendation.recommendation_reason}</p>
-            </div>
-            <div className="flex flex-col items-end gap-1">
               <div className="flex items-center gap-1">
                 {getPriorityStars(recommendation.priority_score)}
               </div>
-              <Badge className="text-xs capitalize">
-                {recommendation.asset_type}
-              </Badge>
             </div>
+            <Badge className="text-xs capitalize w-fit">
+              {recommendation.asset_type}
+            </Badge>
+            <p className="text-gray-400 text-xs leading-tight">{recommendation.recommendation_reason}</p>
           </div>
         </CardHeader>
 
-        <CardContent className="pt-0">
-          <div className="space-y-3">
-            {/* Key metrics */}
-            <div className="grid grid-cols-2 gap-3">
-              <div className="flex items-center gap-2 text-sm">
-                <DollarSign className="w-4 h-4 text-green-500" />
-                <span className="text-gray-300">
-                  ~${Math.round(recommendation.estimated_monthly_earnings)}/month
-                </span>
-              </div>
-              <div className="flex items-center gap-2 text-sm">
-                <Clock className="w-4 h-4 text-blue-500" />
-                <Badge 
-                  variant="outline" 
-                  className={`text-xs ${getComplexityColor(recommendation.setup_complexity)}`}
-                >
-                  {recommendation.setup_complexity} setup
-                </Badge>
-              </div>
+        <CardContent className="pt-0 space-y-3">
+          {/* Key metrics - stacked vertically */}
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 text-xs">
+              <DollarSign className="w-3 h-3 text-green-500" />
+              <span className="text-gray-300">
+                ~${Math.round(recommendation.estimated_monthly_earnings)}/month
+              </span>
             </div>
-
-            {/* Action button */}
-            <div className="flex gap-2">
-              {!isCompleted && (
-                <Button
-                  onClick={handleIntegrate}
-                  disabled={isIntegrating || !recommendation.referral_link}
-                  className="flex-1 bg-tiptop-purple hover:bg-purple-700 text-white"
-                  size="sm"
-                >
-                  {isIntegrating ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                      Setting up...
-                    </>
-                  ) : (
-                    <>
-                      Start Integration
-                      <ExternalLink className="w-4 h-4 ml-2" />
-                    </>
-                  )}
-                </Button>
-              )}
-              
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setIsExpanded(!isExpanded)}
-                className="border-gray-600 text-gray-300 hover:bg-gray-700"
+            <div className="flex items-center gap-2 text-xs">
+              <Clock className="w-3 h-3 text-blue-500" />
+              <Badge 
+                variant="outline" 
+                className={`text-xs ${getComplexityColor(recommendation.setup_complexity)}`}
               >
-                {isExpanded ? 'Less' : 'Details'}
-              </Button>
+                {recommendation.setup_complexity} setup
+              </Badge>
             </div>
-
-            {/* Expanded details */}
-            {isExpanded && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                exit={{ opacity: 0, height: 0 }}
-                className="border-t border-gray-700 pt-3 mt-3"
-              >
-                <div className="text-sm text-gray-400 space-y-2">
-                  <div>
-                    <span className="font-medium text-gray-300">Priority Score:</span> {recommendation.priority_score}/10
-                  </div>
-                  <div>
-                    <span className="font-medium text-gray-300">Asset Match:</span> {recommendation.asset_type}
-                  </div>
-                  {recommendation.referral_link && (
-                    <div>
-                      <span className="font-medium text-gray-300">Referral Link:</span>
-                      <br />
-                      <a 
-                        href={recommendation.referral_link} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="text-tiptop-purple hover:underline break-all text-xs"
-                      >
-                        {recommendation.referral_link}
-                      </a>
-                    </div>
-                  )}
-                </div>
-              </motion.div>
-            )}
           </div>
+
+          {/* Action buttons - stacked vertically */}
+          <div className="space-y-2">
+            {!isCompleted && (
+              <Button
+                onClick={handleIntegrate}
+                disabled={isIntegrating || !recommendation.referral_link}
+                className="w-full bg-tiptop-purple hover:bg-purple-700 text-white"
+                size="sm"
+              >
+                {isIntegrating ? (
+                  <>
+                    <Loader2 className="w-3 h-3 animate-spin mr-1" />
+                    Setting up...
+                  </>
+                ) : (
+                  <>
+                    Start Integration
+                    <ExternalLink className="w-3 h-3 ml-1" />
+                  </>
+                )}
+              </Button>
+            )}
+            
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsExpanded(!isExpanded)}
+              className="w-full border-gray-600 text-gray-300 hover:bg-gray-700"
+            >
+              {isExpanded ? 'Less' : 'Details'}
+            </Button>
+          </div>
+
+          {/* Expanded details */}
+          {isExpanded && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              className="border-t border-gray-700 pt-3 mt-3"
+            >
+              <div className="text-xs text-gray-400 space-y-2">
+                <div>
+                  <span className="font-medium text-gray-300">Priority Score:</span> {recommendation.priority_score}/10
+                </div>
+                <div>
+                  <span className="font-medium text-gray-300">Asset Match:</span> {recommendation.asset_type}
+                </div>
+                {recommendation.referral_link && (
+                  <div>
+                    <span className="font-medium text-gray-300">Referral Link:</span>
+                    <br />
+                    <a 
+                      href={recommendation.referral_link} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-tiptop-purple hover:underline break-all text-xs"
+                    >
+                      {recommendation.referral_link}
+                    </a>
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          )}
         </CardContent>
       </Card>
     </motion.div>
