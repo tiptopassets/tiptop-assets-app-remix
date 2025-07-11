@@ -9,6 +9,8 @@ import { useDashboardJourneyData } from '@/hooks/useDashboardJourneyData';
 import { useUserAssetSelections } from '@/hooks/useUserAssetSelections';
 import { useJourneyTracking } from '@/hooks/useJourneyTracking';
 import EnhancedChatInterface from '@/components/onboarding/EnhancedChatInterface';
+import ChatInputBox from '@/components/onboarding/ChatInputBox';
+import SuggestionBubbles from '@/components/onboarding/SuggestionBubbles';
 import ChatbotLoadingState from '@/components/onboarding/ChatbotLoadingState';
 import ChatbotErrorState from '@/components/onboarding/ChatbotErrorState';
 import ChatbotHeader from '@/components/onboarding/ChatbotHeader';
@@ -47,6 +49,9 @@ const EnhancedOnboardingChatbot = () => {
   const [conversationStartTime] = useState(Date.now());
   const [messageCount, setMessageCount] = useState(0);
   const [showAnalytics, setShowAnalytics] = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(true);
+  const [chatLoading, setChatLoading] = useState(false);
+  const [chatError, setChatError] = useState<string | null>(null);
   
   // Create a unified data object that prioritizes journey data (same as dashboard)
   const unifiedPropertyData = useMemo(() => {
@@ -200,6 +205,26 @@ const EnhancedOnboardingChatbot = () => {
     setMessageCount(prev => prev + 1);
   };
 
+  const handleSendMessage = async (message: string) => {
+    if (!sendInitialMessage) return;
+    
+    setChatLoading(true);
+    setShowSuggestions(false);
+    setChatError(null);
+    
+    try {
+      await sendInitialMessage(message);
+    } catch (err) {
+      setChatError(err instanceof Error ? err.message : 'An error occurred');
+    } finally {
+      setChatLoading(false);
+    }
+  };
+
+  const handleSuggestedAction = async (action: string) => {
+    await handleSendMessage(action);
+  };
+
   // Loading state - wait for auth and data
   const isLoading = authLoading || (propertyLoading && journeyLoading && !unifiedPropertyData);
 
@@ -233,6 +258,13 @@ const EnhancedOnboardingChatbot = () => {
         />
       </div>
 
+      {/* Fixed Chat Input - Top */}
+      <ChatInputBox 
+        onSendMessage={handleSendMessage}
+        isLoading={chatLoading}
+        error={chatError}
+      />
+
       {/* Floating Quick Actions Sidebar */}
       <QuickActionsBar />
 
@@ -251,6 +283,14 @@ const EnhancedOnboardingChatbot = () => {
           </div>
         </div>
       </div>
+
+      {/* Fixed Suggestion Bubbles - Bottom */}
+      <SuggestionBubbles 
+        propertyData={unifiedPropertyData}
+        showSuggestions={showSuggestions}
+        onSuggestedAction={handleSuggestedAction}
+        isLoading={chatLoading}
+      />
     </div>
   );
 };
