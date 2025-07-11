@@ -464,9 +464,9 @@ const EnhancedChatInterface = ({
       </div>
 
       {/* Modern Input Area - Fixed at bottom like ChatGPT */}
-      <div className="fixed bottom-0 left-0 right-0 z-[60] bg-background/80 backdrop-blur-xl border-t border-border/20 p-6">
+      <div className="fixed bottom-0 left-0 right-0 z-[100] bg-background/80 backdrop-blur-xl border-t border-border/20 p-6">
         {/* Floating input container with enhanced glass effect */}
-        <div className="bg-background/60 backdrop-blur-xl rounded-3xl border border-border/20 shadow-lg hover:shadow-xl transition-all duration-200">
+        <div className="bg-background/60 backdrop-blur-xl rounded-3xl border border-border/20 shadow-lg hover:shadow-xl transition-all duration-200 max-w-4xl mx-auto">
           <div className="flex items-center p-3">
             <Input
               value={inputMessage}
@@ -484,7 +484,7 @@ const EnhancedChatInterface = ({
               onClick={handleSendMessage}
               disabled={!inputMessage.trim() || isLoading}
               size="icon"
-              className="rounded-2xl bg-purple-600 hover:bg-purple-700 backdrop-blur-sm shadow-md hover:shadow-lg transition-all duration-200 mx-2"
+              className="rounded-2xl bg-[hsl(267,83%,60%)] hover:bg-[hsl(267,83%,55%)] backdrop-blur-sm shadow-md hover:shadow-lg transition-all duration-200 mx-2"
             >
               <Send className="h-4 w-4 text-white" />
             </Button>
