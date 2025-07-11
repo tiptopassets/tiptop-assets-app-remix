@@ -3,8 +3,7 @@ import React, { useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Send, AlertCircle, Wifi } from 'lucide-react';
+import { Send } from 'lucide-react';
 
 interface ChatInputBoxProps {
   onSendMessage: (message: string) => Promise<void>;
@@ -40,15 +39,6 @@ const ChatInputBox = ({ onSendMessage, isLoading, error }: ChatInputBoxProps) =>
     }
   }, [handleSendMessage]);
 
-  // Connection status indicator
-  const getConnectionStatus = () => {
-    if (isLoading) return { icon: () => <img src="/lovable-uploads/e24798be-80af-43c7-98ff-618e9adc0ee4.png" alt="AI" className="h-4 w-4 rounded-full" />, label: 'Thinking...', color: 'text-blue-600 border-blue-200' };
-    if (error) return { icon: AlertCircle, label: 'Error', color: 'text-red-600 border-red-200' };
-    return { icon: Wifi, label: 'Ready', color: 'text-green-600 border-green-200' };
-  };
-
-  const connectionStatus = getConnectionStatus();
-
   console.log('💬 [CHAT_INPUT] Rendering with:', {
     hasMessage: !!inputMessage.trim(),
     isLoading,
@@ -65,21 +55,12 @@ const ChatInputBox = ({ onSendMessage, isLoading, error }: ChatInputBoxProps) =>
       <div className="flex justify-center">
         <div className="w-full max-w-4xl">
           <div className="glass-effect backdrop-blur-xl border border-border/20 rounded-2xl p-3 md:p-4 shadow-lg">
-            {/* Connection Status */}
-            <div className="flex items-center justify-between mb-3">
-              <Badge 
-                variant="outline" 
-                className={`${connectionStatus.color} text-xs font-medium border px-2 py-1 rounded-lg`}
-              >
-                <connectionStatus.icon className="w-3 h-3 mr-1" />
-                {connectionStatus.label}
-              </Badge>
-              {error && (
-                <div className="text-xs text-red-600 max-w-xs truncate">
-                  {error}
-                </div>
-              )}
-            </div>
+            {/* Error Message */}
+            {error && (
+              <div className="mb-3 text-xs text-red-600 max-w-xs truncate">
+                {error}
+              </div>
+            )}
 
             {/* Input Area */}
             <div className="flex gap-2 md:gap-3 items-end">
