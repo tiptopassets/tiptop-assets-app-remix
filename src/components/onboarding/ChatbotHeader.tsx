@@ -23,7 +23,7 @@ const ChatbotHeader: React.FC<ChatbotHeaderProps> = ({
   const navigate = useNavigate();
 
   return (
-    <div className="bg-white border-b shadow-sm">
+    <div className="sticky top-0 z-50 bg-background/20 backdrop-blur-xl border-b border-border/20">
       <div className="max-w-7xl mx-auto px-4 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
@@ -31,25 +31,28 @@ const ChatbotHeader: React.FC<ChatbotHeaderProps> = ({
               variant="ghost" 
               size="sm"
               onClick={() => navigate('/dashboard')}
+              className="bg-background/30 backdrop-blur-sm border border-border/20 hover:bg-background/40 transition-all duration-200"
             >
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back to Dashboard
             </Button>
             <div className="flex items-center gap-2">
-              <Bot className="h-6 w-6 text-tiptop-purple" />
-              <h1 className="text-xl font-semibold text-gray-900">
-                AI Property Assistant
-              </h1>
-              <Badge className="bg-tiptop-purple/10 text-tiptop-purple border-tiptop-purple/20">
+              <div className="flex items-center gap-2 bg-background/30 backdrop-blur-sm border border-border/20 rounded-lg px-3 py-1.5">
+                <Bot className="h-6 w-6 text-primary" />
+                <h1 className="text-xl font-semibold text-foreground">
+                  AI Property Assistant
+                </h1>
+              </div>
+              <Badge className="bg-primary/20 backdrop-blur-sm border border-primary/30 text-primary">
                 OpenAI Powered
               </Badge>
               {targetAsset && (
-                <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                <Badge variant="outline" className="bg-green-500/20 backdrop-blur-sm text-green-600 border border-green-500/30">
                   {targetAsset.replace('_', ' ')} Setup
                 </Badge>
               )}
               {hasPropertyData && (
-                <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                <Badge variant="outline" className="bg-blue-500/20 backdrop-blur-sm text-blue-600 border border-blue-500/30">
                   <CheckCircle className="h-3 w-3 mr-1" />
                   Analysis Complete
                 </Badge>

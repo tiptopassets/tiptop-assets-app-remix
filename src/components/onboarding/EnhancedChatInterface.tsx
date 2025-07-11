@@ -205,7 +205,7 @@ const EnhancedChatInterface = ({
               <Bot className="h-12 w-12 text-primary" />
             </div>
             <h3 className="text-xl font-semibold mb-2 bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
-              What's on your mind today?
+              What asset do you want to start monetizing?
             </h3>
             <p className="text-muted-foreground/80 text-sm max-w-md mx-auto">
               I'll help you maximize earnings from your property assets through smart partnerships.
@@ -267,10 +267,10 @@ const EnhancedChatInterface = ({
                   </div>
                 )}
                 
-                <div className={`max-w-[80%] rounded-2xl p-4 backdrop-blur-lg ${
+                <div className={`max-w-[80%] rounded-2xl p-4 ${
                   message.role === 'assistant'
-                    ? 'glass-effect text-foreground border border-border/30'
-                    : 'bg-gradient-to-r from-primary to-primary/90 text-primary-foreground ml-auto shadow-lg'
+                    ? 'bg-background/40 backdrop-blur-xl border border-border/20 text-foreground shadow-sm'
+                    : 'bg-primary/90 backdrop-blur-xl text-primary-foreground ml-auto shadow-lg border border-primary/30'
                 }`}>
                   <p className="text-sm whitespace-pre-wrap">{message.content}</p>
                   
@@ -490,11 +490,11 @@ const EnhancedChatInterface = ({
         </div>
       </div>
 
-      {/* Modern Input Area */}
+      {/* Modern Input Area - Copilot Style */}
       <div className="relative z-10 p-6 pt-4">
-        {/* Floating input container */}
-        <div className="glass-effect rounded-3xl p-4 border border-border/30 backdrop-blur-lg">
-          <div className="flex items-center space-x-3">
+        {/* Floating input container with enhanced glass effect */}
+        <div className="bg-background/40 backdrop-blur-xl rounded-3xl border border-border/20 shadow-lg hover:shadow-xl transition-all duration-200">
+          <div className="flex items-center p-3">
             <Input
               value={inputMessage}
               onChange={(e) => setInputMessage(e.target.value)}
@@ -505,13 +505,13 @@ const EnhancedChatInterface = ({
                   : "Thinking..."
               }
               disabled={isLoading}
-              className="flex-1 border-0 bg-transparent focus-visible:ring-0 text-base placeholder:text-muted-foreground/60"
+              className="flex-1 border-0 bg-transparent focus-visible:ring-0 text-base placeholder:text-muted-foreground/60 px-4 py-3"
             />
             <Button 
               onClick={handleSendMessage}
               disabled={!inputMessage.trim() || isLoading}
               size="icon"
-              className="rounded-xl bg-primary hover:bg-primary/90 shadow-lg"
+              className="rounded-2xl bg-primary/90 hover:bg-primary backdrop-blur-sm shadow-md hover:shadow-lg transition-all duration-200 mx-2"
             >
               <Send className="h-4 w-4" />
             </Button>
