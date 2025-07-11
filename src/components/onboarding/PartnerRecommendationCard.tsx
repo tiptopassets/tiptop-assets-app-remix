@@ -51,24 +51,26 @@ const PartnerRecommendationCard: React.FC<PartnerRecommendationCardProps> = ({
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="w-80 flex-shrink-0"
+      className="w-64 flex-shrink-0"
     >
       <Card className={`glassmorphism-card border-white/20 h-auto ${isCompleted ? 'border-green-500/50 bg-green-500/5' : 'hover:border-tiptop-purple/50'} transition-all duration-300`}>
-        <CardHeader className="pb-2">
+        <CardHeader className="pb-3">
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-white flex items-center gap-1 text-base">
+              <CardTitle className="text-white flex items-center gap-1 text-sm">
                 {recommendation.partner_name}
-                {isCompleted && <CheckCircle className="w-4 h-4 text-green-500" />}
+                {isCompleted && <CheckCircle className="w-3 h-3 text-green-500" />}
               </CardTitle>
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-0.5">
                 {getPriorityStars(recommendation.priority_score)}
               </div>
             </div>
             <Badge className="text-xs capitalize w-fit">
               {recommendation.asset_type}
             </Badge>
-            <p className="text-gray-400 text-xs leading-tight">{recommendation.recommendation_reason}</p>
+            <p className="text-gray-400 text-xs leading-tight line-clamp-2">
+              {recommendation.recommendation_reason}
+            </p>
           </div>
         </CardHeader>
 
