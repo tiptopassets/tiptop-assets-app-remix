@@ -98,29 +98,43 @@ const EnhancedOnboardingChatbot = () => {
       });
       
       const assetInfo = unifiedPropertyData.availableAssets.find(a => a.type === targetAsset);
-      if (assetInfo) {
+      const selectedAsset = unifiedPropertyData.selectedAssets.find(a => 
+        a.asset_type.toLowerCase() === targetAsset.toLowerCase()
+      );
+      
+      if (assetInfo || selectedAsset) {
+        const assetName = assetInfo?.name || selectedAsset?.asset_type || targetAsset;
         setDetectedAssets([targetAsset]);
         setConversationStage('asset_configuration');
         
-        // Auto-start the conversation with the target asset
+        // Auto-start the conversation with the target asset and immediately show partner cards
         setTimeout(() => {
-          sendInitialMessage(`I want to manage my ${assetInfo.name.toLowerCase()} setup. Can you help me with the current configuration and next steps?`);
+          sendInitialMessage(`I want to manage my ${assetName.toLowerCase()} setup. Please show me the available partner platforms and configuration options.`);
         }, 1000);
         
+        const revenue = selectedAsset?.monthly_revenue || assetInfo?.monthlyRevenue || 0;
         toast({
           title: "Asset Setup Started",
-          description: `Let's configure your ${assetInfo.name} at ${unifiedPropertyData.address} for $${assetInfo.monthlyRevenue}/month potential earnings.`,
+          description: `Let's configure your ${assetName} at ${unifiedPropertyData.address} for $${revenue}/month potential earnings.`,
         });
       } else {
         console.warn('⚠️ [ONBOARDING] Target asset not found in analysis:', {
           targetAsset,
-          availableAssets: unifiedPropertyData.availableAssets.map(a => a.type)
+          availableAssets: unifiedPropertyData.availableAssets.map(a => a.type),
+          selectedAssets: unifiedPropertyData.selectedAssets.map(a => a.asset_type)
         });
         
+        // Try to use the asset type directly for initialization
+        setDetectedAssets([targetAsset]);
+        setConversationStage('asset_configuration');
+        
+        setTimeout(() => {
+          sendInitialMessage(`I want to set up my ${targetAsset} for monetization. Please show me the available partner platforms and configuration options.`);
+        }, 1000);
+        
         toast({
-          title: "Asset Not Found",
-          description: `The requested asset "${targetAsset}" was not found in your property analysis.`,
-          variant: "destructive"
+          title: "Asset Setup Started",
+          description: `Let's explore options for your ${targetAsset}.`,
         });
       }
     }

@@ -176,8 +176,12 @@ export class LocalChatService {
     // Add user message to history
     this.addMessage('user', userMessage);
 
-    // Check if user is asking to start setup for a specific asset
-    if (userMessage.toLowerCase().includes('start setup') || userMessage.toLowerCase().includes('set up my')) {
+    // Check if user is asking to start setup or manage a specific asset
+    if (userMessage.toLowerCase().includes('start setup') || 
+        userMessage.toLowerCase().includes('set up my') ||
+        userMessage.toLowerCase().includes('manage my') ||
+        userMessage.toLowerCase().includes('configuration') ||
+        userMessage.toLowerCase().includes('partner platforms')) {
       const assetType = this.detectAssetFromMessage(userMessage);
       if (assetType) {
         return await this.generatePartnerOptionsResponse(assetType);
@@ -204,6 +208,9 @@ export class LocalChatService {
     if (lowerMessage.includes('parking') || lowerMessage.includes('driveway')) return 'parking';
     if (lowerMessage.includes('storage') || lowerMessage.includes('basement') || lowerMessage.includes('garage')) return 'storage';
     if (lowerMessage.includes('space') && (lowerMessage.includes('event') || lowerMessage.includes('photo'))) return 'event_space';
+    if (lowerMessage.includes('solar') || lowerMessage.includes('rooftop')) return 'solar';
+    if (lowerMessage.includes('garden') || lowerMessage.includes('yard')) return 'garden';
+    if (lowerMessage.includes('ev') || lowerMessage.includes('charging')) return 'ev_charging';
     
     return null;
   }
@@ -256,10 +263,15 @@ Click on any partner below to get started with step-by-step setup instructions a
       'pool': 'Swimming Pool',
       'parking': 'Parking Space',
       'storage': 'Storage Space',
-      'event_space': 'Event Space'
+      'event_space': 'Event Space',
+      'solar': 'Solar Panels',
+      'rooftop': 'Rooftop Solar',
+      'garden': 'Garden/Yard Space',
+      'ev_charging': 'EV Charging Station',
+      'bandwidth': 'Internet Bandwidth Sharing'
     };
     
-    return displayNames[assetType] || assetType;
+    return displayNames[assetType] || assetType.replace(/[_-]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
   }
 
   private analyzeIntent(message: string): string {
