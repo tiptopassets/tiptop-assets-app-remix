@@ -222,7 +222,7 @@ export class LocalChatService {
     
     // Check for positive confirmations
     const positiveConfirmations = [
-      'yes', 'yeah', 'yep', 'yes i do', 'yes we do', 'we do', 'i do',
+      'yes', 'yeah', 'yep', 'yea', 'ok', 'yes i do', 'yes we do', 'we do', 'i do',
       'correct', 'that\'s right', 'absolutely', 'definitely',
       'sure', 'of course', 'indeed', 'affirmative'
     ];
