@@ -2,7 +2,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Bot, TrendingUp, MessageSquare, CheckCircle } from 'lucide-react';
+import { ArrowLeft, TrendingUp, MessageSquare, CheckCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 interface ChatbotHeaderProps {
@@ -42,7 +42,11 @@ const ChatbotHeader: React.FC<ChatbotHeaderProps> = ({
             </Button>
             <div className="flex items-center gap-2">
               <div className="flex items-center gap-2 bg-background/30 backdrop-blur-sm border border-border/20 rounded-lg px-3 py-1.5">
-                <Bot className="h-6 w-6 text-primary" />
+                <img 
+                  src="/lovable-uploads/e24798be-80af-43c7-98ff-618e9adc0ee4.png" 
+                  alt="AI Assistant" 
+                  className="h-8 w-8 rounded-full object-cover"
+                />
                 <div>
                   <h1 className="text-xl font-semibold text-foreground">
                     Property Assistant

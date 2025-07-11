@@ -6,33 +6,36 @@ const QuickActionsBar: React.FC = () => {
   const navigate = useNavigate();
 
   return (
-    <div className="fixed right-4 top-1/2 -translate-y-1/2 z-50 flex flex-col gap-3">
-      <div className="text-center mb-3">
-        <h3 className="text-sm font-medium text-tiptop-purple">Quick Actions</h3>
+    <div className="fixed right-6 top-1/2 -translate-y-1/2 z-40 flex flex-col gap-2">
+      <div className="text-center mb-2">
+        <h3 className="text-xs font-semibold text-primary/80 tracking-wide uppercase">Quick Actions</h3>
       </div>
       
       <Button
         variant="outline"
-        className="w-40 h-10 glass-effect border border-tiptop-purple/20 hover:bg-tiptop-purple/10 text-tiptop-purple hover:text-tiptop-purple font-medium"
+        size="sm"
+        className="w-36 h-9 bg-background/80 backdrop-blur-md border border-primary/20 hover:bg-primary/5 text-primary hover:text-primary font-medium text-xs shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105"
         onClick={() => navigate('/')}
       >
-        Analyze Another Property
+        Analyze Property
       </Button>
       
       <Button
         variant="outline"
-        className="w-40 h-10 glass-effect border border-tiptop-purple/20 hover:bg-tiptop-purple/10 text-tiptop-purple hover:text-tiptop-purple font-medium"
+        size="sm"
+        className="w-36 h-9 bg-background/80 backdrop-blur-md border border-primary/20 hover:bg-primary/5 text-primary hover:text-primary font-medium text-xs shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105"
         onClick={() => navigate('/dashboard')}
       >
-        View My Dashboard
+        Dashboard
       </Button>
       
       <Button
         variant="default"
-        className="w-40 h-10 bg-tiptop-purple/20 backdrop-blur-sm border border-tiptop-purple/30 text-tiptop-purple hover:bg-tiptop-purple/30 font-medium"
+        size="sm"
+        className="w-36 h-9 bg-primary/10 backdrop-blur-md border border-primary/30 text-primary hover:bg-primary/20 font-medium text-xs shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105"
         onClick={() => window.open('https://calendly.com/tiptop-concierge', '_blank')}
       >
-        Schedule Concierge Call
+        Schedule Call
       </Button>
     </div>
   );
