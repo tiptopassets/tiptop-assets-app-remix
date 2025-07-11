@@ -134,7 +134,7 @@ export class PartnerIntegrationService {
       id: 'peerspace',
       name: 'Peerspace',
       referralLink: 'http://www.peerspace.com/claim/gr-jdO4oxx4LGzq',
-      assetTypes: ['event_space', 'creative_space', 'unique_space'],
+      assetTypes: ['event_space', 'creative_space', 'unique_space', 'event space rental', 'event_space_rental'],
       requirements: [
         'Unique or attractive space',
         'Basic amenities (WiFi, parking, restroom access)',
@@ -199,6 +199,29 @@ export class PartnerIntegrationService {
       earningRange: { min: 200, max: 1000 },
       setupTime: '4-6 hours',
       description: 'Rent garden/yard space for photo shoots and video productions'
+    },
+    {
+      id: 'gympass',
+      name: 'Gympass',
+      referralLink: 'https://gympass.com/business/partner',
+      assetTypes: ['home_gym', 'gym', 'home gym rental', 'home_gym_rental'],
+      requirements: [
+        'Professional gym equipment',
+        'Safe, clean exercise space',
+        'Liability insurance coverage',
+        'Flexible access arrangements',
+        'Equipment maintenance schedule'
+      ],
+      setupSteps: [
+        'Inventory all gym equipment',
+        'Take professional photos of gym space',
+        'Verify insurance and safety requirements',
+        'Set hourly/daily rental rates',
+        'Create equipment usage guidelines'
+      ],
+      earningRange: { min: 150, max: 800 },
+      setupTime: '2-4 hours',
+      description: 'Rent your home gym for personal training sessions'
     }
   ];
 

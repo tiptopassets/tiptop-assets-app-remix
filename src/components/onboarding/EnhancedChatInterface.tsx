@@ -512,9 +512,20 @@ const EnhancedChatInterface = ({
                     'driveway': 'Parking Space', 
                     'storage': 'Storage Space',
                     'garage': 'Storage Space',
-                    'basement': 'Storage Space'
+                    'basement': 'Storage Space',
+                    'event_space': 'Event Space Rental',
+                    'event space rental': 'Event Space Rental',
+                    'event_space_rental': 'Event Space Rental',
+                    'home_gym': 'Home Gym Rental',
+                    'home gym rental': 'Home Gym Rental',
+                    'home_gym_rental': 'Home Gym Rental',
+                    'gym': 'Home Gym Rental',
+                    'garden': 'Garden/Yard Space',
+                    'yard': 'Garden/Yard Space',
+                    'solar': 'Solar Panels',
+                    'rooftop': 'Rooftop Solar'
                   };
-                  return displayNames[cleanType] || cleanType.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
+                  return displayNames[cleanType] || cleanType.replace(/[_-]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
                 };
 
                 const displayName = getAssetDisplayName(assetType);

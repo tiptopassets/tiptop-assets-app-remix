@@ -252,7 +252,8 @@ export class LocalChatService {
     if (lowerMessage.includes('pool') || lowerMessage.includes('swim')) return 'pool';
     if (lowerMessage.includes('parking') || lowerMessage.includes('driveway')) return 'parking';
     if (lowerMessage.includes('storage') || lowerMessage.includes('basement') || lowerMessage.includes('garage')) return 'storage';
-    if (lowerMessage.includes('space') && (lowerMessage.includes('event') || lowerMessage.includes('photo'))) return 'event_space';
+    if (lowerMessage.includes('event') && (lowerMessage.includes('space') || lowerMessage.includes('rental'))) return 'event_space_rental';
+    if (lowerMessage.includes('gym') || lowerMessage.includes('home gym')) return 'home_gym_rental';
     if (lowerMessage.includes('solar') || lowerMessage.includes('rooftop')) return 'solar';
     if (lowerMessage.includes('garden') || lowerMessage.includes('yard')) return 'garden';
     if (lowerMessage.includes('ev') || lowerMessage.includes('charging')) return 'ev_charging';
@@ -308,7 +309,13 @@ Click on any partner below to get started with step-by-step setup instructions a
       'pool': 'Swimming Pool',
       'parking': 'Parking Space',
       'storage': 'Storage Space',
-      'event_space': 'Event Space',
+      'event_space': 'Event Space Rental',
+      'event_space_rental': 'Event Space Rental',
+      'event space rental': 'Event Space Rental',
+      'home_gym': 'Home Gym Rental',
+      'home_gym_rental': 'Home Gym Rental',
+      'home gym rental': 'Home Gym Rental',
+      'gym': 'Home Gym Rental',
       'solar': 'Solar Panels',
       'rooftop': 'Rooftop Solar',
       'garden': 'Garden/Yard Space',
