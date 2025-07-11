@@ -217,9 +217,8 @@ const EnhancedOnboardingChatbot = () => {
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto p-4">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          {/* Chat Interface */}
-          <div className="lg:col-span-8">
+        <div className="flex justify-center">
+          <div className="w-full max-w-4xl">
             {/* Quick Actions Bar - Above Chat */}
             <QuickActionsBar />
             
@@ -232,19 +231,9 @@ const EnhancedOnboardingChatbot = () => {
               />
             </Card>
           </div>
-
-          {/* Sidebar */}
-          <ChatbotSidebar
-            propertyData={unifiedPropertyData}
-            analysisId={unifiedPropertyData?.analysisId || analysisId}
-            targetAsset={targetAsset}
-            hasPropertyData={!!unifiedPropertyData}
-            showAnalytics={showAnalytics}
-            analytics={analytics}
-          />
+          </div>
         </div>
       </div>
-    </div>
   );
 };
 
