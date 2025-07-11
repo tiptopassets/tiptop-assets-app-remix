@@ -16,7 +16,7 @@ interface ExtendedPropertyData extends PropertyAnalysisData {
 import { PartnerIntegrationService } from '@/services/partnerIntegrationService';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { AlertCircle, Wifi, Bot, User, Send, ExternalLink, DollarSign, Clock, CheckCircle, Star } from 'lucide-react';
+import { AlertCircle, Wifi, User, Send, ExternalLink, DollarSign, Clock, CheckCircle, Star } from 'lucide-react';
 import { AssetCard, PartnerOption } from '@/services/localChatService';
 import AssetPartnerCarousel from './AssetPartnerCarousel';
 
@@ -116,7 +116,7 @@ const EnhancedChatInterface = ({
 
   // Connection status indicator
   const getConnectionStatus = () => {
-    if (isLoading) return { icon: Bot, label: 'Thinking...', color: 'text-blue-600 border-blue-200' };
+    if (isLoading) return { icon: () => <img src="/lovable-uploads/e24798be-80af-43c7-98ff-618e9adc0ee4.png" alt="AI" className="h-4 w-4 rounded-full" />, label: 'Thinking...', color: 'text-blue-600 border-blue-200' };
     if (error) return { icon: AlertCircle, label: 'Error', color: 'text-red-600 border-red-200' };
     return { icon: Wifi, label: 'Ready', color: 'text-green-600 border-green-200' };
   };
@@ -163,7 +163,11 @@ const EnhancedChatInterface = ({
             className="text-center py-12"
           >
             <div className="p-4 rounded-3xl glass-effect glow-effect w-fit mx-auto mb-6">
-              <Bot className="h-12 w-12 text-primary" />
+              <img 
+                src="/lovable-uploads/e24798be-80af-43c7-98ff-618e9adc0ee4.png" 
+                alt="AI Assistant" 
+                className="h-12 w-12 rounded-full object-cover"
+              />
             </div>
             <h3 className="text-xl font-semibold mb-2 bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
               What asset do you want to start monetizing?
@@ -224,7 +228,11 @@ const EnhancedChatInterface = ({
               >
                 {message.role === 'assistant' && (
                   <div className="w-10 h-10 rounded-2xl glass-effect glow-effect flex items-center justify-center flex-shrink-0 border border-primary/20">
-                    <Bot className="h-5 w-5 text-primary" />
+                    <img 
+                      src="/lovable-uploads/e24798be-80af-43c7-98ff-618e9adc0ee4.png" 
+                      alt="AI Assistant" 
+                      className="h-6 w-6 rounded-full object-cover"
+                    />
                   </div>
                 )}
                 
@@ -396,7 +404,11 @@ const EnhancedChatInterface = ({
               className="flex items-start gap-3"
             >
               <div className="w-10 h-10 rounded-2xl glass-effect glow-effect flex items-center justify-center flex-shrink-0 border border-primary/20">
-                <Bot className="h-5 w-5 text-primary" />
+                <img 
+                  src="/lovable-uploads/e24798be-80af-43c7-98ff-618e9adc0ee4.png" 
+                  alt="AI Assistant" 
+                  className="h-6 w-6 rounded-full object-cover"
+                />
               </div>
               <div className="glass-effect rounded-2xl p-4 border border-border/30">
                 <div className="flex items-center space-x-2">
@@ -474,7 +486,7 @@ const EnhancedChatInterface = ({
               size="icon"
               className="rounded-2xl bg-primary/90 hover:bg-primary backdrop-blur-sm shadow-md hover:shadow-lg transition-all duration-200 mx-2"
             >
-              <Send className="h-4 w-4" />
+              <Send className="h-4 w-4 text-white" />
             </Button>
           </div>
         </div>
