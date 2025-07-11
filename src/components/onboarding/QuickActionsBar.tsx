@@ -20,7 +20,7 @@ const QuickActionsBar: React.FC = () => {
           <Button
             variant="outline"
             className="w-full justify-center text-xs px-2 py-2 h-auto"
-            onClick={() => navigate('/submit-property')}
+            onClick={() => navigate('/')}
           >
             Analyze Another Property
           </Button>
