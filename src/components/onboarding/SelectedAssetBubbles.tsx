@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Badge } from '@/components/ui/badge';
@@ -19,16 +18,22 @@ interface SelectedAssetBubblesProps {
 }
 
 const SelectedAssetBubbles = ({ propertyData, onAssetClick }: SelectedAssetBubblesProps) => {
-  // Get selected assets from property data
-  const selectedAssets = propertyData?.selectedAssets || [];
+  // Get selected assets from property data and deduplicate by asset_type
+  const allSelectedAssets = propertyData?.selectedAssets || [];
+  
+  // Deduplicate by asset_type, keeping the first occurrence of each type
+  const uniqueAssets = allSelectedAssets.filter((asset, index, array) => 
+    array.findIndex(a => a.asset_type === asset.asset_type) === index
+  );
 
-  if (!selectedAssets.length) {
+  if (!uniqueAssets.length) {
     return null;
   }
 
   console.log('🎯 [SELECTED_ASSETS] Rendering bubbles for:', {
-    assetsCount: selectedAssets.length,
-    assets: selectedAssets.map(a => ({ type: a.asset_type, revenue: a.monthly_revenue }))
+    originalCount: allSelectedAssets.length,
+    uniqueCount: uniqueAssets.length,
+    assets: uniqueAssets.map(a => ({ type: a.asset_type, revenue: a.monthly_revenue }))
   });
 
   const handleAssetClick = (asset: any) => {
@@ -49,9 +54,9 @@ const SelectedAssetBubbles = ({ propertyData, onAssetClick }: SelectedAssetBubbl
       <div className="flex justify-center">
         <div className="w-full max-w-4xl">
           <div className="flex flex-wrap gap-2 justify-center pointer-events-auto">
-            {selectedAssets.map((asset, index) => (
+            {uniqueAssets.map((asset, index) => (
               <motion.div
-                key={asset.id}
+                key={asset.asset_type}
                 initial={{ opacity: 0, scale: 0.8 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: index * 0.1 }}
