@@ -11,6 +11,8 @@ interface ChatbotHeaderProps {
   conversationStage: string;
   showAnalytics: boolean;
   onToggleAnalytics: () => void;
+  propertyAddress?: string;
+  isReady?: boolean;
 }
 
 const ChatbotHeader: React.FC<ChatbotHeaderProps> = ({
@@ -18,7 +20,9 @@ const ChatbotHeader: React.FC<ChatbotHeaderProps> = ({
   hasPropertyData,
   conversationStage,
   showAnalytics,
-  onToggleAnalytics
+  onToggleAnalytics,
+  propertyAddress,
+  isReady
 }) => {
   const navigate = useNavigate();
 
@@ -39,13 +43,26 @@ const ChatbotHeader: React.FC<ChatbotHeaderProps> = ({
             <div className="flex items-center gap-2">
               <div className="flex items-center gap-2 bg-background/30 backdrop-blur-sm border border-border/20 rounded-lg px-3 py-1.5">
                 <Bot className="h-6 w-6 text-primary" />
-                <h1 className="text-xl font-semibold text-foreground">
-                  AI Property Assistant
-                </h1>
+                <div>
+                  <h1 className="text-xl font-semibold text-foreground">
+                    Property Assistant
+                  </h1>
+                  {propertyAddress && (
+                    <p className="text-sm text-muted-foreground/80 font-medium">
+                      {propertyAddress}
+                    </p>
+                  )}
+                </div>
               </div>
               <Badge className="bg-primary/20 backdrop-blur-sm border border-primary/30 text-primary">
                 OpenAI Powered
               </Badge>
+              {isReady && (
+                <Badge variant="outline" className="bg-green-500/20 backdrop-blur-sm text-green-600 border border-green-500/30">
+                  <div className="w-2 h-2 rounded-full bg-green-400 mr-2" />
+                  Ready
+                </Badge>
+              )}
               {targetAsset && (
                 <Badge variant="outline" className="bg-green-500/20 backdrop-blur-sm text-green-600 border border-green-500/30">
                   {targetAsset.replace('_', ' ')} Setup

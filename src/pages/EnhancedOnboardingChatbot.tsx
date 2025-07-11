@@ -227,6 +227,8 @@ const EnhancedOnboardingChatbot = () => {
         conversationStage={conversationStage}
         showAnalytics={showAnalytics}
         onToggleAnalytics={() => setShowAnalytics(!showAnalytics)}
+        propertyAddress={unifiedPropertyData?.address}
+        isReady={!propertyLoading && !journeyLoading && !authLoading}
       />
 
       {/* Main Content */}

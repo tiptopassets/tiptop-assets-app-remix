@@ -153,48 +153,9 @@ const EnhancedChatInterface = ({
       <div className="absolute top-0 left-1/4 w-64 h-64 bg-primary/10 rounded-full blur-3xl opacity-20" />
       <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-accent/10 rounded-full blur-3xl opacity-20" />
       
-      {/* Minimal Floating Header */}
-      <div className="relative z-10 p-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <div className="p-3 rounded-2xl glass-effect glow-effect">
-              <Bot className="h-6 w-6 text-primary" />
-            </div>
-            <div>
-              <h2 className="text-xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
-                Property Assistant
-              </h2>
-              {propertyData?.address && (
-                <p className="text-sm text-muted-foreground/80 font-medium">
-                  {propertyData.address}
-                </p>
-              )}
-            </div>
-          </div>
-          
-          <div className="flex items-center space-x-3">
-            {/* Elegant Status Indicator */}
-            <div className="flex items-center space-x-2 px-3 py-1.5 rounded-full glass-effect">
-              <div className={`w-2 h-2 rounded-full ${
-                isLoading ? 'bg-yellow-400 animate-pulse' : 
-                error ? 'bg-red-400' : 'bg-green-400'
-              } glow-effect`} />
-              <span className="text-xs font-medium text-muted-foreground">
-                {isLoading ? 'Thinking...' : error ? 'Reconnecting' : 'Ready'}
-              </span>
-            </div>
-            
-            {!user && (
-              <Button variant="ghost" size="sm" className="glass-effect hover:glow-effect rounded-xl" asChild>
-                <div onClick={() => navigate('/auth')}>Sign In</div>
-              </Button>
-            )}
-          </div>
-        </div>
-      </div>
 
-      {/* Messages Area - Clean scrollable zone */}
-      <div className="flex-1 overflow-y-auto px-6 pb-6 relative z-10">
+      {/* Messages Area - Clean scrollable zone without outer container */}
+      <div className="flex-1 overflow-y-auto px-6 pt-6 pb-6 relative z-10">
         {messages.length === 0 && !isLoading && (
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
