@@ -1,6 +1,5 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Home, BarChart3, Calendar } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const QuickActionsBar: React.FC = () => {
@@ -8,34 +7,32 @@ const QuickActionsBar: React.FC = () => {
 
   return (
     <div className="fixed right-4 top-1/2 -translate-y-1/2 z-50 flex flex-col gap-3">
+      <div className="text-center mb-3">
+        <h3 className="text-sm font-medium text-tiptop-purple">Quick Actions</h3>
+      </div>
+      
       <Button
         variant="outline"
-        size="icon"
-        className="w-12 h-12 glass-effect border border-border/20 hover:bg-background/80 group"
+        className="w-40 h-10 glass-effect border border-tiptop-purple/20 hover:bg-tiptop-purple/10 text-tiptop-purple hover:text-tiptop-purple font-medium"
         onClick={() => navigate('/')}
-        title="Analyze Another Property"
       >
-        <Home className="h-5 w-5 text-primary group-hover:scale-110 transition-transform" />
+        Analyze Another Property
       </Button>
       
       <Button
         variant="outline"
-        size="icon"
-        className="w-12 h-12 glass-effect border border-border/20 hover:bg-background/80 group"
+        className="w-40 h-10 glass-effect border border-tiptop-purple/20 hover:bg-tiptop-purple/10 text-tiptop-purple hover:text-tiptop-purple font-medium"
         onClick={() => navigate('/dashboard')}
-        title="View My Dashboard"
       >
-        <BarChart3 className="h-5 w-5 text-primary group-hover:scale-110 transition-transform" />
+        View My Dashboard
       </Button>
       
       <Button
         variant="default"
-        size="icon"
-        className="w-12 h-12 bg-primary/20 backdrop-blur-sm border border-primary/30 text-primary hover:bg-primary/30 group"
+        className="w-40 h-10 bg-tiptop-purple/20 backdrop-blur-sm border border-tiptop-purple/30 text-tiptop-purple hover:bg-tiptop-purple/30 font-medium"
         onClick={() => window.open('https://calendly.com/tiptop-concierge', '_blank')}
-        title="Schedule Concierge Call"
       >
-        <Calendar className="h-5 w-5 group-hover:scale-110 transition-transform" />
+        Schedule Concierge Call
       </Button>
     </div>
   );
