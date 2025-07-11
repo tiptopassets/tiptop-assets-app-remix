@@ -45,9 +45,9 @@ const ChatInputBox = ({ onSendMessage, isLoading, error }: ChatInputBoxProps) =>
 
   return (
     <motion.div 
-      initial={{ opacity: 0, y: -20 }}
+      initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="fixed top-20 left-0 right-0 z-[100] px-3 md:px-6"
+      className="fixed bottom-4 left-0 right-0 z-[100] px-3 md:px-6"
     >
       <div className="flex justify-center">
         <div className="w-full max-w-4xl">

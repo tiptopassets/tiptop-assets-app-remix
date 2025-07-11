@@ -258,12 +258,6 @@ const EnhancedOnboardingChatbot = () => {
         />
       </div>
 
-      {/* Fixed Chat Input - Top */}
-      <ChatInputBox 
-        onSendMessage={handleSendMessage}
-        isLoading={chatLoading}
-        error={chatError}
-      />
 
 
       {/* Floating Quick Actions Sidebar */}
@@ -285,7 +279,14 @@ const EnhancedOnboardingChatbot = () => {
         </div>
       </div>
 
-      {/* Fixed Suggestion Bubbles - Bottom */}
+      {/* Fixed Chat Input - Bottom */}
+      <ChatInputBox 
+        onSendMessage={handleSendMessage}
+        isLoading={chatLoading}
+        error={chatError}
+      />
+
+      {/* Fixed Suggestion Bubbles - Above Input */}
       <SuggestionBubbles 
         propertyData={unifiedPropertyData}
         showSuggestions={showSuggestions}

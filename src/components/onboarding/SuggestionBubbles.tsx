@@ -50,7 +50,7 @@ const SuggestionBubbles = ({
     <motion.div 
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="fixed bottom-4 left-0 right-0 z-[90] px-3 md:px-6"
+      className="fixed bottom-24 left-0 right-0 z-[90] px-3 md:px-6"
     >
       <div className="flex justify-center">
         <div className="w-full max-w-4xl">
