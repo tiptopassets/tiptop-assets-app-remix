@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card } from '@/components/ui/card';
@@ -317,18 +318,16 @@ const EnhancedOnboardingChatbot = () => {
       {/* Floating Quick Actions Sidebar */}
       <QuickActionsBar />
 
-      {/* Main Content - Full Height */}
-      <div className="h-screen">
-        <div className="flex justify-center">
-          <div className="w-full max-w-4xl h-full">
-            <div className="h-full pt-20">
-              <EnhancedChatInterface
-                onAssetDetected={handleAssetDetected}
-                onConversationStageChange={handleConversationStageChange}
-                propertyData={unifiedPropertyData}
-                onSendMessageReady={handleSendMessageReady}
-              />
-            </div>
+      {/* Main Content - Full Height with proper flex layout */}
+      <div className="h-screen flex flex-col">
+        <div className="flex-1 pt-20 pb-32">
+          <div className="h-full max-w-4xl mx-auto px-4">
+            <EnhancedChatInterface
+              onAssetDetected={handleAssetDetected}
+              onConversationStageChange={handleConversationStageChange}
+              propertyData={unifiedPropertyData}
+              onSendMessageReady={handleSendMessageReady}
+            />
           </div>
         </div>
       </div>
