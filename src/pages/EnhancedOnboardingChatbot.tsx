@@ -52,6 +52,7 @@ const EnhancedOnboardingChatbot = () => {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [chatLoading, setChatLoading] = useState(false);
   const [chatError, setChatError] = useState<string | null>(null);
+  const [initializationComplete, setInitializationComplete] = useState(false);
   
   // Store the sendMessage function from the chat interface
   const [sendMessageFunction, setSendMessageFunction] = useState<((message: string) => Promise<void>) | null>(null);
@@ -96,19 +97,28 @@ const EnhancedOnboardingChatbot = () => {
     hasSendFunction: !!sendMessageFunction,
     chatLoading,
     chatError,
-    showSuggestions
+    showSuggestions,
+    initializationComplete
   });
 
-  // Initialize conversation with target asset if provided
+  // Initialize conversation with target asset if provided - FIXED TO PREVENT INFINITE LOOP
   useEffect(() => {
+    // Prevent multiple initializations
+    if (initializationComplete) {
+      console.log('🚫 [ONBOARDING] Initialization already complete, skipping');
+      return;
+    }
+
     console.log('🎯 [ONBOARDING] Target asset initialization effect:', {
       hasUnifiedData: !!unifiedPropertyData,
       targetAsset,
       propertyLoading,
       journeyLoading,
-      hasSendFunction: !!sendMessageFunction
+      hasSendFunction: !!sendMessageFunction,
+      authLoading
     });
-    if (unifiedPropertyData && targetAsset && !propertyLoading && !journeyLoading && sendMessageFunction) {
+
+    if (unifiedPropertyData && targetAsset && !propertyLoading && !journeyLoading && !authLoading && sendMessageFunction) {
       console.log('🎯 [ONBOARDING] Initializing with target asset:', {
         targetAsset,
         analysisId: unifiedPropertyData.analysisId,
@@ -126,6 +136,9 @@ const EnhancedOnboardingChatbot = () => {
         const assetName = assetInfo?.name || selectedAsset?.asset_type || targetAsset;
         setDetectedAssets([targetAsset]);
         setConversationStage('asset_configuration');
+        
+        // Mark initialization as complete BEFORE starting auto-message to prevent loops
+        setInitializationComplete(true);
         
         // Auto-start the conversation with the target asset and immediately show partner cards
         setTimeout(() => {
@@ -148,6 +161,9 @@ const EnhancedOnboardingChatbot = () => {
         setDetectedAssets([targetAsset]);
         setConversationStage('asset_configuration');
         
+        // Mark initialization as complete BEFORE starting auto-message to prevent loops
+        setInitializationComplete(true);
+        
         setTimeout(() => {
           sendMessageFunction(`I want to set up my ${targetAsset} for monetization. Please show me the available partner platforms and configuration options.`);
         }, 1000);
@@ -158,7 +174,7 @@ const EnhancedOnboardingChatbot = () => {
         });
       }
     }
-  }, [unifiedPropertyData, targetAsset, propertyLoading, journeyLoading, toast, sendMessageFunction]);
+  }, [unifiedPropertyData, targetAsset, propertyLoading, journeyLoading, authLoading, toast, sendMessageFunction, initializationComplete]);
 
   const [analytics, setAnalytics] = useState({
     totalMessages: 0,
