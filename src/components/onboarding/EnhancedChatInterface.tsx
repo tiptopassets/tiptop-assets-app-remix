@@ -99,6 +99,17 @@ const EnhancedChatInterface = ({
     }
   }, []);
 
+  // Helper function to normalize setup complexity
+  const normalizeSetupComplexity = (setupTime: string): "easy" | "medium" | "hard" => {
+    if (setupTime.includes('5 min') || setupTime.includes('15 min') || setupTime.includes('20 min')) {
+      return 'easy';
+    } else if (setupTime.includes('30 min') || setupTime.includes('1 hour') || setupTime.includes('1-2 hour')) {
+      return 'medium';
+    } else {
+      return 'hard';
+    }
+  };
+
   return (
     <div className="flex flex-col h-full bg-gradient-to-br from-background/80 to-background/60 backdrop-blur-xl relative overflow-hidden">
       {/* Ambient background effects */}
@@ -263,8 +274,7 @@ const EnhancedChatInterface = ({
                             asset_type: 'general', // Default since partner options don't specify
                             estimated_monthly_earnings: partner.earningRange?.min || 0,
                             priority_score: partner.priority === 1 ? 10 : 7,
-                            setup_complexity: partner.setupTime?.includes('5 min') ? 'easy' : 
-                                           partner.setupTime?.includes('15 min') ? 'medium' : 'hard',
+                            setup_complexity: normalizeSetupComplexity(partner.setupTime || ''),
                             recommendation_reason: partner.description,
                             referral_link: partner.referralLink || `#${partner.id}`
                           };
