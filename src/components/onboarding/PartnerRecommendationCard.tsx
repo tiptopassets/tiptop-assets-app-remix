@@ -100,7 +100,7 @@ const PartnerRecommendationCard: React.FC<PartnerRecommendationCardProps> = ({
         <CardHeader className="pb-3">
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-white font-bold flex items-center gap-1 text-sm">
+              <CardTitle className="text-gray-900 dark:text-white font-bold flex items-center gap-1 text-sm">
                 {recommendation.partner_name}
                 {isCompleted && <CheckCircle className="w-3 h-3 text-green-500" />}
               </CardTitle>
@@ -112,7 +112,7 @@ const PartnerRecommendationCard: React.FC<PartnerRecommendationCardProps> = ({
               <Wifi className="w-3 h-3 mr-1" />
               {getAssetDisplayName(recommendation.asset_type)}
             </Badge>
-            <p className="text-gray-300 text-xs leading-tight line-clamp-2">
+            <p className="text-gray-700 dark:text-gray-300 text-xs leading-tight line-clamp-2">
               {recommendation.recommendation_reason}
             </p>
           </div>
@@ -123,10 +123,10 @@ const PartnerRecommendationCard: React.FC<PartnerRecommendationCardProps> = ({
           <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <DollarSign className="w-4 h-4 text-green-400" />
-                <span className="text-green-300 text-sm font-medium">Monthly Income</span>
+                <DollarSign className="w-4 h-4 text-green-600 dark:text-green-400" />
+                <span className="text-green-700 dark:text-green-300 text-sm font-medium">Monthly Income</span>
               </div>
-              <div className="text-green-400 font-bold text-lg">
+              <div className="text-green-600 dark:text-green-400 font-bold text-lg">
                 ~${Math.round(recommendation.estimated_monthly_earnings)}
               </div>
             </div>
@@ -134,21 +134,21 @@ const PartnerRecommendationCard: React.FC<PartnerRecommendationCardProps> = ({
 
           {/* Setup time */}
           <div className="flex items-center gap-2 text-xs">
-            <Clock className="w-3 h-3 text-blue-400" />
-            <span className="text-gray-300">Setup time:</span>
-            <Badge variant="outline" className="text-blue-400 border-blue-400/30 bg-blue-400/10">
+            <Clock className="w-3 h-3 text-blue-500 dark:text-blue-400" />
+            <span className="text-gray-700 dark:text-gray-300">Setup time:</span>
+            <Badge variant="outline" className="text-blue-600 dark:text-blue-400 border-blue-400/30 bg-blue-400/10">
               {getSetupTimeInMinutes(recommendation.setup_complexity)}
             </Badge>
           </div>
 
           {/* Key requirements */}
           <div className="space-y-2">
-            <span className="text-gray-300 text-xs font-medium">Key Requirements:</span>
+            <span className="text-gray-700 dark:text-gray-300 text-xs font-medium">Key Requirements:</span>
             <div className="space-y-1">
               {keyRequirements.slice(0, 2).map((req, index) => (
                 <div key={index} className="flex items-start gap-2 text-xs">
-                  <Check className="w-3 h-3 text-green-400 mt-0.5 flex-shrink-0" />
-                  <span className="text-gray-400">{req}</span>
+                  <Check className="w-3 h-3 text-green-500 mt-0.5 flex-shrink-0" />
+                  <span className="text-gray-600 dark:text-gray-400">{req}</span>
                 </div>
               ))}
             </div>
@@ -181,7 +181,7 @@ const PartnerRecommendationCard: React.FC<PartnerRecommendationCardProps> = ({
               variant="outline"
               size="sm"
               onClick={() => setIsExpanded(!isExpanded)}
-              className="w-full border-gray-600 text-gray-300 hover:bg-gray-700"
+              className="w-full border-gray-400 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
             >
               {isExpanded ? 'Less' : 'Details'}
             </Button>
@@ -193,26 +193,26 @@ const PartnerRecommendationCard: React.FC<PartnerRecommendationCardProps> = ({
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
-              className="border-t border-gray-700 pt-3 mt-3"
+              className="border-t border-gray-300 dark:border-gray-700 pt-3 mt-3"
             >
-              <div className="text-xs text-gray-400 space-y-2">
+              <div className="text-xs text-gray-600 dark:text-gray-400 space-y-2">
                 <div>
-                  <span className="font-medium text-gray-300">Priority Score:</span> {recommendation.priority_score}/10
+                  <span className="font-medium text-gray-800 dark:text-gray-300">Priority Score:</span> {recommendation.priority_score}/10
                 </div>
                 <div>
-                  <span className="font-medium text-gray-300">All Requirements:</span>
+                  <span className="font-medium text-gray-800 dark:text-gray-300">All Requirements:</span>
                   <div className="mt-1 space-y-1">
                     {keyRequirements.map((req, index) => (
                       <div key={index} className="flex items-start gap-2">
-                        <Check className="w-3 h-3 text-green-400 mt-0.5 flex-shrink-0" />
-                        <span className="text-gray-400">{req}</span>
+                        <Check className="w-3 h-3 text-green-500 mt-0.5 flex-shrink-0" />
+                        <span className="text-gray-600 dark:text-gray-400">{req}</span>
                       </div>
                     ))}
                   </div>
                 </div>
                 {recommendation.referral_link && (
                   <div>
-                    <span className="font-medium text-gray-300">Referral Link:</span>
+                    <span className="font-medium text-gray-800 dark:text-gray-300">Referral Link:</span>
                     <br />
                     <a 
                       href={recommendation.referral_link} 
