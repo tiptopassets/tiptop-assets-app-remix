@@ -1,4 +1,5 @@
-import React from 'react';
+
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Badge } from '@/components/ui/badge';
 import { PropertyAnalysisData } from '@/hooks/useUserPropertyAnalysis';
@@ -18,6 +19,8 @@ interface SelectedAssetBubblesProps {
 }
 
 const SelectedAssetBubbles = ({ propertyData, onAssetClick }: SelectedAssetBubblesProps) => {
+  const [isTriggered, setIsTriggered] = useState(false);
+  
   // Get selected assets from property data and deduplicate by asset_type
   const allSelectedAssets = propertyData?.selectedAssets || [];
   
@@ -33,12 +36,16 @@ const SelectedAssetBubbles = ({ propertyData, onAssetClick }: SelectedAssetBubbl
   console.log('🎯 [SELECTED_ASSETS] Rendering bubbles for:', {
     originalCount: allSelectedAssets.length,
     uniqueCount: uniqueAssets.length,
-    assets: uniqueAssets.map(a => ({ type: a.asset_type, revenue: a.monthly_revenue }))
+    assets: uniqueAssets.map(a => ({ type: a.asset_type, revenue: a.monthly_revenue })),
+    isTriggered
   });
 
   const handleAssetClick = (asset: any) => {
     const assetName = asset.asset_type.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase());
     console.log('🎯 [SELECTED_ASSETS] Asset clicked:', { type: asset.asset_type, name: assetName });
+    
+    // Move bubbles to left side after click
+    setIsTriggered(true);
     
     if (onAssetClick) {
       onAssetClick(asset.asset_type, assetName);
@@ -48,12 +55,17 @@ const SelectedAssetBubbles = ({ propertyData, onAssetClick }: SelectedAssetBubbl
   return (
     <motion.div 
       initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="fixed bottom-24 left-0 right-0 z-[99] px-3 md:px-6 pointer-events-none"
+      animate={{ 
+        opacity: 1, 
+        y: 0,
+        x: isTriggered ? -window.innerWidth / 2 + 200 : 0 // Move to left side when triggered
+      }}
+      transition={{ duration: 0.5, ease: "easeInOut" }}
+      className={`fixed ${isTriggered ? 'left-4 top-1/2 -translate-y-1/2' : 'bottom-24 left-0 right-0'} z-[99] px-3 md:px-6 pointer-events-none`}
     >
-      <div className="flex justify-center">
-        <div className="w-full max-w-4xl">
-          <div className="flex flex-wrap gap-2 justify-center pointer-events-auto">
+      <div className={`flex ${isTriggered ? 'flex-col' : 'justify-center'}`}>
+        <div className={`${isTriggered ? 'w-auto' : 'w-full max-w-4xl'}`}>
+          <div className={`flex ${isTriggered ? 'flex-col gap-3' : 'flex-wrap gap-2 justify-center'} pointer-events-auto`}>
             {uniqueAssets.map((asset, index) => (
               <motion.div
                 key={asset.asset_type}
