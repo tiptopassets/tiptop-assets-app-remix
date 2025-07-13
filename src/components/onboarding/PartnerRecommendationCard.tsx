@@ -134,15 +134,13 @@ const PartnerRecommendationCard: React.FC<PartnerRecommendationCardProps> = ({
         </CardHeader>
 
         <CardContent className="pt-0 space-y-3">
-          {/* Enhanced earnings display - now matching setup time style */}
-          <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-3">
-            <div className="flex items-center gap-2 text-xs">
-              <DollarSign className="w-3 h-3 text-green-600 dark:text-green-400" />
-              <span className="text-green-700 dark:text-green-300 text-xs font-medium">Monthly Income:</span>
-              <Badge variant="outline" className="text-green-600 dark:text-green-400 border-green-400/30 bg-green-400/10">
-                ~${Math.round(recommendation.estimated_monthly_earnings)}
-              </Badge>
-            </div>
+          {/* Monthly income - now matching setup time style */}
+          <div className="flex items-center gap-2 text-xs">
+            <DollarSign className="w-3 h-3 text-green-600 dark:text-green-400" />
+            <span className="text-gray-700 dark:text-gray-300">Monthly Income:</span>
+            <Badge variant="outline" className="text-green-600 dark:text-green-400 border-green-400/30 bg-green-400/10">
+              ~${Math.round(recommendation.estimated_monthly_earnings)}
+            </Badge>
           </div>
 
           {/* Setup time */}
