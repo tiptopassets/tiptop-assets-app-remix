@@ -1,3 +1,4 @@
+
 import { PropertyAnalysisData } from '@/hooks/useUserPropertyAnalysis';
 import { PartnerIntegrationService } from './partnerIntegrationService';
 
@@ -287,10 +288,10 @@ export class LocalChatService {
     const assetDisplayName = this.getAssetDisplayName(assetType);
     const response = `Perfect! Here are the best platforms for monetizing your ${assetDisplayName.toLowerCase()}:
 
-💰 **Available Partners for ${assetDisplayName}:**
+💰 <strong>Available Partners for ${assetDisplayName}:</strong>
 
 ${partners.map((partner, index) => 
-  `${index + 1}. **${partner.name}** ${partner.priority === 1 ? '⭐ (Recommended)' : ''}
+  `${index + 1}. <strong>${partner.name}</strong> ${partner.priority === 1 ? '⭐ (Recommended)' : ''}
    - ${partner.briefDescription}`
 ).join('\n\n')}
 
