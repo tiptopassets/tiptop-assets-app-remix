@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Badge } from '@/components/ui/badge';
@@ -57,11 +56,14 @@ const SelectedAssetBubbles = ({ propertyData, onAssetClick }: SelectedAssetBubbl
       initial={{ opacity: 0, y: 10 }}
       animate={{ 
         opacity: 1, 
-        y: 0,
-        x: isTriggered ? -window.innerWidth / 2 + 200 : 0 // Move to left side when triggered
+        y: 0
       }}
       transition={{ duration: 0.5, ease: "easeInOut" }}
-      className={`fixed ${isTriggered ? 'left-4 top-1/2 -translate-y-1/2' : 'bottom-24 left-0 right-0'} z-[99] px-3 md:px-6 pointer-events-none`}
+      className={`fixed ${
+        isTriggered 
+          ? 'left-4 top-1/2 -translate-y-1/2' 
+          : 'bottom-24 left-0 right-0'
+      } z-[99] px-3 md:px-6 pointer-events-none`}
     >
       <div className={`flex ${isTriggered ? 'flex-col' : 'justify-center'}`}>
         <div className={`${isTriggered ? 'w-auto' : 'w-full max-w-4xl'}`}>
