@@ -10,6 +10,7 @@ export interface PartnerPlatform {
   earningRange: { min: number; max: number };
   setupTime: string;
   description: string;
+  briefDescription: string;
   priority?: number;
 }
 
@@ -36,6 +37,7 @@ export class PartnerIntegrationService {
       earningRange: { min: 20, max: 60 },
       setupTime: '30 minutes',
       description: 'Share your unused internet bandwidth and earn passive income',
+      briefDescription: 'AI training network that pays you for sharing unused internet bandwidth',
       priority: 1
     },
     {
@@ -59,6 +61,7 @@ export class PartnerIntegrationService {
       earningRange: { min: 15, max: 45 },
       setupTime: '20 minutes',
       description: 'Monetize your unused internet bandwidth effortlessly',
+      briefDescription: 'Global crowdsourced web intelligence network that monetizes your connection',
       priority: 2
     },
     {
@@ -82,7 +85,8 @@ export class PartnerIntegrationService {
       ],
       earningRange: { min: 100, max: 500 },
       setupTime: '2-3 hours',
-      description: 'Rent your pool for parties, events, and relaxation'
+      description: 'Rent your pool for parties, events, and relaxation',
+      briefDescription: 'Airbnb for pools - rent your swimming pool by the hour for parties and events'
     },
     {
       id: 'spothero',
@@ -105,7 +109,8 @@ export class PartnerIntegrationService {
       ],
       earningRange: { min: 150, max: 400 },
       setupTime: '1-2 hours',
-      description: 'Rent out parking spaces in your driveway or property'
+      description: 'Rent out parking spaces in your driveway or property',
+      briefDescription: 'On-demand parking marketplace for monetizing driveways and garages'
     },
     {
       id: 'neighbor',
@@ -128,7 +133,8 @@ export class PartnerIntegrationService {
       ],
       earningRange: { min: 50, max: 300 },
       setupTime: '1-2 hours',
-      description: 'Rent out extra storage space to neighbors'
+      description: 'Rent out extra storage space to neighbors',
+      briefDescription: 'Storage marketplace connecting people with extra space to those who need it'
     },
     {
       id: 'peerspace',
@@ -151,7 +157,8 @@ export class PartnerIntegrationService {
       ],
       earningRange: { min: 300, max: 2000 },
       setupTime: '3-4 hours',
-      description: 'Rent unique spaces for events, meetings, and creative projects'
+      description: 'Rent unique spaces for events, meetings, and creative projects',
+      briefDescription: 'Creative space marketplace for photo shoots, meetings, and unique events'
     },
     {
       id: 'sniffspot',
@@ -175,6 +182,7 @@ export class PartnerIntegrationService {
       earningRange: { min: 100, max: 500 },
       setupTime: '2-3 hours',
       description: 'Rent your yard as a private dog park space',
+      briefDescription: 'Private dog park marketplace where pet owners rent secure yards by the hour',
       priority: 1
     },
     {
@@ -198,7 +206,8 @@ export class PartnerIntegrationService {
       ],
       earningRange: { min: 200, max: 1000 },
       setupTime: '4-6 hours',
-      description: 'Rent garden/yard space for photo shoots and video productions'
+      description: 'Rent garden/yard space for photo shoots and video productions',
+      briefDescription: 'Film and photo location marketplace for creative productions and content creation'
     },
     {
       id: 'gympass',
@@ -221,7 +230,8 @@ export class PartnerIntegrationService {
       ],
       earningRange: { min: 150, max: 800 },
       setupTime: '2-4 hours',
-      description: 'Rent your home gym for personal training sessions'
+      description: 'Rent your home gym for personal training sessions',
+      briefDescription: 'Home gym rental platform connecting fitness enthusiasts with private workout spaces'
     }
   ];
 

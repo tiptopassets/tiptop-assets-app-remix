@@ -291,9 +291,7 @@ export class LocalChatService {
 
 ${partners.map((partner, index) => 
   `${index + 1}. **${partner.name}** ${partner.priority === 1 ? '⭐ (Recommended)' : ''}
-   - Earning potential: $${partner.earningRange.min}-${partner.earningRange.max}/month
-   - Setup time: ${partner.setupTime}
-   - ${partner.description}`
+   - ${partner.briefDescription}`
 ).join('\n\n')}
 
 Click on any partner below to get started with step-by-step setup instructions and use our referral link for the best benefits!`;
@@ -547,28 +545,20 @@ These numbers are based on real market data for your area. Ready to start with t
     return `Here are the general requirements for our top partner platforms:
 
 🌐 **Internet Bandwidth Sharing:**
-- Grass.io ⭐: Stable internet (10+ Mbps), 24/7 device
-- Honeygain: Residential IP, continuous connection
+- Grass.io ⭐: ${PartnerIntegrationService.getPlatformById('grass')?.briefDescription}
+- Honeygain: ${PartnerIntegrationService.getPlatformById('honeygain')?.briefDescription}
 
 🏊 **Swimply (Pool Rental):**
-- Pool insurance and safety equipment
-- High-quality photos
-- Flexible scheduling
+- ${PartnerIntegrationService.getPlatformById('swimply')?.briefDescription}
 
 🚗 **SpotHero (Parking):**
-- Clear, accessible parking space
-- Simple access instructions  
-- Competitive pricing
+- ${PartnerIntegrationService.getPlatformById('spothero')?.briefDescription}
 
 📦 **Neighbor.com (Storage):**
-- Clean, secure storage area
-- Easy renter access
-- Space measurements and photos
+- ${PartnerIntegrationService.getPlatformById('neighbor')?.briefDescription}
 
 🎭 **Peerspace (Unique Spaces):**
-- Attractive, photogenic space
-- Basic amenities (WiFi, parking)
-- Professional photos
+- ${PartnerIntegrationService.getPlatformById('peerspace')?.briefDescription}
 
 💡 **Universal Requirements:**
 - Government ID for verification
