@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ExternalLink, CheckCircle, Loader2, DollarSign, Clock, Star, Wifi, Check } from 'lucide-react';
+import { ExternalLink, CheckCircle, Loader2, DollarSign, Clock, Star, Wifi, Check, Car, Home } from 'lucide-react';
 import { motion } from 'framer-motion';
 import type { PartnerRecommendation } from '@/services/partnerRecommendationService';
 
@@ -45,7 +45,7 @@ const PartnerRecommendationCard: React.FC<PartnerRecommendationCardProps> = ({
       'pool': 'Pool',
       'swimming_pool': 'Pool',
       'parking': 'Parking',
-      'driveway': 'Driveway',
+      'driveway': 'Parking',
       'storage': 'Storage',
       'garage': 'Garage',
       'basement': 'Basement',
@@ -60,6 +60,21 @@ const PartnerRecommendationCard: React.FC<PartnerRecommendationCardProps> = ({
       'general': 'General'
     };
     return assetMap[assetType] || assetType.charAt(0).toUpperCase() + assetType.slice(1);
+  };
+
+  const getAssetIcon = (assetType: string) => {
+    const iconMap: { [key: string]: React.ReactNode } = {
+      'internet': <Wifi className="w-3 h-3" />,
+      'bandwidth': <Wifi className="w-3 h-3" />,
+      'wifi': <Wifi className="w-3 h-3" />,
+      'parking': <Car className="w-3 h-3" />,
+      'driveway': <Car className="w-3 h-3" />,
+      'storage': <Home className="w-3 h-3" />,
+      'garage': <Home className="w-3 h-3" />,
+      'basement': <Home className="w-3 h-3" />,
+      'general': <Home className="w-3 h-3" />
+    };
+    return iconMap[assetType] || <Home className="w-3 h-3" />;
   };
 
   const getPriorityStars = (score: number) => {
@@ -96,7 +111,7 @@ const PartnerRecommendationCard: React.FC<PartnerRecommendationCardProps> = ({
       className="w-64 min-w-64 flex-shrink-0"
       style={{ minWidth: '256px', maxWidth: '256px' }}
     >
-      <Card className={`glassmorphism-card border-white/20 h-auto ${isCompleted ? 'border-green-500/50 bg-green-500/5' : 'hover:border-tiptop-purple/50'} transition-all duration-300`}>
+      <Card className={`border-2 ${isCompleted ? 'border-green-500/50 bg-green-500/5' : 'border-gray-200 dark:border-gray-700 hover:border-tiptop-purple/50'} transition-all duration-300 bg-white dark:bg-gray-800`}>
         <CardHeader className="pb-3">
           <div className="space-y-2">
             <div className="flex items-center justify-between">
@@ -109,8 +124,8 @@ const PartnerRecommendationCard: React.FC<PartnerRecommendationCardProps> = ({
               </div>
             </div>
             <Badge className="text-xs capitalize w-fit bg-tiptop-purple/20 text-tiptop-purple border-tiptop-purple/30">
-              <Wifi className="w-3 h-3 mr-1" />
-              {getAssetDisplayName(recommendation.asset_type)}
+              {getAssetIcon(recommendation.asset_type)}
+              <span className="ml-1">{getAssetDisplayName(recommendation.asset_type)}</span>
             </Badge>
             <p className="text-gray-700 dark:text-gray-300 text-xs leading-tight line-clamp-2">
               {recommendation.recommendation_reason}
@@ -119,16 +134,14 @@ const PartnerRecommendationCard: React.FC<PartnerRecommendationCardProps> = ({
         </CardHeader>
 
         <CardContent className="pt-0 space-y-3">
-          {/* Enhanced earnings display */}
+          {/* Enhanced earnings display - now matching setup time style */}
           <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <DollarSign className="w-4 h-4 text-green-600 dark:text-green-400" />
-                <span className="text-green-700 dark:text-green-300 text-sm font-medium">Monthly Income</span>
-              </div>
-              <div className="text-green-600 dark:text-green-400 font-bold text-lg">
+            <div className="flex items-center gap-2 text-xs">
+              <DollarSign className="w-3 h-3 text-green-600 dark:text-green-400" />
+              <span className="text-green-700 dark:text-green-300 text-xs font-medium">Monthly Income:</span>
+              <Badge variant="outline" className="text-green-600 dark:text-green-400 border-green-400/30 bg-green-400/10">
                 ~${Math.round(recommendation.estimated_monthly_earnings)}
-              </div>
+              </Badge>
             </div>
           </div>
 
