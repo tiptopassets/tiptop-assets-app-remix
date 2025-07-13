@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ExternalLink, CheckCircle, Loader2, DollarSign, Clock, Star } from 'lucide-react';
+import { ExternalLink, CheckCircle, Loader2, DollarSign, Clock, Star, Wifi, Check } from 'lucide-react';
 import { motion } from 'framer-motion';
 import type { PartnerRecommendation } from '@/services/partnerRecommendationService';
 
@@ -28,13 +28,38 @@ const PartnerRecommendationCard: React.FC<PartnerRecommendationCardProps> = ({
     }
   };
 
-  const getComplexityColor = (complexity: string) => {
+  const getSetupTimeInMinutes = (complexity: string) => {
     switch (complexity) {
-      case 'easy': return 'text-green-500 bg-green-500/10';
-      case 'medium': return 'text-yellow-500 bg-yellow-500/10';
-      case 'hard': return 'text-red-500 bg-red-500/10';
-      default: return 'text-gray-500 bg-gray-500/10';
+      case 'easy': return '15-20 min';
+      case 'medium': return '30-60 min';
+      case 'hard': return '2-3 hours';
+      default: return '30 min';
     }
+  };
+
+  const getAssetDisplayName = (assetType: string) => {
+    const assetMap: { [key: string]: string } = {
+      'internet': 'Internet',
+      'bandwidth': 'Bandwidth',
+      'wifi': 'WiFi',
+      'pool': 'Pool',
+      'swimming_pool': 'Pool',
+      'parking': 'Parking',
+      'driveway': 'Driveway',
+      'storage': 'Storage',
+      'garage': 'Garage',
+      'basement': 'Basement',
+      'event_space': 'Event Space',
+      'creative_space': 'Creative Space',
+      'unique_space': 'Unique Space',
+      'garden': 'Garden',
+      'yard': 'Yard',
+      'outdoor_space': 'Outdoor Space',
+      'home_gym': 'Home Gym',
+      'gym': 'Gym',
+      'general': 'General'
+    };
+    return assetMap[assetType] || assetType.charAt(0).toUpperCase() + assetType.slice(1);
   };
 
   const getPriorityStars = (score: number) => {
@@ -47,6 +72,23 @@ const PartnerRecommendationCard: React.FC<PartnerRecommendationCardProps> = ({
     ));
   };
 
+  // Get key requirements based on partner name (simplified version)
+  const getKeyRequirements = (partnerName: string) => {
+    const requirementsMap: { [key: string]: string[] } = {
+      'Grass.io': ['Stable internet (10+ Mbps)', '24/7 device running', 'Unlimited data plan'],
+      'Honeygain': ['Residential IP address', 'Multiple devices supported', '10GB+ monthly bandwidth'],
+      'Swimply': ['Pool insurance required', 'Safety equipment', 'Flexible scheduling'],
+      'SpotHero': ['Clear parking access', 'Safe, well-lit area', 'Consistent availability'],
+      'Neighbor.com': ['Clean, dry storage', 'Secure access method', 'Space measurements'],
+      'Peerspace': ['Unique/attractive space', 'Professional photos', 'Basic amenities'],
+      'Sniffspot': ['Secure, fenced area', 'Dog-safe environment', 'Water access'],
+      'Giggster': ['Photo/video friendly', 'Good lighting', 'Parking available']
+    };
+    return requirementsMap[partnerName] || ['Basic requirements apply', 'Setup verification needed'];
+  };
+
+  const keyRequirements = getKeyRequirements(recommendation.partner_name);
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -58,7 +100,7 @@ const PartnerRecommendationCard: React.FC<PartnerRecommendationCardProps> = ({
         <CardHeader className="pb-3">
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-white flex items-center gap-1 text-sm">
+              <CardTitle className="text-white font-bold flex items-center gap-1 text-sm">
                 {recommendation.partner_name}
                 {isCompleted && <CheckCircle className="w-3 h-3 text-green-500" />}
               </CardTitle>
@@ -66,42 +108,59 @@ const PartnerRecommendationCard: React.FC<PartnerRecommendationCardProps> = ({
                 {getPriorityStars(recommendation.priority_score)}
               </div>
             </div>
-            <Badge className="text-xs capitalize w-fit">
-              {recommendation.asset_type}
+            <Badge className="text-xs capitalize w-fit bg-tiptop-purple/20 text-tiptop-purple border-tiptop-purple/30">
+              <Wifi className="w-3 h-3 mr-1" />
+              {getAssetDisplayName(recommendation.asset_type)}
             </Badge>
-            <p className="text-gray-400 text-xs leading-tight line-clamp-2">
+            <p className="text-gray-300 text-xs leading-tight line-clamp-2">
               {recommendation.recommendation_reason}
             </p>
           </div>
         </CardHeader>
 
         <CardContent className="pt-0 space-y-3">
-          {/* Key metrics - stacked vertically */}
-          <div className="space-y-2">
-            <div className="flex items-center gap-2 text-xs">
-              <DollarSign className="w-3 h-3 text-green-500" />
-              <span className="text-gray-300">
-                ~${Math.round(recommendation.estimated_monthly_earnings)}/month
-              </span>
-            </div>
-            <div className="flex items-center gap-2 text-xs">
-              <Clock className="w-3 h-3 text-blue-500" />
-              <Badge 
-                variant="outline" 
-                className={`text-xs ${getComplexityColor(recommendation.setup_complexity)}`}
-              >
-                {recommendation.setup_complexity} setup
-              </Badge>
+          {/* Enhanced earnings display */}
+          <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <DollarSign className="w-4 h-4 text-green-400" />
+                <span className="text-green-300 text-sm font-medium">Monthly Income</span>
+              </div>
+              <div className="text-green-400 font-bold text-lg">
+                ~${Math.round(recommendation.estimated_monthly_earnings)}
+              </div>
             </div>
           </div>
 
-          {/* Action buttons - stacked vertically */}
+          {/* Setup time */}
+          <div className="flex items-center gap-2 text-xs">
+            <Clock className="w-3 h-3 text-blue-400" />
+            <span className="text-gray-300">Setup time:</span>
+            <Badge variant="outline" className="text-blue-400 border-blue-400/30 bg-blue-400/10">
+              {getSetupTimeInMinutes(recommendation.setup_complexity)}
+            </Badge>
+          </div>
+
+          {/* Key requirements */}
+          <div className="space-y-2">
+            <span className="text-gray-300 text-xs font-medium">Key Requirements:</span>
+            <div className="space-y-1">
+              {keyRequirements.slice(0, 2).map((req, index) => (
+                <div key={index} className="flex items-start gap-2 text-xs">
+                  <Check className="w-3 h-3 text-green-400 mt-0.5 flex-shrink-0" />
+                  <span className="text-gray-400">{req}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Action buttons */}
           <div className="space-y-2">
             {!isCompleted && (
               <Button
                 onClick={handleIntegrate}
                 disabled={isIntegrating || !recommendation.referral_link}
-                className="w-full bg-tiptop-purple hover:bg-purple-700 text-white"
+                className="w-full bg-tiptop-purple hover:bg-purple-700 text-white font-medium"
                 size="sm"
               >
                 {isIntegrating ? (
@@ -141,7 +200,15 @@ const PartnerRecommendationCard: React.FC<PartnerRecommendationCardProps> = ({
                   <span className="font-medium text-gray-300">Priority Score:</span> {recommendation.priority_score}/10
                 </div>
                 <div>
-                  <span className="font-medium text-gray-300">Asset Match:</span> {recommendation.asset_type}
+                  <span className="font-medium text-gray-300">All Requirements:</span>
+                  <div className="mt-1 space-y-1">
+                    {keyRequirements.map((req, index) => (
+                      <div key={index} className="flex items-start gap-2">
+                        <Check className="w-3 h-3 text-green-400 mt-0.5 flex-shrink-0" />
+                        <span className="text-gray-400">{req}</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
                 {recommendation.referral_link && (
                   <div>
