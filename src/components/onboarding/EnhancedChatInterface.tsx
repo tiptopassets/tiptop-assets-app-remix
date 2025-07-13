@@ -10,6 +10,7 @@ import { PartnerIntegrationService } from '@/services/partnerIntegrationService'
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { AlertCircle, User, ExternalLink, DollarSign, Clock, CheckCircle, Star } from 'lucide-react';
+import PartnerRecommendationCard from './PartnerRecommendationCard';
 
 interface ExtendedPropertyData extends PropertyAnalysisData {
   selectedAssets?: Array<{
@@ -88,6 +89,15 @@ const EnhancedChatInterface = ({
   const handlePartnerReferral = useCallback((platformId: string) => {
     PartnerIntegrationService.openReferralLink(platformId, user?.id);
   }, [user?.id]);
+
+  const handlePartnerIntegration = useCallback(async (partnerName: string, referralLink: string) => {
+    console.log('🔗 [CHAT_INTERFACE] Partner integration requested:', { partnerName, referralLink });
+    
+    // Track the click and open the referral link
+    if (referralLink) {
+      window.open(referralLink, '_blank');
+    }
+  }, []);
 
   return (
     <div className="flex flex-col h-full bg-gradient-to-br from-background/80 to-background/60 backdrop-blur-xl relative overflow-hidden">
@@ -241,65 +251,35 @@ const EnhancedChatInterface = ({
                     </div>
                   )}
 
-                  {/* Partner Options Display */}
+                  {/* Partner Options Display - Now Horizontal */}
                   {message.partnerOptions && message.partnerOptions.length > 0 && (
-                    <div className="mt-4 space-y-3">
-                      {message.partnerOptions.map((partner) => (
-                        <Card 
-                          key={partner.id} 
-                          className="cursor-pointer hover:shadow-md transition-all duration-200 hover:border-primary/30"
-                          onClick={() => handlePartnerReferral(partner.id)}
-                        >
-                          <CardContent className="p-4">
-                            <div className="flex items-center justify-between mb-2">
-                              <div className="flex items-center gap-2">
-                                <h4 className="font-semibold text-sm">{partner.name}</h4>
-                                {partner.priority === 1 && (
-                                  <Badge variant="default" className="text-xs bg-yellow-100 text-yellow-800 border-yellow-200">
-                                    <Star className="w-3 h-3 mr-1 fill-current" />
-                                    Recommended
-                                  </Badge>
-                                )}
-                              </div>
-                              <Badge variant="secondary" className="text-xs">
-                                <DollarSign className="w-3 h-3 mr-1" />
-                                ${partner.earningRange.min}-${partner.earningRange.max}/month
-                              </Badge>
-                            </div>
-                            
-                            <p className="text-xs text-muted-foreground mb-3">{partner.description}</p>
-                            
-                            <div className="flex items-center text-xs text-muted-foreground mb-3">
-                              <Clock className="w-3 h-3 mr-1" />
-                              {partner.setupTime} setup time
-                            </div>
+                    <div className="mt-4">
+                      <div className="flex overflow-x-auto gap-4 pb-2 -mx-1 px-1">
+                        {message.partnerOptions.map((partner) => {
+                          // Transform partner data to match PartnerRecommendationCard interface
+                          const partnerRecommendation = {
+                            id: partner.id,
+                            partner_name: partner.name,
+                            asset_type: 'general', // Default since partner options don't specify
+                            estimated_monthly_earnings: partner.earningRange?.min || 0,
+                            priority_score: partner.priority === 1 ? 10 : 7,
+                            setup_complexity: partner.setupTime?.includes('5 min') ? 'easy' : 
+                                           partner.setupTime?.includes('15 min') ? 'medium' : 'hard',
+                            recommendation_reason: partner.description,
+                            referral_link: partner.referralLink || `#${partner.id}`
+                          };
 
-                            <div className="mb-3">
-                              <p className="text-xs font-medium text-muted-foreground mb-1">Key Requirements:</p>
-                              <ul className="list-disc list-inside space-y-0.5 ml-2 text-xs text-muted-foreground">
-                                {partner.requirements.slice(0, 3).map((req, idx) => (
-                                  <li key={idx}>{req}</li>
-                                ))}
-                                {partner.requirements.length > 3 && (
-                                  <li className="text-primary">...and {partner.requirements.length - 3} more</li>
-                                )}
-                              </ul>
-                            </div>
-
-                            <Button 
-                              size="sm" 
-                              className="w-full" 
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handlePartnerReferral(partner.id);
-                              }}
-                            >
-                              <ExternalLink className="w-3 h-3 mr-1" />
-                              Start with {partner.name}
-                            </Button>
-                          </CardContent>
-                        </Card>
-                      ))}
+                          return (
+                            <PartnerRecommendationCard
+                              key={partner.id}
+                              recommendation={partnerRecommendation}
+                              onIntegrate={handlePartnerIntegration}
+                              isIntegrating={false}
+                              isCompleted={false}
+                            />
+                          );
+                        })}
+                      </div>
                     </div>
                   )}
 
