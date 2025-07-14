@@ -141,7 +141,7 @@ const EnhancedChatInterface = ({
       <>
         {/* Desktop Version - Inside conversation */}
         <div className="hidden md:block mt-4">
-          <div className="flex overflow-x-auto gap-4 pb-2 -mx-1 px-1">
+          <div className="flex overflow-x-auto gap-2 pb-2 -mx-1 px-1">
             {partnerRecommendations.map((partner) => (
               <PartnerRecommendationCard
                 key={partner.id}

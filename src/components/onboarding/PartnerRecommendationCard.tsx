@@ -100,9 +100,9 @@ const PartnerRecommendationCard: React.FC<PartnerRecommendationCardProps> = ({
       animate={{ opacity: 1, y: 0 }}
       className="w-full h-full flex-shrink-0"
     >
-      <Card className={`h-full border-2 ${isCompleted ? 'border-green-500/50 bg-green-500/5' : 'border-gray-200 dark:border-gray-700 hover:border-tiptop-purple/50'} transition-all duration-300 bg-white dark:bg-gray-800 md:max-w-sm`}>
-        <CardHeader className="pb-2 md:pb-1">
-          <div className="space-y-2 md:space-y-1">
+      <Card className={`h-full border-2 ${isCompleted ? 'border-green-500/50 bg-green-500/5' : 'border-gray-200 dark:border-gray-700 hover:border-tiptop-purple/50'} transition-all duration-300 bg-white dark:bg-gray-800 md:w-72 md:max-w-none`}>
+        <CardHeader className="pb-1 md:pb-1">
+          <div className="space-y-1 md:space-y-1">
             <div className="flex items-center justify-between">
               <CardTitle className="text-gray-900 dark:text-white font-bold flex items-center gap-1 text-sm md:text-xs">
                 {recommendation.partner_name}
@@ -119,20 +119,20 @@ const PartnerRecommendationCard: React.FC<PartnerRecommendationCardProps> = ({
           </div>
         </CardHeader>
 
-        <CardContent className="pt-0 space-y-2 md:space-y-1">
+        <CardContent className="pt-0 space-y-1 md:space-y-1">
           {/* Monthly income */}
-          <div className="flex items-center gap-2 text-xs md:text-[10px]">
+          <div className="flex items-center gap-1 text-xs md:text-[10px]">
             <DollarSign className="w-3 h-3 md:w-2.5 md:h-2.5 text-green-600 dark:text-green-400" />
-            <span className="text-gray-700 dark:text-gray-300">Monthly Income:</span>
+            <span className="text-gray-700 dark:text-gray-300">Monthly:</span>
             <Badge variant="outline" className="text-green-600 dark:text-green-400 border-green-400/30 bg-green-400/10 text-xs md:text-[10px]">
               ~${Math.round(recommendation.estimated_monthly_earnings)}
             </Badge>
           </div>
 
           {/* Setup time */}
-          <div className="flex items-center gap-2 text-xs md:text-[10px]">
+          <div className="flex items-center gap-1 text-xs md:text-[10px]">
             <Clock className="w-3 h-3 md:w-2.5 md:h-2.5 text-blue-500 dark:text-blue-400" />
-            <span className="text-gray-700 dark:text-gray-300">Setup time:</span>
+            <span className="text-gray-700 dark:text-gray-300">Setup:</span>
             <Badge variant="outline" className="text-blue-600 dark:text-blue-400 border-blue-400/30 bg-blue-400/10 text-xs md:text-[10px]">
               {getSetupTimeInMinutes(recommendation.setup_complexity)}
             </Badge>
@@ -140,24 +140,24 @@ const PartnerRecommendationCard: React.FC<PartnerRecommendationCardProps> = ({
 
           {/* Key requirements */}
           <div className="space-y-1">
-            <span className="text-gray-700 dark:text-gray-300 text-xs md:text-[10px] font-medium">Key Requirements:</span>
+            <span className="text-gray-700 dark:text-gray-300 text-xs md:text-[10px] font-medium">Requirements:</span>
             <div className="space-y-0.5">
               {keyRequirements.slice(0, 2).map((req, index) => (
-                <div key={index} className="flex items-start gap-1.5 text-xs md:text-[10px]">
-                  <Check className="w-3 h-3 md:w-2.5 md:h-2.5 text-green-500 mt-0.5 flex-shrink-0" />
-                  <span className="text-gray-600 dark:text-gray-400">{req}</span>
+                <div key={index} className="flex items-start gap-1 text-xs md:text-[10px]">
+                  <Check className="w-2.5 h-2.5 md:w-2 md:h-2 text-green-500 mt-0.5 flex-shrink-0" />
+                  <span className="text-gray-600 dark:text-gray-400 text-[10px] leading-tight">{req}</span>
                 </div>
               ))}
             </div>
           </div>
 
           {/* Action buttons */}
-          <div className="space-y-1.5 md:space-y-1">
+          <div className="space-y-1 md:space-y-1 pt-1">
             {!isCompleted && (
               <Button
                 onClick={handleIntegrate}
                 disabled={isIntegrating || !recommendation.referral_link}
-                className="w-full bg-tiptop-purple hover:bg-purple-700 text-white font-medium"
+                className="w-full bg-tiptop-purple hover:bg-purple-700 text-white font-medium text-xs h-8"
                 size="sm"
               >
                 {isIntegrating ? (
@@ -178,7 +178,7 @@ const PartnerRecommendationCard: React.FC<PartnerRecommendationCardProps> = ({
               variant="outline"
               size="sm"
               onClick={() => setIsExpanded(!isExpanded)}
-              className="w-full border-gray-400 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 text-xs md:text-[10px]"
+              className="w-full border-gray-400 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 text-xs h-7"
             >
               {isExpanded ? 'Less' : 'Details'}
             </Button>
