@@ -35,7 +35,7 @@ const DashboardSidebar = () => {
         <div className={`fixed left-0 top-0 h-full w-80 bg-gray-900 text-white z-50 transform transition-transform duration-300 ${
           isOpen ? 'translate-x-0' : '-translate-x-full'
         }`}>
-          <div className="flex flex-col h-full pt-16">
+          <div className="flex flex-col h-full">
             <DashboardSidebarHeader />
             <DashboardSidebarNavigation />
             <DashboardSidebarBottomNav />
