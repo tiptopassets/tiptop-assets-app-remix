@@ -39,14 +39,21 @@ export const useServiceIntegrations = () => {
     const fetchIntegrations = async () => {
       setLoading(true);
       try {
-        // Fetch real partner data from enhanced_service_providers
+        console.log('Fetching partner integrations data...');
+        
+        // Fetch all active partner data from enhanced_service_providers
         const { data: providersData, error: providersError } = await supabase
           .from('enhanced_service_providers')
           .select('*')
           .eq('is_active', true)
           .order('priority', { ascending: false });
 
-        if (providersError) throw providersError;
+        if (providersError) {
+          console.error('Error fetching providers:', providersError);
+          throw providersError;
+        }
+
+        console.log('Fetched providers:', providersData?.length || 0);
 
         // Fetch click tracking data from partner_integration_progress
         const { data: clicksData, error: clicksError } = await supabase
@@ -57,7 +64,12 @@ export const useServiceIntegrations = () => {
           `)
           .not('referral_link', 'is', null);
 
-        if (clicksError) throw clicksError;
+        if (clicksError) {
+          console.error('Error fetching clicks:', clicksError);
+          throw clicksError;
+        }
+
+        console.log('Fetched clicks:', clicksData?.length || 0);
 
         // Process the data
         const processedIntegrations: ServiceIntegration[] = (providersData || []).map(provider => {
@@ -90,6 +102,7 @@ export const useServiceIntegrations = () => {
           };
         });
 
+        console.log('Processed integrations:', processedIntegrations.length);
         setIntegrations(processedIntegrations);
 
         // Group clicks by partner for detailed view
@@ -120,9 +133,21 @@ export const useServiceIntegrations = () => {
 
     fetchIntegrations();
 
-    // Set up real-time subscription for click updates
+    // Set up real-time subscription for updates
     const subscription = supabase
-      .channel('partner_integration_changes')
+      .channel('service_integrations_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'enhanced_service_providers'
+        },
+        () => {
+          console.log('Enhanced service providers updated, refreshing...');
+          fetchIntegrations();
+        }
+      )
       .on(
         'postgres_changes',
         {
@@ -131,7 +156,8 @@ export const useServiceIntegrations = () => {
           table: 'partner_integration_progress'
         },
         () => {
-          fetchIntegrations(); // Refresh data on changes
+          console.log('Partner integration progress updated, refreshing...');
+          fetchIntegrations();
         }
       )
       .subscribe();
@@ -207,7 +233,9 @@ function getIconForAssetType(assetType: string): string {
     'garden': 'flower',
     'yard': 'trees',
     'home_gym': 'dumbbell',
+    'home_interior': 'home',
     'solar': 'sun',
+    'rooftop': 'sun',
     'general': 'settings'
   };
 
