@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Badge } from '@/components/ui/badge';
@@ -40,17 +39,6 @@ const SelectedAssetBubbles = ({
       setIsTriggered(true);
     }
   }, [isInteractionActive]);
-
-  // Auto-reset after period of inactivity
-  useEffect(() => {
-    if (isTriggered && !isInteractionActive) {
-      const resetTimer = setTimeout(() => {
-        setIsTriggered(false);
-      }, 15000); // Reset after 15 seconds of inactivity
-
-      return () => clearTimeout(resetTimer);
-    }
-  }, [isTriggered, isInteractionActive]);
 
   if (!uniqueAssets.length) {
     return null;

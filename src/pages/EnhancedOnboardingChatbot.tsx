@@ -103,35 +103,22 @@ const EnhancedOnboardingChatbot = () => {
 
   // New state to track interaction activity
   const [isInteractionActive, setIsInteractionActive] = useState(false);
-  const [interactionTimer, setInteractionTimer] = useState<NodeJS.Timeout | null>(null);
 
   // Function to trigger interaction state
   const triggerInteraction = useCallback(() => {
     console.log('🔄 [ONBOARDING] Interaction triggered - repositioning bubbles');
     setIsInteractionActive(true);
-    
-    // Clear existing timer
-    if (interactionTimer) {
-      clearTimeout(interactionTimer);
-    }
-    
-    // Set new timer to reset interaction state after 10 seconds
-    const newTimer = setTimeout(() => {
-      console.log('🔄 [ONBOARDING] Interaction timer expired - resetting bubbles');
-      setIsInteractionActive(false);
-    }, 10000);
-    
-    setInteractionTimer(newTimer);
-  }, [interactionTimer]);
+  }, []);
 
-  // Clear timer on unmount
+  // Check for interaction trigger from dashboard on mount
   useEffect(() => {
-    return () => {
-      if (interactionTimer) {
-        clearTimeout(interactionTimer);
-      }
-    };
-  }, [interactionTimer]);
+    const shouldTrigger = sessionStorage.getItem('triggerBubbleInteraction');
+    if (shouldTrigger === 'true') {
+      console.log('🔄 [ONBOARDING] Triggering bubble interaction from dashboard');
+      triggerInteraction();
+      sessionStorage.removeItem('triggerBubbleInteraction');
+    }
+  }, [triggerInteraction]);
 
   console.log('🔍 [ONBOARDING] Current state:', {
     hasUnifiedData: !!unifiedPropertyData,
@@ -215,7 +202,7 @@ const EnhancedOnboardingChatbot = () => {
         });
       }
     }
-  }, [unifiedPropertyData, targetAsset, propertyLoading, journeyLoading, authLoading, toast, sendMessageFunction, initializationComplete]);
+  }, [unifiedPropertyData, targetAsset, propertyLoading, journeyLoading, authLoading, toast, sendMessageFunction, initializationComplete, triggerInteraction]);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -230,7 +217,7 @@ const EnhancedOnboardingChatbot = () => {
     }, 5000);
 
     return () => clearInterval(interval);
-  }, [messageCount, detectedAssets, conversationStage, conversationStartTime]);
+  }, [messageCount, detectedAssets, conversationStage, conversationStartTime, unifiedPropertyData]);
 
   const generateKeyInsights = (assets: string[], stage: string) => {
     const insights: string[] = [];

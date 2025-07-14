@@ -37,6 +37,9 @@ const DashboardPropertyOverview: React.FC<DashboardPropertyOverviewProps> = ({
       const chatbotUrl = navigateToChatbot(analysis.id, assetType);
       console.log('🔗 [DASHBOARD] Navigating to:', chatbotUrl);
       
+      // Store interaction trigger flag in sessionStorage to be picked up by chatbot
+      sessionStorage.setItem('triggerBubbleInteraction', 'true');
+      
       // Navigate immediately without delay
       navigate(chatbotUrl);
     } catch (error) {
