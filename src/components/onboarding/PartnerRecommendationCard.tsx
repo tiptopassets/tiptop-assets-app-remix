@@ -98,11 +98,9 @@ const PartnerRecommendationCard: React.FC<PartnerRecommendationCardProps> = ({
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="w-48 min-w-48 md:w-64 md:min-w-64 flex-shrink-0"
-      style={{ minWidth: '192px', maxWidth: '192px' }}
-      // Mobile: w-48 (192px), Desktop: w-64 (256px)
+      className="w-full h-full flex-shrink-0"
     >
-      <Card className={`border-2 ${isCompleted ? 'border-green-500/50 bg-green-500/5' : 'border-gray-200 dark:border-gray-700 hover:border-tiptop-purple/50'} transition-all duration-300 bg-white dark:bg-gray-800`}>
+      <Card className={`h-full border-2 ${isCompleted ? 'border-green-500/50 bg-green-500/5' : 'border-gray-200 dark:border-gray-700 hover:border-tiptop-purple/50'} transition-all duration-300 bg-white dark:bg-gray-800`}>
         <CardHeader className="pb-3">
           <div className="space-y-2">
             <div className="flex items-center justify-between">

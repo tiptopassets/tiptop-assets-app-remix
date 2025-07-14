@@ -1,3 +1,4 @@
+
 import React, { useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent } from '@/components/ui/card';
@@ -110,6 +111,63 @@ const EnhancedChatInterface = ({
     }
   };
 
+  // Render partner cards section
+  const renderPartnerCards = (partnerOptions: any[], messageIndex: number) => {
+    const partnerRecommendations = partnerOptions.map((partner) => {
+      // Transform partner data to match PartnerRecommendationCard interface
+      return {
+        id: partner.id,
+        partner_name: partner.name,
+        asset_type: partner.assetType || 'general',
+        estimated_monthly_earnings: partner.earningRange?.min || 0,
+        priority_score: partner.priority === 1 ? 10 : 7,
+        setup_complexity: normalizeSetupComplexity(partner.setupTime || ''),
+        recommendation_reason: partner.description,
+        referral_link: partner.referralLink || `#${partner.id}`
+      };
+    });
+
+    return (
+      <>
+        {/* Desktop Version - Inside conversation */}
+        <div className="hidden md:block mt-4">
+          <div className="flex overflow-x-auto gap-4 pb-2 -mx-1 px-1">
+            {partnerRecommendations.map((partner) => (
+              <PartnerRecommendationCard
+                key={partner.id}
+                recommendation={partner}
+                onIntegrate={handlePartnerIntegration}
+                isIntegrating={false}
+                isCompleted={false}
+              />
+            ))}
+          </div>
+        </div>
+
+        {/* Mobile Version - Full width, breaking out of conversation */}
+        <div 
+          key={`mobile-partners-${messageIndex}`}
+          className="md:hidden relative -mx-3 md:-mx-6 mt-4"
+        >
+          <div className="w-screen relative left-1/2 right-1/2 -ml-[50vw] -mr-[50vw]">
+            <div className="flex overflow-x-auto gap-3 px-4 pb-2">
+              {partnerRecommendations.map((partner) => (
+                <div key={partner.id} className="w-56 min-w-56 flex-shrink-0">
+                  <PartnerRecommendationCard
+                    recommendation={partner}
+                    onIntegrate={handlePartnerIntegration}
+                    isIntegrating={false}
+                    isCompleted={false}
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </>
+    );
+  };
+
   return (
     <div className="flex flex-col h-full bg-gradient-to-br from-background/80 to-background/60 backdrop-blur-xl relative overflow-hidden">
       {/* Ambient background effects */}
@@ -179,151 +237,126 @@ const EnhancedChatInterface = ({
 
         <div className="space-y-3 md:space-y-4">
           <AnimatePresence>
-            {messages.map((message) => (
-              <motion.div
-                key={message.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                transition={{ duration: 0.3 }}
-                className={`flex items-start gap-2 md:gap-3 ${
-                  message.role === 'assistant' ? 'justify-start' : 'justify-end'
-                }`}
-              >
-                {message.role === 'assistant' && (
-                  <div className="w-8 h-8 md:w-10 md:h-10 rounded-xl md:rounded-2xl glass-effect glow-effect flex items-center justify-center flex-shrink-0 border border-primary/20">
-                    <img 
-                      src="/lovable-uploads/e24798be-80af-43c7-98ff-618e9adc0ee4.png" 
-                      alt="AI Assistant" 
-                      className="h-4 w-4 md:h-6 md:w-6 rounded-full object-cover"
-                    />
-                  </div>
-                )}
-                
-                <div className={`max-w-[85%] md:max-w-[80%] rounded-xl md:rounded-2xl p-3 md:p-4 ${
-                  message.role === 'assistant'
-                    ? 'bg-background/40 backdrop-blur-xl border border-border/20 text-foreground shadow-sm'
-                    : 'bg-primary/90 backdrop-blur-xl text-primary-foreground ml-auto shadow-lg border border-primary/30'
-                }`}>
-                  <div className="text-xs md:text-sm">
-                    <MessageContent content={message.content} />
-                  </div>
+            {messages.map((message, messageIndex) => (
+              <React.Fragment key={message.id}>
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  transition={{ duration: 0.3 }}
+                  className={`flex items-start gap-2 md:gap-3 ${
+                    message.role === 'assistant' ? 'justify-start' : 'justify-end'
+                  }`}
+                >
+                  {message.role === 'assistant' && (
+                    <div className="w-8 h-8 md:w-10 md:h-10 rounded-xl md:rounded-2xl glass-effect glow-effect flex items-center justify-center flex-shrink-0 border border-primary/20">
+                      <img 
+                        src="/lovable-uploads/e24798be-80af-43c7-98ff-618e9adc0ee4.png" 
+                        alt="AI Assistant" 
+                        className="h-4 w-4 md:h-6 md:w-6 rounded-full object-cover"
+                      />
+                    </div>
+                  )}
                   
-                  {/* Asset Cards Display */}
-                  {message.assetCards && message.assetCards.length > 0 && (
-                    <div className="mt-4 space-y-3">
-                      {message.assetCards.map((asset) => (
-                        <Card 
-                          key={asset.id} 
-                          className="cursor-pointer hover:shadow-md transition-all duration-200 hover:border-primary/30"
-                        >
-                          <CardContent className="p-4">
-                            <div className="flex items-center justify-between mb-2">
-                              <h4 className="font-semibold text-sm">{asset.name}</h4>
-                              <Badge variant="secondary" className="text-xs">
-                                <DollarSign className="w-3 h-3 mr-1" />
-                                ${asset.monthlyRevenue}/month potential
-                              </Badge>
-                            </div>
-                            
-                            <div className="flex items-center text-xs text-muted-foreground mb-3">
-                              <Clock className="w-3 h-3 mr-1" />
-                              {asset.setupTime} setup time
-                            </div>
-
-                            {asset.partnerInfo && (
-                              <div className="mb-3">
-                                <p className="text-xs font-medium text-muted-foreground mb-1">
-                                  Platform: {asset.partnerInfo.platform}
-                                </p>
-                                <div className="text-xs text-muted-foreground">
-                                  <p className="mb-1">Requirements:</p>
-                                  <ul className="list-disc list-inside space-y-0.5 ml-2">
-                                    {asset.requirements.slice(0, 3).map((req, idx) => (
-                                      <li key={idx}>{req}</li>
-                                    ))}
-                                    {asset.requirements.length > 3 && (
-                                      <li className="text-primary">...and {asset.requirements.length - 3} more</li>
-                                    )}
-                                  </ul>
-                                </div>
+                  <div className={`max-w-[85%] md:max-w-[80%] rounded-xl md:rounded-2xl p-3 md:p-4 ${
+                    message.role === 'assistant'
+                      ? 'bg-background/40 backdrop-blur-xl border border-border/20 text-foreground shadow-sm'
+                      : 'bg-primary/90 backdrop-blur-xl text-primary-foreground ml-auto shadow-lg border border-primary/30'
+                  }`}>
+                    <div className="text-xs md:text-sm">
+                      <MessageContent content={message.content} />
+                    </div>
+                    
+                    {/* Asset Cards Display */}
+                    {message.assetCards && message.assetCards.length > 0 && (
+                      <div className="mt-4 space-y-3">
+                        {message.assetCards.map((asset) => (
+                          <Card 
+                            key={asset.id} 
+                            className="cursor-pointer hover:shadow-md transition-all duration-200 hover:border-primary/30"
+                          >
+                            <CardContent className="p-4">
+                              <div className="flex items-center justify-between mb-2">
+                                <h4 className="font-semibold text-sm">{asset.name}</h4>
+                                <Badge variant="secondary" className="text-xs">
+                                  <DollarSign className="w-3 h-3 mr-1" />
+                                  ${asset.monthlyRevenue}/month potential
+                                </Badge>
                               </div>
-                            )}
+                              
+                              <div className="flex items-center text-xs text-muted-foreground mb-3">
+                                <Clock className="w-3 h-3 mr-1" />
+                                {asset.setupTime} setup time
+                              </div>
 
-                            <Button 
-                              size="sm" 
-                              className="w-full" 
-                              variant="outline"
-                            >
-                              <CheckCircle className="w-3 h-3 mr-1" />
-                              Start Setup
-                            </Button>
-                          </CardContent>
-                        </Card>
-                      ))}
-                    </div>
-                  )}
+                              {asset.partnerInfo && (
+                                <div className="mb-3">
+                                  <p className="text-xs font-medium text-muted-foreground mb-1">
+                                    Platform: {asset.partnerInfo.platform}
+                                  </p>
+                                  <div className="text-xs text-muted-foreground">
+                                    <p className="mb-1">Requirements:</p>
+                                    <ul className="list-disc list-inside space-y-0.5 ml-2">
+                                      {asset.requirements.slice(0, 3).map((req, idx) => (
+                                        <li key={idx}>{req}</li>
+                                      ))}
+                                      {asset.requirements.length > 3 && (
+                                        <li className="text-primary">...and {asset.requirements.length - 3} more</li>
+                                      )}
+                                    </ul>
+                                  </div>
+                                </div>
+                              )}
 
-                  {/* Partner Options Display - Now Horizontal */}
-                  {message.partnerOptions && message.partnerOptions.length > 0 && (
-                    <div className="mt-4">
-                      <div className="flex overflow-x-auto gap-4 pb-2 -mx-1 px-1">
-                        {message.partnerOptions.map((partner) => {
-                          // Transform partner data to match PartnerRecommendationCard interface
-                          const partnerRecommendation = {
-                            id: partner.id,
-                            partner_name: partner.name,
-                            asset_type: partner.assetType || 'general', // Use the asset type from partner data
-                            estimated_monthly_earnings: partner.earningRange?.min || 0,
-                            priority_score: partner.priority === 1 ? 10 : 7,
-                            setup_complexity: normalizeSetupComplexity(partner.setupTime || ''),
-                            recommendation_reason: partner.description,
-                            referral_link: partner.referralLink || `#${partner.id}`
-                          };
-
-                          return (
-                            <PartnerRecommendationCard
-                              key={partner.id}
-                              recommendation={partnerRecommendation}
-                              onIntegrate={handlePartnerIntegration}
-                              isIntegrating={false}
-                              isCompleted={false}
-                            />
-                          );
-                        })}
+                              <Button 
+                                size="sm" 
+                                className="w-full" 
+                                variant="outline"
+                              >
+                                <CheckCircle className="w-3 h-3 mr-1" />
+                                Start Setup
+                              </Button>
+                            </CardContent>
+                          </Card>
+                        ))}
                       </div>
-                    </div>
-                  )}
+                    )}
 
-                  <div className={`text-xs mt-2 opacity-70`}>
-                    {message.timestamp.toLocaleTimeString()}
+                    <div className={`text-xs mt-2 opacity-70`}>
+                      {message.timestamp.toLocaleTimeString()}
+                    </div>
+                    
+                    {/* Add partner referral buttons for assistant messages */}
+                    {message.role === 'assistant' && message.content.includes('Ready to start') && !message.assetCards && !message.partnerOptions && (
+                      <div className="mt-3 space-y-2">
+                        {PartnerIntegrationService.getAllPlatforms().map(platform => (
+                          <Button
+                            key={platform.id}
+                            size="sm"
+                            onClick={() => handlePartnerReferral(platform.id)}
+                            className="mr-2 mb-2"
+                            variant="outline"
+                          >
+                            <ExternalLink className="w-3 h-3 mr-1" />
+                            Open {platform.name}
+                          </Button>
+                        ))}
+                      </div>
+                    )}
                   </div>
                   
-                  {/* Add partner referral buttons for assistant messages */}
-                  {message.role === 'assistant' && message.content.includes('Ready to start') && !message.assetCards && !message.partnerOptions && (
-                    <div className="mt-3 space-y-2">
-                      {PartnerIntegrationService.getAllPlatforms().map(platform => (
-                        <Button
-                          key={platform.id}
-                          size="sm"
-                          onClick={() => handlePartnerReferral(platform.id)}
-                          className="mr-2 mb-2"
-                          variant="outline"
-                        >
-                          <ExternalLink className="w-3 h-3 mr-1" />
-                          Open {platform.name}
-                        </Button>
-                      ))}
+                  {message.role === 'user' && (
+                    <div className="w-8 h-8 md:w-10 md:h-10 rounded-xl md:rounded-2xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center flex-shrink-0 shadow-lg">
+                      <User className="h-4 w-4 md:h-5 md:w-5 text-primary-foreground" />
                     </div>
                   )}
-                </div>
-                
-                {message.role === 'user' && (
-                  <div className="w-8 h-8 md:w-10 md:h-10 rounded-xl md:rounded-2xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center flex-shrink-0 shadow-lg">
-                    <User className="h-4 w-4 md:h-5 md:w-5 text-primary-foreground" />
-                  </div>
-                )}
-              </motion.div>
+                </motion.div>
+
+                {/* Partner Options Display - Rendered separately for mobile full-width */}
+                {message.partnerOptions && message.partnerOptions.length > 0 && 
+                  renderPartnerCards(message.partnerOptions, messageIndex)
+                }
+              </React.Fragment>
             ))}
           </AnimatePresence>
           
