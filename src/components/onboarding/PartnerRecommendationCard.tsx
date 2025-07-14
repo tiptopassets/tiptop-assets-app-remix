@@ -100,51 +100,51 @@ const PartnerRecommendationCard: React.FC<PartnerRecommendationCardProps> = ({
       animate={{ opacity: 1, y: 0 }}
       className="w-full h-full flex-shrink-0"
     >
-      <Card className={`h-full border-2 ${isCompleted ? 'border-green-500/50 bg-green-500/5' : 'border-gray-200 dark:border-gray-700 hover:border-tiptop-purple/50'} transition-all duration-300 bg-white dark:bg-gray-800`}>
-        <CardHeader className="pb-3">
-          <div className="space-y-2">
+      <Card className={`h-full border-2 ${isCompleted ? 'border-green-500/50 bg-green-500/5' : 'border-gray-200 dark:border-gray-700 hover:border-tiptop-purple/50'} transition-all duration-300 bg-white dark:bg-gray-800 md:max-w-sm`}>
+        <CardHeader className="pb-2 md:pb-1">
+          <div className="space-y-2 md:space-y-1">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-gray-900 dark:text-white font-bold flex items-center gap-1 text-sm">
+              <CardTitle className="text-gray-900 dark:text-white font-bold flex items-center gap-1 text-sm md:text-xs">
                 {recommendation.partner_name}
                 {isCompleted && <CheckCircle className="w-3 h-3 text-green-500" />}
               </CardTitle>
             </div>
-            <Badge className="text-xs capitalize w-fit bg-tiptop-purple/20 text-tiptop-purple border-tiptop-purple/30">
+            <Badge className="text-xs md:text-[10px] capitalize w-fit bg-tiptop-purple/20 text-tiptop-purple border-tiptop-purple/30">
               {getAssetIcon(recommendation.asset_type)}
               <span className="ml-1">{getAssetDisplayName(recommendation.asset_type)}</span>
             </Badge>
-            <p className="text-gray-700 dark:text-gray-300 text-xs leading-tight line-clamp-2">
+            <p className="text-gray-700 dark:text-gray-300 text-xs md:text-[10px] leading-tight line-clamp-2">
               {recommendation.recommendation_reason}
             </p>
           </div>
         </CardHeader>
 
-        <CardContent className="pt-0 space-y-3">
-          {/* Monthly income - now matching setup time style */}
-          <div className="flex items-center gap-2 text-xs">
-            <DollarSign className="w-3 h-3 text-green-600 dark:text-green-400" />
+        <CardContent className="pt-0 space-y-2 md:space-y-1">
+          {/* Monthly income */}
+          <div className="flex items-center gap-2 text-xs md:text-[10px]">
+            <DollarSign className="w-3 h-3 md:w-2.5 md:h-2.5 text-green-600 dark:text-green-400" />
             <span className="text-gray-700 dark:text-gray-300">Monthly Income:</span>
-            <Badge variant="outline" className="text-green-600 dark:text-green-400 border-green-400/30 bg-green-400/10">
+            <Badge variant="outline" className="text-green-600 dark:text-green-400 border-green-400/30 bg-green-400/10 text-xs md:text-[10px]">
               ~${Math.round(recommendation.estimated_monthly_earnings)}
             </Badge>
           </div>
 
           {/* Setup time */}
-          <div className="flex items-center gap-2 text-xs">
-            <Clock className="w-3 h-3 text-blue-500 dark:text-blue-400" />
+          <div className="flex items-center gap-2 text-xs md:text-[10px]">
+            <Clock className="w-3 h-3 md:w-2.5 md:h-2.5 text-blue-500 dark:text-blue-400" />
             <span className="text-gray-700 dark:text-gray-300">Setup time:</span>
-            <Badge variant="outline" className="text-blue-600 dark:text-blue-400 border-blue-400/30 bg-blue-400/10">
+            <Badge variant="outline" className="text-blue-600 dark:text-blue-400 border-blue-400/30 bg-blue-400/10 text-xs md:text-[10px]">
               {getSetupTimeInMinutes(recommendation.setup_complexity)}
             </Badge>
           </div>
 
           {/* Key requirements */}
-          <div className="space-y-2">
-            <span className="text-gray-700 dark:text-gray-300 text-xs font-medium">Key Requirements:</span>
-            <div className="space-y-1">
+          <div className="space-y-1">
+            <span className="text-gray-700 dark:text-gray-300 text-xs md:text-[10px] font-medium">Key Requirements:</span>
+            <div className="space-y-0.5">
               {keyRequirements.slice(0, 2).map((req, index) => (
-                <div key={index} className="flex items-start gap-2 text-xs">
-                  <Check className="w-3 h-3 text-green-500 mt-0.5 flex-shrink-0" />
+                <div key={index} className="flex items-start gap-1.5 text-xs md:text-[10px]">
+                  <Check className="w-3 h-3 md:w-2.5 md:h-2.5 text-green-500 mt-0.5 flex-shrink-0" />
                   <span className="text-gray-600 dark:text-gray-400">{req}</span>
                 </div>
               ))}
@@ -152,7 +152,7 @@ const PartnerRecommendationCard: React.FC<PartnerRecommendationCardProps> = ({
           </div>
 
           {/* Action buttons */}
-          <div className="space-y-2">
+          <div className="space-y-1.5 md:space-y-1">
             {!isCompleted && (
               <Button
                 onClick={handleIntegrate}
@@ -178,7 +178,7 @@ const PartnerRecommendationCard: React.FC<PartnerRecommendationCardProps> = ({
               variant="outline"
               size="sm"
               onClick={() => setIsExpanded(!isExpanded)}
-              className="w-full border-gray-400 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+              className="w-full border-gray-400 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 text-xs md:text-[10px]"
             >
               {isExpanded ? 'Less' : 'Details'}
             </Button>
@@ -190,18 +190,18 @@ const PartnerRecommendationCard: React.FC<PartnerRecommendationCardProps> = ({
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
-              className="border-t border-gray-300 dark:border-gray-700 pt-3 mt-3"
+              className="border-t border-gray-300 dark:border-gray-700 pt-2 mt-2"
             >
-              <div className="text-xs text-gray-600 dark:text-gray-400 space-y-2">
+              <div className="text-xs md:text-[10px] text-gray-600 dark:text-gray-400 space-y-1.5">
                 <div>
                   <span className="font-medium text-gray-800 dark:text-gray-300">Priority Score:</span> {recommendation.priority_score}/10
                 </div>
                 <div>
                   <span className="font-medium text-gray-800 dark:text-gray-300">All Requirements:</span>
-                  <div className="mt-1 space-y-1">
+                  <div className="mt-1 space-y-0.5">
                     {keyRequirements.map((req, index) => (
-                      <div key={index} className="flex items-start gap-2">
-                        <Check className="w-3 h-3 text-green-500 mt-0.5 flex-shrink-0" />
+                      <div key={index} className="flex items-start gap-1.5">
+                        <Check className="w-2.5 h-2.5 text-green-500 mt-0.5 flex-shrink-0" />
                         <span className="text-gray-600 dark:text-gray-400">{req}</span>
                       </div>
                     ))}
@@ -215,7 +215,7 @@ const PartnerRecommendationCard: React.FC<PartnerRecommendationCardProps> = ({
                       href={recommendation.referral_link} 
                       target="_blank" 
                       rel="noopener noreferrer"
-                      className="text-tiptop-purple hover:underline break-all text-xs"
+                      className="text-tiptop-purple hover:underline break-all text-[10px]"
                     >
                       {recommendation.referral_link}
                     </a>
