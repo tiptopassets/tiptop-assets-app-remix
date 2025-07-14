@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ExternalLink, CheckCircle, Loader2, DollarSign, Clock, Star, Wifi, Check, Car, Home } from 'lucide-react';
+import { ExternalLink, CheckCircle, Loader2, DollarSign, Clock, Wifi, Check, Car, Home } from 'lucide-react';
 import { motion } from 'framer-motion';
 import type { PartnerRecommendation } from '@/services/partnerRecommendationService';
 
@@ -77,16 +77,6 @@ const PartnerRecommendationCard: React.FC<PartnerRecommendationCardProps> = ({
     return iconMap[assetType] || <Home className="w-3 h-3" />;
   };
 
-  const getPriorityStars = (score: number) => {
-    const stars = Math.min(Math.floor(score / 2), 5);
-    return Array.from({ length: 5 }, (_, i) => (
-      <Star
-        key={i}
-        className={`w-3 h-3 ${i < stars ? 'text-yellow-400 fill-current' : 'text-gray-400'}`}
-      />
-    ));
-  };
-
   // Get key requirements based on partner name (simplified version)
   const getKeyRequirements = (partnerName: string) => {
     const requirementsMap: { [key: string]: string[] } = {
@@ -119,9 +109,6 @@ const PartnerRecommendationCard: React.FC<PartnerRecommendationCardProps> = ({
                 {recommendation.partner_name}
                 {isCompleted && <CheckCircle className="w-3 h-3 text-green-500" />}
               </CardTitle>
-              <div className="flex items-center gap-0.5">
-                {getPriorityStars(recommendation.priority_score)}
-              </div>
             </div>
             <Badge className="text-xs capitalize w-fit bg-tiptop-purple/20 text-tiptop-purple border-tiptop-purple/30">
               {getAssetIcon(recommendation.asset_type)}
