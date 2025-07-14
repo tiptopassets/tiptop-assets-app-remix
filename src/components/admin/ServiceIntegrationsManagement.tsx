@@ -2,26 +2,30 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Plus } from 'lucide-react';
+import { Plus, RefreshCw } from 'lucide-react';
 import ServiceIntegrationsTable from './ServiceIntegrationsTable';
 import AddServiceIntegrationForm, { ServiceIntegrationFormValues } from './AddServiceIntegrationForm';
 import { useServiceIntegrations } from '@/hooks/useServiceIntegrations';
 
 const ServiceIntegrationsManagement = () => {
   const [showAddDialog, setShowAddDialog] = useState(false);
-  const { integrations, loading, addIntegration, updateIntegrationStatus } = useServiceIntegrations();
+  const { integrations, partnerClicks, loading, addIntegration, updateIntegrationStatus } = useServiceIntegrations();
 
   // Create a wrapper function to handle the Promise returned by addIntegration
   const handleAddIntegration = async (integration: ServiceIntegrationFormValues) => {
     try {
-      // Cast the integration object to the required type to fix the TypeScript error
       const result = await addIntegration(integration as any);
       if (!result.success && result.error) {
         throw result.error;
       }
+      setShowAddDialog(false);
     } catch (error) {
       throw error;
     }
+  };
+
+  const handleRefresh = () => {
+    window.location.reload(); // Simple refresh to get latest data
   };
 
   return (
@@ -30,17 +34,23 @@ const ServiceIntegrationsManagement = () => {
         <div>
           <h2 className="text-2xl font-bold tracking-tight">Service Integrations</h2>
           <p className="text-muted-foreground">
-            Manage property monetization service partners and integrations
+            Manage property monetization service partners and track user engagement
           </p>
         </div>
-        <Button onClick={() => setShowAddDialog(true)}>
-          <Plus className="mr-2 h-4 w-4" /> Add Integration
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={handleRefresh}>
+            <RefreshCw className="mr-2 h-4 w-4" /> Refresh
+          </Button>
+          <Button onClick={() => setShowAddDialog(true)}>
+            <Plus className="mr-2 h-4 w-4" /> Add Integration
+          </Button>
+        </div>
       </div>
 
       <div className="glass-effect rounded-lg border p-1">
         <ServiceIntegrationsTable
           integrations={integrations}
+          partnerClicks={partnerClicks}
           loading={loading}
           onUpdateStatus={updateIntegrationStatus}
         />
