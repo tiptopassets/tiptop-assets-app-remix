@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card } from '@/components/ui/card';
@@ -93,6 +92,47 @@ const EnhancedOnboardingChatbot = () => {
     return null;
   }, [journeyData, propertyData, assetSelections, analysisId]);
 
+  const [analytics, setAnalytics] = useState({
+    totalMessages: 0,
+    conversationDuration: 0,
+    detectedAssets: [],
+    confidenceScore: 0.9,
+    completionProgress: 0,
+    keyInsights: []
+  });
+
+  // New state to track interaction activity
+  const [isInteractionActive, setIsInteractionActive] = useState(false);
+  const [interactionTimer, setInteractionTimer] = useState<NodeJS.Timeout | null>(null);
+
+  // Function to trigger interaction state
+  const triggerInteraction = useCallback(() => {
+    console.log('🔄 [ONBOARDING] Interaction triggered - repositioning bubbles');
+    setIsInteractionActive(true);
+    
+    // Clear existing timer
+    if (interactionTimer) {
+      clearTimeout(interactionTimer);
+    }
+    
+    // Set new timer to reset interaction state after 10 seconds
+    const newTimer = setTimeout(() => {
+      console.log('🔄 [ONBOARDING] Interaction timer expired - resetting bubbles');
+      setIsInteractionActive(false);
+    }, 10000);
+    
+    setInteractionTimer(newTimer);
+  }, [interactionTimer]);
+
+  // Clear timer on unmount
+  useEffect(() => {
+    return () => {
+      if (interactionTimer) {
+        clearTimeout(interactionTimer);
+      }
+    };
+  }, [interactionTimer]);
+
   console.log('🔍 [ONBOARDING] Current state:', {
     hasUnifiedData: !!unifiedPropertyData,
     hasSendFunction: !!sendMessageFunction,
@@ -177,15 +217,6 @@ const EnhancedOnboardingChatbot = () => {
     }
   }, [unifiedPropertyData, targetAsset, propertyLoading, journeyLoading, authLoading, toast, sendMessageFunction, initializationComplete]);
 
-  const [analytics, setAnalytics] = useState({
-    totalMessages: 0,
-    conversationDuration: 0,
-    detectedAssets: [],
-    confidenceScore: 0.9,
-    completionProgress: 0,
-    keyInsights: []
-  });
-
   useEffect(() => {
     const interval = setInterval(() => {
       setAnalytics(prev => ({
@@ -237,7 +268,7 @@ const EnhancedOnboardingChatbot = () => {
     setMessageCount(prev => prev + 1);
   };
 
-  // Handle message sending from input box
+  // Handle message sending from input box - MODIFIED to trigger interaction
   const handleSendMessage = useCallback(async (message: string) => {
     console.log('🔄 [ONBOARDING] handleSendMessage called with:', message);
     console.log('🔄 [ONBOARDING] sendMessageFunction available:', !!sendMessageFunction);
@@ -251,6 +282,9 @@ const EnhancedOnboardingChatbot = () => {
     setChatLoading(true);
     setChatError(null);
     
+    // Trigger interaction state when message is sent
+    triggerInteraction();
+    
     try {
       await sendMessageFunction(message);
       console.log('✅ [ONBOARDING] Message sent successfully');
@@ -260,21 +294,25 @@ const EnhancedOnboardingChatbot = () => {
     } finally {
       setChatLoading(false);
     }
-  }, [sendMessageFunction]);
+  }, [sendMessageFunction, triggerInteraction]);
 
   const handleSuggestedAction = useCallback(async (action: string) => {
     console.log('💡 [ONBOARDING] Suggestion clicked:', action);
+    // Trigger interaction state when suggestion is clicked
+    triggerInteraction();
     await handleSendMessage(action);
-  }, [handleSendMessage]);
+  }, [handleSendMessage, triggerInteraction]);
 
-  // Handle asset bubble clicks
+  // Handle asset bubble clicks - MODIFIED to trigger interaction
   const handleAssetBubbleClick = useCallback(async (assetType: string, assetName: string) => {
     console.log('🎯 [ONBOARDING] Asset bubble clicked:', { assetType, assetName });
     
     const configurationMessage = `I want to configure my ${assetName.toLowerCase()} for monetization. Please show me the available partner platforms and setup options for this asset.`;
     
+    // Trigger interaction state when asset bubble is clicked
+    triggerInteraction();
     await handleSendMessage(configurationMessage);
-  }, [handleSendMessage]);
+  }, [handleSendMessage, triggerInteraction]);
 
   // Callback to receive the sendMessage function from EnhancedChatInterface
   const handleSendMessageReady = useCallback((sendMessage: (message: string) => Promise<void>) => {
@@ -327,15 +365,17 @@ const EnhancedOnboardingChatbot = () => {
               onConversationStageChange={handleConversationStageChange}
               propertyData={unifiedPropertyData}
               onSendMessageReady={handleSendMessageReady}
+              onInteractionTriggered={triggerInteraction} // Pass trigger function to chat interface
             />
           </div>
         </div>
       </div>
 
-      {/* Selected Asset Bubbles - Fixed above chat input */}
+      {/* Selected Asset Bubbles - Fixed above chat input - MODIFIED with interaction state */}
       <SelectedAssetBubbles 
         propertyData={unifiedPropertyData} 
         onAssetClick={handleAssetBubbleClick}
+        isInteractionActive={isInteractionActive}
       />
 
       {/* Fixed Chat Input - Bottom */}

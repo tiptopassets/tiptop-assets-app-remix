@@ -1,6 +1,5 @@
 
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Badge } from '@/components/ui/badge';
 import { PropertyAnalysisData } from '@/hooks/useUserPropertyAnalysis';
@@ -17,9 +16,14 @@ interface ExtendedPropertyData extends PropertyAnalysisData {
 interface SelectedAssetBubblesProps {
   propertyData: ExtendedPropertyData | null;
   onAssetClick?: (assetType: string, assetName: string) => void;
+  isInteractionActive?: boolean; // New prop for external control
 }
 
-const SelectedAssetBubbles = ({ propertyData, onAssetClick }: SelectedAssetBubblesProps) => {
+const SelectedAssetBubbles = ({ 
+  propertyData, 
+  onAssetClick, 
+  isInteractionActive = false 
+}: SelectedAssetBubblesProps) => {
   const [isTriggered, setIsTriggered] = useState(false);
   
   // Get selected assets from property data and deduplicate by asset_type
@@ -30,6 +34,24 @@ const SelectedAssetBubbles = ({ propertyData, onAssetClick }: SelectedAssetBubbl
     array.findIndex(a => a.asset_type === asset.asset_type) === index
   );
 
+  // Update triggered state based on external interaction or internal clicks
+  useEffect(() => {
+    if (isInteractionActive) {
+      setIsTriggered(true);
+    }
+  }, [isInteractionActive]);
+
+  // Auto-reset after period of inactivity
+  useEffect(() => {
+    if (isTriggered && !isInteractionActive) {
+      const resetTimer = setTimeout(() => {
+        setIsTriggered(false);
+      }, 15000); // Reset after 15 seconds of inactivity
+
+      return () => clearTimeout(resetTimer);
+    }
+  }, [isTriggered, isInteractionActive]);
+
   if (!uniqueAssets.length) {
     return null;
   }
@@ -38,7 +60,8 @@ const SelectedAssetBubbles = ({ propertyData, onAssetClick }: SelectedAssetBubbl
     originalCount: allSelectedAssets.length,
     uniqueCount: uniqueAssets.length,
     assets: uniqueAssets.map(a => ({ type: a.asset_type, revenue: a.monthly_revenue })),
-    isTriggered
+    isTriggered,
+    isInteractionActive
   });
 
   const handleAssetClick = (asset: any) => {
@@ -53,6 +76,9 @@ const SelectedAssetBubbles = ({ propertyData, onAssetClick }: SelectedAssetBubbl
     }
   };
 
+  // Determine if bubbles should be in triggered state (either from interaction or click)
+  const shouldShowTriggered = isTriggered || isInteractionActive;
+
   return (
     <motion.div 
       initial={{ opacity: 0, y: 10 }}
@@ -62,15 +88,15 @@ const SelectedAssetBubbles = ({ propertyData, onAssetClick }: SelectedAssetBubbl
       }}
       transition={{ duration: 0.5, ease: "easeInOut" }}
       className={`fixed ${
-        isTriggered 
+        shouldShowTriggered 
           ? 'bottom-24 left-0 right-0 md:left-4 md:top-1/2 md:-translate-y-1/2 md:right-auto md:bottom-auto' 
           : 'bottom-24 left-0 right-0'
       } z-[99] px-3 md:px-6 pointer-events-none`}
     >
-      <div className={`flex ${isTriggered ? 'justify-center md:justify-start' : 'justify-center'}`}>
-        <div className={`${isTriggered ? 'w-full max-w-4xl md:w-auto' : 'w-full max-w-4xl'}`}>
+      <div className={`flex ${shouldShowTriggered ? 'justify-center md:justify-start' : 'justify-center'}`}>
+        <div className={`${shouldShowTriggered ? 'w-full max-w-4xl md:w-auto' : 'w-full max-w-4xl'}`}>
           <div className={`flex ${
-            isTriggered 
+            shouldShowTriggered 
               ? 'overflow-x-auto gap-3 justify-start pb-2 scrollbar-hide md:overflow-visible md:flex-col md:pb-0' 
               : 'flex-wrap gap-2 justify-center'
           } pointer-events-auto`}>
@@ -82,7 +108,7 @@ const SelectedAssetBubbles = ({ propertyData, onAssetClick }: SelectedAssetBubbl
                 transition={{ delay: index * 0.1 }}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                className={isTriggered ? 'flex-shrink-0' : ''}
+                className={shouldShowTriggered ? 'flex-shrink-0' : ''}
               >
                 <Badge
                   variant="secondary"
@@ -108,4 +134,3 @@ const SelectedAssetBubbles = ({ propertyData, onAssetClick }: SelectedAssetBubbl
 };
 
 export default SelectedAssetBubbles;
-

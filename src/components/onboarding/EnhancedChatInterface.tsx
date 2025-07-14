@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent } from '@/components/ui/card';
@@ -25,13 +24,15 @@ interface EnhancedChatInterfaceProps {
   onConversationStageChange: (stage: string) => void;
   propertyData: ExtendedPropertyData | null;
   onSendMessageReady?: (sendMessage: (message: string) => Promise<void>) => void;
+  onInteractionTriggered?: () => void;
 }
 
 const EnhancedChatInterface = ({ 
   onAssetDetected, 
   onConversationStageChange, 
   propertyData,
-  onSendMessageReady 
+  onSendMessageReady,
+  onInteractionTriggered
 }: EnhancedChatInterfaceProps) => {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -88,17 +89,26 @@ const EnhancedChatInterface = ({
   }, [messages, onAssetDetected, onConversationStageChange, getContext]);
 
   const handlePartnerReferral = useCallback((platformId: string) => {
+    // Trigger interaction when partner referral is clicked
+    if (onInteractionTriggered) {
+      onInteractionTriggered();
+    }
     PartnerIntegrationService.openReferralLink(platformId, user?.id);
-  }, [user?.id]);
+  }, [user?.id, onInteractionTriggered]);
 
   const handlePartnerIntegration = useCallback(async (partnerName: string, referralLink: string) => {
     console.log('🔗 [CHAT_INTERFACE] Partner integration requested:', { partnerName, referralLink });
+    
+    // Trigger interaction when partner integration is clicked (like "Manage" button)
+    if (onInteractionTriggered) {
+      onInteractionTriggered();
+    }
     
     // Track the click and open the referral link
     if (referralLink) {
       window.open(referralLink, '_blank');
     }
-  }, []);
+  }, [onInteractionTriggered]);
 
   // Helper function to normalize setup complexity
   const normalizeSetupComplexity = (setupTime: string): "easy" | "medium" | "hard" => {
