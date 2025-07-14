@@ -1,4 +1,5 @@
 
+
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Badge } from '@/components/ui/badge';
@@ -62,15 +63,15 @@ const SelectedAssetBubbles = ({ propertyData, onAssetClick }: SelectedAssetBubbl
       transition={{ duration: 0.5, ease: "easeInOut" }}
       className={`fixed ${
         isTriggered 
-          ? 'bottom-24 left-0 right-0' 
+          ? 'bottom-24 left-0 right-0 md:left-4 md:top-1/2 md:-translate-y-1/2 md:right-auto md:bottom-auto' 
           : 'bottom-24 left-0 right-0'
       } z-[99] px-3 md:px-6 pointer-events-none`}
     >
-      <div className={`flex ${isTriggered ? 'justify-center' : 'justify-center'}`}>
-        <div className={`${isTriggered ? 'w-full max-w-4xl' : 'w-full max-w-4xl'}`}>
+      <div className={`flex ${isTriggered ? 'justify-center md:justify-start' : 'justify-center'}`}>
+        <div className={`${isTriggered ? 'w-full max-w-4xl md:w-auto' : 'w-full max-w-4xl'}`}>
           <div className={`flex ${
             isTriggered 
-              ? 'overflow-x-auto gap-3 justify-start pb-2 scrollbar-hide' 
+              ? 'overflow-x-auto gap-3 justify-start pb-2 scrollbar-hide md:overflow-visible md:flex-col md:pb-0' 
               : 'flex-wrap gap-2 justify-center'
           } pointer-events-auto`}>
             {uniqueAssets.map((asset, index) => (
@@ -107,3 +108,4 @@ const SelectedAssetBubbles = ({ propertyData, onAssetClick }: SelectedAssetBubbl
 };
 
 export default SelectedAssetBubbles;
+
