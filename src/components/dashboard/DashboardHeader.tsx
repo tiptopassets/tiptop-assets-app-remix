@@ -14,31 +14,31 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   onRefresh 
 }) => {
   return (
-    <div className="flex items-center justify-between">
+    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">Property Dashboard</h1>
-        <p className="text-gray-600">
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Property Dashboard</h1>
+        <p className="text-gray-600 text-sm sm:text-base">
           {primaryAddress || 'Your monetization overview'}
         </p>
       </div>
-      <div className="flex gap-2">
-        <Button onClick={onRefresh} variant="outline" size="sm">
-          <RefreshCw className="h-4 w-4 mr-2" />
-          Refresh
+      <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+        <Button onClick={onRefresh} variant="outline" size="sm" className="w-full sm:w-auto">
+          <RefreshCw className="h-4 w-4 sm:mr-2" />
+          <span className="sm:inline">Refresh</span>
         </Button>
         <Button 
           onClick={() => window.open('https://forms.office.com/Pages/ResponsePage.aspx?id=DQSIkWdsW0yxEjajBLZtrQAAAAAAAAAAAAFKAG3Oh5NUN1FBQlBKUzNaQjVGNlBIS1ZXRU8wRTFWRi4u', '_blank')}
           variant="outline" 
           size="sm"
-          className="bg-orange-500 text-white border-orange-500 hover:bg-orange-600 hover:border-orange-600"
+          className="bg-orange-500 text-white border-orange-500 hover:bg-orange-600 hover:border-orange-600 w-full sm:w-auto"
         >
-          <MessageSquare className="h-4 w-4 mr-2" />
-          Quick Survey
+          <MessageSquare className="h-4 w-4 sm:mr-2" />
+          <span className="sm:inline">Quick Survey</span>
         </Button>
-        <Button asChild variant="outline">
+        <Button asChild variant="outline" className="w-full sm:w-auto" size="sm">
           <Link to="/">
-            <MapPin className="mr-2 h-4 w-4" />
-            Analyze New Property
+            <MapPin className="h-4 w-4 sm:mr-2" />
+            <span className="sm:inline">Analyze New Property</span>
           </Link>
         </Button>
       </div>

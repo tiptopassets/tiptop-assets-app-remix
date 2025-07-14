@@ -29,7 +29,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
       <div className="min-h-screen bg-gray-50">
         <DashboardSidebar />
         <main className="w-full overflow-auto">
-          <div className="p-4">
+          <div className="pt-16 px-4 pb-4">
             {children}
           </div>
         </main>
