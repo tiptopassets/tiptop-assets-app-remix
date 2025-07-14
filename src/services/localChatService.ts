@@ -36,6 +36,7 @@ export interface PartnerOption {
   requirements: string[];
   setupSteps: string[];
   priority?: number;
+  assetType?: string;
 }
 
 export interface ConversationContext {
@@ -271,7 +272,7 @@ export class LocalChatService {
       return `I don't have specific partner recommendations for ${assetType} yet, but I can help you explore general monetization options. What would you like to know?`;
     }
 
-    // Convert to PartnerOption format
+    // Convert to PartnerOption format with asset type
     const partnerOptions: PartnerOption[] = partners.map(partner => ({
       id: partner.id,
       name: partner.name,
@@ -281,7 +282,8 @@ export class LocalChatService {
       setupTime: partner.setupTime,
       requirements: partner.requirements,
       setupSteps: partner.setupSteps,
-      priority: partner.priority
+      priority: partner.priority,
+      assetType: assetType
     }));
 
     const assetDisplayName = this.getAssetDisplayName(assetType);

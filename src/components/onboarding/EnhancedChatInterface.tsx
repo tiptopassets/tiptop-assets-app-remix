@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent } from '@/components/ui/card';
@@ -11,6 +10,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { AlertCircle, User, ExternalLink, DollarSign, Clock, CheckCircle, Star } from 'lucide-react';
 import PartnerRecommendationCard from './PartnerRecommendationCard';
+import MessageContent from './MessageContent';
 
 interface ExtendedPropertyData extends PropertyAnalysisData {
   selectedAssets?: Array<{
@@ -205,7 +205,9 @@ const EnhancedChatInterface = ({
                     ? 'bg-background/40 backdrop-blur-xl border border-border/20 text-foreground shadow-sm'
                     : 'bg-primary/90 backdrop-blur-xl text-primary-foreground ml-auto shadow-lg border border-primary/30'
                 }`}>
-                  <p className="text-xs md:text-sm whitespace-pre-wrap">{message.content}</p>
+                  <div className="text-xs md:text-sm">
+                    <MessageContent content={message.content} />
+                  </div>
                   
                   {/* Asset Cards Display */}
                   {message.assetCards && message.assetCards.length > 0 && (
@@ -271,7 +273,7 @@ const EnhancedChatInterface = ({
                           const partnerRecommendation = {
                             id: partner.id,
                             partner_name: partner.name,
-                            asset_type: 'general', // Default since partner options don't specify
+                            asset_type: partner.assetType || 'general', // Use the asset type from partner data
                             estimated_monthly_earnings: partner.earningRange?.min || 0,
                             priority_score: partner.priority === 1 ? 10 : 7,
                             setup_complexity: normalizeSetupComplexity(partner.setupTime || ''),
