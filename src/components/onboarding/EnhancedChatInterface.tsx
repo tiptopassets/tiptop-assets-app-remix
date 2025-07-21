@@ -1,3 +1,4 @@
+
 import React, { useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent } from '@/components/ui/card';
@@ -143,13 +144,14 @@ const EnhancedChatInterface = ({
         <div className="hidden md:block mt-4">
           <div className="flex overflow-x-auto gap-3 pb-2">
             {partnerRecommendations.map((partner) => (
-              <PartnerRecommendationCard
-                key={partner.id}
-                recommendation={partner}
-                onIntegrate={handlePartnerIntegration}
-                isIntegrating={false}
-                isCompleted={false}
-              />
+              <div key={partner.id} className="w-72 flex-shrink-0">
+                <PartnerRecommendationCard
+                  recommendation={partner}
+                  onIntegrate={handlePartnerIntegration}
+                  isIntegrating={false}
+                  isCompleted={false}
+                />
+              </div>
             ))}
           </div>
         </div>
