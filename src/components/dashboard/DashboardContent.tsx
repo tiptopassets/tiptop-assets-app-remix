@@ -122,7 +122,8 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
       {/* Debug Component for Development */}
       <AssetSelectionDebug />
 
-      {/* Saved Asset Selections */}
+      {/* Saved Asset Selections - Hidden since info is now in Overview card */}
+      {/* 
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -130,6 +131,7 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
       >
         <SavedAssetSelections />
       </motion.div>
+      */}
 
       {/* Revenue Charts */}
       {analysisResults && (
