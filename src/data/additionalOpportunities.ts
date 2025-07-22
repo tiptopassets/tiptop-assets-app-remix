@@ -4,7 +4,7 @@ import { AdditionalOpportunity } from '@/types/analysis';
 export const additionalOpportunities: AdditionalOpportunity[] = [
   // High Revenue Tier ($200+ /month)
   {
-    title: "ADU Rental",
+    title: "Airbnb Rental",
     icon: "storage",
     monthlyRevenue: 1200,
     description: "Rent out your accessory dwelling unit on Airbnb for consistent income.",
@@ -12,7 +12,7 @@ export const additionalOpportunities: AdditionalOpportunity[] = [
     setupCost: 2500,
     roi: 2,
     formFields: [
-      { type: "select", name: "unitType", label: "ADU Type", value: "Studio", options: ["Studio", "1 Bedroom", "2 Bedroom"] },
+      { type: "select", name: "unitType", label: "Property Type", value: "Studio", options: ["Studio", "1 Bedroom", "2 Bedroom"] },
       { type: "select", name: "amenities", label: "Included Amenities", value: "Basic", options: ["Basic", "Standard", "Luxury"] },
       { type: "select", name: "availability", label: "Availability", value: "Full-time", options: ["Weekends", "Part-time", "Full-time"] }
     ]
@@ -432,7 +432,7 @@ export const getOpportunitiesByRevenueTier = () => {
 
 export const getOpportunitiesByCategory = () => {
   const spaceRentals = additionalOpportunities.filter(opp => 
-    ['ADU Rental', 'Event Space Rental', 'Event Space Rental (Large)', 'Co-working Space', 'Photography Studio', 'Content Creator Studio', 'Fitness Studio', 'Art Studio Space', 'Home Gym Rental', 'Game Room Rental', 'Music Practice Room', 'Meeting Room Rental'].includes(opp.title)
+    ['Airbnb Rental', 'Event Space Rental', 'Event Space Rental (Large)', 'Co-working Space', 'Photography Studio', 'Content Creator Studio', 'Fitness Studio', 'Art Studio Space', 'Home Gym Rental', 'Game Room Rental', 'Music Practice Room', 'Meeting Room Rental'].includes(opp.title)
   );
   
   const petServices = additionalOpportunities.filter(opp => 

@@ -91,7 +91,7 @@ export class PartnerIntegrationService {
     {
       id: 'spothero',
       name: 'SpotHero',
-      referralLink: 'https://spothero.com/developers',
+      referralLink: 'https://spothero.com/sell-parking/independent-sellers',
       assetTypes: ['parking', 'driveway'],
       requirements: [
         'Available parking space (driveway, garage, or lot)',
