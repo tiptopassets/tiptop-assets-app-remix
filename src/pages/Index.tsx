@@ -49,8 +49,8 @@ const Index = () => {
     );
   }
 
-  // Check if we should show the banner
-  const showBanner = status !== 'idle' && (status === 'capturing' || status === 'generating' || status === 'completed' || status === 'error');
+  // Check if we should show the banner (remove completed status to avoid popup)
+  const showBanner = status !== 'idle' && (status === 'capturing' || status === 'generating' || status === 'error');
 
   return (
     <div className="min-h-screen relative overflow-hidden flex flex-col bg-gradient-to-b from-gray-900 to-black">
@@ -129,16 +129,10 @@ const Index = () => {
             {!analysisComplete && !isAnalyzing && <AssetIcons />}
           </div>
 
-          {/* Model Generation Banner - positioned above HomeModelViewer */}
+          {/* Model Generation Banner - now inline instead of modal */}
           {showBanner && (
-            <div className="relative w-full max-w-7xl mx-auto mb-4">
-              {/* Background overlay */}
-              <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40" />
-              
-              {/* Centered banner */}
-              <div className="relative z-50 w-full px-4">
-                <ModelGenerationSheet />
-              </div>
+            <div className="w-full max-w-4xl mx-auto mb-4 px-4">
+              <ModelGenerationSheet />
             </div>
           )}
 

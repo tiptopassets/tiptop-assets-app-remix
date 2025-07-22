@@ -126,35 +126,30 @@ const ModelGenerationSheet = () => {
           {(status === 'capturing' || status === 'generating') && (
             <div className="mb-4">
               <div className="flex items-center gap-4">
-                {/* Property images on the left */}
-                {(propertyImages.satellite || propertyImages.streetView) && (
-                  <div className="flex gap-2 flex-shrink-0">
-                    {propertyImages.satellite && (
-                      <div className="relative">
-                        <img 
-                          src={propertyImages.satellite} 
-                          alt="Satellite view" 
-                          className="w-12 h-12 md:w-16 md:h-16 object-cover rounded-lg border-2 border-gray-200"
-                        />
-                        <span className="absolute -bottom-1 -right-1 bg-blue-500 text-white text-[8px] md:text-[10px] px-1 py-0.5 rounded">
-                          Satellite
-                        </span>
-                      </div>
-                    )}
-                    {propertyImages.streetView && (
-                      <div className="relative">
-                        <img 
-                          src={propertyImages.streetView} 
-                          alt="Street view" 
-                          className="w-12 h-12 md:w-16 md:h-16 object-cover rounded-lg border-2 border-gray-200"
-                        />
-                        <span className="absolute -bottom-1 -right-1 bg-green-500 text-white text-[8px] md:text-[10px] px-1 py-0.5 rounded">
-                          Street
-                        </span>
-                      </div>
-                    )}
+                {/* Property images on the left - show placeholder or actual images */}
+                <div className="flex gap-2 flex-shrink-0">
+                  {/* Always show placeholders during progress, replace with actual images when available */}
+                  <div className="relative">
+                    <img 
+                      src={propertyImages.satellite || "https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=100&h=100&fit=crop&crop=center"} 
+                      alt="Satellite view" 
+                      className="w-12 h-12 md:w-16 md:h-16 object-cover rounded-lg border-2 border-gray-200"
+                    />
+                    <span className="absolute -bottom-1 -right-1 bg-blue-500 text-white text-[8px] md:text-[10px] px-1 py-0.5 rounded">
+                      Satellite
+                    </span>
                   </div>
-                )}
+                  <div className="relative">
+                    <img 
+                      src={propertyImages.streetView || "https://images.unsplash.com/photo-1426604966848-d7adac402bff?w=100&h=100&fit=crop&crop=center"} 
+                      alt="Street view" 
+                      className="w-12 h-12 md:w-16 md:h-16 object-cover rounded-lg border-2 border-gray-200"
+                    />
+                    <span className="absolute -bottom-1 -right-1 bg-green-500 text-white text-[8px] md:text-[10px] px-1 py-0.5 rounded">
+                      Street
+                    </span>
+                  </div>
+                </div>
                 
                 {/* Centered progress bar */}
                 <div className="flex-1">
