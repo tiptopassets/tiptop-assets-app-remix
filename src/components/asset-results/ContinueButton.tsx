@@ -15,6 +15,10 @@ const ContinueButton = ({ selectedCount, onContinue, selectedAssetsData }: Conti
   const { analysisResults, address } = useGoogleMap();
 
   const handleContinue = () => {
+    if (selectedCount < 2) {
+      return; // Don't proceed if less than 2 assets selected
+    }
+    
     onContinue();
     
     // Pass analysis data AND selected assets through navigation state and sessionStorage
@@ -34,12 +38,29 @@ const ContinueButton = ({ selectedCount, onContinue, selectedAssetsData }: Conti
     });
   };
 
+  const getButtonText = () => {
+    if (selectedCount === 0) {
+      return 'Select at least 2 assets to continue';
+    } else if (selectedCount === 1) {
+      return 'Select at least one more asset to continue';
+    } else {
+      return `Continue with ${selectedCount} asset${selectedCount !== 1 ? 's' : ''}`;
+    }
+  };
+
+  const isDisabled = selectedCount < 2;
+
   return (
     <Button 
       onClick={handleContinue}
-      className="w-full bg-gradient-to-r from-tiptop-purple to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white border-none shadow-lg hover:shadow-xl transition-all duration-300"
+      disabled={isDisabled}
+      className={`w-full border-none shadow-lg hover:shadow-xl transition-all duration-300 ${
+        isDisabled 
+          ? 'bg-gray-600 hover:bg-gray-600 text-gray-400 cursor-not-allowed' 
+          : 'bg-gradient-to-r from-tiptop-purple to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white'
+      }`}
     >
-      Continue with {selectedCount} asset{selectedCount !== 1 ? 's' : ''}
+      {getButtonText()}
     </Button>
   );
 };
