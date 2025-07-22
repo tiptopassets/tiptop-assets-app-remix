@@ -1,4 +1,3 @@
-
 import { useEffect } from 'react';
 import { useModelGeneration } from '@/contexts/ModelGeneration';
 import { useGoogleMap } from '@/contexts/GoogleMapContext';
@@ -9,7 +8,7 @@ import ImageGrid from '@/components/model-viewer/ImageGrid';
 import ActionButtons from '@/components/model-viewer/ActionButtons';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
-import { Check, Info, ExternalLink } from 'lucide-react';
+import { Check, Info, ExternalLink, Plus } from 'lucide-react';
 import './ModelViewer.css';
 import { Button } from '@/components/ui/button';
 
@@ -44,13 +43,31 @@ const ModelViewer = () => {
     (sum, opp) => sum + opp.monthlyRevenue, 0
   );
 
+  // Get main assets from analysis results
+  const mainAssets = [
+    { name: 'Rooftop Solar', revenue: analysisResults.rooftop.revenue, selected: true },
+    { name: 'Garden Space', revenue: analysisResults.garden.revenue, selected: true },
+    { name: 'Parking Space', revenue: analysisResults.parking.revenue, selected: false },
+    { name: 'Storage Space', revenue: analysisResults.storage.revenue, selected: false },
+    { name: 'Short-term Rental', revenue: analysisResults.shortTermRental.monthlyProjection, selected: false },
+    ...(analysisResults.pool?.present ? [{ name: 'Pool Rental', revenue: analysisResults.pool.revenue, selected: false }] : [])
+  ];
+
+  const selectedAssets = mainAssets.filter(asset => asset.selected);
+  const unselectedAssets = mainAssets.filter(asset => !asset.selected);
+
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black text-white">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-gray-900 to-black text-white relative overflow-hidden">
+      {/* Ambient background effects - matching options page */}
+      <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-accent/5" />
+      <div className="absolute top-0 left-1/4 w-64 h-64 bg-primary/10 rounded-full blur-3xl opacity-20" />
+      <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-accent/10 rounded-full blur-3xl opacity-20" />
+      
       {/* Header */}
       <ViewerHeader onClose={() => navigate('/')} />
 
       {/* Main content */}
-      <div className="container mx-auto px-4 pb-20 mt-6">
+      <div className="container mx-auto px-4 pb-20 mt-6 relative z-10">
         {/* Property Address */}
         <div className="mb-6 text-center">
           <h2 className="text-2xl font-bold">{address}</h2>
@@ -388,8 +405,70 @@ const ModelViewer = () => {
           </div>
         </div>
         
-        {/* Actions */}
-        <ActionButtons onViewAssets={() => navigate('/dashboard')} />
+        {/* Summary Section */}
+        <div className="mt-8">
+          <div className="bg-background/40 backdrop-blur-xl rounded-lg border border-border/20 p-6">
+            <h2 className="text-xl font-bold mb-6 text-center">Summary</h2>
+            
+            {/* Selected Assets */}
+            <div className="mb-8">
+              <h3 className="text-lg font-semibold mb-4 text-green-400">Selected Assets</h3>
+              <div className="space-y-3">
+                {selectedAssets.map((asset, index) => (
+                  <Card key={index} className="bg-green-500/10 border-green-500/30 p-4">
+                    <div className="flex justify-between items-center">
+                      <div className="flex items-center">
+                        <Check className="h-5 w-5 text-green-400 mr-3" />
+                        <div>
+                          <h4 className="font-medium">{asset.name}</h4>
+                          <p className="text-sm text-gray-400">Ready for setup</p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-green-400 font-bold">${asset.revenue}/month</p>
+                      </div>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            </div>
+            
+            {/* Unselected Assets */}
+            {unselectedAssets.length > 0 && (
+              <div className="mb-8">
+                <h3 className="text-lg font-semibold mb-4 text-gray-400">Available Assets</h3>
+                <div className="space-y-3">
+                  {unselectedAssets.map((asset, index) => (
+                    <Card key={index} className="bg-white/5 border-white/10 p-4 opacity-60 hover:opacity-100 transition-opacity cursor-pointer">
+                      <div className="flex justify-between items-center">
+                        <div className="flex items-center">
+                          <Plus className="h-5 w-5 text-gray-400 mr-3" />
+                          <div>
+                            <h4 className="font-medium">{asset.name}</h4>
+                            <p className="text-sm text-gray-400">Click to add</p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-gray-400 font-bold">${asset.revenue}/month</p>
+                        </div>
+                      </div>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+            )}
+            
+            {/* Complete & Authenticate Button */}
+            <div className="text-center">
+              <Button 
+                onClick={() => navigate('/dashboard')}
+                className="bg-gradient-to-r from-tiptop-purple to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white border-none shadow-lg hover:shadow-xl transition-all duration-300 px-8 py-3 text-lg font-semibold"
+              >
+                Complete & Authenticate
+              </Button>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
