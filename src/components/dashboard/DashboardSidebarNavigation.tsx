@@ -8,7 +8,7 @@ import {
   Zap, 
   Wifi, 
   Car,
-  Settings,
+  Plus,
   User,
   DollarSign,
   ChevronDown,
@@ -96,7 +96,7 @@ const DashboardSidebarNavigation = () => {
     {
       name: 'Add Asset',
       href: '/dashboard/add-asset',
-      icon: Settings,
+      icon: Plus,
       description: 'Add new revenue streams'
     },
     {
