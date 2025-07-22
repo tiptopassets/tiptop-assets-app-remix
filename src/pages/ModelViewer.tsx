@@ -5,11 +5,18 @@ import { useUserAssetSelections } from '@/hooks/useUserAssetSelections';
 import { useToast } from '@/hooks/use-toast';
 import { useAssetSelection } from '@/hooks/useAssetSelection';
 import { SelectedAsset } from '@/types/analysis';
-import ViewerHeader from '@/components/model-viewer/ViewerHeader';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Check, Plus } from 'lucide-react';
+import { Check, Plus, X } from 'lucide-react';
+import { motion } from 'framer-motion';
+import SolarPanelIcon from '@/components/asset-icons/SolarPanelIcon';
+import GardenIcon from '@/components/asset-icons/GardenIcon';
+import ParkingIcon from '@/components/asset-icons/ParkingIcon';
+import StorageIcon from '@/components/asset-icons/StorageIcon';
+import SwimmingPoolIcon from '@/components/asset-icons/SwimmingPoolIcon';
+import WifiIcon from '@/components/asset-icons/WifiIcon';
+import CarIcon from '@/components/asset-icons/CarIcon';
 import './ModelViewerSummary.css';
 
 const ModelViewer = () => {
@@ -23,6 +30,21 @@ const ModelViewer = () => {
   const [analysisResults, setAnalysisResults] = useState<any>(null);
   const [address, setAddress] = useState<string>('');
   const [isLoading, setIsLoading] = useState(true);
+
+  // Icon mapping for different asset types
+  const getAssetIcon = (assetType: string) => {
+    const type = assetType.toLowerCase();
+    if (type.includes('solar') || type.includes('rooftop')) return <SolarPanelIcon />;
+    if (type.includes('garden') || type.includes('space')) return <GardenIcon />;
+    if (type.includes('parking')) return <ParkingIcon />;
+    if (type.includes('storage')) return <StorageIcon />;
+    if (type.includes('pool')) return <SwimmingPoolIcon />;
+    if (type.includes('bandwidth') || type.includes('internet')) return <WifiIcon />;
+    if (type.includes('rental') || type.includes('term')) return <CarIcon />;
+    return <div className="w-12 h-12 bg-tiptop-purple/20 rounded-lg flex items-center justify-center">
+      <div className="w-6 h-6 bg-tiptop-purple rounded"></div>
+    </div>;
+  };
 
   useEffect(() => {
     // Get data from navigation state or sessionStorage
@@ -181,10 +203,14 @@ const ModelViewer = () => {
         formData: {}
       }));
 
+  // Filter out selected assets from available assets to avoid duplicates
   const unselectedAssets = mainAssets.filter(asset => 
     !selectedAssets.some(selectedId => 
       selectedId.toLowerCase().includes(asset.id.toLowerCase()) ||
       asset.id.toLowerCase().includes(selectedId.toLowerCase())
+    ) && !selectedAssetDataToShow.some(selectedAsset => 
+      selectedAsset.title.toLowerCase().includes(asset.name.toLowerCase()) ||
+      asset.name.toLowerCase().includes(selectedAsset.title.toLowerCase())
     )
   );
 
@@ -242,8 +268,21 @@ const ModelViewer = () => {
       <div className="summary-glow-top" />
       <div className="summary-glow-bottom" />
       
-      {/* Header */}
-      <ViewerHeader onClose={() => navigate('/')} />
+      {/* Header with tiptop logo */}
+      <header className="p-4 md:p-6 flex justify-between items-center">
+        <div>
+          <h1 className="text-2xl md:text-3xl font-bold text-tiptop-purple">tiptop</h1>
+          <p className="text-sm text-gray-400">Property Analysis Summary</p>
+        </div>
+        <Button 
+          variant="ghost" 
+          onClick={() => navigate('/')}
+          className="text-gray-300 hover:text-white"
+        >
+          <X className="mr-2 h-4 w-4" />
+          Close
+        </Button>
+      </header>
 
       {/* Main content */}
       <div className="summary-content">
@@ -269,62 +308,80 @@ const ModelViewer = () => {
                 <h3 className="text-lg font-semibold mb-4 text-green-400">Selected Assets</h3>
                 <div className="space-y-3">
                   {selectedAssetDataToShow.map((asset, index) => (
-                    <Card key={index} className="selected-asset-card p-4">
-                      <div className="flex justify-between items-center">
+                    <motion.div
+                      key={index}
+                      whileHover={{ translateY: -2 }}
+                      className="glass-effect rounded-xl p-4 border-2 border-green-400/30 bg-gradient-to-br from-green-400/10 to-green-600/5"
+                    >
+                      <div className="flex items-center justify-between">
                         <div className="flex items-center">
-                          <Check className="h-5 w-5 text-green-400 mr-3" />
-                          <div>
-                            <h4 className="font-medium">{asset.title}</h4>
-                            <p className="text-sm text-gray-400">
-                              {asset.title === 'Internet Bandwidth Sharing' ? 'Share unused bandwidth for passive income' :
-                               asset.title === 'Personal Storage Rental' ? 'Rent out personal storage space within your unit' :
-                               `Asset: ${asset.title}`}
-                            </p>
+                          <div className="mr-4">
+                            {getAssetIcon(asset.title)}
+                          </div>
+                          <div className="flex items-center">
+                            <Check className="h-5 w-5 text-green-400 mr-3" />
+                            <div>
+                              <h4 className="font-medium text-white">{asset.title}</h4>
+                              <p className="text-sm text-gray-300">
+                                {asset.title === 'Internet Bandwidth Sharing' ? 'Share unused bandwidth for passive income' :
+                                 asset.title === 'Personal Storage Rental' ? 'Rent out personal storage space within your unit' :
+                                 `Asset: ${asset.title}`}
+                              </p>
+                            </div>
                           </div>
                         </div>
                         <div className="text-right">
                           <p className="text-green-400 font-bold">${asset.monthlyRevenue}/month</p>
                         </div>
                       </div>
-                    </Card>
+                    </motion.div>
                   ))}
                 </div>
               </div>
               
-              {/* Unselected Assets */}
+              {/* Available Assets */}
               {unselectedAssets.length > 0 && (
                 <div className="mb-8">
                   <h3 className="text-lg font-semibold mb-4 text-gray-400">Available Assets</h3>
                   <div className="space-y-3">
                     {unselectedAssets.map((asset, index) => (
-                      <Card 
-                        key={index} 
-                        className="available-asset-card p-4"
+                      <motion.div
+                        key={index}
+                        whileHover={{ translateY: -2 }}
+                        className="glass-effect rounded-xl p-4 border-2 border-white/10 hover:border-white/30 cursor-pointer bg-gradient-to-br from-white/5 to-white/2 transition-all duration-300"
                         onClick={() => handleAssetToggle(asset)}
                       >
-                        <div className="flex justify-between items-center">
+                        <div className="flex items-center justify-between">
                           <div className="flex items-center">
-                            <Plus className="h-5 w-5 text-gray-400 mr-3" />
-                            <div>
-                              <h4 className="font-medium">{asset.name}</h4>
-                              <p className="text-sm text-gray-400">{asset.description}</p>
+                            <div className="mr-4">
+                              {getAssetIcon(asset.name)}
+                            </div>
+                            <div className="flex items-center">
+                              <Plus className="h-5 w-5 text-gray-400 mr-3" />
+                              <div>
+                                <h4 className="font-medium text-white">{asset.name}</h4>
+                                <p className="text-sm text-gray-400">{asset.description}</p>
+                              </div>
                             </div>
                           </div>
                           <div className="text-right">
-                            <p className="text-gray-400 font-bold">${asset.revenue}/month</p>
+                            <p className="text-gray-300 font-bold">${asset.revenue}/month</p>
                           </div>
                         </div>
-                      </Card>
+                      </motion.div>
                     ))}
                   </div>
                 </div>
               )}
               
-              {/* Complete & Authenticate Button - Fixed Navigation */}
+              {/* Complete & Authenticate Button */}
               <div className="text-center">
                 <Button 
                   onClick={() => navigate('/options')}
-                  className="bg-gradient-to-r from-tiptop-purple to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white border-none shadow-lg hover:shadow-xl transition-all duration-300 px-8 py-3 text-lg font-semibold"
+                  className="glass-effect bg-gradient-to-r from-tiptop-purple to-purple-600 hover:opacity-90 px-8 py-6 rounded-full text-xl font-semibold text-white border-none shadow-lg hover:shadow-xl transition-all duration-300"
+                  style={{ 
+                    boxShadow: '0 0 20px rgba(155, 135, 245, 0.5)',
+                  }}
                 >
                   Complete & Authenticate
                 </Button>
