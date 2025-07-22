@@ -21,6 +21,8 @@ interface PropertyAnalysis {
   created_at: string;
   updated_at: string;
   user_email?: string;
+  is_active?: boolean;
+  coordinates?: any;
 }
 
 interface PropertyStats {
@@ -73,13 +75,14 @@ const PropertyManagement = () => {
 
       // Process the data to extract property addresses and format properly
       const processedProperties: PropertyAnalysis[] = (analysesData || []).map(analysis => {
-        // Extract property address from analysis results
+        // Extract property address from analysis results with proper type checking
         let propertyAddress = 'Unknown Address';
-        if (analysis.analysis_results) {
+        if (analysis.analysis_results && typeof analysis.analysis_results === 'object') {
+          const results = analysis.analysis_results as Record<string, any>;
           propertyAddress = 
-            analysis.analysis_results.propertyAddress || 
-            analysis.analysis_results.address || 
-            analysis.analysis_results.property_address ||
+            results.propertyAddress || 
+            results.address || 
+            results.property_address ||
             'Unknown Address';
         }
 
@@ -93,6 +96,8 @@ const PropertyManagement = () => {
           analysis_results: analysis.analysis_results,
           created_at: analysis.created_at,
           updated_at: analysis.updated_at,
+          is_active: true, // Default value
+          coordinates: null // Default value
         };
       });
 
