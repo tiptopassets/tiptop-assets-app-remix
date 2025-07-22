@@ -135,36 +135,11 @@ const DashboardPropertyOverview: React.FC<DashboardPropertyOverviewProps> = ({
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Property Details - Left Side */}
-          <div className="lg:col-span-2 space-y-4">
-            <div>
-              <p className="text-sm font-medium text-gray-700 mb-1">Address</p>
-              <p className="text-gray-900">{propertyAddress}</p>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <p className="text-sm font-medium text-gray-700 mb-1">
-                  Monthly Revenue Potential
-                </p>
-                <p className="text-2xl font-bold text-green-600">
-                  ${hasSelectedAssets ? totalSelectedRevenue : analysis.total_monthly_revenue}/month
-                </p>
-              </div>
-              <div>
-                <p className="text-sm font-medium text-gray-700 mb-1">
-                  {hasSelectedAssets ? 'Selected Assets' : 'Available Opportunities'}
-                </p>
-                <p className="text-2xl font-bold text-tiptop-purple">
-                  {hasSelectedAssets ? totalSelectedCount : analysis.total_opportunities}
-                </p>
-              </div>
-            </div>
-
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Selected Assets - Left Side */}
+          <div className="space-y-4">
             {hasSelectedAssets ? (
               <div>
-                <p className="text-sm font-medium text-gray-700 mb-2">Selected Assets</p>
                 <div className="space-y-2">
                   {selectedAssets.slice(0, 3).map((asset) => (
                     <div key={asset.type} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
