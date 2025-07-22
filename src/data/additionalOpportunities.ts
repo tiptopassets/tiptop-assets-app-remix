@@ -7,8 +7,9 @@ export const additionalOpportunities: AdditionalOpportunity[] = [
     title: "Airbnb Rental",
     icon: "storage",
     monthlyRevenue: 1200,
-    description: "Rent out your accessory dwelling unit on Airbnb for consistent income.",
+    description: "Rent out your property or unit on Airbnb for consistent income.",
     provider: "Airbnb",
+    referralLink: "https://www.airbnb.com/rp/eduardos73?p=stay&s=67&unique_share_id=b4245d92-dcf3-4666-9450-d809ab89e897",
     setupCost: 2500,
     roi: 2,
     formFields: [

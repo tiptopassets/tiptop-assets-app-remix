@@ -127,6 +127,7 @@ export interface AdditionalOpportunity {
   monthlyRevenue: number;
   description: string;
   provider?: string;
+  referralLink?: string;
   setupCost?: number;
   roi?: number;
   formFields?: FormField[];
