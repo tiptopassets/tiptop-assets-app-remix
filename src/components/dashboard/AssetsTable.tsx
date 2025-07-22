@@ -135,7 +135,7 @@ export const AssetsTable = ({ analysisResults, isAssetConfigured, analysisId }: 
                 <TableCell>{asset.setupCost}</TableCell>
                 <TableCell>
                   {!asset.potential ? (
-                    <Badge variant="secondary">Not Available</Badge>
+                    <Badge variant="secondary">Not Detected</Badge>
                   ) : isConfigured ? (
                     <Badge className="bg-green-100 text-green-800 border-green-200">
                       Selected

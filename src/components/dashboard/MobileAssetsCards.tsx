@@ -131,7 +131,7 @@ export const MobileAssetsCards = ({ analysisResults, isAssetConfigured, analysis
 
               <div className="pt-2">
                 {!asset.potential ? (
-                  <Badge variant="secondary" className="w-full justify-center">Not Available</Badge>
+                  <Badge variant="secondary" className="w-full justify-center">Not Detected</Badge>
                 ) : isConfigured ? (
                   <Badge className="bg-green-100 text-green-800 border-green-200 w-full justify-center">
                     Selected
