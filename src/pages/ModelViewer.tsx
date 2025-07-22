@@ -270,7 +270,6 @@ const ModelViewer = () => {
       <header className="p-4 md:p-6 flex justify-between items-center">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold text-tiptop-purple">tiptop</h1>
-          <p className="text-sm text-gray-400">Property Analysis Summary</p>
         </div>
         <Button 
           variant="ghost" 
