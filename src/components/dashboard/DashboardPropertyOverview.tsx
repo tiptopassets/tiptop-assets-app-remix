@@ -143,7 +143,7 @@ const DashboardPropertyOverview: React.FC<DashboardPropertyOverviewProps> = ({
               <div>
                 <p className="text-sm font-medium text-gray-700 mb-2">Selected Assets</p>
                 <div className="space-y-2">
-                  {selectedAssets.slice(0, 3).map((asset) => (
+                  {selectedAssets.map((asset) => (
                     <div key={asset.type} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                       <div>
                         <p className="font-medium text-gray-900">{asset.name}</p>
