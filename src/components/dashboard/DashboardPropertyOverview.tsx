@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { MapPin, TrendingUp, Zap, MessageSquare, Image as ImageIcon, Loader2 } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { UserPropertyAnalysis } from '@/types/userData';
 import { navigateToChatbot } from '@/utils/navigationHelpers';
 import { useNavigate } from 'react-router-dom';
@@ -131,7 +132,7 @@ const DashboardPropertyOverview: React.FC<DashboardPropertyOverviewProps> = ({
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <MapPin className="h-5 w-5 text-tiptop-purple" />
-          Property Overview
+          Overview
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -230,23 +231,32 @@ const DashboardPropertyOverview: React.FC<DashboardPropertyOverviewProps> = ({
         </div>
 
         <div className="pt-4 border-t mt-6">
-          <Button
-            onClick={() => handleStartAssetSetup()}
-            disabled={navigatingGeneral || navigatingAsset !== null}
-            className="w-full bg-tiptop-purple hover:bg-purple-600 disabled:opacity-50"
-          >
-            {navigatingGeneral ? (
-              <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Loading AI Assistant...
-              </>
-            ) : (
-              <>
-                <MessageSquare className="h-4 w-4 mr-2" />
-                Start AI Assistant
-              </>
-            )}
-          </Button>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  onClick={() => handleStartAssetSetup()}
+                  disabled={navigatingGeneral || navigatingAsset !== null}
+                  className="w-full bg-tiptop-purple hover:bg-purple-600 disabled:opacity-50"
+                >
+                  {navigatingGeneral ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Loading AI Assistant...
+                    </>
+                  ) : (
+                    <>
+                      <MessageSquare className="h-4 w-4 mr-2" />
+                      Start AI Assistant
+                    </>
+                  )}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Upload your assets and start earning with AI-powered assistance</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </div>
       </CardContent>
     </Card>
