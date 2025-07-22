@@ -25,7 +25,7 @@ const AnalyticsDashboard = () => {
       const existingAssetIndex = acc.findIndex(asset => asset.asset_type === assetType);
       
       if (existingAssetIndex !== -1) {
-        // Keep the more recent selection and sum the revenues
+        // Keep the more recent selection (replace, don't sum)
         const existingDate = new Date(acc[existingAssetIndex].selected_at);
         const currentDate = new Date(selection.selected_at);
         
@@ -33,13 +33,12 @@ const AnalyticsDashboard = () => {
           acc[existingAssetIndex] = {
             asset_type: assetType,
             name: displayName,
-            monthly_revenue: acc[existingAssetIndex].monthly_revenue + selection.monthly_revenue,
+            monthly_revenue: selection.monthly_revenue,
             setup_cost: selection.setup_cost,
             selected_at: selection.selected_at
           };
-        } else {
-          acc[existingAssetIndex].monthly_revenue += selection.monthly_revenue;
         }
+        // Don't sum revenues - keep only the most recent selection
       } else {
         // First occurrence of this asset type
         acc.push({
