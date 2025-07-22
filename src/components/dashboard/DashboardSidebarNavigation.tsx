@@ -172,11 +172,11 @@ const DashboardSidebarNavigation = () => {
                     )}
                   >
                     <item.icon size={18} />
-                    <div className="flex-1">
-                      <div className="font-medium">{item.name}</div>
+                    <div className="flex-1 min-w-0">
+                      <div className="font-medium truncate">{item.name}</div>
                     </div>
                     {item.badge && (
-                      <Badge variant="secondary" className="text-xs">
+                      <Badge variant="secondary" className="text-xs px-1.5 py-0.5 h-5 text-[10px] font-medium shrink-0">
                         {item.badge}
                       </Badge>
                     )}
