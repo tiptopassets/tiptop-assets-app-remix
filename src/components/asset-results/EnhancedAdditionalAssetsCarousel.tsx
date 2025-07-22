@@ -144,6 +144,7 @@ const EnhancedAdditionalAssetsCarousel = ({
               src={`/lovable-uploads/${
                 iconType === 'wifi' ? 'f5bf9c32-688f-4a52-8a95-4d803713d2ff.png' : 
                 iconType === 'storage' ? '417dfc9f-434d-4b41-aec2-fca0d8c4cb23.png' :
+                iconType === 'pool' ? '6f86ef27-873e-4a4f-b5ec-05f2a25d3a83.png' :
                 'ef52333e-7ea8-4692-aeed-9a222da95b75.png'
               }`}
               alt={`${opportunity.title} Icon`}
@@ -178,6 +179,7 @@ const EnhancedAdditionalAssetsCarousel = ({
                 src={`/lovable-uploads/${
                   iconType === 'wifi' ? 'f5bf9c32-688f-4a52-8a95-4d803713d2ff.png' : 
                   iconType === 'storage' ? '417dfc9f-434d-4b41-aec2-fca0d8c4cb23.png' :
+                  iconType === 'pool' ? '6f86ef27-873e-4a4f-b5ec-05f2a25d3a83.png' :
                   'ef52333e-7ea8-4692-aeed-9a222da95b75.png'
                 }`}
                 alt={`${opportunity.title} Icon`}
