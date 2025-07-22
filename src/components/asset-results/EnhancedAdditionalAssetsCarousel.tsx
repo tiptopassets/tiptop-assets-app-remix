@@ -226,30 +226,6 @@ const EnhancedAdditionalAssetsCarousel = ({
       {/* Filter and Sort Controls */}
       <div className="flex flex-col sm:flex-row flex-wrap gap-3 sm:gap-4 mb-4 sm:mb-6 glass-effect p-3 sm:p-4 rounded-lg">
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
-          <div className="flex items-center gap-2">
-            <Filter className="h-4 w-4 text-white" />
-            <span className="text-white text-sm font-medium">Filter:</span>
-          </div>
-          <Select value={filterType} onValueChange={setFilterType}>
-            <SelectTrigger className="w-full sm:w-48 bg-white/10 border-white/20 text-white text-sm">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Opportunities</SelectItem>
-              <SelectItem value="high-revenue">High Revenue ($200+)</SelectItem>
-              <SelectItem value="medium-revenue">Medium Revenue ($75-$199)</SelectItem>
-              <SelectItem value="low-revenue">Lower Revenue ($25-$74)</SelectItem>
-              <SelectItem value="space-rentals">Space Rentals</SelectItem>
-              <SelectItem value="home-services">Home Services</SelectItem>
-              <SelectItem value="pet-services">Pet & Care Services</SelectItem>
-              <SelectItem value="logistics">Logistics & Storage</SelectItem>
-              <SelectItem value="community">Community Services</SelectItem>
-              <SelectItem value="tech">Tech Infrastructure</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
           <span className="text-white text-sm font-medium">Sort by:</span>
           <Select value={sortBy} onValueChange={setSortBy}>
             <SelectTrigger className="w-full sm:w-40 bg-white/10 border-white/20 text-white text-sm">
@@ -267,6 +243,47 @@ const EnhancedAdditionalAssetsCarousel = ({
         <div className="sm:ml-auto text-white text-xs sm:text-sm">
           Showing {filteredOpportunities.length} of {opportunities.length} opportunities
         </div>
+      </div>
+
+      {/* Category Carousel */}
+      <div className="mb-4 sm:mb-6">
+        <Carousel 
+          className="w-full"
+          opts={{
+            align: "start",
+            dragFree: true
+          }}
+        >
+          <CarouselContent className="-ml-2 md:-ml-4">
+            {[
+              { key: "all", label: "All Opportunities" },
+              { key: "high-revenue", label: "High Revenue ($200+)" },
+              { key: "medium-revenue", label: "Medium Revenue ($75–$199)" },
+              { key: "low-revenue", label: "Lower Revenue ($25–$74)" },
+              { key: "space-rentals", label: "Space Rentals" },
+              { key: "home-services", label: "Home Services" },
+              { key: "pet-services", label: "Pet & Care Services" },
+              { key: "logistics", label: "Logistics & Storage" },
+              { key: "community", label: "Community Services" },
+              { key: "tech", label: "Tech Infrastructure" }
+            ].map((category) => (
+              <CarouselItem key={category.key} className="pl-2 md:pl-4 basis-auto">
+                <Button
+                  variant={filterType === category.key ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setFilterType(category.key)}
+                  className={`whitespace-nowrap transition-all duration-200 ${
+                    filterType === category.key
+                      ? "bg-white text-black hover:bg-white/90"
+                      : "bg-white/10 text-white border-white/20 hover:bg-white/20"
+                  }`}
+                >
+                  {category.label}
+                </Button>
+              </CarouselItem>
+            ))}
+          </CarouselContent>
+        </Carousel>
       </div>
       
       <Carousel 
