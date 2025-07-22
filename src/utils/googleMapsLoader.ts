@@ -1,37 +1,47 @@
-
 import { Loader } from '@googlemaps/js-api-loader';
 import { supabase } from '@/integrations/supabase/client';
 
-// Securely fetch Google Maps API key
+// Securely fetch Google Maps API key with enhanced error handling
 const fetchGoogleMapsApiKey = async (): Promise<string> => {
+  console.log('🔑 Fetching Google Maps API key...');
+  
   // 1. Try environment variable first
   const envApiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
   if (envApiKey) {
-    console.log('Using Google Maps API key from environment variable');
+    console.log('✅ Using Google Maps API key from environment variable');
     return envApiKey;
   }
   
   // 2. Fallback to Supabase edge function using the client
   try {
-    console.log('Fetching Google Maps API key from Supabase edge function');
-    const { data, error } = await supabase.functions.invoke('get-google-maps-key', {
+    console.log('🔄 Fetching Google Maps API key from Supabase edge function');
+    
+    // Add timeout to the edge function call
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      setTimeout(() => reject(new Error('API key fetch timeout')), 15000);
+    });
+    
+    const fetchPromise = supabase.functions.invoke('get-google-maps-key', {
       body: { origin: window.location.origin }
     });
     
+    const { data, error } = await Promise.race([fetchPromise, timeoutPromise]);
+    
     if (error) {
-      console.error('Error from Supabase function:', error);
+      console.error('❌ Error from Supabase function:', error);
       throw new Error(`Supabase function error: ${error.message}`);
     }
     
     if (!data?.apiKey) {
+      console.error('❌ No API key returned from server');
       throw new Error('No API key returned from server');
     }
     
-    console.log('Successfully retrieved API key from Supabase');
+    console.log('✅ Successfully retrieved API key from Supabase');
     return data.apiKey;
   } catch (error) {
-    console.error('Failed to get Google Maps API key:', error);
-    throw new Error('Google Maps API key not available. Please check your configuration.');
+    console.error('❌ Failed to get Google Maps API key:', error);
+    throw new Error(`Google Maps API key not available: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 };
 
@@ -41,13 +51,21 @@ let apiKey: string = '';
 export const loadGoogleMaps = async (): Promise<typeof google.maps> => {
   if (!googleMapsPromise) {
     try {
-      // Get the API key first
-      apiKey = await fetchGoogleMapsApiKey();
+      console.log('🚀 Initializing Google Maps loader...');
+      
+      // Get the API key first with timeout protection
+      const keyFetchPromise = fetchGoogleMapsApiKey();
+      const keyTimeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => reject(new Error('API key fetch timeout after 15 seconds')), 15000);
+      });
+      
+      apiKey = await Promise.race([keyFetchPromise, keyTimeoutPromise]);
       
       if (!apiKey) {
         throw new Error('Google Maps API key not available');
       }
       
+      console.log('📚 Creating Google Maps loader with API key');
       const loader = new Loader({
         apiKey: apiKey,
         version: 'weekly',
@@ -55,11 +73,16 @@ export const loadGoogleMaps = async (): Promise<typeof google.maps> => {
       });
 
       googleMapsPromise = loader.load().then((google) => {
-        console.log('Google Maps API loaded successfully');
+        console.log('✅ Google Maps API loaded successfully');
         return google.maps;
+      }).catch((error) => {
+        console.error('❌ Google Maps loader failed:', error);
+        // Reset promise so it can be retried
+        googleMapsPromise = null;
+        throw new Error(`Google Maps loader failed: ${error.message}`);
       });
     } catch (error) {
-      console.error('Error initializing Google Maps:', error);
+      console.error('❌ Error initializing Google Maps:', error);
       // Reset promise so it can be retried
       googleMapsPromise = null;
       throw error;
@@ -79,18 +102,29 @@ export const getGoogleMapsApiKey = async (): Promise<string> => {
   return apiKey;
 };
 
-// Verify API key configuration
+// Verify API key configuration with timeout
 export const verifyApiKeyConfiguration = async (): Promise<{ valid: boolean; message: string }> => {
   try {
-    const key = await getGoogleMapsApiKey();
-    if (!key) {
-      return { valid: false, message: 'Google Maps API key not configured' };
-    }
+    console.log('🔍 Verifying API key configuration...');
     
-    await loadGoogleMaps();
-    return { valid: true, message: 'API key is valid and Maps loaded successfully' };
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      setTimeout(() => reject(new Error('Verification timeout')), 10000);
+    });
+    
+    const verifyPromise = async () => {
+      const key = await getGoogleMapsApiKey();
+      if (!key) {
+        return { valid: false, message: 'Google Maps API key not configured' };
+      }
+      
+      await loadGoogleMaps();
+      return { valid: true, message: 'API key is valid and Maps loaded successfully' };
+    };
+    
+    return await Promise.race([verifyPromise(), timeoutPromise]);
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error occurred';
+    console.error('❌ API key verification failed:', message);
     return { valid: false, message: `API key validation failed: ${message}` };
   }
 };
