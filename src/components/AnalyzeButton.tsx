@@ -208,7 +208,7 @@ const AnalyzeButton = () => {
               <>🔄 Selecting address automatically...</>
             ) : (
               <>⚠️ Please select your address from the dropdown suggestions<br/>
-              <span className="text-xs text-amber-400">📋 Choose from the list to ensure accurate analysis</span></>
+              <span className="text-xs text-amber-400">Please click on your address again</span></>
             )
           ) : user ? (
             <>🚀 Multi-source analysis with Google Solar + GPT-4o<br/>
