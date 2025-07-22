@@ -21,18 +21,28 @@ const ModelViewer = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [selectedAssets, setSelectedAssets] = useState<string[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   
   useEffect(() => {
-    // Redirect if no images or analysis are available
-    if (status !== 'completed' || (!propertyImages.satellite && !propertyImages.streetView)) {
-      toast({
-        title: "No Property Images Available",
-        description: "Please complete the property analysis first",
-        variant: "destructive"
-      });
-      navigate('/');
-    }
-  }, [status, propertyImages, navigate, toast]);
+    // Add a small delay to ensure all components are properly initialized
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+      
+      // Check if we have the necessary data
+      if (!analysisResults || !address) {
+        console.log('No analysis results or address, redirecting to home...');
+        toast({
+          title: "No Property Data Available",
+          description: "Please complete the property analysis first",
+          variant: "destructive"
+        });
+        navigate('/');
+        return;
+      }
+    }, 100);
+
+    return () => clearTimeout(timer);
+  }, [analysisResults, address, navigate, toast]);
 
   useEffect(() => {
     // Initialize selected assets from user selections
@@ -42,10 +52,26 @@ const ModelViewer = () => {
     }
   }, [assetSelections]);
 
-  if (!analysisResults) {
+  // Show loading state while initializing
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black text-white flex items-center justify-center">
-        <p>No property analysis available. Please analyze a property first.</p>
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
+          <p>Loading property summary...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Early return if no analysis results
+  if (!analysisResults || !address) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black text-white flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-xl mb-4">No property analysis available</p>
+          <Button onClick={() => navigate('/')}>Go Home</Button>
+        </div>
       </div>
     );
   }
@@ -117,28 +143,37 @@ const ModelViewer = () => {
   );
 
   const handleAssetToggle = async (asset: any) => {
-    const isCurrentlySelected = selectedAssets.some(selectedId => 
-      selectedId.toLowerCase().includes(asset.id.toLowerCase()) ||
-      asset.id.toLowerCase().includes(selectedId.toLowerCase())
-    );
-
-    if (isCurrentlySelected) {
-      // Remove from selection
-      setSelectedAssets(prev => prev.filter(id => 
-        !id.toLowerCase().includes(asset.id.toLowerCase()) &&
-        !asset.id.toLowerCase().includes(id.toLowerCase())
-      ));
-    } else {
-      // Add to selection
-      setSelectedAssets(prev => [...prev, asset.id]);
-      
-      // Save the selection
-      await saveSelection(
-        asset.id,
-        asset,
-        asset.revenue,
-        asset.setupCost || 0
+    try {
+      const isCurrentlySelected = selectedAssets.some(selectedId => 
+        selectedId.toLowerCase().includes(asset.id.toLowerCase()) ||
+        asset.id.toLowerCase().includes(selectedId.toLowerCase())
       );
+
+      if (isCurrentlySelected) {
+        // Remove from selection
+        setSelectedAssets(prev => prev.filter(id => 
+          !id.toLowerCase().includes(asset.id.toLowerCase()) &&
+          !asset.id.toLowerCase().includes(id.toLowerCase())
+        ));
+      } else {
+        // Add to selection
+        setSelectedAssets(prev => [...prev, asset.id]);
+        
+        // Save the selection
+        await saveSelection(
+          asset.id,
+          asset,
+          asset.revenue,
+          asset.setupCost || 0
+        );
+      }
+    } catch (error) {
+      console.error('Error toggling asset:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update asset selection",
+        variant: "destructive"
+      });
     }
   };
 
