@@ -33,7 +33,9 @@ import {
   Users,
   MousePointer,
   TrendingUp,
-  Calendar
+  Calendar,
+  Mail,
+  User
 } from "lucide-react";
 import { ServiceIntegration, PartnerClick } from "@/hooks/useServiceIntegrations";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
@@ -112,6 +114,17 @@ const ServiceIntegrationsTable = ({
     });
   };
 
+  // Check if partner has clicks - either from total_clicks or partnerClicks data
+  const hasClicks = (integration: ServiceIntegration) => {
+    return integration.total_clicks > 0 || (partnerClicks[integration.name] && partnerClicks[integration.name].length > 0);
+  };
+
+  // Get actual click count for display
+  const getClickCount = (integration: ServiceIntegration) => {
+    const actualClicks = partnerClicks[integration.name]?.length || 0;
+    return Math.max(integration.total_clicks, actualClicks);
+  };
+
   // Use mobile cards on small screens
   if (isMobile) {
     return <MobileServiceIntegrationsCards integrations={integrations} loading={loading} onUpdateStatus={onUpdateStatus} />;
@@ -139,7 +152,7 @@ const ServiceIntegrationsTable = ({
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {integrations.reduce((sum, partner) => sum + partner.total_clicks, 0)}
+                {integrations.reduce((sum, partner) => sum + getClickCount(partner), 0)}
               </div>
             </CardContent>
           </Card>
@@ -235,7 +248,7 @@ const ServiceIntegrationsTable = ({
                       <TableCell>
                         <div className="flex items-center">
                           <MousePointer className="h-4 w-4 mr-1 text-blue-500" />
-                          <span className="font-medium">{integration.total_clicks}</span>
+                          <span className="font-medium">{getClickCount(integration)}</span>
                         </div>
                       </TableCell>
                       <TableCell>
@@ -248,7 +261,7 @@ const ServiceIntegrationsTable = ({
                       <TableCell>{getStatusBadge(integration.status)}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex items-center gap-2 justify-end">
-                          {integration.total_clicks > 0 && (
+                          {hasClicks(integration) && (
                             <Button
                               variant="outline"
                               size="sm"
@@ -303,8 +316,20 @@ const ServiceIntegrationsTable = ({
                               {partnerClicks[integration.name].map((click, index) => (
                                 <div key={click.id} className="flex items-center justify-between bg-white p-3 rounded border text-sm">
                                   <div className="flex items-center space-x-3">
-                                    <div className="text-xs font-mono bg-gray-100 px-2 py-1 rounded">
-                                      {click.user_id.substring(0, 8)}...
+                                    <div className="flex items-center space-x-2">
+                                      {click.user_email ? (
+                                        <div className="flex items-center space-x-1">
+                                          <Mail className="h-3 w-3 text-blue-500" />
+                                          <span className="text-blue-600 font-medium">{click.user_email}</span>
+                                        </div>
+                                      ) : (
+                                        <div className="flex items-center space-x-1">
+                                          <User className="h-3 w-3 text-gray-500" />
+                                          <span className="text-xs font-mono bg-gray-100 px-2 py-1 rounded">
+                                            {click.user_id.substring(0, 8)}...
+                                          </span>
+                                        </div>
+                                      )}
                                     </div>
                                     <div className="flex items-center text-gray-500">
                                       <Calendar className="h-3 w-3 mr-1" />
@@ -362,7 +387,7 @@ const ServiceIntegrationsTable = ({
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <h4 className="font-medium mb-1">Total Clicks</h4>
-                  <p className="text-2xl font-bold text-blue-600">{selectedIntegration.total_clicks}</p>
+                  <p className="text-2xl font-bold text-blue-600">{getClickCount(selectedIntegration)}</p>
                 </div>
                 <div>
                   <h4 className="font-medium mb-1">Conversion Rate</h4>

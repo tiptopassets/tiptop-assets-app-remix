@@ -71,10 +71,33 @@ export const useServiceIntegrations = () => {
 
         console.log('Fetched clicks:', clicksData?.length || 0);
 
-        // Process the data
+        // Fetch user emails for better identification
+        const userIds = [...new Set(clicksData?.map(click => click.user_id).filter(Boolean) || [])];
+        const userEmails: Record<string, string> = {};
+        
+        if (userIds.length > 0) {
+          // Fetch user emails from auth.users (via RPC or direct query if available)
+          // For now, we'll use a placeholder approach since we can't directly access auth.users
+          // In a real implementation, you'd need an RPC function or stored procedure
+          try {
+            const { data: userData, error: userError } = await supabase.auth.admin.listUsers();
+            if (userData?.users && !userError) {
+              userData.users.forEach(user => {
+                if (user.id && user.email) {
+                  userEmails[user.id] = user.email;
+                }
+              });
+            }
+          } catch (authError) {
+            console.warn('Could not fetch user emails:', authError);
+          }
+        }
+
+        // Process the data with improved matching logic
         const processedIntegrations: ServiceIntegration[] = (providersData || []).map(provider => {
+          // Use case-insensitive matching and trim whitespace
           const providerClicks = clicksData?.filter(click => 
-            click.partner_name === provider.name
+            click.partner_name?.toLowerCase().trim() === provider.name?.toLowerCase().trim()
           ) || [];
 
           const totalClicks = providerClicks.length;
@@ -83,6 +106,8 @@ export const useServiceIntegrations = () => {
           ).length;
           
           const conversionRate = totalClicks > 0 ? (completedRegistrations / totalClicks) * 100 : 0;
+
+          console.log(`Processing ${provider.name}: ${totalClicks} clicks, ${completedRegistrations} completed`);
 
           return {
             id: provider.id,
@@ -105,23 +130,26 @@ export const useServiceIntegrations = () => {
         console.log('Processed integrations:', processedIntegrations.length);
         setIntegrations(processedIntegrations);
 
-        // Group clicks by partner for detailed view
+        // Group clicks by partner for detailed view with user emails
         const groupedClicks: Record<string, PartnerClick[]> = {};
         for (const click of clicksData || []) {
-          if (!groupedClicks[click.partner_name]) {
-            groupedClicks[click.partner_name] = [];
+          const partnerName = click.partner_name;
+          if (!groupedClicks[partnerName]) {
+            groupedClicks[partnerName] = [];
           }
           
-          groupedClicks[click.partner_name].push({
+          groupedClicks[partnerName].push({
             id: click.id,
             user_id: click.user_id,
             partner_name: click.partner_name,
             referral_link: click.referral_link || '',
             clicked_at: click.created_at || '',
-            integration_status: click.integration_status || 'pending'
+            integration_status: click.integration_status || 'pending',
+            user_email: userEmails[click.user_id] || undefined
           });
         }
 
+        console.log('Grouped clicks:', Object.keys(groupedClicks).length, 'partners');
         setPartnerClicks(groupedClicks);
       } catch (err) {
         console.error('Error fetching integrations:', err);
