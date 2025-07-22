@@ -138,7 +138,7 @@ export const AssetsTable = ({ analysisResults, isAssetConfigured, analysisId }: 
                     <Badge variant="secondary">Not Available</Badge>
                   ) : isConfigured ? (
                     <Badge className="bg-green-100 text-green-800 border-green-200">
-                      Configured
+                      Selected
                     </Badge>
                   ) : (
                     <Button

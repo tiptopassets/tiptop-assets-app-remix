@@ -134,7 +134,7 @@ export const MobileAssetsCards = ({ analysisResults, isAssetConfigured, analysis
                   <Badge variant="secondary" className="w-full justify-center">Not Available</Badge>
                 ) : isConfigured ? (
                   <Badge className="bg-green-100 text-green-800 border-green-200 w-full justify-center">
-                    Configured
+                    Selected
                   </Badge>
                 ) : (
                   <Button
