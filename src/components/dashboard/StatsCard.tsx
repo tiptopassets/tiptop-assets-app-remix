@@ -61,14 +61,14 @@ export const StatsCard = ({
       <div className="absolute inset-0 bg-white/40 backdrop-blur-[1px]"></div>
       <div className="absolute top-0 right-0 h-16 w-16 bg-gradient-to-bl from-white/60 to-transparent rounded-bl-full"></div>
       
-      <CardHeader className="pb-2 relative z-10">
+      <CardHeader className="pb-1 md:pb-2 relative z-10">
         <div className="flex justify-between items-start">
-          <CardTitle className="text-sm font-medium text-gray-500">{title}</CardTitle>
-          {icon && <div className="text-gray-400">{icon}</div>}
+          <CardTitle className="text-xs md:text-sm font-medium text-gray-500">{title}</CardTitle>
+          {icon && <div className="text-gray-400 md:block hidden">{icon}</div>}
         </div>
       </CardHeader>
-      <CardContent className="relative z-10">
-        <div className="text-2xl font-bold">{value}</div>
+      <CardContent className="relative z-10 pt-1 md:pt-6">
+        <div className="text-lg md:text-2xl font-bold">{value}</div>
         
         {(description || trend) && (
           <div className="mt-2 flex items-center">
