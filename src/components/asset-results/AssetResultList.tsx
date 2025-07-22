@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { motion } from "framer-motion";
+import { useNavigate } from 'react-router-dom';
 import { useAdditionalOpportunities } from '@/hooks/useAdditionalOpportunities';
 import { SelectedAsset } from '@/types/analysis';
 import AssetOpportunitiesGrid from './AssetOpportunitiesGrid';
@@ -24,6 +25,7 @@ const AssetResultList: React.FC<AssetResultListProps> = ({
   analysisResults, 
   onFormSectionToggle 
 }) => {
+  const navigate = useNavigate();
   const { additionalOpportunities, opportunitiesByTier, opportunitiesByCategory } = useAdditionalOpportunities();
   const [selectedAssets, setSelectedAssets] = useState<string[]>([]);
   const [selectedAssetsData, setSelectedAssetsData] = useState<SelectedAsset[]>([]);
@@ -246,11 +248,12 @@ const AssetResultList: React.FC<AssetResultListProps> = ({
     console.log('📋 Selected assets data:', selectedAssetsData);
     
     if (selectedAssets.length > 0) {
-      setShowAssetForm(true);
+      // Navigate to the new summary page instead of showing form
+      navigate('/model-viewer');
     } else {
       console.warn('⚠️ No assets selected when continue was clicked');
     }
-  }, [selectedAssets.length, selectedAssetsData]);
+  }, [selectedAssets.length, selectedAssetsData, navigate]);
 
   const handleFormComplete = useCallback(async () => {
     console.log('🚀🚀🚀 ATTEMPTING TO SAVE ASSET SELECTION WITH ROBUST RECOVERY 🚀🚀🚀');
