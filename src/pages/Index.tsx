@@ -49,8 +49,8 @@ const Index = () => {
     );
   }
 
-  // Check if we should show the banner (remove completed status to avoid popup)
-  const showBanner = status !== 'idle' && (status === 'capturing' || status === 'generating' || status === 'error');
+  // Check if we should show the banner (hide during capturing, show during generating and error)
+  const showBanner = status !== 'idle' && (status === 'generating' || status === 'error');
 
   return (
     <div className="min-h-screen relative overflow-hidden flex flex-col bg-gradient-to-b from-gray-900 to-black">
