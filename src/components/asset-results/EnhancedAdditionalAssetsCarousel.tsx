@@ -174,19 +174,17 @@ const EnhancedAdditionalAssetsCarousel = ({
         <div className="absolute inset-0 p-3 flex flex-col justify-between z-10">
           {/* Top: Small icon and title */}
           <div className="flex items-center gap-2">
-            <div className={`${isMobile ? 'w-6 h-6' : 'w-8 h-8'} bg-white/10 backdrop-blur rounded-lg flex items-center justify-center`}>
-              <img 
-                src={`/lovable-uploads/${
-                  iconType === 'wifi' ? 'f5bf9c32-688f-4a52-8a95-4d803713d2ff.png' : 
-                  iconType === 'storage' ? '417dfc9f-434d-4b41-aec2-fca0d8c4cb23.png' :
-                  iconType === 'pool' ? '6f86ef27-873e-4a4f-b5ec-05f2a25d3a83.png' :
-                  'ef52333e-7ea8-4692-aeed-9a222da95b75.png'
-                }`}
-                alt={`${opportunity.title} Icon`}
-                className={`${isMobile ? 'w-3 h-3' : 'w-4 h-4'} object-contain`}
-                style={{ filter: `drop-shadow(0 0 4px ${glowColor})` }}
-              />
-            </div>
+            <img 
+              src={`/lovable-uploads/${
+                iconType === 'wifi' ? 'f5bf9c32-688f-4a52-8a95-4d803713d2ff.png' : 
+                iconType === 'storage' ? '417dfc9f-434d-4b41-aec2-fca0d8c4cb23.png' :
+                iconType === 'pool' ? '6f86ef27-873e-4a4f-b5ec-05f2a25d3a83.png' :
+                'ef52333e-7ea8-4692-aeed-9a222da95b75.png'
+              }`}
+              alt={`${opportunity.title} Icon`}
+              className={`${isMobile ? 'w-6 h-6' : 'w-8 h-8'} object-contain`}
+              style={{ filter: `drop-shadow(0 0 4px ${glowColor})` }}
+            />
             {getRevenueTierIcon(opportunity.monthlyRevenue)}
           </div>
           
