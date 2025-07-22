@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -76,16 +75,15 @@ export const useServiceIntegrations = () => {
         const userEmails: Record<string, string> = {};
         
         if (userIds.length > 0) {
-          // Fetch user emails from auth.users via admin API
+          // Try to fetch user emails - this might not work with client-side auth
+          // but we'll attempt it and handle gracefully if it fails
           try {
-            const { data: authResponse, error: authError } = await supabase.auth.admin.listUsers();
-            if (authResponse?.users && !authError) {
-              authResponse.users.forEach(user => {
-                if (user.id && user.email) {
-                  userEmails[user.id] = user.email;
-                }
-              });
-            }
+            // Create a simple mapping for now - in production you'd want an RPC function
+            console.log('Attempting to fetch user details for', userIds.length, 'users');
+            
+            // Since we can't access auth.users directly from client, we'll skip email fetching for now
+            // and focus on making the click tracking work properly
+            console.log('Skipping email fetch - client-side auth.admin not available');
           } catch (authError) {
             console.warn('Could not fetch user emails:', authError);
           }
@@ -128,7 +126,7 @@ export const useServiceIntegrations = () => {
         console.log('Processed integrations:', processedIntegrations.length);
         setIntegrations(processedIntegrations);
 
-        // Group clicks by partner for detailed view with user emails
+        // Group clicks by partner for detailed view
         const groupedClicks: Record<string, PartnerClick[]> = {};
         for (const click of clicksData || []) {
           const partnerName = click.partner_name;
