@@ -3,6 +3,7 @@ import React from 'react';
 import { motion } from "framer-motion";
 import { AssetDistributionChart, TodayRevenueChart, RevenueOverTimeChart } from './RevenueCharts';
 import { AnalysisResults } from '@/types/analysis';
+import { useUserAssetSelections } from '@/hooks/useUserAssetSelections';
 
 interface DashboardChartsProps {
   analysisResults: AnalysisResults;
@@ -10,26 +11,33 @@ interface DashboardChartsProps {
 }
 
 export const DashboardCharts = ({ analysisResults, totalMonthlyRevenue }: DashboardChartsProps) => {
-  // Prepare chart data from analysis results
-  const chartData = [];
-  if (analysisResults?.rooftop?.revenue) {
-    chartData.push({ name: 'Solar/Rooftop', value: analysisResults.rooftop.revenue });
-  }
-  if (analysisResults?.parking?.revenue) {
-    chartData.push({ name: 'Parking', value: analysisResults.parking.revenue });
-  }
-  if (analysisResults?.garden?.revenue) {
-    chartData.push({ name: 'Garden', value: analysisResults.garden.revenue });
-  }
-  if (analysisResults?.pool?.revenue) {
-    chartData.push({ name: 'Pool', value: analysisResults.pool.revenue });
-  }
-  if (analysisResults?.storage?.revenue) {
-    chartData.push({ name: 'Storage', value: analysisResults.storage.revenue });
-  }
-  if (analysisResults?.bandwidth?.revenue) {
-    chartData.push({ name: 'Internet', value: analysisResults.bandwidth.revenue });
-  }
+  const { assetSelections } = useUserAssetSelections();
+  
+  // Prepare chart data from user's selected assets
+  const chartData = assetSelections.map(selection => ({
+    name: selection.asset_type.charAt(0).toUpperCase() + selection.asset_type.slice(1),
+    value: selection.monthly_revenue
+  }));
+
+  // Generate time series data with some variation
+  const generateTimeSeriesData = () => {
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
+    return months.map(month => {
+      const data: any = { name: month };
+      assetSelections.forEach(selection => {
+        const assetName = selection.asset_type.charAt(0).toUpperCase() + selection.asset_type.slice(1);
+        // Add some realistic variation (±15%)
+        const variation = 0.85 + Math.random() * 0.3;
+        data[assetName] = Math.round(selection.monthly_revenue * variation);
+      });
+      return data;
+    });
+  };
+
+  const timeSeriesData = generateTimeSeriesData();
+  const timeSeriesKeys = assetSelections.map(selection => 
+    selection.asset_type.charAt(0).toUpperCase() + selection.asset_type.slice(1)
+  );
 
   return (
     <motion.div 
@@ -41,12 +49,8 @@ export const DashboardCharts = ({ analysisResults, totalMonthlyRevenue }: Dashbo
         <AssetDistributionChart data={chartData} />
         <TodayRevenueChart amount={totalMonthlyRevenue / 30} increasePercentage={15} />
         <RevenueOverTimeChart 
-          data={[
-            { name: 'Jan', Solar: analysisResults?.rooftop?.revenue || 0, Parking: analysisResults?.parking?.revenue || 0 },
-            { name: 'Feb', Solar: analysisResults?.rooftop?.revenue || 0, Parking: analysisResults?.parking?.revenue || 0 },
-            { name: 'Mar', Solar: analysisResults?.rooftop?.revenue || 0, Parking: analysisResults?.parking?.revenue || 0 },
-          ]}
-          keys={['Solar', 'Parking']}
+          data={timeSeriesData}
+          keys={timeSeriesKeys}
         />
       </div>
     </motion.div>
