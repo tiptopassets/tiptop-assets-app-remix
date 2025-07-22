@@ -16,13 +16,19 @@ export const DashboardCharts = ({ analysisResults, totalMonthlyRevenue }: Dashbo
   // Deduplicate assets by type and sum their revenues
   const deduplicatedAssets = assetSelections.reduce((acc, selection) => {
     const assetType = selection.asset_type.toLowerCase();
+    const displayName = selection.asset_type.charAt(0).toUpperCase() + selection.asset_type.slice(1).replace('_', ' ');
+    
     if (acc[assetType]) {
+      // Sum the revenues for duplicate asset types
       acc[assetType].monthly_revenue += selection.monthly_revenue;
       acc[assetType].setup_cost += selection.setup_cost;
     } else {
+      // First occurrence of this asset type
       acc[assetType] = {
-        ...selection,
-        name: selection.asset_type.charAt(0).toUpperCase() + selection.asset_type.slice(1).replace('_', ' ')
+        asset_type: assetType,
+        name: displayName,
+        monthly_revenue: selection.monthly_revenue,
+        setup_cost: selection.setup_cost
       };
     }
     return acc;
