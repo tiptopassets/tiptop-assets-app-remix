@@ -13,7 +13,7 @@ interface RevenueByAssetProps {
 }
 
 interface TodayRevenueProps {
-  amount: number;
+  monthlyAmount: number;
   increasePercentage: number;
 }
 
@@ -23,6 +23,7 @@ interface RevenueOverTimeProps {
     [key: string]: number | string;
   }[];
   keys: string[];
+  title?: string;
 }
 
 const COLORS = ['#9b87f5', '#33C3F0', '#6E59A5', '#FF8042', '#FFBB28', '#00C49F'];
@@ -67,7 +68,10 @@ export const AssetDistributionChart = ({ data }: RevenueByAssetProps) => {
   );
 };
 
-export const TodayRevenueChart = ({ amount, increasePercentage }: TodayRevenueProps) => {
+export const TodayRevenueChart = ({ monthlyAmount, increasePercentage }: TodayRevenueProps) => {
+  const dailyAmount = monthlyAmount / 30;
+  const yearlyAmount = monthlyAmount * 12;
+  
   return (
     <Card className="h-full overflow-hidden border-0 shadow-md hover:shadow-lg transition-shadow duration-300 relative">
       {/* Glassmorphism effect */}
@@ -75,33 +79,46 @@ export const TodayRevenueChart = ({ amount, increasePercentage }: TodayRevenuePr
       <div className="absolute inset-0 bg-white/50 z-0"></div>
       
       <CardHeader className="relative z-10">
-        <CardTitle className="text-lg font-medium">Today's Revenue</CardTitle>
+        <CardTitle className="text-lg font-medium">Potential Revenue</CardTitle>
       </CardHeader>
-      <CardContent className="relative z-10 flex flex-col items-center justify-center pt-2">
-        <div className="text-4xl font-bold">${amount.toFixed(2)}</div>
+      <CardContent className="relative z-10 pt-2">
+        <div className="space-y-3">
+          <div className="text-center">
+            <div className="text-sm text-gray-500">Daily</div>
+            <div className="text-xl font-bold">${dailyAmount.toFixed(2)}</div>
+          </div>
+          <div className="text-center">
+            <div className="text-sm text-gray-500">Monthly</div>
+            <div className="text-2xl font-bold">${monthlyAmount.toFixed(2)}</div>
+          </div>
+          <div className="text-center">
+            <div className="text-sm text-gray-500">Yearly</div>
+            <div className="text-xl font-bold">${yearlyAmount.toLocaleString()}</div>
+          </div>
+        </div>
         <div className={cn(
-          "flex items-center mt-2 text-sm",
+          "flex items-center justify-center mt-4 text-sm",
           increasePercentage >= 0 ? "text-green-600" : "text-red-600"
         )}>
           <span>
             {increasePercentage >= 0 ? (
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M12 5L12 19M12 5L18 11M12 5L6 11" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             ) : (
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M12 19L12 5M12 19L18 13M12 19L6 13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             )}
           </span>
-          <span className="ml-1">{Math.abs(increasePercentage)}% from yesterday</span>
+          <span className="ml-1">{Math.abs(increasePercentage)}% potential growth</span>
         </div>
       </CardContent>
     </Card>
   );
 };
 
-export const RevenueOverTimeChart = ({ data, keys }: RevenueOverTimeProps) => {
+export const RevenueOverTimeChart = ({ data, keys, title = "Revenue Over Time" }: RevenueOverTimeProps) => {
   return (
     <Card className="h-full overflow-hidden border-0 shadow-md hover:shadow-lg transition-shadow duration-300 relative">
       {/* Glassmorphism effect */}
@@ -109,7 +126,7 @@ export const RevenueOverTimeChart = ({ data, keys }: RevenueOverTimeProps) => {
       <div className="absolute inset-0 bg-white/50 z-0"></div>
       
       <CardHeader className="relative z-10">
-        <CardTitle className="text-lg font-medium">Revenue Over Time</CardTitle>
+        <CardTitle className="text-lg font-medium">{title}</CardTitle>
       </CardHeader>
       <CardContent className="relative z-10 pt-2">
         <div className="h-[240px]">
@@ -120,7 +137,7 @@ export const RevenueOverTimeChart = ({ data, keys }: RevenueOverTimeProps) => {
             >
               <XAxis dataKey="name" />
               <YAxis />
-              <Tooltip formatter={(value) => [`$${value}`, 'Revenue']} />
+              <Tooltip formatter={(value) => [`$${value}`, title.includes('Setup') ? 'Setup Cost' : 'Revenue']} />
               <Legend />
               {keys.map((key, index) => (
                 <Bar key={key} dataKey={key} stackId="a" fill={COLORS[index % COLORS.length]} />
