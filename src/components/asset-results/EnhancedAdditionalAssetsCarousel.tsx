@@ -131,30 +131,15 @@ const EnhancedAdditionalAssetsCarousel = ({
     
     return (
       <div 
-        className={`${isMobile ? 'h-[100px]' : 'h-[120px]'} rounded-lg p-2 sm:p-3 flex flex-col glass-effect relative cursor-pointer transition-all duration-300 border border-white/10`}
-        style={{
-          background: `linear-gradient(to bottom right, ${glowColor.replace('0.5', '0.6')}, transparent)`,
-          boxShadow: isSelected ? `0 2px 8px ${glowColor.replace('0.5', '0.4')}` : `0 1px 4px ${glowColor.replace('0.5', '0.2')}`
-        }}
+        className={`${isMobile ? 'h-[100px]' : 'h-[120px]'} rounded-xl relative cursor-pointer transition-all duration-300 overflow-hidden group`}
         onClick={() => onAssetToggle(opportunity.title)}
+        style={{
+          boxShadow: isSelected ? `0 4px 20px ${glowColor.replace('0.5', '0.3')}` : `0 2px 10px rgba(0,0,0,0.3)`
+        }}
       >
-        {/* Selection indicator */}
-        <div className="absolute top-1 right-1">
-          <div className={`transition-all duration-300 ${
-            isSelected ? 'bg-white' : 'bg-white/20 border border-white/30'
-          } rounded-full p-0.5 shadow-sm`}>
-            {isSelected ? (
-              <Check className="h-2.5 w-2.5 text-tiptop-purple" />
-            ) : (
-              <Plus className="h-2.5 w-2.5 text-white" />
-            )}
-          </div>
-        </div>
-        
-        {/* Content */}
-        <div className="flex items-start gap-2 flex-1">
-          {/* Icon */}
-          <div className={`${isMobile ? 'w-6 h-6' : 'w-8 h-8'} glass-effect rounded-md flex items-center justify-center flex-shrink-0 mt-0.5`}>
+        {/* Background Image with Icon */}
+        <div className="absolute inset-0 bg-gradient-to-br from-gray-800 via-gray-700 to-gray-900">
+          <div className="absolute inset-0 flex items-center justify-center opacity-20">
             <img 
               src={`/lovable-uploads/${
                 iconType === 'wifi' ? 'f5bf9c32-688f-4a52-8a95-4d803713d2ff.png' : 
@@ -162,41 +147,67 @@ const EnhancedAdditionalAssetsCarousel = ({
                 'ef52333e-7ea8-4692-aeed-9a222da95b75.png'
               }`}
               alt={`${opportunity.title} Icon`}
-              className={`${isMobile ? 'w-3 h-3' : 'w-4 h-4'} object-contain`}
-              style={{ filter: `drop-shadow(0 0 2px ${glowColor})` }}
+              className="w-16 h-16 sm:w-20 sm:h-20 object-contain"
+              style={{ filter: `drop-shadow(0 0 10px ${glowColor})` }}
             />
           </div>
-          
-          {/* Text content */}
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-1 mb-0.5">
-              {getRevenueTierIcon(opportunity.monthlyRevenue)}
-              <h3 className={`${isMobile ? 'text-xs' : 'text-sm'} font-semibold text-white line-clamp-1`}>
-                {opportunity.title}
-              </h3>
-            </div>
-            <p className={`${isMobile ? 'text-sm' : 'text-base'} font-bold mb-0.5 ${getRevenueTierColor(opportunity.monthlyRevenue)}`}>
-              ${opportunity.monthlyRevenue}/mo
-            </p>
-            
-            {/* Provider */}
-            {opportunity.provider && (
-              <div className={`inline-block bg-white/15 text-white ${isMobile ? 'text-xs' : 'text-xs'} rounded-full px-1.5 py-0.5 font-medium`}>
-                {opportunity.provider}
-              </div>
-            )}
+        </div>
 
-            {/* Desktop: Show description */}
-            {!isMobile && (
-              <p className="text-xs text-gray-200 mt-1 line-clamp-2">
-                {opportunity.description}
-              </p>
+        {/* Gradient Overlay */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20"></div>
+        
+        {/* Selection indicator */}
+        <div className="absolute top-2 right-2 z-10">
+          <div className={`transition-all duration-300 ${
+            isSelected ? 'bg-green-500 scale-110' : 'bg-white/20 border border-white/30'
+          } rounded-full p-1 shadow-lg`}>
+            {isSelected ? (
+              <Check className="h-3 w-3 text-white" />
+            ) : (
+              <Plus className="h-3 w-3 text-white" />
             )}
           </div>
         </div>
         
-        {/* Enhanced glossy effect */}
-        <div className="absolute top-0 left-0 right-0 h-1/2 bg-gradient-to-b from-white/15 to-transparent rounded-t-lg pointer-events-none"></div>
+        {/* Content Overlay */}
+        <div className="absolute inset-0 p-3 flex flex-col justify-between z-10">
+          {/* Top: Small icon and title */}
+          <div className="flex items-center gap-2">
+            <div className={`${isMobile ? 'w-6 h-6' : 'w-8 h-8'} bg-white/10 backdrop-blur rounded-lg flex items-center justify-center`}>
+              <img 
+                src={`/lovable-uploads/${
+                  iconType === 'wifi' ? 'f5bf9c32-688f-4a52-8a95-4d803713d2ff.png' : 
+                  iconType === 'storage' ? '417dfc9f-434d-4b41-aec2-fca0d8c4cb23.png' :
+                  'ef52333e-7ea8-4692-aeed-9a222da95b75.png'
+                }`}
+                alt={`${opportunity.title} Icon`}
+                className={`${isMobile ? 'w-3 h-3' : 'w-4 h-4'} object-contain`}
+                style={{ filter: `drop-shadow(0 0 4px ${glowColor})` }}
+              />
+            </div>
+            {getRevenueTierIcon(opportunity.monthlyRevenue)}
+          </div>
+          
+          {/* Bottom: Title and Revenue */}
+          <div className="space-y-1">
+            <h3 className={`${isMobile ? 'text-sm' : 'text-base'} font-bold text-white drop-shadow-lg line-clamp-1`}>
+              {opportunity.title}
+            </h3>
+            <p className={`${isMobile ? 'text-base' : 'text-lg'} font-bold ${getRevenueTierColor(opportunity.monthlyRevenue)} drop-shadow-lg`}>
+              ${opportunity.monthlyRevenue}/mo
+            </p>
+            
+            {/* Provider Badge */}
+            {opportunity.provider && (
+              <div className="inline-block bg-white/20 backdrop-blur text-white text-xs rounded-full px-2 py-1 font-medium">
+                {opportunity.provider}
+              </div>
+            )}
+          </div>
+        </div>
+        
+        {/* Hover Effect */}
+        <div className="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
       </div>
     );
   };
