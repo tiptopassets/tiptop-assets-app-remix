@@ -40,8 +40,8 @@ const ModelViewer = () => {
     if (type.includes('pool')) return <SwimmingPoolIcon />;
     if (type.includes('bandwidth') || type.includes('internet')) return <WifiIcon />;
     if (type.includes('rental') || type.includes('term')) return <CarIcon />;
-    return <div className="w-12 h-12 bg-tiptop-purple/20 rounded-lg flex items-center justify-center">
-      <div className="w-6 h-6 bg-tiptop-purple rounded"></div>
+    return <div className="w-8 h-8 md:w-12 md:h-12 bg-tiptop-purple/20 rounded-lg flex items-center justify-center">
+      <div className="w-4 h-4 md:w-6 md:h-6 bg-tiptop-purple rounded"></div>
     </div>;
   };
 
@@ -283,43 +283,42 @@ const ModelViewer = () => {
 
       {/* Main content */}
       <div className="summary-content">
-        <div className="container mx-auto px-4 pb-20 mt-6 max-w-4xl">
+        <div className="container mx-auto px-4 pb-20 mt-2 md:mt-6 max-w-4xl">
           {/* Property Address */}
-          <div className="mb-6 text-center">
-            <h2 className="text-2xl font-bold">{address}</h2>
-            <p className="text-gray-400">Property Analysis Summary</p>
+          <div className="mb-4 md:mb-6 text-center">
+            <h2 className="text-lg md:text-2xl font-bold leading-tight">{address}</h2>
             <div className="mt-2">
-              <Badge className="bg-tiptop-purple text-white">
+              <Badge className="bg-tiptop-purple text-white text-xs md:text-sm">
                 Selected Income: ${totalSelectedRevenue}/month
               </Badge>
             </div>
           </div>
           
           {/* Summary Section */}
-          <div className="mt-8">
-            <div className="backdrop-blur-sm bg-white/5 border border-white/10 rounded-xl p-6">
-              <h2 className="text-xl font-bold mb-6 text-center text-white">Summary</h2>
+          <div className="mt-4 md:mt-8">
+            <div className="backdrop-blur-sm bg-white/5 border border-white/10 rounded-xl p-4 md:p-6">
+              <h2 className="text-lg md:text-xl font-bold mb-4 md:mb-6 text-center text-white">Summary</h2>
               
               {/* Selected Assets */}
-              <div className="mb-8">
-                <h3 className="text-lg font-semibold mb-4 text-green-400">Selected Assets</h3>
-                <div className="space-y-3">
+              <div className="mb-6 md:mb-8">
+                <h3 className="text-base md:text-lg font-semibold mb-3 md:mb-4 text-green-400">Selected Assets</h3>
+                <div className="space-y-2 md:space-y-3">
                   {selectedAssetDataToShow.map((asset, index) => (
                     <motion.div
                       key={index}
                       whileHover={{ translateY: -2 }}
-                      className="backdrop-blur-sm bg-white/5 border border-green-400/30 rounded-xl p-4"
+                      className="backdrop-blur-sm bg-white/5 border border-green-400/30 rounded-xl p-3 md:p-4"
                     >
                       <div className="flex items-center justify-between">
                         <div className="flex items-center">
-                          <div className="mr-4 w-12 h-12 flex items-center justify-center">
+                          <div className="mr-3 md:mr-4 w-8 h-8 md:w-12 md:h-12 flex items-center justify-center">
                             {getAssetIcon(asset.title)}
                           </div>
                           <div className="flex items-center">
-                            <Check className="h-5 w-5 text-green-400 mr-3" />
+                            <Check className="h-4 w-4 md:h-5 md:w-5 text-green-400 mr-2 md:mr-3" />
                             <div>
-                              <h4 className="font-medium text-white">{asset.title}</h4>
-                              <p className="text-sm text-gray-300">
+                              <h4 className="font-medium text-white text-sm md:text-base">{asset.title}</h4>
+                              <p className="text-xs md:text-sm text-gray-300">
                                 {asset.title === 'Internet Bandwidth Sharing' ? 'Share unused bandwidth for passive income' :
                                  asset.title === 'Personal Storage Rental' ? 'Rent out personal storage space within your unit' :
                                  `Asset: ${asset.title}`}
@@ -328,7 +327,7 @@ const ModelViewer = () => {
                           </div>
                         </div>
                         <div className="text-right">
-                          <p className="text-green-400 font-bold">${asset.monthlyRevenue}/month</p>
+                          <p className="text-green-400 font-bold text-sm md:text-base">${asset.monthlyRevenue}/month</p>
                         </div>
                       </div>
                     </motion.div>
@@ -338,31 +337,31 @@ const ModelViewer = () => {
               
               {/* Available Assets */}
               {unselectedAssets.length > 0 && (
-                <div className="mb-8">
-                  <h3 className="text-lg font-semibold mb-4 text-gray-400">Available Assets</h3>
-                  <div className="space-y-3">
+                <div className="mb-6 md:mb-8">
+                  <h3 className="text-base md:text-lg font-semibold mb-3 md:mb-4 text-gray-400">Available Assets</h3>
+                  <div className="space-y-2 md:space-y-3">
                     {unselectedAssets.map((asset, index) => (
                       <motion.div
                         key={index}
                         whileHover={{ translateY: -2 }}
-                        className="backdrop-blur-sm bg-white/5 border border-white/10 hover:border-white/20 cursor-pointer rounded-xl p-4 transition-all duration-300"
+                        className="backdrop-blur-sm bg-white/5 border border-white/10 hover:border-white/20 cursor-pointer rounded-xl p-3 md:p-4 transition-all duration-300"
                         onClick={() => handleAssetToggle(asset)}
                       >
                         <div className="flex items-center justify-between">
                           <div className="flex items-center">
-                            <div className="mr-4 w-12 h-12 flex items-center justify-center">
+                            <div className="mr-3 md:mr-4 w-8 h-8 md:w-12 md:h-12 flex items-center justify-center">
                               {getAssetIcon(asset.title)}
                             </div>
                             <div className="flex items-center">
-                              <Plus className="h-5 w-5 text-gray-400 mr-3" />
+                              <Plus className="h-4 w-4 md:h-5 md:w-5 text-gray-400 mr-2 md:mr-3" />
                               <div>
-                                <h4 className="font-medium text-white">{asset.title}</h4>
-                                <p className="text-sm text-gray-300">{asset.description}</p>
+                                <h4 className="font-medium text-white text-sm md:text-base">{asset.title}</h4>
+                                <p className="text-xs md:text-sm text-gray-300">{asset.description}</p>
                               </div>
                             </div>
                           </div>
                           <div className="text-right">
-                            <p className="text-gray-300 font-bold">${asset.monthlyRevenue}/month</p>
+                            <p className="text-gray-300 font-bold text-sm md:text-base">${asset.monthlyRevenue}/month</p>
                           </div>
                         </div>
                       </motion.div>
@@ -375,7 +374,7 @@ const ModelViewer = () => {
               <div className="text-center">
                 <Button 
                   onClick={() => navigate('/options')}
-                  className="glass-effect bg-gradient-to-r from-tiptop-purple to-purple-600 hover:opacity-90 px-8 py-6 rounded-full text-xl font-semibold text-white border-none shadow-lg hover:shadow-xl transition-all duration-300"
+                  className="glass-effect bg-gradient-to-r from-tiptop-purple to-purple-600 hover:opacity-90 px-6 py-4 md:px-8 md:py-6 rounded-full text-lg md:text-xl font-semibold text-white border-none shadow-lg hover:shadow-xl transition-all duration-300"
                   style={{ 
                     boxShadow: '0 0 20px rgba(155, 135, 245, 0.5)',
                   }}
