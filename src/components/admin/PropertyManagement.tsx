@@ -60,27 +60,7 @@ const PropertyManagement = () => {
       setLoading(true);
       console.log('Fetching property analyses...');
 
-      // First, let's check all tables for recent data
-      const { data: recentCheck, error: recentError } = await supabase
-        .from('user_property_analyses')
-        .select('id, created_at, user_id')
-        .order('created_at', { ascending: false })
-        .limit(10);
-
-      console.log('Recent analyses check:', recentCheck);
-      if (recentError) console.error('Recent check error:', recentError);
-
-      // Also check user_journey_complete for recent activity
-      const { data: journeyCheck, error: journeyError } = await supabase
-        .from('user_journey_complete')
-        .select('id, created_at, property_address, analysis_results')
-        .order('created_at', { ascending: false })
-        .limit(10);
-
-      console.log('Recent journey data:', journeyCheck);
-      if (journeyError) console.error('Journey check error:', journeyError);
-
-      // Fetch property analyses with expanded data
+      // Fetch property analyses from user_property_analyses table
       const { data: analysesData, error: analysesError } = await supabase
         .from('user_property_analyses')
         .select(`
@@ -101,11 +81,35 @@ const PropertyManagement = () => {
         throw analysesError;
       }
 
-      console.log('Fetched analyses:', analysesData?.length || 0);
-      console.log('Sample analysis:', analysesData?.[0]);
+      console.log('Fetched analyses from user_property_analyses:', analysesData?.length || 0);
 
-      // Process the data to extract property addresses and format properly
-      const processedProperties: PropertyAnalysis[] = (analysesData || []).map(analysis => {
+      // Also fetch recent journey data that contains analysis results but may not be in user_property_analyses
+      const { data: journeyData, error: journeyError } = await supabase
+        .from('user_journey_complete')
+        .select(`
+          id,
+          user_id,
+          property_address,
+          analysis_results,
+          total_monthly_revenue,
+          total_opportunities,
+          created_at,
+          updated_at,
+          analysis_id
+        `)
+        .not('analysis_results', 'is', null)
+        .order('created_at', { ascending: false })
+        .limit(200);
+
+      if (journeyError) {
+        console.error('Error fetching journey data:', journeyError);
+        throw journeyError;
+      }
+
+      console.log('Fetched journey data with analyses:', journeyData?.length || 0);
+
+      // Process analyses from user_property_analyses table
+      const processedFromAnalyses: PropertyAnalysis[] = (analysesData || []).map(analysis => {
         // Extract property address from analysis results with improved type checking
         let propertyAddress = 'Unknown Address';
         if (analysis.analysis_results) {
@@ -136,18 +140,78 @@ const PropertyManagement = () => {
         };
       });
 
-      console.log('Processed properties:', processedProperties.length);
-      setProperties(processedProperties);
+      // Process analyses from user_journey_complete table that aren't already in user_property_analyses
+      const existingAnalysisIds = new Set((analysesData || []).map(a => a.id));
+      const processedFromJourney: PropertyAnalysis[] = (journeyData || [])
+        .filter(journey => {
+          // Skip if this analysis_id already exists in user_property_analyses
+          return !journey.analysis_id || !existingAnalysisIds.has(journey.analysis_id);
+        })
+        .map(journey => {
+          // Extract property address and other data from journey analysis results
+          let propertyAddress = journey.property_address || 'Unknown Address';
+          let propertyType = 'Unknown';
+          let totalMonthlyRevenue = journey.total_monthly_revenue || 0;
+          let totalOpportunities = journey.total_opportunities || 0;
+
+          if (journey.analysis_results) {
+            try {
+              const results = journey.analysis_results as Record<string, any>;
+              propertyAddress = 
+                results.propertyAddress || 
+                results.address || 
+                results.property_address ||
+                journey.property_address ||
+                'Unknown Address';
+              
+              propertyType = results.propertyType || 'Unknown';
+              totalMonthlyRevenue = results.totalMonthlyRevenue || journey.total_monthly_revenue || 0;
+              
+              // Count opportunities from analysis results
+              if (results.topOpportunities && Array.isArray(results.topOpportunities)) {
+                totalOpportunities = results.topOpportunities.length;
+              }
+            } catch (e) {
+              console.warn('Error parsing journey analysis results for:', journey.id);
+            }
+          }
+
+          return {
+            id: journey.id,
+            user_id: journey.user_id || 'unknown',
+            property_address: propertyAddress,
+            property_type: propertyType,
+            total_monthly_revenue: totalMonthlyRevenue,
+            total_opportunities: totalOpportunities,
+            analysis_results: journey.analysis_results,
+            created_at: journey.created_at,
+            updated_at: journey.updated_at,
+            is_active: true,
+            coordinates: null
+          };
+        });
+
+      // Combine both sources of property data
+      const allProperties = [...processedFromAnalyses, ...processedFromJourney];
+      
+      // Sort by creation date (most recent first)
+      allProperties.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+      console.log('Processed properties from analyses table:', processedFromAnalyses.length);
+      console.log('Processed properties from journey table:', processedFromJourney.length);
+      console.log('Total combined properties:', allProperties.length);
+      
+      setProperties(allProperties);
 
       // Calculate statistics
-      const totalAnalyses = processedProperties.length;
+      const totalAnalyses = allProperties.length;
       const averageRevenue = totalAnalyses > 0 
-        ? processedProperties.reduce((sum, p) => sum + (p.total_monthly_revenue || 0), 0) / totalAnalyses
+        ? allProperties.reduce((sum, p) => sum + (p.total_monthly_revenue || 0), 0) / totalAnalyses
         : 0;
 
       // Count property types
       const propertyTypeCounts: Record<string, number> = {};
-      processedProperties.forEach(p => {
+      allProperties.forEach(p => {
         const type = p.property_type || 'Unknown';
         propertyTypeCounts[type] = (propertyTypeCounts[type] || 0) + 1;
       });
@@ -159,7 +223,7 @@ const PropertyManagement = () => {
       const sevenDaysAgo = new Date();
       sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
       
-      const recentAnalyses = processedProperties.filter(p => {
+      const recentAnalyses = allProperties.filter(p => {
         const createdAt = new Date(p.created_at);
         return createdAt >= sevenDaysAgo;
       }).length;
