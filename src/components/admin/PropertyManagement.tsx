@@ -5,10 +5,17 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Search, MapPin, TrendingUp, Calendar, DollarSign, Eye } from 'lucide-react';
+import { Search, MapPin, TrendingUp, Calendar, DollarSign, Eye, ArrowUpDown } from 'lucide-react';
 import { format } from 'date-fns';
 import PropertyDetailsDialog from './PropertyDetailsDialog';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 
 interface PropertyAnalysis {
   id: string;
@@ -45,13 +52,35 @@ const PropertyManagement = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedProperty, setSelectedProperty] = useState<PropertyAnalysis | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [sortBy, setSortBy] = useState<'created_at' | 'total_monthly_revenue' | 'property_address'>('created_at');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
   const fetchProperties = async () => {
     try {
       setLoading(true);
       console.log('Fetching property analyses...');
 
-      // Fetch property analyses with proper date handling
+      // First, let's check all tables for recent data
+      const { data: recentCheck, error: recentError } = await supabase
+        .from('user_property_analyses')
+        .select('id, created_at, user_id')
+        .order('created_at', { ascending: false })
+        .limit(10);
+
+      console.log('Recent analyses check:', recentCheck);
+      if (recentError) console.error('Recent check error:', recentError);
+
+      // Also check user_journey_complete for recent activity
+      const { data: journeyCheck, error: journeyError } = await supabase
+        .from('user_journey_complete')
+        .select('id, created_at, property_address, analysis_results')
+        .order('created_at', { ascending: false })
+        .limit(10);
+
+      console.log('Recent journey data:', journeyCheck);
+      if (journeyError) console.error('Journey check error:', journeyError);
+
+      // Fetch property analyses with expanded data
       const { data: analysesData, error: analysesError } = await supabase
         .from('user_property_analyses')
         .select(`
@@ -65,7 +94,7 @@ const PropertyManagement = () => {
           updated_at
         `)
         .order('created_at', { ascending: false })
-        .limit(100);
+        .limit(200);
 
       if (analysesError) {
         console.error('Error fetching analyses:', analysesError);
@@ -73,18 +102,23 @@ const PropertyManagement = () => {
       }
 
       console.log('Fetched analyses:', analysesData?.length || 0);
+      console.log('Sample analysis:', analysesData?.[0]);
 
       // Process the data to extract property addresses and format properly
       const processedProperties: PropertyAnalysis[] = (analysesData || []).map(analysis => {
-        // Extract property address from analysis results with proper type checking
+        // Extract property address from analysis results with improved type checking
         let propertyAddress = 'Unknown Address';
-        if (analysis.analysis_results && typeof analysis.analysis_results === 'object') {
-          const results = analysis.analysis_results as Record<string, any>;
-          propertyAddress = 
-            results.propertyAddress || 
-            results.address || 
-            results.property_address ||
-            'Unknown Address';
+        if (analysis.analysis_results) {
+          try {
+            const results = analysis.analysis_results as Record<string, any>;
+            propertyAddress = 
+              results.propertyAddress || 
+              results.address || 
+              results.property_address ||
+              'Unknown Address';
+          } catch (e) {
+            console.warn('Error parsing analysis results for:', analysis.id);
+          }
         }
 
         return {
@@ -97,8 +131,8 @@ const PropertyManagement = () => {
           analysis_results: analysis.analysis_results,
           created_at: analysis.created_at,
           updated_at: analysis.updated_at,
-          is_active: true, // Default value
-          coordinates: null // Default value
+          is_active: true,
+          coordinates: null
         };
       });
 
@@ -177,7 +211,38 @@ const PropertyManagement = () => {
     };
   }, []);
 
-  const filteredProperties = properties.filter(property =>
+  const handleSort = (column: 'created_at' | 'total_monthly_revenue' | 'property_address') => {
+    if (sortBy === column) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortBy(column);
+      setSortOrder('desc');
+    }
+  };
+
+  const sortedProperties = [...properties].sort((a, b) => {
+    let aValue: any = a[sortBy];
+    let bValue: any = b[sortBy];
+
+    if (sortBy === 'created_at') {
+      aValue = new Date(aValue);
+      bValue = new Date(bValue);
+    } else if (sortBy === 'total_monthly_revenue') {
+      aValue = parseFloat(aValue) || 0;
+      bValue = parseFloat(bValue) || 0;
+    } else {
+      aValue = aValue?.toLowerCase() || '';
+      bValue = bValue?.toLowerCase() || '';
+    }
+
+    if (sortOrder === 'asc') {
+      return aValue > bValue ? 1 : -1;
+    } else {
+      return aValue < bValue ? 1 : -1;
+    }
+  });
+
+  const filteredProperties = sortedProperties.filter(property =>
     property.property_address.toLowerCase().includes(searchTerm.toLowerCase()) ||
     property.property_type.toLowerCase().includes(searchTerm.toLowerCase()) ||
     property.user_id.toLowerCase().includes(searchTerm.toLowerCase())
@@ -280,71 +345,112 @@ const PropertyManagement = () => {
         </div>
       </div>
 
-      {/* Properties List */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
-        {filteredProperties.map((property) => (
-          <Card key={property.id} className="hover:shadow-lg transition-shadow">
-            <CardHeader className="pb-3">
-              <div className="flex justify-between items-start">
-                <CardTitle className="text-lg line-clamp-2">
-                  {property.property_address}
-                </CardTitle>
-                <Badge variant="secondary">
-                  {property.property_type}
-                </Badge>
-              </div>
-            </CardHeader>
-            <CardContent className="pt-0">
-              <div className="space-y-2">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">Monthly Revenue:</span>
-                  <span className="font-semibold text-green-600">
-                    ${property.total_monthly_revenue?.toFixed(0) || 0}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">Opportunities:</span>
-                  <span className="font-semibold">
-                    {property.total_opportunities || 0}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">User ID:</span>
-                  <span className="text-xs font-mono">
-                    {property.user_id?.slice(0, 8)}...
-                  </span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">Analyzed:</span>
-                  <span className="text-xs">
-                    {format(new Date(property.created_at), 'MMM dd, yyyy')}
-                  </span>
-                </div>
-              </div>
-              <div className="mt-4 pt-3 border-t">
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="w-full"
-                  onClick={() => {
-                    setSelectedProperty(property);
-                    setDialogOpen(true);
-                  }}
-                >
-                  <Eye className="h-4 w-4 mr-2" />
-                  View Details
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+      {/* Properties Table */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Properties ({filteredProperties.length})</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>
+                  <Button
+                    variant="ghost"
+                    onClick={() => handleSort('property_address')}
+                    className="h-auto p-0 font-semibold"
+                  >
+                    Address
+                    <ArrowUpDown className="ml-2 h-4 w-4" />
+                  </Button>
+                </TableHead>
+                <TableHead>Property Type</TableHead>
+                <TableHead>
+                  <Button
+                    variant="ghost"
+                    onClick={() => handleSort('total_monthly_revenue')}
+                    className="h-auto p-0 font-semibold"
+                  >
+                    Monthly Revenue
+                    <ArrowUpDown className="ml-2 h-4 w-4" />
+                  </Button>
+                </TableHead>
+                <TableHead>Opportunities</TableHead>
+                <TableHead>User ID</TableHead>
+                <TableHead>
+                  <Button
+                    variant="ghost"
+                    onClick={() => handleSort('created_at')}
+                    className="h-auto p-0 font-semibold"
+                  >
+                    Created
+                    <ArrowUpDown className="ml-2 h-4 w-4" />
+                  </Button>
+                </TableHead>
+                <TableHead>Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredProperties.map((property) => (
+                <TableRow key={property.id} className="hover:bg-gray-50">
+                  <TableCell className="font-medium">
+                    <div className="max-w-xs truncate" title={property.property_address}>
+                      {property.property_address}
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant="outline">
+                      {property.property_type}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <span className="font-semibold text-green-600">
+                      ${property.total_monthly_revenue?.toFixed(0) || 0}
+                    </span>
+                  </TableCell>
+                  <TableCell>
+                    <span className="font-semibold">
+                      {property.total_opportunities || 0}
+                    </span>
+                  </TableCell>
+                  <TableCell>
+                    <span className="text-xs font-mono text-gray-500">
+                      {property.user_id?.slice(0, 8)}...
+                    </span>
+                  </TableCell>
+                  <TableCell>
+                    <span className="text-sm text-gray-600">
+                      {format(new Date(property.created_at), 'MMM dd, yyyy')}
+                    </span>
+                  </TableCell>
+                  <TableCell>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setSelectedProperty(property);
+                        setDialogOpen(true);
+                      }}
+                    >
+                      <Eye className="h-4 w-4 mr-2" />
+                      View Details
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
 
-      {filteredProperties.length === 0 && !loading && (
-        <div className="text-center py-8">
-          <p className="text-gray-500">No properties found matching your search criteria.</p>
-        </div>
-      )}
+          {filteredProperties.length === 0 && !loading && (
+            <div className="text-center py-8">
+              <p className="text-gray-500">No properties found matching your search criteria.</p>
+              <Button onClick={fetchProperties} className="mt-4" variant="outline">
+                Refresh Data
+              </Button>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Property Details Dialog */}
       {selectedProperty && (
