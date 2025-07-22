@@ -63,6 +63,7 @@ const AdminDashboard = () => {
         const [
           usersResult,
           analysesResult,
+          journeyResult,
           addressesResult,
           earningsResult,
           todayActiveResult,
@@ -74,18 +75,33 @@ const AdminDashboard = () => {
             .from('user_login_stats')
             .select('user_id, login_count, first_login_at, last_login_at'),
           
-           // Get all property analyses with addresses
-           supabase
-             .from('user_property_analyses')
-             .select(`
-               id, 
-               user_id,
-               total_monthly_revenue, 
-               created_at,
-               address_id,
-               analysis_results
-             `)
-             .order('created_at', { ascending: false }),
+            // Get all property analyses from user_property_analyses table
+            supabase
+              .from('user_property_analyses')
+              .select(`
+                id, 
+                user_id,
+                total_monthly_revenue, 
+                created_at,
+                address_id,
+                analysis_results
+              `)
+              .order('created_at', { ascending: false }),
+            
+            // Also get analyses from user_journey_complete table  
+            supabase
+              .from('user_journey_complete')
+              .select(`
+                id,
+                user_id,
+                property_address,
+                analysis_results,
+                total_monthly_revenue,
+                created_at,
+                analysis_id
+              `)
+              .not('analysis_results', 'is', null)
+              .order('created_at', { ascending: false }),
             
           // Get all user addresses separately
           supabase
@@ -121,6 +137,7 @@ const AdminDashboard = () => {
         // Handle any errors
         if (usersResult.error) throw usersResult.error;
         if (analysesResult.error) throw analysesResult.error;
+        if (journeyResult.error) throw journeyResult.error;
         if (addressesResult.error) throw addressesResult.error;
         if (earningsResult.error) throw earningsResult.error;
         if (todayActiveResult.error) throw todayActiveResult.error;
@@ -129,17 +146,26 @@ const AdminDashboard = () => {
 
         const users = usersResult.data || [];
         const analyses = analysesResult.data || [];
+        const journeyData = journeyResult.data || [];
         const addresses = addressesResult.data || [];
         const earnings = earningsResult.data || [];
         const todayActive = todayActiveResult.data || [];
         const thisMonthUsers = thisMonthUsersResult.data || [];
         const lastMonthUsers = lastMonthUsersResult.data || [];
 
+        // Combine analyses from both sources, avoiding duplicates
+        const existingAnalysisIds = new Set(analyses.map((a: any) => a.id));
+        const journeyAnalyses = journeyData.filter((j: any) => 
+          !j.analysis_id || !existingAnalysisIds.has(j.analysis_id)
+        );
+        
+        const allAnalyses = [...analyses, ...journeyAnalyses];
+
         // Calculate totals
         const totalUsers = users.length;
         const totalLogins = users.reduce((sum, user) => sum + (user.login_count || 0), 0);
-        const totalAnalyses = analyses.length;
-        const totalRevenue = analyses.reduce((sum, analysis) => sum + (analysis.total_monthly_revenue || 0), 0);
+        const totalAnalyses = allAnalyses.length;
+        const totalRevenue = allAnalyses.reduce((sum, analysis) => sum + (analysis.total_monthly_revenue || 0), 0);
         const totalAffiliateEarnings = earnings.reduce((sum, earning) => sum + (Number(earning.earnings_amount) || 0), 0);
         const activeUsersToday = todayActive.length;
         
@@ -157,6 +183,21 @@ const AdminDashboard = () => {
         analyses.forEach(analysis => {
           if (analysis.analysis_results && typeof analysis.analysis_results === 'object') {
             const results = analysis.analysis_results as any;
+            if (results.propertyAddress && typeof results.propertyAddress === 'string') {
+              allPropertyAddresses.add(results.propertyAddress);
+            } else if (results.address && typeof results.address === 'string') {
+              allPropertyAddresses.add(results.address);
+            }
+          }
+        });
+        
+        // Add addresses from journey data
+        journeyData.forEach((journey: any) => {
+          if (journey.property_address) {
+            allPropertyAddresses.add(journey.property_address);
+          }
+          if (journey.analysis_results && typeof journey.analysis_results === 'object') {
+            const results = journey.analysis_results as any;
             if (results.propertyAddress && typeof results.propertyAddress === 'string') {
               allPropertyAddresses.add(results.propertyAddress);
             } else if (results.address && typeof results.address === 'string') {
