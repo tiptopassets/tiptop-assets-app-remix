@@ -76,13 +76,11 @@ export const useServiceIntegrations = () => {
         const userEmails: Record<string, string> = {};
         
         if (userIds.length > 0) {
-          // Fetch user emails from auth.users (via RPC or direct query if available)
-          // For now, we'll use a placeholder approach since we can't directly access auth.users
-          // In a real implementation, you'd need an RPC function or stored procedure
+          // Fetch user emails from auth.users via admin API
           try {
-            const { data: userData, error: userError } = await supabase.auth.admin.listUsers();
-            if (userData?.users && !userError) {
-              userData.users.forEach(user => {
+            const { data: authResponse, error: authError } = await supabase.auth.admin.listUsers();
+            if (authResponse?.users && !authError) {
+              authResponse.users.forEach(user => {
                 if (user.id && user.email) {
                   userEmails[user.id] = user.email;
                 }
