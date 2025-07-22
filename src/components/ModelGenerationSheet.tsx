@@ -11,7 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { StatusIndicator } from './model-generation/StatusIndicator';
 import PropertyImages from './model-generation/PropertyImages';
 import ErrorUI from './model-generation/ErrorUI';
-import NoSatelliteErrorDialog from './model-generation/NoSatelliteErrorDialog';
+
 
 const ModelGenerationSheet = () => {
   const {
@@ -25,16 +25,8 @@ const ModelGenerationSheet = () => {
   
   const { analysisResults } = useGoogleMap();
   
-  const [showErrorDialog, setShowErrorDialog] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
-
-  useEffect(() => {
-    // Show the error dialog when status is error and the error is about missing satellite image
-    if (status === 'error' && errorMessage?.toLowerCase().includes('no satellite image')) {
-      setShowErrorDialog(true);
-    }
-  }, [status, errorMessage]);
 
   // Handle view insights button click
   const handleViewInsights = () => {
@@ -44,13 +36,11 @@ const ModelGenerationSheet = () => {
 
   // Handle retry button click for error state
   const handleRetry = () => {
-    setShowErrorDialog(false);
     generateModel();
   };
 
   // Handle close button click
   const handleClose = () => {
-    setShowErrorDialog(false);
     resetGeneration();
   };
 
@@ -93,16 +83,14 @@ const ModelGenerationSheet = () => {
   const { title, description } = getStatusContent();
 
   return (
-    <>
-      {/* Main banner content */}
-      <motion.div
-        initial={{ opacity: 0, y: -20, scale: 0.95 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        exit={{ opacity: 0, y: -20, scale: 0.95 }}
-        transition={{ duration: 0.4, ease: "easeOut" }}
-        className="w-full max-w-4xl mx-auto"
-      >
-        <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-2xl p-4 md:p-6">
+    <motion.div
+      initial={{ opacity: 0, y: -20, scale: 0.95 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      exit={{ opacity: 0, y: -20, scale: 0.95 }}
+      transition={{ duration: 0.4, ease: "easeOut" }}
+      className="w-full max-w-4xl mx-auto"
+    >
+      <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-2xl p-4 md:p-6">
           {/* Header */}
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3 flex-1 min-w-0">
@@ -213,16 +201,7 @@ const ModelGenerationSheet = () => {
           </div>
         </div>
       </motion.div>
-      
-      {/* No Satellite Image Error Dialog */}
-      <NoSatelliteErrorDialog 
-        open={showErrorDialog}
-        onOpenChange={setShowErrorDialog}
-        onClose={handleClose}
-        onRetry={handleRetry}
-      />
-    </>
-  );
-};
-
-export default ModelGenerationSheet;
+    );
+  };
+  
+  export default ModelGenerationSheet;
