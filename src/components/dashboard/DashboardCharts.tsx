@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { motion } from "framer-motion";
 import { AssetDistributionChart, TodayRevenueChart, RevenueOverTimeChart } from './RevenueCharts';
@@ -13,45 +12,62 @@ interface DashboardChartsProps {
 export const DashboardCharts = ({ analysisResults, totalMonthlyRevenue }: DashboardChartsProps) => {
   const { assetSelections } = useUserAssetSelections();
   
-  // Deduplicate assets by type and sum their revenues
+  // Properly deduplicate assets by keeping only the most recent selection for each asset type
   const deduplicatedAssets = assetSelections.reduce((acc, selection) => {
     const assetType = selection.asset_type.toLowerCase();
     const displayName = selection.asset_type.charAt(0).toUpperCase() + selection.asset_type.slice(1).replace('_', ' ');
     
-    if (acc[assetType]) {
-      // Sum the revenues for duplicate asset types
-      acc[assetType].monthly_revenue += selection.monthly_revenue;
-      acc[assetType].setup_cost += selection.setup_cost;
+    const existingAssetIndex = acc.findIndex(asset => asset.asset_type === assetType);
+    
+    if (existingAssetIndex !== -1) {
+      // Keep the more recent selection
+      const existingDate = new Date(acc[existingAssetIndex].selected_at);
+      const currentDate = new Date(selection.selected_at);
+      
+      if (currentDate > existingDate) {
+        acc[existingAssetIndex] = {
+          asset_type: assetType,
+          name: displayName,
+          monthly_revenue: selection.monthly_revenue,
+          setup_cost: selection.setup_cost,
+          selected_at: selection.selected_at
+        };
+      }
     } else {
       // First occurrence of this asset type
-      acc[assetType] = {
+      acc.push({
         asset_type: assetType,
         name: displayName,
         monthly_revenue: selection.monthly_revenue,
-        setup_cost: selection.setup_cost
-      };
+        setup_cost: selection.setup_cost,
+        selected_at: selection.selected_at
+      });
     }
     return acc;
-  }, {} as Record<string, any>);
-
-  const uniqueAssets = Object.values(deduplicatedAssets);
+  }, [] as any[]);
   
   // Prepare chart data from deduplicated assets
-  const chartData = uniqueAssets.map(asset => ({
+  const chartData = deduplicatedAssets.map(asset => ({
     name: asset.name,
     value: asset.monthly_revenue
   }));
 
   // Filter assets that require setup costs for the setup cost chart
-  const assetsWithSetupCosts = uniqueAssets.filter(asset => asset.setup_cost > 0);
+  const assetsWithSetupCosts = deduplicatedAssets.filter(asset => asset.setup_cost > 0);
   
-  // Generate setup cost data over time
+  // Generate setup cost data - showing one-time setup cost, not monthly recurring
   const generateSetupCostData = () => {
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
-    return months.map(month => {
-      const data: any = { name: month };
+    const phases = ['Initial Setup', 'Month 2', 'Month 3', 'Month 4', 'Month 5', 'Month 6'];
+    return phases.map((phase, index) => {
+      const data: any = { name: phase };
       assetsWithSetupCosts.forEach(asset => {
-        data[asset.name] = asset.setup_cost;
+        if (index === 0) {
+          // Initial setup cost only in first phase
+          data[asset.name] = asset.setup_cost;
+        } else {
+          // Maintenance fee (10% of setup cost) for subsequent months
+          data[asset.name] = Math.round(asset.setup_cost * 0.1);
+        }
       });
       return data;
     });
@@ -61,7 +77,7 @@ export const DashboardCharts = ({ analysisResults, totalMonthlyRevenue }: Dashbo
   const setupCostKeys = assetsWithSetupCosts.map(asset => asset.name);
   
   // Calculate total monthly revenue from deduplicated assets
-  const actualTotalMonthly = uniqueAssets.reduce((sum, asset) => sum + asset.monthly_revenue, 0);
+  const actualTotalMonthly = deduplicatedAssets.reduce((sum, asset) => sum + asset.monthly_revenue, 0);
 
   return (
     <motion.div 
@@ -78,7 +94,7 @@ export const DashboardCharts = ({ analysisResults, totalMonthlyRevenue }: Dashbo
         <RevenueOverTimeChart 
           data={setupCostData}
           keys={setupCostKeys}
-          title="Required Setup Costs"
+          title="Setup Costs & Maintenance"
         />
       </div>
     </motion.div>

@@ -31,7 +31,6 @@ const COLORS = ['#9b87f5', '#33C3F0', '#6E59A5', '#FF8042', '#FFBB28', '#00C49F'
 export const AssetDistributionChart = ({ data }: RevenueByAssetProps) => {
   return (
     <Card className="h-full overflow-hidden border-0 shadow-md hover:shadow-lg transition-shadow duration-300 relative">
-      {/* Glassmorphism effect */}
       <div className="absolute inset-0 bg-gradient-to-br from-white/80 to-white/40 backdrop-blur-sm z-0"></div>
       <div className="absolute inset-0 bg-white/50 z-0"></div>
       
@@ -74,7 +73,6 @@ export const TodayRevenueChart = ({ monthlyAmount, increasePercentage }: TodayRe
   
   return (
     <Card className="h-full overflow-hidden border-0 shadow-md hover:shadow-lg transition-shadow duration-300 relative">
-      {/* Glassmorphism effect */}
       <div className="absolute inset-0 bg-gradient-to-br from-white/80 to-white/40 backdrop-blur-sm z-0"></div>
       <div className="absolute inset-0 bg-white/50 z-0"></div>
       
@@ -119,14 +117,18 @@ export const TodayRevenueChart = ({ monthlyAmount, increasePercentage }: TodayRe
 };
 
 export const RevenueOverTimeChart = ({ data, keys, title = "Revenue Over Time" }: RevenueOverTimeProps) => {
+  const isSetupCostChart = title.includes('Setup');
+  
   return (
     <Card className="h-full overflow-hidden border-0 shadow-md hover:shadow-lg transition-shadow duration-300 relative">
-      {/* Glassmorphism effect */}
       <div className="absolute inset-0 bg-gradient-to-br from-white/80 to-white/40 backdrop-blur-sm z-0"></div>
       <div className="absolute inset-0 bg-white/50 z-0"></div>
       
       <CardHeader className="relative z-10">
         <CardTitle className="text-lg font-medium">{title}</CardTitle>
+        {isSetupCostChart && (
+          <p className="text-sm text-gray-500">Initial setup cost, then monthly maintenance fees</p>
+        )}
       </CardHeader>
       <CardContent className="relative z-10 pt-2">
         <div className="h-[240px]">
@@ -137,7 +139,15 @@ export const RevenueOverTimeChart = ({ data, keys, title = "Revenue Over Time" }
             >
               <XAxis dataKey="name" />
               <YAxis />
-              <Tooltip formatter={(value) => [`$${value}`, title.includes('Setup') ? 'Setup Cost' : 'Revenue']} />
+              <Tooltip 
+                formatter={(value, name, props) => {
+                  const isFirstMonth = props.payload?.name === 'Initial Setup';
+                  const label = isSetupCostChart 
+                    ? (isFirstMonth ? 'Setup Cost' : 'Maintenance Fee')
+                    : 'Revenue';
+                  return [`$${value}`, label];
+                }}
+              />
               <Legend />
               {keys.map((key, index) => (
                 <Bar key={key} dataKey={key} stackId="a" fill={COLORS[index % COLORS.length]} />
