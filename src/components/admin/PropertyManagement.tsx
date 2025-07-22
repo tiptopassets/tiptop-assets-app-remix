@@ -21,8 +21,8 @@ interface PropertyAnalysis {
   created_at: string;
   updated_at: string;
   user_email?: string;
-  is_active?: boolean;
-  coordinates?: any;
+  is_active: boolean;
+  coordinates: any;
 }
 
 interface PropertyStats {
@@ -44,6 +44,7 @@ const PropertyManagement = () => {
   const [error, setError] = useState<Error | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedProperty, setSelectedProperty] = useState<PropertyAnalysis | null>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
 
   const fetchProperties = async () => {
     try {
@@ -321,27 +322,18 @@ const PropertyManagement = () => {
                 </div>
               </div>
               <div className="mt-4 pt-3 border-t">
-                <Dialog>
-                  <DialogTrigger asChild>
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      className="w-full"
-                      onClick={() => setSelectedProperty(property)}
-                    >
-                      <Eye className="h-4 w-4 mr-2" />
-                      View Details
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-                    <DialogHeader>
-                      <DialogTitle>Property Analysis Details</DialogTitle>
-                    </DialogHeader>
-                    {selectedProperty && (
-                      <PropertyDetailsDialog property={selectedProperty} />
-                    )}
-                  </DialogContent>
-                </Dialog>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="w-full"
+                  onClick={() => {
+                    setSelectedProperty(property);
+                    setDialogOpen(true);
+                  }}
+                >
+                  <Eye className="h-4 w-4 mr-2" />
+                  View Details
+                </Button>
               </div>
             </CardContent>
           </Card>
@@ -352,6 +344,15 @@ const PropertyManagement = () => {
         <div className="text-center py-8">
           <p className="text-gray-500">No properties found matching your search criteria.</p>
         </div>
+      )}
+
+      {/* Property Details Dialog */}
+      {selectedProperty && (
+        <PropertyDetailsDialog 
+          property={selectedProperty} 
+          open={dialogOpen} 
+          onOpenChange={setDialogOpen} 
+        />
       )}
     </div>
   );
