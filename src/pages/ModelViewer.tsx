@@ -4,6 +4,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { useUserAssetSelections } from '@/hooks/useUserAssetSelections';
 import { useToast } from '@/hooks/use-toast';
 import { useAssetSelection } from '@/hooks/useAssetSelection';
+import { SelectedAsset } from '@/types/analysis';
 import ViewerHeader from '@/components/model-viewer/ViewerHeader';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
@@ -18,6 +19,7 @@ const ModelViewer = () => {
   const { assetSelections } = useUserAssetSelections();
   const { saveSelection } = useAssetSelection();
   const [selectedAssets, setSelectedAssets] = useState<string[]>([]);
+  const [selectedAssetsData, setSelectedAssetsData] = useState<SelectedAsset[]>([]);
   const [analysisResults, setAnalysisResults] = useState<any>(null);
   const [address, setAddress] = useState<string>('');
   const [isLoading, setIsLoading] = useState(true);
@@ -40,6 +42,14 @@ const ModelViewer = () => {
     if (data && data.analysisResults && data.address) {
       setAnalysisResults(data.analysisResults);
       setAddress(data.address);
+      
+      // Use passed selected assets data if available
+      if (data.selectedAssetsData && data.selectedAssetsData.length > 0) {
+        console.log('📋 Using passed selected assets data:', data.selectedAssetsData);
+        setSelectedAssetsData(data.selectedAssetsData);
+        setSelectedAssets(data.selectedAssetsData.map((asset: SelectedAsset) => asset.title));
+      }
+      
       setIsLoading(false);
     } else {
       console.log('No analysis data found, redirecting to home...');
@@ -53,12 +63,25 @@ const ModelViewer = () => {
   }, [location.state, navigate, toast]);
 
   useEffect(() => {
-    // Initialize selected assets from user selections
-    if (assetSelections.length > 0) {
+    // Fallback: Initialize from database selections if no passed data
+    if (assetSelections.length > 0 && selectedAssetsData.length === 0) {
       const selectedAssetTypes = assetSelections.map(selection => selection.asset_type);
       setSelectedAssets(selectedAssetTypes);
+      
+      // Convert database selections to SelectedAsset format
+      const convertedData = assetSelections.map(selection => ({
+        title: selection.asset_type,
+        icon: 'default',
+        monthlyRevenue: selection.monthly_revenue,
+        provider: undefined,
+        setupCost: selection.setup_cost,
+        roi: selection.roi_months,
+        formData: selection.asset_data
+      }));
+      
+      setSelectedAssetsData(convertedData);
     }
-  }, [assetSelections]);
+  }, [assetSelections, selectedAssetsData.length]);
 
   // Show loading state while initializing
   if (isLoading) {
@@ -140,12 +163,15 @@ const ModelViewer = () => {
     }] : [])
   ];
 
-  const selectedAssetData = mainAssets.filter(asset => 
-    selectedAssets.some(selectedId => 
-      selectedId.toLowerCase().includes(asset.id.toLowerCase()) ||
-      asset.id.toLowerCase().includes(selectedId.toLowerCase())
-    )
-  );
+  // Use selected assets data if available, otherwise fallback to matching by ID
+  const selectedAssetDataToShow = selectedAssetsData.length > 0 
+    ? selectedAssetsData
+    : mainAssets.filter(asset => 
+        selectedAssets.some(selectedId => 
+          selectedId.toLowerCase().includes(asset.id.toLowerCase()) ||
+          asset.id.toLowerCase().includes(selectedId.toLowerCase())
+        )
+      );
 
   const unselectedAssets = mainAssets.filter(asset => 
     !selectedAssets.some(selectedId => 
@@ -167,9 +193,19 @@ const ModelViewer = () => {
           !id.toLowerCase().includes(asset.id.toLowerCase()) &&
           !asset.id.toLowerCase().includes(id.toLowerCase())
         ));
+        setSelectedAssetsData(prev => prev.filter(item => item.title !== asset.name));
       } else {
         // Add to selection
         setSelectedAssets(prev => [...prev, asset.id]);
+        setSelectedAssetsData(prev => [...prev, {
+          title: asset.name,
+          icon: 'default',
+          monthlyRevenue: asset.revenue,
+          provider: undefined,
+          setupCost: asset.setupCost || 0,
+          roi: undefined,
+          formData: {}
+        }]);
         
         // Save the selection
         await saveSelection(
@@ -189,7 +225,7 @@ const ModelViewer = () => {
     }
   };
 
-  const totalSelectedRevenue = selectedAssetData.reduce((sum, asset) => sum + asset.revenue, 0);
+  const totalSelectedRevenue = selectedAssetDataToShow.reduce((sum, asset) => sum + asset.monthlyRevenue, 0);
 
   return (
     <div className="summary-container">
@@ -224,18 +260,22 @@ const ModelViewer = () => {
               <div className="mb-8">
                 <h3 className="text-lg font-semibold mb-4 text-green-400">Selected Assets</h3>
                 <div className="space-y-3">
-                  {selectedAssetData.map((asset, index) => (
+                  {selectedAssetDataToShow.map((asset, index) => (
                     <Card key={index} className="selected-asset-card p-4">
                       <div className="flex justify-between items-center">
                         <div className="flex items-center">
                           <Check className="h-5 w-5 text-green-400 mr-3" />
                           <div>
-                            <h4 className="font-medium">{asset.name}</h4>
-                            <p className="text-sm text-gray-400">{asset.description}</p>
+                            <h4 className="font-medium">{asset.title}</h4>
+                            <p className="text-sm text-gray-400">
+                              {asset.title === 'Internet Bandwidth Sharing' ? 'Share unused bandwidth for passive income' :
+                               asset.title === 'Personal Storage Rental' ? 'Rent out personal storage space within your unit' :
+                               `Asset: ${asset.title}`}
+                            </p>
                           </div>
                         </div>
                         <div className="text-right">
-                          <p className="text-green-400 font-bold">${asset.revenue}/month</p>
+                          <p className="text-green-400 font-bold">${asset.monthlyRevenue}/month</p>
                         </div>
                       </div>
                     </Card>
@@ -272,10 +312,10 @@ const ModelViewer = () => {
                 </div>
               )}
               
-              {/* Complete & Authenticate Button */}
+              {/* Complete & Authenticate Button - Fixed Navigation */}
               <div className="text-center">
                 <Button 
-                  onClick={() => navigate('/dashboard')}
+                  onClick={() => navigate('/options')}
                   className="bg-gradient-to-r from-tiptop-purple to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white border-none shadow-lg hover:shadow-xl transition-all duration-300 px-8 py-3 text-lg font-semibold"
                 >
                   Complete & Authenticate

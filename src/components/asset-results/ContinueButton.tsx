@@ -2,23 +2,26 @@
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { useGoogleMap } from '@/contexts/GoogleMapContext';
+import { SelectedAsset } from '@/types/analysis';
 
 interface ContinueButtonProps {
   selectedCount: number;
   onContinue: () => void;
+  selectedAssetsData?: SelectedAsset[];
 }
 
-const ContinueButton = ({ selectedCount, onContinue }: ContinueButtonProps) => {
+const ContinueButton = ({ selectedCount, onContinue, selectedAssetsData }: ContinueButtonProps) => {
   const navigate = useNavigate();
   const { analysisResults, address } = useGoogleMap();
 
   const handleContinue = () => {
     onContinue();
     
-    // Pass analysis data through navigation state and also store in sessionStorage as backup
+    // Pass analysis data AND selected assets through navigation state and sessionStorage
     const navigationData = {
       analysisResults,
       address,
+      selectedAssetsData: selectedAssetsData || [],
       timestamp: Date.now()
     };
     

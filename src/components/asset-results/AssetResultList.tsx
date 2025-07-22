@@ -577,6 +577,7 @@ const AssetResultList: React.FC<AssetResultListProps> = ({
             <ContinueButton 
               selectedCount={selectedAssets.length}
               onContinue={handleContinue}
+              selectedAssetsData={selectedAssetsData}
             />
           </div>
         </motion.div>
