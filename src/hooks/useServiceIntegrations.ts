@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -34,9 +35,42 @@ export const useServiceIntegrations = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
+  // Function to fetch user emails using our edge function
+  const fetchUserEmails = async (userIds: string[]): Promise<Record<string, string>> => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        console.warn('No session token available for fetching user emails');
+        return {};
+      }
+
+      const response = await fetch('/supabase/functions/get-admin-user-details', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ userIds }),
+      });
+
+      if (!response.ok) {
+        console.warn('Failed to fetch user emails:', response.status);
+        return {};
+      }
+
+      const { userEmails } = await response.json();
+      return userEmails || {};
+    } catch (error) {
+      console.warn('Error fetching user emails:', error);
+      return {};
+    }
+  };
+
   useEffect(() => {
     const fetchIntegrations = async () => {
       setLoading(true);
+      setError(null);
+      
       try {
         console.log('Fetching partner integrations data...');
         
@@ -57,11 +91,9 @@ export const useServiceIntegrations = () => {
         // Fetch click tracking data from partner_integration_progress
         const { data: clicksData, error: clicksError } = await supabase
           .from('partner_integration_progress')
-          .select(`
-            *,
-            user_id
-          `)
-          .not('referral_link', 'is', null);
+          .select('*')
+          .not('referral_link', 'is', null)
+          .order('created_at', { ascending: false });
 
         if (clicksError) {
           console.error('Error fetching clicks:', clicksError);
@@ -70,31 +102,34 @@ export const useServiceIntegrations = () => {
 
         console.log('Fetched clicks:', clicksData?.length || 0);
 
-        // Fetch user emails for better identification
+        // Get unique user IDs and fetch their emails
         const userIds = [...new Set(clicksData?.map(click => click.user_id).filter(Boolean) || [])];
-        const userEmails: Record<string, string> = {};
+        const userEmails = await fetchUserEmails(userIds);
         
-        if (userIds.length > 0) {
-          // Try to fetch user emails - this might not work with client-side auth
-          // but we'll attempt it and handle gracefully if it fails
-          try {
-            // Create a simple mapping for now - in production you'd want an RPC function
-            console.log('Attempting to fetch user details for', userIds.length, 'users');
-            
-            // Since we can't access auth.users directly from client, we'll skip email fetching for now
-            // and focus on making the click tracking work properly
-            console.log('Skipping email fetch - client-side auth.admin not available');
-          } catch (authError) {
-            console.warn('Could not fetch user emails:', authError);
-          }
-        }
+        console.log('Fetched user emails for', Object.keys(userEmails).length, 'users');
 
         // Process the data with improved matching logic
         const processedIntegrations: ServiceIntegration[] = (providersData || []).map(provider => {
-          // Use case-insensitive matching and trim whitespace
-          const providerClicks = clicksData?.filter(click => 
-            click.partner_name?.toLowerCase().trim() === provider.name?.toLowerCase().trim()
-          ) || [];
+          // Use case-insensitive matching and handle name variations
+          const providerClicks = clicksData?.filter(click => {
+            if (!click.partner_name || !provider.name) return false;
+            
+            const clickName = click.partner_name.toLowerCase().trim();
+            const providerName = provider.name.toLowerCase().trim();
+            
+            // Direct match
+            if (clickName === providerName) return true;
+            
+            // Handle common variations
+            if (clickName.includes(providerName) || providerName.includes(clickName)) return true;
+            
+            // Handle specific cases
+            if (clickName === 'honeygain' && providerName === 'honeygain') return true;
+            if (clickName === 'neighbor.com' && providerName === 'neighbor.com') return true;
+            if (clickName === 'gympass' && providerName === 'gympass') return true;
+            
+            return false;
+          }) || [];
 
           const totalClicks = providerClicks.length;
           const completedRegistrations = providerClicks.filter(click => 
@@ -126,9 +161,11 @@ export const useServiceIntegrations = () => {
         console.log('Processed integrations:', processedIntegrations.length);
         setIntegrations(processedIntegrations);
 
-        // Group clicks by partner for detailed view
+        // Group clicks by partner for detailed view with user emails
         const groupedClicks: Record<string, PartnerClick[]> = {};
         for (const click of clicksData || []) {
+          if (!click.partner_name) continue;
+          
           const partnerName = click.partner_name;
           if (!groupedClicks[partnerName]) {
             groupedClicks[partnerName] = [];
@@ -141,12 +178,13 @@ export const useServiceIntegrations = () => {
             referral_link: click.referral_link || '',
             clicked_at: click.created_at || '',
             integration_status: click.integration_status || 'pending',
-            user_email: userEmails[click.user_id] || undefined
+            user_email: userEmails[click.user_id] || `User ${click.user_id?.slice(0, 8)}...`
           });
         }
 
-        console.log('Grouped clicks:', Object.keys(groupedClicks).length, 'partners');
+        console.log('Grouped clicks by partner:', Object.keys(groupedClicks).length, 'partners');
         setPartnerClicks(groupedClicks);
+        
       } catch (err) {
         console.error('Error fetching integrations:', err);
         setError(err instanceof Error ? err : new Error('Unknown error'));
@@ -257,6 +295,10 @@ function getIconForAssetType(assetType: string): string {
     'garden': 'flower',
     'yard': 'trees',
     'home_gym': 'dumbbell',
+    'fitness': 'dumbbell',
+    'wellness': 'heart',
+    'vehicle': 'car',
+    'car': 'car',
     'home_interior': 'home',
     'solar': 'sun',
     'rooftop': 'sun',
