@@ -1,59 +1,43 @@
 
-import React from 'react';
-import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, CheckCircle, Plus } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { useNavigate } from 'react-router-dom';
+import { useGoogleMap } from '@/contexts/GoogleMapContext';
 
 interface ContinueButtonProps {
-  selectedAssetsCount: number;
-  onClick: () => void;
-  className?: string;
+  selectedCount: number;
+  onContinue: () => void;
 }
 
-const ContinueButton: React.FC<ContinueButtonProps> = ({ 
-  selectedAssetsCount, 
-  onClick,
-  className 
-}) => {
-  const isDisabled = selectedAssetsCount < 2;
-  const buttonText = isDisabled 
-    ? `Select at least ${2 - selectedAssetsCount} more asset${2 - selectedAssetsCount !== 1 ? 's' : ''} to continue`
-    : `Continue with ${selectedAssetsCount} Asset${selectedAssetsCount !== 1 ? 's' : ''}`;
+const ContinueButton = ({ selectedCount, onContinue }: ContinueButtonProps) => {
+  const navigate = useNavigate();
+  const { analysisResults, address } = useGoogleMap();
+
+  const handleContinue = () => {
+    onContinue();
+    
+    // Pass analysis data through navigation state and also store in sessionStorage as backup
+    const navigationData = {
+      analysisResults,
+      address,
+      timestamp: Date.now()
+    };
+    
+    // Store in sessionStorage as backup
+    sessionStorage.setItem('model-viewer-data', JSON.stringify(navigationData));
+    
+    // Navigate with state
+    navigate('/model-viewer', { 
+      state: navigationData
+    });
+  };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.9 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ duration: 0.3 }}
-      className={cn("", className)}
+    <Button 
+      onClick={handleContinue}
+      className="w-full bg-gradient-to-r from-tiptop-purple to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white border-none shadow-lg hover:shadow-xl transition-all duration-300"
     >
-      <Button
-        onClick={onClick}
-        disabled={isDisabled}
-        className={cn(
-          "text-white border-none shadow-lg transition-all duration-300 group",
-          isDisabled
-            ? "bg-gray-600 hover:bg-gray-600 cursor-not-allowed opacity-60"
-            : "bg-gradient-to-r from-tiptop-purple to-purple-600 hover:from-purple-600 hover:to-purple-700 hover:shadow-xl"
-        )}
-        size="lg"
-      >
-        <div className="flex items-center gap-2">
-          {isDisabled ? (
-            <Plus className="h-5 w-5" />
-          ) : (
-            <CheckCircle className="h-5 w-5" />
-          )}
-          <span className="font-semibold">
-            {buttonText}
-          </span>
-          {!isDisabled && (
-            <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform duration-200" />
-          )}
-        </div>
-      </Button>
-    </motion.div>
+      Continue with {selectedCount} asset{selectedCount !== 1 ? 's' : ''}
+    </Button>
   );
 };
 

@@ -1,9 +1,7 @@
 
 import { useEffect, useState } from 'react';
-import { useModelGeneration } from '@/contexts/ModelGeneration';
-import { useGoogleMap } from '@/contexts/GoogleMapContext';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useUserAssetSelections } from '@/hooks/useUserAssetSelections';
-import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { useAssetSelection } from '@/hooks/useAssetSelection';
 import ViewerHeader from '@/components/model-viewer/ViewerHeader';
@@ -14,34 +12,45 @@ import { Check, Plus } from 'lucide-react';
 import './ModelViewerSummary.css';
 
 const ModelViewer = () => {
-  const { analysisResults, address } = useGoogleMap();
-  const { assetSelections } = useUserAssetSelections();
-  const { saveSelection } = useAssetSelection();
+  const location = useLocation();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { assetSelections } = useUserAssetSelections();
+  const { saveSelection } = useAssetSelection();
   const [selectedAssets, setSelectedAssets] = useState<string[]>([]);
+  const [analysisResults, setAnalysisResults] = useState<any>(null);
+  const [address, setAddress] = useState<string>('');
   const [isLoading, setIsLoading] = useState(true);
-  
-  useEffect(() => {
-    // Add a small delay to ensure all components are properly initialized
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-      
-      // Check if we have the necessary data
-      if (!analysisResults || !address) {
-        console.log('No analysis results or address, redirecting to home...');
-        toast({
-          title: "No Property Data Available",
-          description: "Please complete the property analysis first",
-          variant: "destructive"
-        });
-        navigate('/');
-        return;
-      }
-    }, 100);
 
-    return () => clearTimeout(timer);
-  }, [analysisResults, address, navigate, toast]);
+  useEffect(() => {
+    // Get data from navigation state or sessionStorage
+    let data = location.state;
+    
+    if (!data) {
+      const storedData = sessionStorage.getItem('model-viewer-data');
+      if (storedData) {
+        try {
+          data = JSON.parse(storedData);
+        } catch (e) {
+          console.error('Error parsing stored data:', e);
+        }
+      }
+    }
+
+    if (data && data.analysisResults && data.address) {
+      setAnalysisResults(data.analysisResults);
+      setAddress(data.address);
+      setIsLoading(false);
+    } else {
+      console.log('No analysis data found, redirecting to home...');
+      toast({
+        title: "No Property Data Available",
+        description: "Please complete the property analysis first",
+        variant: "destructive"
+      });
+      navigate('/');
+    }
+  }, [location.state, navigate, toast]);
 
   useEffect(() => {
     // Initialize selected assets from user selections
