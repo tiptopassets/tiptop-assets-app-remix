@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useUserAssetSelections } from '@/hooks/useUserAssetSelections';
@@ -133,7 +132,7 @@ const ModelViewer = () => {
     );
   }
 
-  // Get main assets from analysis results
+  // Get main assets from analysis results and convert to SelectedAsset format
   const mainAssets = [
     { 
       id: 'rooftop_solar', 
@@ -183,7 +182,14 @@ const ModelViewer = () => {
       setupCost: 0,
       area: analysisResults.pool.area
     }] : [])
-  ];
+  ].map(asset => ({
+    ...asset,
+    title: asset.name,
+    icon: 'default',
+    monthlyRevenue: asset.revenue,
+    provider: undefined,
+    formData: {}
+  }));
 
   // Use selected assets data if available, otherwise convert mainAssets to SelectedAsset format
   const selectedAssetDataToShow = selectedAssetsData.length > 0 
@@ -193,15 +199,7 @@ const ModelViewer = () => {
           selectedId.toLowerCase().includes(asset.id.toLowerCase()) ||
           asset.id.toLowerCase().includes(selectedId.toLowerCase())
         )
-      ).map(asset => ({
-        title: asset.name,
-        icon: 'default',
-        monthlyRevenue: asset.revenue,
-        provider: undefined,
-        setupCost: asset.setupCost || 0,
-        roi: undefined,
-        formData: {}
-      }));
+      );
 
   // Filter out selected assets from available assets to avoid duplicates
   const unselectedAssets = mainAssets.filter(asset => 
@@ -209,8 +207,8 @@ const ModelViewer = () => {
       selectedId.toLowerCase().includes(asset.id.toLowerCase()) ||
       asset.id.toLowerCase().includes(selectedId.toLowerCase())
     ) && !selectedAssetDataToShow.some(selectedAsset => 
-      selectedAsset.title.toLowerCase().includes(asset.name.toLowerCase()) ||
-      asset.name.toLowerCase().includes(selectedAsset.title.toLowerCase())
+      selectedAsset.title.toLowerCase().includes(asset.title.toLowerCase()) ||
+      asset.title.toLowerCase().includes(selectedAsset.title.toLowerCase())
     )
   );
 
@@ -227,14 +225,14 @@ const ModelViewer = () => {
           !id.toLowerCase().includes(asset.id.toLowerCase()) &&
           !asset.id.toLowerCase().includes(id.toLowerCase())
         ));
-        setSelectedAssetsData(prev => prev.filter(item => item.title !== asset.name));
+        setSelectedAssetsData(prev => prev.filter(item => item.title !== asset.title));
       } else {
         // Add to selection
         setSelectedAssets(prev => [...prev, asset.id]);
         setSelectedAssetsData(prev => [...prev, {
-          title: asset.name,
+          title: asset.title,
           icon: 'default',
-          monthlyRevenue: asset.revenue,
+          monthlyRevenue: asset.monthlyRevenue,
           provider: undefined,
           setupCost: asset.setupCost || 0,
           roi: undefined,
@@ -245,7 +243,7 @@ const ModelViewer = () => {
         await saveSelection(
           asset.id,
           asset,
-          asset.revenue,
+          asset.monthlyRevenue,
           asset.setupCost || 0
         );
       }
@@ -286,7 +284,7 @@ const ModelViewer = () => {
 
       {/* Main content */}
       <div className="summary-content">
-        <div className="container mx-auto px-4 pb-20 mt-6">
+        <div className="container mx-auto px-4 pb-20 mt-6 max-w-4xl">
           {/* Property Address */}
           <div className="mb-6 text-center">
             <h2 className="text-2xl font-bold">{address}</h2>
@@ -300,8 +298,8 @@ const ModelViewer = () => {
           
           {/* Summary Section */}
           <div className="mt-8">
-            <div className="summary-card p-6">
-              <h2 className="text-xl font-bold mb-6 text-center">Summary</h2>
+            <div className="backdrop-blur-sm bg-white/5 border border-white/10 rounded-xl p-6">
+              <h2 className="text-xl font-bold mb-6 text-center text-white">Summary</h2>
               
               {/* Selected Assets */}
               <div className="mb-8">
@@ -311,11 +309,11 @@ const ModelViewer = () => {
                     <motion.div
                       key={index}
                       whileHover={{ translateY: -2 }}
-                      className="glass-effect rounded-xl p-4 border-2 border-green-400/30 bg-gradient-to-br from-green-400/10 to-green-600/5"
+                      className="backdrop-blur-sm bg-white/5 border border-green-400/30 rounded-xl p-4"
                     >
                       <div className="flex items-center justify-between">
                         <div className="flex items-center">
-                          <div className="mr-4">
+                          <div className="mr-4 w-12 h-12 flex items-center justify-center">
                             {getAssetIcon(asset.title)}
                           </div>
                           <div className="flex items-center">
@@ -348,24 +346,24 @@ const ModelViewer = () => {
                       <motion.div
                         key={index}
                         whileHover={{ translateY: -2 }}
-                        className="glass-effect rounded-xl p-4 border-2 border-white/10 hover:border-white/30 cursor-pointer bg-gradient-to-br from-white/5 to-white/2 transition-all duration-300"
+                        className="backdrop-blur-sm bg-white/5 border border-white/10 hover:border-white/20 cursor-pointer rounded-xl p-4 transition-all duration-300"
                         onClick={() => handleAssetToggle(asset)}
                       >
                         <div className="flex items-center justify-between">
                           <div className="flex items-center">
-                            <div className="mr-4">
-                              {getAssetIcon(asset.name)}
+                            <div className="mr-4 w-12 h-12 flex items-center justify-center">
+                              {getAssetIcon(asset.title)}
                             </div>
                             <div className="flex items-center">
                               <Plus className="h-5 w-5 text-gray-400 mr-3" />
                               <div>
-                                <h4 className="font-medium text-white">{asset.name}</h4>
-                                <p className="text-sm text-gray-400">{asset.description}</p>
+                                <h4 className="font-medium text-white">{asset.title}</h4>
+                                <p className="text-sm text-gray-300">{asset.description}</p>
                               </div>
                             </div>
                           </div>
                           <div className="text-right">
-                            <p className="text-gray-300 font-bold">${asset.revenue}/month</p>
+                            <p className="text-gray-300 font-bold">${asset.monthlyRevenue}/month</p>
                           </div>
                         </div>
                       </motion.div>
