@@ -193,16 +193,17 @@ const EnhancedAdditionalAssetsCarousel = ({
             <h3 className={`${isMobile ? 'text-sm' : 'text-base'} font-bold text-white drop-shadow-lg line-clamp-1`}>
               {opportunity.title}
             </h3>
-            <p className={`${isMobile ? 'text-base' : 'text-lg'} font-bold ${getRevenueTierColor(opportunity.monthlyRevenue)} drop-shadow-lg`}>
-              ${opportunity.monthlyRevenue}/mo
-            </p>
-            
-            {/* Provider Badge */}
-            {opportunity.provider && (
-              <div className="inline-block bg-white/20 backdrop-blur text-white text-xs rounded-full px-2 py-1 font-medium">
-                {opportunity.provider}
-              </div>
-            )}
+            <div className="flex items-center justify-between">
+              <p className={`${isMobile ? 'text-base' : 'text-lg'} font-bold ${getRevenueTierColor(opportunity.monthlyRevenue)} drop-shadow-lg`}>
+                ${opportunity.monthlyRevenue}/mo
+              </p>
+              {/* Provider Badge */}
+              {opportunity.provider && (
+                <div className="bg-white/20 backdrop-blur text-white text-xs rounded-full px-2 py-1 font-medium">
+                  {opportunity.provider}
+                </div>
+              )}
+            </div>
           </div>
         </div>
         
