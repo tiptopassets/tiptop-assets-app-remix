@@ -73,19 +73,22 @@ const DashboardSidebarNavigation = () => {
       name: 'EV Charging',
       href: '/dashboard/ev-charging',
       icon: Zap,
-      description: 'EV charging stations'
+      description: 'EV charging stations',
+      badge: 'Simulated'
     },
     {
       name: 'Internet Sharing',
       href: '/dashboard/internet',
       icon: Wifi,
-      description: 'Bandwidth monetization'
+      description: 'Bandwidth monetization',
+      badge: 'Simulated'
     },
     {
       name: 'Parking',
       href: '/dashboard/parking',
       icon: Car,
-      description: 'Parking space rental'
+      description: 'Parking space rental',
+      badge: 'Simulated'
     }
   ];
 
