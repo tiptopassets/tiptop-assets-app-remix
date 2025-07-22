@@ -575,9 +575,8 @@ const AssetResultList: React.FC<AssetResultListProps> = ({
             
             {/* Continue Button */}
             <ContinueButton 
-              selectedAssetsCount={selectedAssets.length}
-              onClick={handleContinue}
-              className="w-full"
+              selectedCount={selectedAssets.length}
+              onContinue={handleContinue}
             />
           </div>
         </motion.div>
