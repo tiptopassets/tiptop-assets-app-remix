@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { MapPin, TrendingUp, Zap, MessageSquare, Image as ImageIcon, Loader2 } from 'lucide-react';
+import { MapPin, TrendingUp, Zap, MessageSquare, Image as ImageIcon, Loader2, Plus } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { UserPropertyAnalysis } from '@/types/userData';
 import { navigateToChatbot } from '@/utils/navigationHelpers';
@@ -141,6 +141,7 @@ const DashboardPropertyOverview: React.FC<DashboardPropertyOverviewProps> = ({
           <div className="space-y-4">
             {hasSelectedAssets ? (
               <div>
+                <p className="text-sm font-medium text-gray-700 mb-2">Selected Assets</p>
                 <div className="space-y-2">
                   {selectedAssets.slice(0, 3).map((asset) => (
                     <div key={asset.type} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
@@ -172,6 +173,15 @@ const DashboardPropertyOverview: React.FC<DashboardPropertyOverviewProps> = ({
                     </div>
                   ))}
                 </div>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => window.location.href = '/'}
+                  className="w-full mt-3 border-tiptop-purple text-tiptop-purple hover:bg-tiptop-purple hover:text-white"
+                >
+                  <Plus className="h-4 w-4 mr-1" />
+                  Add More Assets
+                </Button>
               </div>
             ) : (
               <div className="p-4 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
