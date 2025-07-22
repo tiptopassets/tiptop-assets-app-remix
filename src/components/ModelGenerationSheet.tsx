@@ -122,50 +122,56 @@ const ModelGenerationSheet = () => {
             </Button>
           </div>
 
-          {/* Progress indicator */}
+          {/* Progress indicator with integrated images */}
           {(status === 'capturing' || status === 'generating') && (
             <div className="mb-4">
-              <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 md:h-3">
-                <div 
-                  className="bg-tiptop-purple h-2 md:h-3 rounded-full transition-all duration-300"
-                  style={{ width: `${progress}%` }}
-                />
+              <div className="flex items-center gap-4">
+                {/* Property images on the left */}
+                {(propertyImages.satellite || propertyImages.streetView) && (
+                  <div className="flex gap-2 flex-shrink-0">
+                    {propertyImages.satellite && (
+                      <div className="relative">
+                        <img 
+                          src={propertyImages.satellite} 
+                          alt="Satellite view" 
+                          className="w-12 h-12 md:w-16 md:h-16 object-cover rounded-lg border-2 border-gray-200"
+                        />
+                        <span className="absolute -bottom-1 -right-1 bg-blue-500 text-white text-[8px] md:text-[10px] px-1 py-0.5 rounded">
+                          Satellite
+                        </span>
+                      </div>
+                    )}
+                    {propertyImages.streetView && (
+                      <div className="relative">
+                        <img 
+                          src={propertyImages.streetView} 
+                          alt="Street view" 
+                          className="w-12 h-12 md:w-16 md:h-16 object-cover rounded-lg border-2 border-gray-200"
+                        />
+                        <span className="absolute -bottom-1 -right-1 bg-green-500 text-white text-[8px] md:text-[10px] px-1 py-0.5 rounded">
+                          Street
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                )}
+                
+                {/* Centered progress bar */}
+                <div className="flex-1">
+                  <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 md:h-3">
+                    <div 
+                      className="bg-tiptop-purple h-2 md:h-3 rounded-full transition-all duration-300"
+                      style={{ width: `${progress}%` }}
+                    />
+                  </div>
+                  <p className="text-xs text-right mt-1 text-gray-500">{progress}%</p>
+                </div>
               </div>
-              <p className="text-xs text-right mt-1 text-gray-500">{progress}%</p>
             </div>
           )}
 
           {/* Content - Responsive Layout */}
           <div className="flex flex-col md:flex-row items-center gap-4 md:gap-6">
-            {/* Property images */}
-            {status !== 'error' && (propertyImages.satellite || propertyImages.streetView) && (
-              <div className="flex gap-2 md:gap-3 flex-shrink-0 order-1 md:order-none">
-                {propertyImages.satellite && (
-                  <div className="relative">
-                    <img 
-                      src={propertyImages.satellite} 
-                      alt="Satellite view" 
-                      className="w-16 h-16 md:w-20 md:h-20 object-cover rounded-lg border-2 border-gray-200"
-                    />
-                    <span className="absolute -bottom-1 -right-1 bg-blue-500 text-white text-[10px] px-1 py-0.5 rounded">
-                      Satellite
-                    </span>
-                  </div>
-                )}
-                {propertyImages.streetView && (
-                  <div className="relative">
-                    <img 
-                      src={propertyImages.streetView} 
-                      alt="Street view" 
-                      className="w-16 h-16 md:w-20 md:h-20 object-cover rounded-lg border-2 border-gray-200"
-                    />
-                    <span className="absolute -bottom-1 -right-1 bg-green-500 text-white text-[10px] px-1 py-0.5 rounded">
-                      Street
-                    </span>
-                  </div>
-                )}
-              </div>
-            )}
 
             {/* Analysis Results Summary (when complete) */}
             {status === 'completed' && analysisResults && (
