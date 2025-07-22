@@ -163,7 +163,7 @@ const ModelViewer = () => {
     }] : [])
   ];
 
-  // Use selected assets data if available, otherwise fallback to matching by ID
+  // Use selected assets data if available, otherwise convert mainAssets to SelectedAsset format
   const selectedAssetDataToShow = selectedAssetsData.length > 0 
     ? selectedAssetsData
     : mainAssets.filter(asset => 
@@ -171,7 +171,15 @@ const ModelViewer = () => {
           selectedId.toLowerCase().includes(asset.id.toLowerCase()) ||
           asset.id.toLowerCase().includes(selectedId.toLowerCase())
         )
-      );
+      ).map(asset => ({
+        title: asset.name,
+        icon: 'default',
+        monthlyRevenue: asset.revenue,
+        provider: undefined,
+        setupCost: asset.setupCost || 0,
+        roi: undefined,
+        formData: {}
+      }));
 
   const unselectedAssets = mainAssets.filter(asset => 
     !selectedAssets.some(selectedId => 
