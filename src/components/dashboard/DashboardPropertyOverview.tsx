@@ -176,7 +176,7 @@ const DashboardPropertyOverview: React.FC<DashboardPropertyOverviewProps> = ({
                 <Button
                   size="sm"
                   variant="outline"
-                  onClick={() => window.location.href = '/'}
+                  onClick={() => navigate('/dashboard/add-asset')}
                   className="w-full mt-3 border-tiptop-purple text-tiptop-purple hover:bg-tiptop-purple hover:text-white"
                 >
                   <Plus className="h-4 w-4 mr-1" />
