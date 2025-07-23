@@ -249,15 +249,52 @@ export class LocalChatService {
   private detectAssetFromMessage(message: string): string | null {
     const lowerMessage = message.toLowerCase();
     
+    // Internet and bandwidth sharing
     if (lowerMessage.includes('internet') || lowerMessage.includes('bandwidth') || lowerMessage.includes('wifi')) return 'internet';
+    
+    // Swimming pool
     if (lowerMessage.includes('pool') || lowerMessage.includes('swim')) return 'pool';
+    
+    // Parking
     if (lowerMessage.includes('parking') || lowerMessage.includes('driveway')) return 'parking';
+    
+    // Storage
     if (lowerMessage.includes('storage') || lowerMessage.includes('basement') || lowerMessage.includes('garage')) return 'storage';
-    if (lowerMessage.includes('event') && (lowerMessage.includes('space') || lowerMessage.includes('rental'))) return 'event_space_rental';
-    if (lowerMessage.includes('gym') || lowerMessage.includes('home gym')) return 'home_gym_rental';
+    
+    // Event spaces
+    if (lowerMessage.includes('event') && (lowerMessage.includes('space') || lowerMessage.includes('rental'))) return 'event_space';
+    
+    // Home gym
+    if (lowerMessage.includes('gym') || lowerMessage.includes('home gym')) return 'home_gym';
+    
+    // Solar
     if (lowerMessage.includes('solar') || lowerMessage.includes('rooftop')) return 'solar';
+    
+    // Garden/yard
     if (lowerMessage.includes('garden') || lowerMessage.includes('yard')) return 'garden';
-    if (lowerMessage.includes('ev') || lowerMessage.includes('charging')) return 'ev_charging';
+    
+    // EV charging
+    if (lowerMessage.includes('ev') || lowerMessage.includes('charging') || lowerMessage.includes('electric vehicle')) return 'ev_charging';
+    
+    // Vehicle/car rental
+    if (lowerMessage.includes('car') || lowerMessage.includes('vehicle') || lowerMessage.includes('turo')) return 'vehicle';
+    
+    // Airbnb and rental-related
+    if (lowerMessage.includes('airbnb') || lowerMessage.includes('short term rental') || lowerMessage.includes('short-term rental')) return 'short_term_rental';
+    if (lowerMessage.includes('room rental') || lowerMessage.includes('room') || lowerMessage.includes('guest room')) return 'room_rental';
+    if (lowerMessage.includes('rental') && !lowerMessage.includes('car') && !lowerMessage.includes('vehicle')) return 'rental';
+    
+    // Experiences and tours
+    if (lowerMessage.includes('experience') || lowerMessage.includes('tour') || lowerMessage.includes('activity')) return 'experience';
+    
+    // Services
+    if (lowerMessage.includes('service') || lowerMessage.includes('cleaning') || lowerMessage.includes('maintenance')) return 'services';
+    
+    // Library
+    if (lowerMessage.includes('library') || lowerMessage.includes('book') || lowerMessage.includes('tool library')) return 'library';
+    
+    // Creative/meeting spaces
+    if (lowerMessage.includes('creative space') || lowerMessage.includes('meeting room') || lowerMessage.includes('peerspace')) return 'creative_space';
     
     return null;
   }
@@ -329,12 +366,21 @@ Click on any partner below to get started with step-by-step setup instructions a
   private analyzeIntent(message: string): string {
     const lowerMessage = message.toLowerCase();
     
-    // Asset-specific intents
+    // Asset-specific intents with updated detection
     if (lowerMessage.includes('pool') || lowerMessage.includes('swim')) return 'pool_setup';
     if (lowerMessage.includes('parking') || lowerMessage.includes('driveway')) return 'parking_setup';
     if (lowerMessage.includes('storage') || lowerMessage.includes('basement') || lowerMessage.includes('garage')) return 'storage_setup';
     if (lowerMessage.includes('space') && (lowerMessage.includes('event') || lowerMessage.includes('photo'))) return 'space_rental_setup';
     if (lowerMessage.includes('internet') || lowerMessage.includes('bandwidth')) return 'internet_setup';
+    
+    // New asset type intents
+    if (lowerMessage.includes('airbnb') || lowerMessage.includes('rental')) return 'rental_setup';
+    if (lowerMessage.includes('solar') || lowerMessage.includes('rooftop')) return 'solar_setup';
+    if (lowerMessage.includes('library') || lowerMessage.includes('book')) return 'library_setup';
+    if (lowerMessage.includes('ev') || lowerMessage.includes('charging')) return 'ev_charging_setup';
+    if (lowerMessage.includes('car') || lowerMessage.includes('vehicle')) return 'vehicle_setup';
+    if (lowerMessage.includes('experience') || lowerMessage.includes('tour')) return 'experience_setup';
+    if (lowerMessage.includes('service') || lowerMessage.includes('cleaning')) return 'service_setup';
     
     // General intents
     if (lowerMessage.includes('start') || lowerMessage.includes('begin') || lowerMessage.includes('setup')) return 'start_setup';
@@ -357,6 +403,20 @@ Click on any partner below to get started with step-by-step setup instructions a
         return await this.generateStorageSetupResponse();
       case 'space_rental_setup':
         return await this.generateSpaceRentalSetupResponse();
+      case 'rental_setup':
+        return await this.generateRentalSetupResponse();
+      case 'solar_setup':
+        return await this.generateSolarSetupResponse();
+      case 'library_setup':
+        return await this.generateLibrarySetupResponse();
+      case 'ev_charging_setup':
+        return await this.generateEVChargingSetupResponse();
+      case 'vehicle_setup':
+        return await this.generateVehicleSetupResponse();
+      case 'experience_setup':
+        return await this.generateExperienceSetupResponse();
+      case 'service_setup':
+        return await this.generateServiceSetupResponse();
       case 'start_setup':
         return this.generateStartSetupResponse();
       case 'earnings_question':
@@ -484,6 +544,34 @@ I can open Neighbor.com registration with our referral link right now. You'll ge
 3. Create compelling descriptions for different use cases
 
 I can help you register with Peerspace using our referral link for premium host benefits. Ready to unlock your space's earning potential?`;
+  }
+
+  private async generateRentalSetupResponse(): Promise<string> {
+    return await this.generatePartnerOptionsResponse('short_term_rental');
+  }
+
+  private async generateSolarSetupResponse(): Promise<string> {
+    return await this.generatePartnerOptionsResponse('solar');
+  }
+
+  private async generateLibrarySetupResponse(): Promise<string> {
+    return await this.generatePartnerOptionsResponse('library');
+  }
+
+  private async generateEVChargingSetupResponse(): Promise<string> {
+    return await this.generatePartnerOptionsResponse('ev_charging');
+  }
+
+  private async generateVehicleSetupResponse(): Promise<string> {
+    return await this.generatePartnerOptionsResponse('vehicle');
+  }
+
+  private async generateExperienceSetupResponse(): Promise<string> {
+    return await this.generatePartnerOptionsResponse('experience');
+  }
+
+  private async generateServiceSetupResponse(): Promise<string> {
+    return await this.generatePartnerOptionsResponse('services');
   }
 
   private generateStartSetupResponse(): string {
