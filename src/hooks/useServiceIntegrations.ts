@@ -123,10 +123,13 @@ export const useServiceIntegrations = () => {
             // Handle common variations
             if (clickName.includes(providerName) || providerName.includes(clickName)) return true;
             
-            // Handle specific cases
-            if (clickName === 'honeygain' && providerName === 'honeygain') return true;
-            if (clickName === 'neighbor.com' && providerName === 'neighbor.com') return true;
-            if (clickName === 'gympass' && providerName === 'gympass') return true;
+            // Handle specific cases for new partners
+            if (clickName.includes('airbnb') && providerName.includes('airbnb')) return true;
+            if (clickName.includes('tesla') && providerName.includes('tesla')) return true;
+            if (clickName.includes('kolonia') && providerName.includes('kolonia')) return true;
+            if (clickName.includes('chargepoint') && providerName.includes('chargepoint')) return true;
+            if (clickName.includes('evgo') && providerName.includes('evgo')) return true;
+            if (clickName.includes('library') && providerName.includes('library')) return true;
             
             return false;
           }) || [];
@@ -283,6 +286,18 @@ export const useServiceIntegrations = () => {
 // Helper function to get appropriate icon for asset type
 function getIconForAssetType(assetType: string): string {
   const iconMap: Record<string, string> = {
+    'short_term_rental': 'home',
+    'rental': 'home',
+    'room_rental': 'bed',
+    'experience': 'calendar',
+    'tours': 'map',
+    'services': 'wrench',
+    'solar': 'sun',
+    'rooftop': 'sun',
+    'energy': 'zap',
+    'library': 'book',
+    'community': 'users',
+    'ev_charging': 'battery-charging',
     'internet': 'wifi',
     'bandwidth': 'wifi', 
     'pool': 'waves',
@@ -300,8 +315,6 @@ function getIconForAssetType(assetType: string): string {
     'vehicle': 'car',
     'car': 'car',
     'home_interior': 'home',
-    'solar': 'sun',
-    'rooftop': 'sun',
     'general': 'settings'
   };
 

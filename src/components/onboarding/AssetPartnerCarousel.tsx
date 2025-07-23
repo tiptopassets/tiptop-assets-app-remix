@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
@@ -12,9 +13,10 @@ interface AssetPartnerCarouselProps {
     asset_data: any;
   }>;
   onPartnerClick?: (platformId: string, assetType: string) => void;
+  userLocation?: string;
 }
 
-const AssetPartnerCarousel = ({ selectedAssets, onPartnerClick }: AssetPartnerCarouselProps) => {
+const AssetPartnerCarousel = ({ selectedAssets, onPartnerClick, userLocation }: AssetPartnerCarouselProps) => {
   const { user } = useAuth();
 
   // Helper function to safely handle toLowerCase
@@ -25,39 +27,18 @@ const AssetPartnerCarousel = ({ selectedAssets, onPartnerClick }: AssetPartnerCa
 
   // Helper function to get display name for asset
   const getAssetDisplayName = (assetType: string): string => {
-    const cleanType = safeToLowerCase(assetType);
-    const displayNames: Record<string, string> = {
-      'internet': 'Internet Bandwidth Sharing',
-      'bandwidth': 'Internet Bandwidth Sharing',
-      'wifi': 'Internet Bandwidth Sharing',
-      'pool': 'Swimming Pool',
-      'swimming_pool': 'Swimming Pool',
-      'parking': 'Parking Space',
-      'driveway': 'Parking Space',
-      'storage': 'Storage Space',
-      'garage': 'Storage Space',
-      'basement': 'Storage Space'
-    };
-    return displayNames[cleanType] || cleanType.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
+    return PartnerIntegrationService.getAssetTypeDisplayName(assetType);
   };
 
   // Get partner platforms for each asset
   const getPartnersForAsset = (assetType: string) => {
     const cleanType = safeToLowerCase(assetType);
-    let platforms = PartnerIntegrationService.getPlatformsByAsset(cleanType);
+    let platforms = PartnerIntegrationService.getPlatformsByAsset(cleanType, userLocation);
     
-    // Special handling for parking - show both SpotHero and Neighbor, prioritize Neighbor
-    if (cleanType.includes('parking') || cleanType.includes('driveway')) {
-      const neighbor = PartnerIntegrationService.getPlatformById('neighbor');
-      const spothero = PartnerIntegrationService.getPlatformById('spothero');
-      
-      if (neighbor && spothero) {
-        // Prioritize Neighbor by giving it priority 1
-        return [
-          { ...neighbor, priority: 1 },
-          { ...spothero, priority: 2 }
-        ].sort((a, b) => (a.priority || 999) - (b.priority || 999));
-      }
+    // For solar assets, ensure we show both Tesla and Kolonia Energy (if in FL/TX)
+    if (cleanType.includes('solar') || cleanType.includes('energy')) {
+      const allSolarPlatforms = PartnerIntegrationService.getPlatformsByAsset('solar', userLocation);
+      platforms = allSolarPlatforms;
     }
     
     return platforms;
@@ -106,7 +87,7 @@ const AssetPartnerCarousel = ({ selectedAssets, onPartnerClick }: AssetPartnerCa
                   <span className="text-xs font-medium text-primary">
                     {displayName}
                   </span>
-                  {partner.priority === 1 && (
+                  {partner.priority && partner.priority >= 9 && (
                     <Star className="w-3 h-3 text-yellow-500 fill-current" />
                   )}
                 </div>
