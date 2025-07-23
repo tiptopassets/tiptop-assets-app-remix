@@ -543,7 +543,7 @@ ${assets.slice(0, 2).map(asset =>
 These numbers are based on real market data for your area. Ready to start with the highest-earning opportunity?`;
   }
 
-  private async generateRequirementsResponse(): string {
+  private async generateRequirementsResponse(): Promise<string> {
     return `Here are the general requirements for our top partner platforms:
 
 🌐 **Internet Bandwidth Sharing:**
