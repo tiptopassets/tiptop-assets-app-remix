@@ -4,7 +4,10 @@ import { LocalChatService, ChatMessage } from '@/services/localChatService';
 import { PropertyAnalysisData } from '@/hooks/useUserPropertyAnalysis';
 
 export const useLocalChat = (propertyData: PropertyAnalysisData | null) => {
-  const [chatService] = useState(() => new LocalChatService(propertyData));
+  const [chatService] = useState(() => {
+    console.log('🔧 [USE_LOCAL_CHAT] Creating new LocalChatService instance');
+    return new LocalChatService(propertyData);
+  });
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -22,6 +25,7 @@ export const useLocalChat = (propertyData: PropertyAnalysisData | null) => {
 
     try {
       console.log('🔄 [USE_LOCAL_CHAT] Processing message through chat service...');
+      
       // Process the message through our local chat service
       const response = await chatService.processMessage(userMessage);
       
@@ -33,8 +37,18 @@ export const useLocalChat = (propertyData: PropertyAnalysisData | null) => {
         userMessage,
         response: response.substring(0, 100) + '...',
         messageCount: updatedMessages.length,
-        totalMessages: updatedMessages.length
+        lastMessageHasPartners: updatedMessages[updatedMessages.length - 1]?.partnerOptions?.length || 0
       });
+      
+      // Debug: Log the last message details
+      const lastMessage = updatedMessages[updatedMessages.length - 1];
+      if (lastMessage?.partnerOptions?.length) {
+        console.log('🤝 [USE_LOCAL_CHAT] Partner options in last message:', 
+          lastMessage.partnerOptions.map(p => ({ name: p.name, id: p.id }))
+        );
+      } else {
+        console.log('⚠️ [USE_LOCAL_CHAT] No partner options in last message');
+      }
       
     } catch (err) {
       console.error('❌ [USE_LOCAL_CHAT] Error processing message:', err);
@@ -64,7 +78,8 @@ export const useLocalChat = (propertyData: PropertyAnalysisData | null) => {
     messageCount: messages.length,
     isLoading,
     hasError: !!error,
-    sendMessageReady: !!sendMessage
+    sendMessageReady: !!sendMessage,
+    lastMessagePartners: messages[messages.length - 1]?.partnerOptions?.length || 0
   });
 
   return {

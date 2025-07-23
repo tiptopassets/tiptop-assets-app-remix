@@ -17,6 +17,9 @@ import ChatbotHeader from '@/components/onboarding/ChatbotHeader';
 import ChatbotSidebar from '@/components/onboarding/ChatbotSidebar';
 import QuickActionsBar from '@/components/onboarding/QuickActionsBar';
 
+// Import the test runner for debugging
+import { LocalChatServiceTest } from '@/services/localChatServiceTest';
+
 const EnhancedOnboardingChatbot = () => {
   const { user, loading: authLoading } = useAuth();
   const { toast } = useToast();
@@ -31,6 +34,14 @@ const EnhancedOnboardingChatbot = () => {
     targetAsset,
     url: window.location.href
   });
+
+  // Run tests in development mode
+  useEffect(() => {
+    if (process.env.NODE_ENV === 'development') {
+      console.log('🧪 [CHATBOT] Running LocalChatService tests...');
+      LocalChatServiceTest.runTests();
+    }
+  }, []);
   
   // Enhanced property analysis integration with fallback to journey data
   const { propertyData, loading: propertyLoading, hasPropertyData } = useUserPropertyAnalysis(analysisId || undefined);
@@ -57,7 +68,6 @@ const EnhancedOnboardingChatbot = () => {
   // Store the sendMessage function from the chat interface
   const [sendMessageFunction, setSendMessageFunction] = useState<((message: string) => Promise<void>) | null>(null);
 
-  // Create a unified data object that prioritizes journey data (same as dashboard)
   const unifiedPropertyData = useMemo(() => {
     if (journeyData) {
       console.log('🎯 [CHATBOT] Using journey data as primary source:', {
