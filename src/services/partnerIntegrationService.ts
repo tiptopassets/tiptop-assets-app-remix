@@ -26,7 +26,7 @@ export class PartnerIntegrationService {
       name: 'Airbnb Unit Rental',
       description: 'Rent out your property or spare rooms to travelers on Airbnb',
       briefDescription: 'Short-term rental platform for properties and rooms',
-      assetTypes: ['short_term_rental', 'rental', 'room_rental', 'guest_room', 'property', 'airbnb'],
+      assetTypes: ['airbnb', 'short_term_rental', 'rental', 'room_rental', 'guest_room', 'property'],
       earningRange: { min: 800, max: 3000 },
       referralLink: 'https://www.airbnb.com/rp/tiptopa2?p=stay&s=67&unique_share_id=7d56143e-b489-4ef6-ba7f-c10c1241bce9',
       logoUrl: 'https://www.airbnb.com/favicon.ico',
@@ -40,7 +40,7 @@ export class PartnerIntegrationService {
       name: 'Airbnb Experience',
       description: 'Create and host unique experiences for travelers in your area',
       briefDescription: 'Host unique local experiences for travelers',
-      assetTypes: ['experience', 'tours', 'activities', 'local_expertise', 'hosting'],
+      assetTypes: ['airbnb', 'experience', 'tours', 'activities', 'local_expertise', 'hosting'],
       earningRange: { min: 200, max: 1500 },
       referralLink: 'https://www.airbnb.com/rp/tiptopa2?p=experience&s=67&unique_share_id=560cba6c-7231-400c-84f2-9434c6a31c2a',
       logoUrl: 'https://www.airbnb.com/favicon.ico',
@@ -54,7 +54,7 @@ export class PartnerIntegrationService {
       name: 'Airbnb Service',
       description: 'Offer services to Airbnb hosts and guests in your area',
       briefDescription: 'Provide services to Airbnb hosts and guests',
-      assetTypes: ['services', 'cleaning', 'maintenance', 'hospitality'],
+      assetTypes: ['airbnb', 'services', 'cleaning', 'maintenance', 'hospitality'],
       earningRange: { min: 300, max: 2000 },
       referralLink: 'https://www.airbnb.com/rp/tiptopa2?p=service&s=67&unique_share_id=6c478139-a138-490e-af41-58869ceb0d6b',
       logoUrl: 'https://www.airbnb.com/favicon.ico',
@@ -244,7 +244,8 @@ export class PartnerIntegrationService {
       const hasMatch = platform.assetTypes.some(type => {
         const normalizedType = type.toLowerCase();
         const matches = normalizedType.includes(normalizedAssetType) || 
-                       normalizedAssetType.includes(normalizedType);
+                       normalizedAssetType.includes(normalizedType) ||
+                       normalizedAssetType === normalizedType;
         
         if (matches) {
           console.log('🎯 [PARTNER_SERVICE] Platform', platform.name, 'matches asset type', normalizedAssetType, 'via', normalizedType);
@@ -285,11 +286,12 @@ export class PartnerIntegrationService {
 
   static getAssetTypeDisplayName(assetType: string): string {
     const displayNames: Record<string, string> = {
+      'airbnb': 'Airbnb Opportunities',
       'short_term_rental': 'Short-term Rental',
       'rental': 'Property Rental',
       'room_rental': 'Room Rental',
       'guest_room': 'Guest Room',
-      'airbnb': 'Airbnb Rental',
+      'property': 'Property Rental',
       'experience': 'Experience Hosting',
       'tours': 'Tours & Activities',
       'activities': 'Local Activities',

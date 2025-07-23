@@ -256,8 +256,8 @@ export class LocalChatService {
         lowerMessage.includes('rental property') ||
         lowerMessage.includes('rent out') ||
         lowerMessage.includes('hosting')) {
-      console.log('🔍 [ASSET_DETECTION] Detected: short_term_rental');
-      return 'short_term_rental';
+      console.log('🔍 [ASSET_DETECTION] Detected: airbnb (will show all 3 options)');
+      return 'airbnb';
     }
     
     if (lowerMessage.includes('library') || 
@@ -321,13 +321,58 @@ export class LocalChatService {
     console.log('🎯 [PARTNER_OPTIONS] Generating response for asset type:', assetType);
     this.context.currentStage = `${assetType}_partner_selection`;
     
-    // Get available partners for this asset type
-    const partners = PartnerIntegrationService.getPlatformsByAsset(assetType);
-    console.log('🎯 [PARTNER_OPTIONS] Found partners:', partners.length, 'for asset:', assetType);
+    let partners;
+    let response;
     
-    if (partners.length === 0) {
-      console.log('⚠️ [PARTNER_OPTIONS] No partners found for asset type:', assetType);
-      return `I don't have specific partner recommendations for ${assetType} yet, but I can help you explore general monetization options. What would you like to know?`;
+    // Special handling for Airbnb - show all 3 options
+    if (assetType === 'airbnb') {
+      console.log('🎯 [PARTNER_OPTIONS] Special Airbnb handling - showing all 3 options');
+      
+      // Get all three Airbnb partners specifically
+      const airbnbRental = PartnerIntegrationService.getPlatformById('airbnb-unit-rental');
+      const airbnbExperience = PartnerIntegrationService.getPlatformById('airbnb-experience');
+      const airbnbService = PartnerIntegrationService.getPlatformById('airbnb-service');
+      
+      partners = [airbnbRental, airbnbExperience, airbnbService].filter(Boolean);
+      
+      response = `Perfect! Here are all the Airbnb monetization opportunities available to you:
+
+💰 **Airbnb Partner Options:**
+
+1. **Airbnb Unit Rental** ⭐ (Recommended)
+   - Rent out your property or spare rooms to travelers
+   - Earning potential: $800-$3,000/month
+
+2. **Airbnb Experience**
+   - Create and host unique experiences for travelers in your area
+   - Earning potential: $200-$1,500/month
+
+3. **Airbnb Service**
+   - Offer services to Airbnb hosts and guests in your area
+   - Earning potential: $300-$2,000/month
+
+Click on any option below to get started with step-by-step setup instructions and use our referral links for the best benefits!`;
+    } else {
+      // Regular asset handling
+      partners = PartnerIntegrationService.getPlatformsByAsset(assetType);
+      console.log('🎯 [PARTNER_OPTIONS] Found partners:', partners.length, 'for asset:', assetType);
+      
+      if (partners.length === 0) {
+        console.log('⚠️ [PARTNER_OPTIONS] No partners found for asset type:', assetType);
+        return `I don't have specific partner recommendations for ${assetType} yet, but I can help you explore general monetization options. What would you like to know?`;
+      }
+
+      const assetDisplayName = this.getAssetDisplayName(assetType);
+      response = `Perfect! Here are the best platforms for monetizing your ${assetDisplayName.toLowerCase()}:
+
+💰 **Available Partners for ${assetDisplayName}:**
+
+${partners.map((partner, index) => 
+  `${index + 1}. **${partner.name}** ${partner.priority === 10 ? '⭐ (Recommended)' : ''}
+   - ${partner.briefDescription || partner.description}`
+).join('\n\n')}
+
+Click on any partner below to get started with step-by-step setup instructions and use our referral link for the best benefits!`;
     }
 
     // Convert to PartnerOption format with asset type
@@ -349,18 +394,6 @@ export class LocalChatService {
 
     console.log('🎯 [PARTNER_OPTIONS] Created partner options:', partnerOptions.length);
 
-    const assetDisplayName = this.getAssetDisplayName(assetType);
-    const response = `Perfect! Here are the best platforms for monetizing your ${assetDisplayName.toLowerCase()}:
-
-💰 **Available Partners for ${assetDisplayName}:**
-
-${partners.map((partner, index) => 
-  `${index + 1}. **${partner.name}** ${partner.priority === 10 ? '⭐ (Recommended)' : ''}
-   - ${partner.briefDescription || partner.description}`
-).join('\n\n')}
-
-Click on any partner below to get started with step-by-step setup instructions and use our referral link for the best benefits!`;
-
     // Add the response with partner options
     this.addMessageWithPartners('assistant', response, partnerOptions);
     console.log('🎯 [PARTNER_OPTIONS] Response added with partner options');
@@ -369,6 +402,7 @@ Click on any partner below to get started with step-by-step setup instructions a
 
   private getAssetDisplayName(assetType: string): string {
     const displayNames: Record<string, string> = {
+      'airbnb': 'Airbnb Opportunities',
       'short_term_rental': 'Short-term Rental (Airbnb)',
       'rental': 'Property Rental',
       'room_rental': 'Room Rental',
@@ -454,7 +488,7 @@ Click on any partner below to get started with step-by-step setup instructions a
 
   private async generateAirbnbSetupResponse(): Promise<string> {
     console.log('🎯 [AIRBNB_SETUP] Generating Airbnb setup response');
-    return await this.generatePartnerOptionsResponse('short_term_rental');
+    return await this.generatePartnerOptionsResponse('airbnb');
   }
 
   private async generateLibrarySetupResponse(): Promise<string> {
