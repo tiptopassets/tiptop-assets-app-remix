@@ -279,9 +279,9 @@ export class LocalChatService {
       description: partner.description,
       referralLink: partner.referralLink,
       earningRange: partner.earningRange,
-      setupTime: partner.setupTime,
-      requirements: partner.requirements,
-      setupSteps: partner.setupSteps,
+      setupTime: partner.setupTime || '1-2 hours',
+      requirements: partner.requirements || ['Basic setup required'],
+      setupSteps: partner.setupSteps || ['Sign up', 'Complete setup', 'Start earning'],
       priority: partner.priority,
       assetType: assetType
     }));
@@ -292,8 +292,8 @@ export class LocalChatService {
 💰 **Available Partners for ${assetDisplayName}:**
 
 ${partners.map((partner, index) => 
-  `${index + 1}. **${partner.name}** ${partner.priority === 1 ? '⭐ (Recommended)' : ''}
-   - ${partner.briefDescription}`
+  `${index + 1}. **${partner.name}** ${partner.priority === 10 ? '⭐ (Recommended)' : ''}
+   - ${partner.briefDescription || partner.description}`
 ).join('\n\n')}
 
 Click on any partner below to get started with step-by-step setup instructions and use our referral link for the best benefits!`;
@@ -543,24 +543,26 @@ ${assets.slice(0, 2).map(asset =>
 These numbers are based on real market data for your area. Ready to start with the highest-earning opportunity?`;
   }
 
-  private generateRequirementsResponse(): string {
+  private async generateRequirementsResponse(): string {
     return `Here are the general requirements for our top partner platforms:
 
 🌐 **Internet Bandwidth Sharing:**
-- Grass.io ⭐: ${PartnerIntegrationService.getPlatformById('grass')?.briefDescription}
-- Honeygain: ${PartnerIntegrationService.getPlatformById('honeygain')?.briefDescription}
+- Honeygain: ${PartnerIntegrationService.getPlatformById('honeygain')?.briefDescription || PartnerIntegrationService.getPlatformById('honeygain')?.description || 'Passive income from internet bandwidth'}
 
 🏊 **Swimply (Pool Rental):**
-- ${PartnerIntegrationService.getPlatformById('swimply')?.briefDescription}
+- ${PartnerIntegrationService.getPlatformById('swimply')?.briefDescription || PartnerIntegrationService.getPlatformById('swimply')?.description || 'Pool rental marketplace'}
 
 🚗 **SpotHero (Parking):**
-- ${PartnerIntegrationService.getPlatformById('spothero')?.briefDescription}
+- ${PartnerIntegrationService.getPlatformById('spothero')?.briefDescription || PartnerIntegrationService.getPlatformById('spothero')?.description || 'Parking space rental platform'}
 
 📦 **Neighbor.com (Storage):**
-- ${PartnerIntegrationService.getPlatformById('neighbor')?.briefDescription}
+- ${PartnerIntegrationService.getPlatformById('neighbor')?.briefDescription || PartnerIntegrationService.getPlatformById('neighbor')?.description || 'Peer-to-peer storage space rental'}
 
 🎭 **Peerspace (Unique Spaces):**
-- ${PartnerIntegrationService.getPlatformById('peerspace')?.briefDescription}
+- ${PartnerIntegrationService.getPlatformById('peerspace')?.briefDescription || PartnerIntegrationService.getPlatformById('peerspace')?.description || 'Unique space rental for events'}
+
+🏠 **Airbnb (Property Rental):**
+- ${PartnerIntegrationService.getPlatformById('airbnb-unit-rental')?.briefDescription || PartnerIntegrationService.getPlatformById('airbnb-unit-rental')?.description || 'Short-term rental platform'}
 
 💡 **Universal Requirements:**
 - Government ID for verification
@@ -710,7 +712,7 @@ To give you personalized recommendations, could you tell me what type of propert
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
-          'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdmcXhydXZsZG9qeXV6ZnB6b2RnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA2MTMwMTQsImV4cCI6MjA2NjE4OTAxNH0.bIMaxFc9KaBdAOqVyw8t2fNjR9i24NYGLAe8wY56LZw'
+          'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdmcXhydXZsZG9qeXV6ZnB6b2RnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA6MTMwMTQsImV4cCI6MjA2NjE4OTAxNH0.bIMaxFc9KaBdAOqVyw8t2fNjR9i24NYGLAe8wY56LZw'
         },
         body: JSON.stringify({
           query: `${platform} host requirements setup 2024`,
