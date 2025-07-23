@@ -1,3 +1,4 @@
+
 export interface PartnerPlatform {
   id: string;
   name: string;
@@ -25,7 +26,7 @@ export class PartnerIntegrationService {
       name: 'Airbnb Unit Rental',
       description: 'Rent out your property or spare rooms to travelers on Airbnb',
       briefDescription: 'Short-term rental platform for properties and rooms',
-      assetTypes: ['short_term_rental', 'rental', 'room_rental', 'guest_room', 'property'],
+      assetTypes: ['short_term_rental', 'rental', 'room_rental', 'guest_room', 'property', 'airbnb'],
       earningRange: { min: 800, max: 3000 },
       referralLink: 'https://www.airbnb.com/rp/tiptopa2?p=stay&s=67&unique_share_id=7d56143e-b489-4ef6-ba7f-c10c1241bce9',
       logoUrl: 'https://www.airbnb.com/favicon.ico',
@@ -39,7 +40,7 @@ export class PartnerIntegrationService {
       name: 'Airbnb Experience',
       description: 'Create and host unique experiences for travelers in your area',
       briefDescription: 'Host unique local experiences for travelers',
-      assetTypes: ['experience', 'tours', 'activities', 'local_expertise'],
+      assetTypes: ['experience', 'tours', 'activities', 'local_expertise', 'hosting'],
       earningRange: { min: 200, max: 1500 },
       referralLink: 'https://www.airbnb.com/rp/tiptopa2?p=experience&s=67&unique_share_id=560cba6c-7231-400c-84f2-9434c6a31c2a',
       logoUrl: 'https://www.airbnb.com/favicon.ico',
@@ -237,13 +238,27 @@ export class PartnerIntegrationService {
 
   static getPlatformsByAsset(assetType: string, userLocation?: string): PartnerPlatform[] {
     const normalizedAssetType = assetType.toLowerCase().trim();
+    console.log('🔍 [PARTNER_SERVICE] Looking for platforms for asset type:', normalizedAssetType);
     
-    let matchingPlatforms = this.platforms.filter(platform => 
-      platform.assetTypes.some(type => 
-        type.toLowerCase().includes(normalizedAssetType) || 
-        normalizedAssetType.includes(type.toLowerCase())
-      )
-    );
+    let matchingPlatforms = this.platforms.filter(platform => {
+      const hasMatch = platform.assetTypes.some(type => {
+        const normalizedType = type.toLowerCase();
+        const matches = normalizedType.includes(normalizedAssetType) || 
+                       normalizedAssetType.includes(normalizedType);
+        
+        if (matches) {
+          console.log('🎯 [PARTNER_SERVICE] Platform', platform.name, 'matches asset type', normalizedAssetType, 'via', normalizedType);
+        }
+        return matches;
+      });
+      
+      return hasMatch;
+    });
+
+    console.log('🎯 [PARTNER_SERVICE] Found', matchingPlatforms.length, 'matching platforms for', normalizedAssetType);
+    matchingPlatforms.forEach(platform => {
+      console.log('  - Platform:', platform.name, 'Asset types:', platform.assetTypes.join(', '));
+    });
 
     // Apply location restrictions
     if (userLocation) {
@@ -274,6 +289,7 @@ export class PartnerIntegrationService {
       'rental': 'Property Rental',
       'room_rental': 'Room Rental',
       'guest_room': 'Guest Room',
+      'airbnb': 'Airbnb Rental',
       'experience': 'Experience Hosting',
       'tours': 'Tours & Activities',
       'activities': 'Local Activities',

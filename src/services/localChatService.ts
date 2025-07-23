@@ -249,42 +249,105 @@ export class LocalChatService {
   private detectAssetFromMessage(message: string): string | null {
     const lowerMessage = message.toLowerCase();
     
-    if (lowerMessage.includes('internet') || lowerMessage.includes('bandwidth') || lowerMessage.includes('wifi')) return 'internet';
-    if (lowerMessage.includes('pool') || lowerMessage.includes('swim')) return 'pool';
-    if (lowerMessage.includes('parking') || lowerMessage.includes('driveway')) return 'parking';
-    if (lowerMessage.includes('storage') || lowerMessage.includes('basement') || lowerMessage.includes('garage')) return 'storage';
-    if (lowerMessage.includes('event') && (lowerMessage.includes('space') || lowerMessage.includes('rental'))) return 'event_space_rental';
-    if (lowerMessage.includes('gym') || lowerMessage.includes('home gym')) return 'home_gym_rental';
-    if (lowerMessage.includes('solar') || lowerMessage.includes('rooftop')) return 'solar';
-    if (lowerMessage.includes('garden') || lowerMessage.includes('yard')) return 'garden';
-    if (lowerMessage.includes('ev') || lowerMessage.includes('charging')) return 'ev_charging';
+    // Enhanced asset detection with better matching
+    if (lowerMessage.includes('airbnb') || 
+        lowerMessage.includes('short term rental') || 
+        lowerMessage.includes('vacation rental') ||
+        lowerMessage.includes('rental property') ||
+        lowerMessage.includes('rent out') ||
+        lowerMessage.includes('hosting')) {
+      console.log('🔍 [ASSET_DETECTION] Detected: short_term_rental');
+      return 'short_term_rental';
+    }
     
+    if (lowerMessage.includes('library') || 
+        lowerMessage.includes('book') || 
+        lowerMessage.includes('little free library') ||
+        lowerMessage.includes('community library')) {
+      console.log('🔍 [ASSET_DETECTION] Detected: library');
+      return 'library';
+    }
+    
+    if (lowerMessage.includes('internet') || lowerMessage.includes('bandwidth') || lowerMessage.includes('wifi')) {
+      console.log('🔍 [ASSET_DETECTION] Detected: internet');
+      return 'internet';
+    }
+    
+    if (lowerMessage.includes('pool') || lowerMessage.includes('swim')) {
+      console.log('🔍 [ASSET_DETECTION] Detected: pool');
+      return 'pool';
+    }
+    
+    if (lowerMessage.includes('parking') || lowerMessage.includes('driveway')) {
+      console.log('🔍 [ASSET_DETECTION] Detected: parking');
+      return 'parking';
+    }
+    
+    if (lowerMessage.includes('storage') || lowerMessage.includes('basement') || lowerMessage.includes('garage')) {
+      console.log('🔍 [ASSET_DETECTION] Detected: storage');
+      return 'storage';
+    }
+    
+    if (lowerMessage.includes('event') && (lowerMessage.includes('space') || lowerMessage.includes('rental'))) {
+      console.log('🔍 [ASSET_DETECTION] Detected: event_space_rental');
+      return 'event_space_rental';
+    }
+    
+    if (lowerMessage.includes('gym') || lowerMessage.includes('home gym')) {
+      console.log('🔍 [ASSET_DETECTION] Detected: home_gym_rental');
+      return 'home_gym_rental';
+    }
+    
+    if (lowerMessage.includes('solar') || lowerMessage.includes('rooftop')) {
+      console.log('🔍 [ASSET_DETECTION] Detected: solar');
+      return 'solar';
+    }
+    
+    if (lowerMessage.includes('garden') || lowerMessage.includes('yard')) {
+      console.log('🔍 [ASSET_DETECTION] Detected: garden');
+      return 'garden';
+    }
+    
+    if (lowerMessage.includes('ev') || lowerMessage.includes('charging')) {
+      console.log('🔍 [ASSET_DETECTION] Detected: ev_charging');
+      return 'ev_charging';
+    }
+    
+    console.log('🔍 [ASSET_DETECTION] No asset detected in message:', lowerMessage);
     return null;
   }
 
   private async generatePartnerOptionsResponse(assetType: string): Promise<string> {
+    console.log('🎯 [PARTNER_OPTIONS] Generating response for asset type:', assetType);
     this.context.currentStage = `${assetType}_partner_selection`;
     
     // Get available partners for this asset type
     const partners = PartnerIntegrationService.getPlatformsByAsset(assetType);
+    console.log('🎯 [PARTNER_OPTIONS] Found partners:', partners.length, 'for asset:', assetType);
     
     if (partners.length === 0) {
+      console.log('⚠️ [PARTNER_OPTIONS] No partners found for asset type:', assetType);
       return `I don't have specific partner recommendations for ${assetType} yet, but I can help you explore general monetization options. What would you like to know?`;
     }
 
     // Convert to PartnerOption format with asset type
-    const partnerOptions: PartnerOption[] = partners.map(partner => ({
-      id: partner.id,
-      name: partner.name,
-      description: partner.description,
-      referralLink: partner.referralLink,
-      earningRange: partner.earningRange,
-      setupTime: partner.setupTime || '1-2 hours',
-      requirements: partner.requirements || ['Basic setup required'],
-      setupSteps: partner.setupSteps || ['Sign up', 'Complete setup', 'Start earning'],
-      priority: partner.priority,
-      assetType: assetType
-    }));
+    const partnerOptions: PartnerOption[] = partners.map(partner => {
+      console.log('🎯 [PARTNER_OPTIONS] Processing partner:', partner.name, 'for asset:', assetType);
+      return {
+        id: partner.id,
+        name: partner.name,
+        description: partner.description,
+        referralLink: partner.referralLink,
+        earningRange: partner.earningRange,
+        setupTime: partner.setupTime || '1-2 hours',
+        requirements: partner.requirements || ['Basic setup required'],
+        setupSteps: partner.setupSteps || ['Sign up', 'Complete setup', 'Start earning'],
+        priority: partner.priority,
+        assetType: assetType
+      };
+    });
+
+    console.log('🎯 [PARTNER_OPTIONS] Created partner options:', partnerOptions.length);
 
     const assetDisplayName = this.getAssetDisplayName(assetType);
     const response = `Perfect! Here are the best platforms for monetizing your ${assetDisplayName.toLowerCase()}:
@@ -300,22 +363,27 @@ Click on any partner below to get started with step-by-step setup instructions a
 
     // Add the response with partner options
     this.addMessageWithPartners('assistant', response, partnerOptions);
+    console.log('🎯 [PARTNER_OPTIONS] Response added with partner options');
     return response;
   }
 
   private getAssetDisplayName(assetType: string): string {
     const displayNames: Record<string, string> = {
+      'short_term_rental': 'Short-term Rental (Airbnb)',
+      'rental': 'Property Rental',
+      'room_rental': 'Room Rental',
+      'guest_room': 'Guest Room',
+      'library': 'Community Library',
+      'community': 'Community Projects',
+      'books': 'Book Sharing',
       'internet': 'Internet Bandwidth Sharing',
       'pool': 'Swimming Pool',
       'parking': 'Parking Space',
       'storage': 'Storage Space',
       'event_space': 'Event Space Rental',
       'event_space_rental': 'Event Space Rental',
-      'event space rental': 'Event Space Rental',
       'home_gym': 'Home Gym Rental',
       'home_gym_rental': 'Home Gym Rental',
-      'home gym rental': 'Home Gym Rental',
-      'gym': 'Home Gym Rental',
       'solar': 'Solar Panels',
       'rooftop': 'Rooftop Solar',
       'garden': 'Garden/Yard Space',
@@ -329,12 +397,16 @@ Click on any partner below to get started with step-by-step setup instructions a
   private analyzeIntent(message: string): string {
     const lowerMessage = message.toLowerCase();
     
-    // Asset-specific intents
+    // Asset-specific intents with enhanced detection
+    if (lowerMessage.includes('airbnb') || lowerMessage.includes('short term') || lowerMessage.includes('vacation rental')) return 'airbnb_setup';
+    if (lowerMessage.includes('library') || lowerMessage.includes('book')) return 'library_setup';
     if (lowerMessage.includes('pool') || lowerMessage.includes('swim')) return 'pool_setup';
     if (lowerMessage.includes('parking') || lowerMessage.includes('driveway')) return 'parking_setup';
     if (lowerMessage.includes('storage') || lowerMessage.includes('basement') || lowerMessage.includes('garage')) return 'storage_setup';
     if (lowerMessage.includes('space') && (lowerMessage.includes('event') || lowerMessage.includes('photo'))) return 'space_rental_setup';
     if (lowerMessage.includes('internet') || lowerMessage.includes('bandwidth')) return 'internet_setup';
+    if (lowerMessage.includes('solar') || lowerMessage.includes('rooftop')) return 'solar_setup';
+    if (lowerMessage.includes('ev') || lowerMessage.includes('charging')) return 'ev_setup';
     
     // General intents
     if (lowerMessage.includes('start') || lowerMessage.includes('begin') || lowerMessage.includes('setup')) return 'start_setup';
@@ -346,7 +418,13 @@ Click on any partner below to get started with step-by-step setup instructions a
   }
 
   private async generateResponse(intent: string, userMessage: string): Promise<string> {
+    console.log('🎯 [GENERATE_RESPONSE] Processing intent:', intent);
+    
     switch (intent) {
+      case 'airbnb_setup':
+        return await this.generateAirbnbSetupResponse();
+      case 'library_setup':
+        return await this.generateLibrarySetupResponse();
       case 'internet_setup':
         return await this.generateInternetSetupResponse();
       case 'pool_setup':
@@ -357,6 +435,10 @@ Click on any partner below to get started with step-by-step setup instructions a
         return await this.generateStorageSetupResponse();
       case 'space_rental_setup':
         return await this.generateSpaceRentalSetupResponse();
+      case 'solar_setup':
+        return await this.generateSolarSetupResponse();
+      case 'ev_setup':
+        return await this.generateEVSetupResponse();
       case 'start_setup':
         return this.generateStartSetupResponse();
       case 'earnings_question':
@@ -368,6 +450,26 @@ Click on any partner below to get started with step-by-step setup instructions a
       default:
         return this.generateContextualResponse(userMessage);
     }
+  }
+
+  private async generateAirbnbSetupResponse(): Promise<string> {
+    console.log('🎯 [AIRBNB_SETUP] Generating Airbnb setup response');
+    return await this.generatePartnerOptionsResponse('short_term_rental');
+  }
+
+  private async generateLibrarySetupResponse(): Promise<string> {
+    console.log('🎯 [LIBRARY_SETUP] Generating library setup response');
+    return await this.generatePartnerOptionsResponse('library');
+  }
+
+  private async generateSolarSetupResponse(): Promise<string> {
+    console.log('🎯 [SOLAR_SETUP] Generating solar setup response');
+    return await this.generatePartnerOptionsResponse('solar');
+  }
+
+  private async generateEVSetupResponse(): Promise<string> {
+    console.log('🎯 [EV_SETUP] Generating EV charging setup response');
+    return await this.generatePartnerOptionsResponse('ev_charging');
   }
 
   private async generateInternetSetupResponse(): Promise<string> {
@@ -657,6 +759,7 @@ To give you personalized recommendations, could you tell me what type of propert
   }
 
   private addMessageWithPartners(role: 'user' | 'assistant', content: string, partnerOptions: PartnerOption[]): void {
+    console.log('🎯 [ADD_MESSAGE_WITH_PARTNERS] Adding message with partners:', partnerOptions.length);
     this.messageHistory.push({
       id: `${Date.now()}-${Math.random()}`,
       role,
