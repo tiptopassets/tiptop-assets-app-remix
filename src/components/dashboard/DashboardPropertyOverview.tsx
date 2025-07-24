@@ -1,246 +1,275 @@
 
-import React from 'react';
-import { motion } from 'framer-motion';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import React, { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { MapPin, Calendar, Settings, TrendingUp, DollarSign } from 'lucide-react';
-import { formatDistanceToNow } from 'date-fns';
+import { Badge } from '@/components/ui/badge';
+import { MapPin, TrendingUp, Zap, MessageSquare, Image as ImageIcon, Loader2, Plus } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { UserPropertyAnalysis } from '@/types/userData';
+import { navigateToChatbot } from '@/utils/navigationHelpers';
+import { useNavigate } from 'react-router-dom';
+import { useSatelliteImage } from '@/hooks/useSatelliteImage';
+import { useUserAssetSelections } from '@/hooks/useUserAssetSelections';
 
 interface DashboardPropertyOverviewProps {
-  analysis: any;
+  analysis: UserPropertyAnalysis;
   address?: string;
-  assetSelections?: any[];
-  hasUserSelections?: boolean;
 }
 
-const DashboardPropertyOverview: React.FC<DashboardPropertyOverviewProps> = ({ 
-  analysis, 
-  address,
-  assetSelections = [],
-  hasUserSelections = false
+const DashboardPropertyOverview: React.FC<DashboardPropertyOverviewProps> = ({
+  analysis,
+  address
 }) => {
-  if (!analysis) return null;
+  const navigate = useNavigate();
+  const [navigatingAsset, setNavigatingAsset] = useState<string | null>(null);
+  const [navigatingGeneral, setNavigatingGeneral] = useState(false);
+  const { assetSelections, loading: selectionsLoading } = useUserAssetSelections();
 
-  const analysisResults = analysis.analysis_results;
-  const createdAt = new Date(analysis.created_at);
-  
-  // Get filtered assets based on user selections
-  const getFilteredAssets = () => {
-    if (!hasUserSelections || !analysisResults) return [];
-    
-    const assets = [];
-    
-    // Check each asset type and include if selected
-    assetSelections.forEach(selection => {
-      const assetType = selection.asset_type.toLowerCase();
-      
-      if (assetType.includes('parking') && analysisResults.parking?.revenue > 0) {
-        assets.push({
-          type: 'parking',
-          title: 'Parking Spaces',
-          revenue: selection.monthly_revenue,
-          setupCost: selection.setup_cost || 0,
-          description: `${analysisResults.parking.spaces || 2} spaces available`,
-          icon: '🚗'
-        });
+  const handleStartAssetSetup = async (assetType?: string) => {
+    try {
+      if (assetType) {
+        setNavigatingAsset(assetType);
+        console.log('🚀 [DASHBOARD] Starting asset setup:', { analysisId: analysis.id, assetType });
+      } else {
+        setNavigatingGeneral(true);
+        console.log('🚀 [DASHBOARD] Starting general AI assistant:', { analysisId: analysis.id });
       }
+
+      const chatbotUrl = navigateToChatbot(analysis.id, assetType);
+      console.log('🔗 [DASHBOARD] Navigating to:', chatbotUrl);
       
-      if (assetType.includes('pool') && analysisResults.pool?.revenue > 0) {
-        assets.push({
-          type: 'pool',
-          title: 'Swimming Pool',
-          revenue: selection.monthly_revenue,
-          setupCost: selection.setup_cost || 0,
-          description: 'Pool area available for events',
-          icon: '🏊'
-        });
-      }
+      // Store interaction trigger flag in sessionStorage to be picked up by chatbot
+      sessionStorage.setItem('triggerBubbleInteraction', 'true');
       
-      if ((assetType.includes('garden') || assetType.includes('yard')) && analysisResults.garden?.revenue > 0) {
-        assets.push({
-          type: 'garden',
-          title: 'Garden Space',
-          revenue: selection.monthly_revenue,
-          setupCost: selection.setup_cost || 0,
-          description: 'Outdoor space for activities',
-          icon: '🌿'
-        });
-      }
+      // Navigate immediately without delay
+      navigate(chatbotUrl);
+    } catch (error) {
+      console.error('❌ [DASHBOARD] Navigation error:', error);
       
-      if ((assetType.includes('rooftop') || assetType.includes('solar')) && analysisResults.rooftop?.revenue > 0) {
-        assets.push({
-          type: 'rooftop',
-          title: 'Rooftop Solar',
-          revenue: selection.monthly_revenue,
-          setupCost: selection.setup_cost || 0,
-          description: 'Solar panel installation',
-          icon: '☀️'
-        });
-      }
-      
-      if ((assetType.includes('bandwidth') || assetType.includes('internet')) && analysisResults.bandwidth?.revenue > 0) {
-        assets.push({
-          type: 'bandwidth',
-          title: 'Internet Bandwidth',
-          revenue: selection.monthly_revenue,
-          setupCost: selection.setup_cost || 0,
-          description: 'Share unused internet capacity',
-          icon: '📡'
-        });
-      }
-    });
-    
-    return assets;
+      // Clear loading states on error
+      setNavigatingAsset(null);
+      setNavigatingGeneral(false);
+    }
   };
 
-  const filteredAssets = getFilteredAssets();
-  const totalSetupCost = filteredAssets.reduce((sum, asset) => sum + (asset.setupCost || 0), 0);
-  const totalMonthlyRevenue = filteredAssets.reduce((sum, asset) => sum + asset.revenue, 0);
+  const getPropertyAddress = () => {
+    if (address) {
+      return address;
+    }
+    
+    // Fallback to a generic address since AnalysisResults doesn't contain address
+    return 'Property Address';
+  };
+
+  const propertyAddress = getPropertyAddress();
+  const { imageUrl: satelliteImageUrl, loading: imageLoading } = useSatelliteImage(propertyAddress);
+
+  const getSelectedAssets = () => {
+    if (!assetSelections.length) return null;
+
+    // Deduplicate asset selections - keep only the most recent selection for each asset type
+    const uniqueAssetSelections = assetSelections.reduce((acc, selection) => {
+      const existingIndex = acc.findIndex(existing => 
+        existing.asset_type.toLowerCase() === selection.asset_type.toLowerCase()
+      );
+      
+      if (existingIndex === -1) {
+        // Asset type not found, add it
+        acc.push(selection);
+      } else {
+        // Asset type exists, keep the more recent one
+        const existingDate = new Date(acc[existingIndex].selected_at);
+        const currentDate = new Date(selection.selected_at);
+        
+        if (currentDate > existingDate) {
+          acc[existingIndex] = selection;
+        }
+      }
+      
+      return acc;
+    }, [] as typeof assetSelections);
+
+    // Map deduplicated asset selections to display format
+    const assets = uniqueAssetSelections.map(selection => {
+      const assetType = selection.asset_type.toLowerCase();
+      
+      // Determine display name based on asset type
+      let name = selection.asset_type;
+      if (assetType.includes('internet') || assetType.includes('bandwidth')) {
+        name = 'Internet Bandwidth Sharing';
+      } else if (assetType.includes('storage')) {
+        name = 'Personal Storage Rental';
+      } else if (assetType.includes('pool') || assetType.includes('swimming')) {
+        name = 'Swimming Pool';
+      } else if (assetType.includes('solar') || assetType.includes('rooftop')) {
+        name = 'Solar Panels';
+      } else if (assetType.includes('parking')) {
+        name = 'Parking Spaces';
+      } else if (assetType.includes('garden')) {
+        name = 'Garden Space';
+      }
+
+      return {
+        type: assetType,
+        name,
+        revenue: selection.monthly_revenue || 0,
+        setupCost: selection.setup_cost || 0,
+        data: selection.asset_data
+      };
+    });
+
+    // Sort by revenue (highest first)
+    return assets.sort((a, b) => b.revenue - a.revenue);
+  };
+
+  const selectedAssets = getSelectedAssets();
+  const totalSelectedRevenue = selectedAssets ? selectedAssets.reduce((sum, asset) => sum + asset.revenue, 0) : 0;
+  const totalSelectedCount = selectedAssets ? selectedAssets.length : 0;
+  const hasSelectedAssets = selectedAssets && selectedAssets.length > 0;
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.1 }}
-      className="space-y-6"
-    >
-      {/* Property Header */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-start justify-between">
-            <div className="space-y-1">
-              <CardTitle className="flex items-center gap-2">
-                <MapPin className="h-5 w-5 text-primary" />
-                Property Overview
-              </CardTitle>
-              <CardDescription className="flex items-center gap-2">
-                <Calendar className="h-4 w-4" />
-                Analyzed {formatDistanceToNow(createdAt, { addSuffix: true })}
-              </CardDescription>
-            </div>
-            <Badge variant="secondary" className="bg-green-100 text-green-800">
-              {hasUserSelections ? `${filteredAssets.length} Assets Selected` : 'Analysis Complete'}
-            </Badge>
-          </div>
-        </CardHeader>
-        
-        <CardContent>
-          <div className="p-4 bg-muted/50 rounded-lg mb-4">
-            <h3 className="font-semibold text-foreground mb-1">Property Address</h3>
-            <p className="text-muted-foreground">{address || 'Address not available'}</p>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Main Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Asset Cards */}
-        <div className="lg:col-span-2 space-y-4">
-          <h3 className="text-lg font-semibold">Selected Assets</h3>
-          
-          {filteredAssets.length > 0 ? (
-            <div className="grid gap-4">
-              {filteredAssets.map((asset, index) => (
-                <Card key={index} className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <span className="text-2xl">{asset.icon}</span>
+    <Card className="mb-6">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <MapPin className="h-5 w-5 text-tiptop-purple" />
+          Overview
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Selected Assets - Left Side */}
+          <div className="space-y-4">
+            {hasSelectedAssets ? (
+              <div>
+                <p className="text-sm font-medium text-gray-700 mb-2">Selected Assets</p>
+                <div className="space-y-2">
+                  {selectedAssets.map((asset) => (
+                    <div key={asset.type} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                       <div>
-                        <h4 className="font-medium">{asset.title}</h4>
-                        <p className="text-sm text-muted-foreground">{asset.description}</p>
-                        <div className="flex items-center gap-4 mt-1">
-                          <span className="text-sm font-medium text-green-600">
-                            ${asset.revenue}/month
-                          </span>
-                          {asset.setupCost > 0 && (
-                            <span className="text-sm text-muted-foreground">
-                              Setup: ${asset.setupCost}
-                            </span>
-                          )}
-                        </div>
+                        <p className="font-medium text-gray-900">{asset.name}</p>
+                        <p className="text-sm text-gray-600">
+                          ${asset.revenue}/month
+                          {asset.setupCost > 0 && ` • Setup: $${asset.setupCost}`}
+                        </p>
+                      </div>
+                      <Button
+                        size="sm"
+                        onClick={() => handleStartAssetSetup(asset.type)}
+                        disabled={navigatingAsset === asset.type || navigatingGeneral}
+                        className="bg-tiptop-purple hover:bg-purple-600 disabled:opacity-50"
+                      >
+                        {navigatingAsset === asset.type ? (
+                          <>
+                            <Loader2 className="h-4 w-4 animate-spin mr-1" />
+                            Loading...
+                          </>
+                        ) : (
+                          <>
+                            <Zap className="h-4 w-4 mr-1" />
+                            Manage
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => navigate('/dashboard/add-asset')}
+                  className="w-full mt-3 border-tiptop-purple text-tiptop-purple hover:bg-tiptop-purple hover:text-white"
+                >
+                  <Plus className="h-4 w-4 mr-1" />
+                  Add More Assets
+                </Button>
+              </div>
+            ) : (
+              <div className="p-4 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
+                <p className="text-sm font-medium text-gray-700 mb-2">No Assets Selected Yet</p>
+                <p className="text-sm text-gray-600 mb-3">
+                  You have {analysis.total_opportunities} potential opportunities worth ${analysis.total_monthly_revenue}/month. 
+                  Complete your property analysis to select and configure your assets.
+                </p>
+                <Button
+                  size="sm"
+                  onClick={() => window.location.href = '/'}
+                  className="bg-tiptop-purple hover:bg-purple-600"
+                >
+                  <TrendingUp className="h-4 w-4 mr-1" />
+                  Select Assets
+                </Button>
+              </div>
+            )}
+          </div>
+
+          {/* Satellite Image - Right Side */}
+          <div className="lg:col-span-1">
+            <div className="space-y-4">
+              <div>
+                <p className="text-sm font-medium text-gray-700 mb-2">Satellite View</p>
+                <div className="relative overflow-hidden rounded-lg border bg-gray-100">
+                  {imageLoading ? (
+                    <div className="aspect-square flex items-center justify-center">
+                      <div className="text-center">
+                        <div className="w-8 h-8 border-2 border-tiptop-purple border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
+                        <p className="text-xs text-gray-500">Loading image...</p>
                       </div>
                     </div>
-                    <Button variant="outline" size="sm">
-                      <Settings className="h-4 w-4 mr-1" />
-                      Manage
-                    </Button>
-                  </div>
-                </Card>
-              ))}
-            </div>
-          ) : (
-            <Card className="p-6 text-center">
-              <p className="text-muted-foreground">No assets selected for this property</p>
-            </Card>
-          )}
-        </div>
-
-        {/* Satellite View */}
-        <div className="space-y-4">
-          <h3 className="text-lg font-semibold">Satellite View</h3>
-          <Card className="overflow-hidden">
-            <div className="h-64 bg-muted flex items-center justify-center">
-              <p className="text-muted-foreground">Satellite view loading...</p>
-            </div>
-          </Card>
-          
-          {/* Revenue Summary */}
-          <Card className="p-4">
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Monthly Revenue</span>
-                <span className="font-semibold text-green-600">${totalMonthlyRevenue}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Annual Potential</span>
-                <span className="font-semibold">${totalMonthlyRevenue * 12}</span>
-              </div>
-              {totalSetupCost > 0 && (
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">Setup Investment</span>
-                  <span className="font-medium text-orange-600">${totalSetupCost}</span>
-                </div>
-              )}
-            </div>
-          </Card>
-        </div>
-      </div>
-
-      {/* Setup Costs Chart */}
-      {totalSetupCost > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <DollarSign className="h-5 w-5" />
-              Setup Investment Breakdown
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {filteredAssets.filter(asset => asset.setupCost > 0).map((asset, index) => (
-                <div key={index} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
-                  <div className="flex items-center gap-2">
-                    <span className="text-lg">{asset.icon}</span>
-                    <span className="font-medium">{asset.title}</span>
-                  </div>
-                  <div className="text-right">
-                    <div className="font-semibold">${asset.setupCost}</div>
-                    <div className="text-sm text-muted-foreground">
-                      ROI: {Math.round(asset.setupCost / asset.revenue)} months
+                  ) : satelliteImageUrl ? (
+                    <img
+                      src={satelliteImageUrl}
+                      alt={`Satellite view of ${propertyAddress}`}
+                      className="w-full aspect-square object-cover"
+                    />
+                  ) : (
+                    <div className="aspect-square flex items-center justify-center">
+                      <div className="text-center text-gray-400">
+                        <ImageIcon className="h-8 w-8 mx-auto mb-2" />
+                        <p className="text-xs">Satellite view unavailable</p>
+                      </div>
                     </div>
-                  </div>
+                  )}
+                  {satelliteImageUrl && (
+                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/50 to-transparent p-2">
+                      <p className="text-white text-xs font-medium truncate">{propertyAddress}</p>
+                    </div>
+                  )}
                 </div>
-              ))}
-              <div className="border-t pt-3 flex items-center justify-between font-semibold">
-                <span>Total Investment</span>
-                <span className="text-lg">${totalSetupCost}</span>
               </div>
             </div>
-          </CardContent>
-        </Card>
-      )}
-    </motion.div>
+          </div>
+        </div>
+
+        <div className="pt-4 border-t mt-6">
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  onClick={() => handleStartAssetSetup()}
+                  disabled={navigatingGeneral || navigatingAsset !== null}
+                  className="w-full bg-tiptop-purple hover:bg-purple-600 disabled:opacity-50"
+                >
+                  {navigatingGeneral ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Loading AI Assistant...
+                    </>
+                  ) : (
+                    <>
+                      <MessageSquare className="h-4 w-4 mr-2" />
+                      Start AI Assistant
+                    </>
+                  )}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Upload your assets and start earning with AI-powered assistance</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
+      </CardContent>
+    </Card>
   );
 };
 

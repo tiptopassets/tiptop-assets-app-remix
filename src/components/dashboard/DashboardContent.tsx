@@ -167,16 +167,11 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
         />
       </motion.div>
 
-      {/* Property Overview - Pass filtered results and selection data */}
+      {/* Property Overview */}
       {latestAnalysis && (
         <DashboardPropertyOverview 
-          analysis={{
-            ...latestAnalysis,
-            analysis_results: filteredAnalysisResults
-          }}
+          analysis={latestAnalysis}
           address={primaryAddress}
-          assetSelections={uniqueAssetSelections}
-          hasUserSelections={hasUserSelections}
         />
       )}
 
@@ -233,7 +228,6 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
         <DashboardCharts 
           analysisResults={filteredAnalysisResults}
           totalMonthlyRevenue={actualTotalRevenue}
-          assetSelections={uniqueAssetSelections}
         />
       )}
     </div>
