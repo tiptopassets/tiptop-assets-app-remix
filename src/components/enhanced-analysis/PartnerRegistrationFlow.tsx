@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -30,15 +29,44 @@ const PartnerRegistrationFlow: React.FC<PartnerRegistrationFlowProps> = ({
   const [currentStep, setCurrentStep] = useState(0);
   const { generateReferralLink, registerWithPartner, trackClick, isLoading } = useAffiliateIntegration();
 
+  // Normalize partner names for consistent tracking
+  const normalizePartnerName = (partnerName: string): string => {
+    const nameMap: Record<string, string> = {
+      'FlexOffers': 'FlexOffers',
+      'Honeygain': 'Honeygain',
+      'Tesla Energy': 'Tesla Energy',
+      'Tesla Solar': 'Tesla Energy', // Normalize to Tesla Energy
+      'Tesla': 'Tesla Energy', // Normalize to Tesla Energy
+      'Swimply': 'Swimply',
+      'Airbnb': 'Airbnb Unit Rental', // Default to unit rental
+      'Booking.com': 'Booking.com',
+      'SpotHero': 'SpotHero',
+      'Rakuten': 'Rakuten',
+      'Kolonia Energy': 'Kolonia Energy',
+      'Kolonia': 'Kolonia Energy',
+      'Peerspace': 'Peerspace',
+      'Neighbor.com': 'Neighbor.com',
+      'Neighbor': 'Neighbor.com',
+      'Little Free Library': 'Little Free Library'
+    };
+    
+    return nameMap[partnerName] || partnerName;
+  };
+
   const handlePartnerRegistration = async (partner: Partner) => {
-    // Track the click
-    await trackClick(partner.name, {
+    const normalizedName = normalizePartnerName(partner.name);
+    
+    console.log(`🎯 Tracking click for partner: "${partner.name}" -> normalized: "${normalizedName}"`);
+    
+    // Track the click with normalized name
+    await trackClick(normalizedName, {
       asset: selectedAssets,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
+      original_partner_name: partner.name
     });
 
     // Generate referral link
-    const referralLink = await generateReferralLink(partner.name, getPartnerUrl(partner.name));
+    const referralLink = await generateReferralLink(normalizedName, getPartnerUrl(partner.name));
     
     if (referralLink) {
       // Open in new tab
@@ -46,7 +74,7 @@ const PartnerRegistrationFlow: React.FC<PartnerRegistrationFlowProps> = ({
       
       // Mark as registered after a delay (simulating user completing registration)
       setTimeout(async () => {
-        await registerWithPartner(partner.name, {
+        await registerWithPartner(normalizedName, {
           assets: selectedAssets,
           registrationMethod: 'direct_link'
         });
@@ -65,11 +93,22 @@ const PartnerRegistrationFlow: React.FC<PartnerRegistrationFlowProps> = ({
       'FlexOffers': 'https://www.flexoffers.com/affiliate-programs',
       'Honeygain': 'https://dashboard.honeygain.com/ref/TIPTOP',
       'Tesla Energy': 'https://www.tesla.com/solar-panels',
+      'Tesla Solar': 'https://www.tesla.com/solar-panels',
+      'Tesla': 'https://www.tesla.com/solar-panels',
       'Swimply': 'https://swimply.com/for-hosts',
       'Airbnb': 'https://www.airbnb.com/host/homes',
+      'Airbnb Unit Rental': 'https://www.airbnb.com/host/homes',
+      'Airbnb Experience': 'https://www.airbnb.com/experiences',
+      'Airbnb Service': 'https://www.airbnb.com/host/services',
       'Booking.com': 'https://partner.booking.com/',
       'SpotHero': 'https://spothero.com/partners',
-      'Rakuten': 'https://rakutenadvertising.com'
+      'Rakuten': 'https://rakutenadvertising.com',
+      'Kolonia Energy': 'https://koloniahouse.com',
+      'Kolonia': 'https://koloniahouse.com',
+      'Peerspace': 'https://www.peerspace.com/claim/gr-jdO4oxx4LGzq',
+      'Neighbor.com': 'http://www.neighbor.com/invited/eduardo-944857?program_version=1',
+      'Neighbor': 'http://www.neighbor.com/invited/eduardo-944857?program_version=1',
+      'Little Free Library': 'https://littlefreelibrary.org/start/'
     };
     return urls[partnerName] || '#';
   };
