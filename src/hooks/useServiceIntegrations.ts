@@ -28,37 +28,43 @@ export type PartnerClick = {
   user_email?: string;
 };
 
-// Enhanced name matching function with comprehensive mapping
+// Enhanced name matching function with comprehensive mapping for all partners
 const getPartnerNameVariations = (name: string): string[] => {
   const variations = [name.toLowerCase().trim()];
   
-  // Comprehensive name mapping for all partners
+  // Comprehensive name mapping for all partners including new ones
   const nameMap: Record<string, string[]> = {
     // Tesla variations
     'tesla energy': ['tesla', 'tesla solar', 'tesla energy'],
     'tesla': ['tesla energy', 'tesla solar'],
     'tesla solar': ['tesla', 'tesla energy'],
     
-    // Airbnb variations
-    'airbnb unit rental': ['airbnb', 'airbnb unit', 'airbnb rental', 'airbnb unit rental'],
+    // Airbnb variations (now with specific types)
+    'airbnb unit rental': ['airbnb', 'airbnb unit', 'airbnb rental', 'airbnb unit rental', 'airbnb hosting'],
     'airbnb experience': ['airbnb', 'airbnb experience', 'airbnb experiences'],
     'airbnb service': ['airbnb', 'airbnb service', 'airbnb services'],
     'airbnb': ['airbnb unit rental', 'airbnb experience', 'airbnb service'],
     
     // Kolonia variations
     'kolonia energy': ['kolonia', 'kolonia energy', 'kolonia house'],
-    'kolonia': ['kolonia energy'],
+    'kolonia': ['kolonia energy', 'kolonia house'],
     'kolonia house': ['kolonia', 'kolonia energy'],
     
     // Honeygain variations
     'honeygain': ['honeygain', 'honey gain'],
     'honey gain': ['honeygain'],
     
-    // Other partners
-    'peerspace': ['peerspace', 'peer space'],
-    'peer space': ['peerspace'],
+    // Gympass variations
+    'gympass': ['gympass', 'gym pass'],
+    'gym pass': ['gympass'],
+    
+    // Neighbor variations
     'neighbor.com': ['neighbor', 'neighbor.com'],
     'neighbor': ['neighbor.com'],
+    
+    // Other existing partners
+    'peerspace': ['peerspace', 'peer space'],
+    'peer space': ['peerspace'],
     'swimply': ['swimply'],
     'spothero': ['spothero', 'spot hero'],
     'spot hero': ['spothero'],
@@ -76,7 +82,7 @@ const getPartnerNameVariations = (name: string): string[] => {
   Object.entries(nameMap).forEach(([key, values]) => {
     if (values.includes(baseName) || key === baseName) {
       variations.push(...values);
-      variations.push(key); // Also add the key itself
+      variations.push(key);
     }
   });
   
@@ -369,30 +375,49 @@ export const useServiceIntegrations = () => {
   };
 };
 
-// Helper function to get appropriate icon for asset type
+// Helper function to get appropriate icon for asset type - updated with new asset types
 function getIconForAssetType(assetType: string): string {
   const iconMap: Record<string, string> = {
     'short_term_rental': 'home',
     'rental': 'home',
     'room_rental': 'bed',
+    'guest_room': 'bed',
+    'property': 'home',
     'experience': 'calendar',
     'tours': 'map',
+    'activities': 'calendar',
+    'local_expertise': 'users',
+    'hosting': 'users',
     'services': 'wrench',
+    'cleaning': 'wrench',
+    'maintenance': 'wrench',
+    'hospitality': 'users',
     'solar': 'sun',
     'rooftop': 'sun',
     'energy': 'zap',
+    'renewable_energy': 'zap',
     'library': 'book',
     'community': 'users',
+    'books': 'book',
     'ev_charging': 'battery-charging',
+    'charging': 'battery-charging',
+    'electric_vehicle': 'car',
     'internet': 'wifi',
-    'bandwidth': 'wifi', 
+    'bandwidth': 'wifi',
+    'wifi': 'wifi',
     'pool': 'waves',
     'swimming_pool': 'waves',
+    'hot_tub': 'waves',
     'parking': 'car',
     'driveway': 'car',
+    'garage_parking': 'car',
     'storage': 'package',
     'garage': 'package',
+    'basement': 'package',
+    'shed': 'package',
     'event_space': 'calendar',
+    'creative_space': 'palette',
+    'meeting_room': 'users',
     'garden': 'flower',
     'yard': 'trees',
     'home_gym': 'dumbbell',
@@ -400,6 +425,7 @@ function getIconForAssetType(assetType: string): string {
     'wellness': 'heart',
     'vehicle': 'car',
     'car': 'car',
+    'transportation': 'car',
     'home_interior': 'home',
     'general': 'settings'
   };

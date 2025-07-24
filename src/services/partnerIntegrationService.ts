@@ -1,4 +1,3 @@
-
 export interface PartnerPlatform {
   id: string;
   name: string;
@@ -20,13 +19,13 @@ export interface PartnerPlatform {
 
 export class PartnerIntegrationService {
   private static platforms: PartnerPlatform[] = [
-    // Airbnb Partners
+    // Airbnb Partners (now separated by type)
     {
       id: 'airbnb-unit-rental',
       name: 'Airbnb Unit Rental',
       description: 'Rent out your property or spare rooms to travelers on Airbnb',
       briefDescription: 'Short-term rental platform for properties and rooms',
-      assetTypes: ['airbnb', 'short_term_rental', 'rental', 'room_rental', 'guest_room', 'property'],
+      assetTypes: ['short_term_rental', 'rental', 'room_rental', 'guest_room', 'property'],
       earningRange: { min: 800, max: 3000 },
       referralLink: 'https://www.airbnb.com/rp/tiptopa2?p=stay&s=67&unique_share_id=7d56143e-b489-4ef6-ba7f-c10c1241bce9',
       logoUrl: 'https://www.airbnb.com/favicon.ico',
@@ -40,7 +39,7 @@ export class PartnerIntegrationService {
       name: 'Airbnb Experience',
       description: 'Create and host unique experiences for travelers in your area',
       briefDescription: 'Host unique local experiences for travelers',
-      assetTypes: ['airbnb', 'experience', 'tours', 'activities', 'local_expertise', 'hosting'],
+      assetTypes: ['experience', 'tours', 'activities', 'local_expertise', 'hosting'],
       earningRange: { min: 200, max: 1500 },
       referralLink: 'https://www.airbnb.com/rp/tiptopa2?p=experience&s=67&unique_share_id=560cba6c-7231-400c-84f2-9434c6a31c2a',
       logoUrl: 'https://www.airbnb.com/favicon.ico',
@@ -54,7 +53,7 @@ export class PartnerIntegrationService {
       name: 'Airbnb Service',
       description: 'Offer services to Airbnb hosts and guests in your area',
       briefDescription: 'Provide services to Airbnb hosts and guests',
-      assetTypes: ['airbnb', 'services', 'cleaning', 'maintenance', 'hospitality'],
+      assetTypes: ['services', 'cleaning', 'maintenance', 'hospitality'],
       earningRange: { min: 300, max: 2000 },
       referralLink: 'https://www.airbnb.com/rp/tiptopa2?p=service&s=67&unique_share_id=6c478139-a138-490e-af41-58869ceb0d6b',
       logoUrl: 'https://www.airbnb.com/favicon.ico',
@@ -66,8 +65,8 @@ export class PartnerIntegrationService {
     
     // Solar Partners
     {
-      id: 'tesla-solar',
-      name: 'Tesla Solar',
+      id: 'tesla-energy',
+      name: 'Tesla Energy',
       description: 'Install Tesla solar panels and energy storage systems',
       briefDescription: 'Premium solar panels and energy storage',
       assetTypes: ['solar', 'rooftop', 'energy', 'renewable_energy'],
@@ -93,6 +92,38 @@ export class PartnerIntegrationService {
       setupTime: '3-5 weeks',
       requirements: ['Florida or Texas location', 'Roof assessment', 'Permits'],
       setupSteps: ['Initial consultation', 'Roof evaluation', 'System design', 'Installation']
+    },
+    
+    // Internet/Bandwidth Partners
+    {
+      id: 'honeygain',
+      name: 'Honeygain',
+      description: 'Share your unused internet bandwidth and earn passive income',
+      briefDescription: 'Passive income from internet bandwidth',
+      assetTypes: ['internet', 'bandwidth', 'wifi'],
+      earningRange: { min: 20, max: 80 },
+      referralLink: 'https://r.honeygain.me/EDUARCE2A5',
+      logoUrl: 'https://honeygain.com/favicon.ico',
+      priority: 8,
+      setupTime: '15 minutes',
+      requirements: ['Stable internet', 'Computer or phone', 'Unlimited data plan'],
+      setupSteps: ['Download app', 'Create account', 'Install on devices', 'Start earning']
+    },
+    
+    // Fitness/Wellness Partners
+    {
+      id: 'gympass',
+      name: 'Gympass',
+      description: 'Corporate wellness platform for fitness and wellness services',
+      briefDescription: 'Corporate wellness and fitness platform',
+      assetTypes: ['fitness', 'wellness', 'home_gym'],
+      earningRange: { min: 100, max: 500 },
+      referralLink: 'https://gympass.com',
+      logoUrl: 'https://gympass.com/favicon.ico',
+      priority: 6,
+      setupTime: '1-2 hours',
+      requirements: ['Fitness expertise', 'Wellness qualifications', 'Space for activities'],
+      setupSteps: ['Create provider profile', 'Verify qualifications', 'Set service offerings', 'Start accepting bookings']
     },
     
     // Community Partners
@@ -141,7 +172,7 @@ export class PartnerIntegrationService {
       setupSteps: ['Location evaluation', 'Partnership agreement', 'Installation', 'Go live']
     },
     
-    // Existing Partners
+    // Existing Partners (updated)
     {
       id: 'neighbor',
       name: 'Neighbor.com',
@@ -197,20 +228,6 @@ export class PartnerIntegrationService {
       setupTime: '1 hour',
       requirements: ['Available parking space', 'Clear access', 'Photos'],
       setupSteps: ['Take parking photos', 'Set availability', 'Price competitively', 'Go live']
-    },
-    {
-      id: 'honeygain',
-      name: 'Honeygain',
-      description: 'Share your unused internet bandwidth',
-      briefDescription: 'Passive income from internet bandwidth',
-      assetTypes: ['internet', 'bandwidth', 'wifi'],
-      earningRange: { min: 20, max: 80 },
-      referralLink: 'https://r.honeygain.me/EDUARCE2A5',
-      logoUrl: 'https://honeygain.com/favicon.ico',
-      priority: 8,
-      setupTime: '15 minutes',
-      requirements: ['Stable internet', 'Computer or phone', 'Unlimited data plan'],
-      setupSteps: ['Download app', 'Create account', 'Install on devices', 'Start earning']
     },
     {
       id: 'turo',
@@ -286,7 +303,6 @@ export class PartnerIntegrationService {
 
   static getAssetTypeDisplayName(assetType: string): string {
     const displayNames: Record<string, string> = {
-      'airbnb': 'Airbnb Opportunities',
       'short_term_rental': 'Short-term Rental',
       'rental': 'Property Rental',
       'room_rental': 'Room Rental',
@@ -295,9 +311,12 @@ export class PartnerIntegrationService {
       'experience': 'Experience Hosting',
       'tours': 'Tours & Activities',
       'activities': 'Local Activities',
+      'local_expertise': 'Local Expertise',
+      'hosting': 'Hosting Services',
       'services': 'Services',
       'cleaning': 'Cleaning Services',
       'maintenance': 'Maintenance Services',
+      'hospitality': 'Hospitality Services',
       'solar': 'Solar Panels',
       'rooftop': 'Rooftop Solar',
       'energy': 'Energy Solutions',
@@ -305,6 +324,7 @@ export class PartnerIntegrationService {
       'library': 'Community Library',
       'community': 'Community Projects',
       'books': 'Book Sharing',
+      'neighborhood': 'Neighborhood Services',
       'ev_charging': 'EV Charging',
       'parking': 'Parking Space',
       'charging': 'Charging Station',
@@ -312,6 +332,7 @@ export class PartnerIntegrationService {
       'storage': 'Storage Space',
       'garage': 'Garage Space',
       'basement': 'Basement Storage',
+      'shed': 'Shed Storage',
       'pool': 'Swimming Pool',
       'swimming_pool': 'Swimming Pool',
       'hot_tub': 'Hot Tub',
@@ -325,7 +346,10 @@ export class PartnerIntegrationService {
       'wifi': 'WiFi Sharing',
       'vehicle': 'Vehicle Rental',
       'car': 'Car Rental',
-      'transportation': 'Transportation'
+      'transportation': 'Transportation',
+      'fitness': 'Fitness Services',
+      'wellness': 'Wellness Services',
+      'home_gym': 'Home Gym'
     };
 
     return displayNames[assetType.toLowerCase()] || assetType.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
