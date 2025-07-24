@@ -150,12 +150,19 @@ const Index = () => {
               <AssetResultList 
                 propertyData={{
                   availableAssets: analysisResults.topOpportunities?.map((opp, index) => ({
-                    id: `asset-${index}`,
-                    assetId: `asset-${index}`,
+                    type: opp.title.toLowerCase().replace(/\s+/g, '_'),
                     name: opp.title,
-                    type: opp.title,
-                    monthlyRevenue: opp.monthlyRevenue
-                  })) || []
+                    monthlyRevenue: opp.monthlyRevenue,
+                    setupCost: opp.setupCost || 0,
+                    description: opp.description || `Monetize your ${opp.title.toLowerCase()}`,
+                    hasRevenuePotential: (opp.monthlyRevenue || 0) > 0,
+                    isConfigured: false
+                  })) || [],
+                  analysisId: 'current',
+                  address: address || '',
+                  totalMonthlyRevenue: analysisResults.topOpportunities?.reduce((sum, opp) => sum + (opp.monthlyRevenue || 0), 0) || 0,
+                  totalOpportunities: analysisResults.topOpportunities?.length || 0,
+                  analysisResults
                 }}
                 onAssetSelect={handleAssetSelect}
                 selectedAssets={selectedAssets}

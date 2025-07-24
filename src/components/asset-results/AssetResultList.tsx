@@ -59,9 +59,9 @@ const AssetResultList = ({ propertyData, onAssetSelect, selectedAssets = [] }: A
   useEffect(() => {
     if (propertyData && selectedAssets) {
       const selectedData = propertyData.availableAssets
-        ?.filter(asset => selectedAssets.includes(asset.assetId || asset.id))
+        ?.filter(asset => selectedAssets.includes(asset.type))
         .map(asset => ({
-          asset_id: asset.assetId || asset.id,
+          asset_id: asset.type,
           asset_type: asset.type,
           monthly_revenue: asset.monthlyRevenue
         })) || [];
@@ -73,8 +73,8 @@ const AssetResultList = ({ propertyData, onAssetSelect, selectedAssets = [] }: A
     setSearchTerm(e.target.value);
   };
 
-  const handleAssetCheckboxChange = (assetId: string, checked: boolean) => {
-    onAssetSelect(assetId, checked);
+  const handleAssetCheckboxChange = (assetType: string, checked: boolean) => {
+    onAssetSelect(assetType, checked);
   };
 
   const handleSelectAllChange = (checked: boolean) => {
@@ -82,7 +82,7 @@ const AssetResultList = ({ propertyData, onAssetSelect, selectedAssets = [] }: A
 
     if (propertyData && propertyData.availableAssets) {
       propertyData.availableAssets.forEach(asset => {
-        onAssetSelect(asset.assetId || asset.id, checked);
+        onAssetSelect(asset.type, checked);
       });
     }
   };
@@ -138,15 +138,15 @@ const AssetResultList = ({ propertyData, onAssetSelect, selectedAssets = [] }: A
           </TableHeader>
           <TableBody>
             {filteredAssets.map((asset) => {
-              const assetId = asset.assetId || asset.id;
-              const isSelected = selectedAssets.includes(assetId);
+              const assetKey = asset.type;
+              const isSelected = selectedAssets.includes(assetKey);
               return (
-                <TableRow key={assetId}>
+                <TableRow key={assetKey}>
                   <TableCell className="font-medium">
                     <Checkbox
-                      id={`asset-${assetId}`}
+                      id={`asset-${assetKey}`}
                       checked={isSelected}
-                      onCheckedChange={(checked) => handleAssetCheckboxChange(assetId, !!checked)}
+                      onCheckedChange={(checked) => handleAssetCheckboxChange(assetKey, !!checked)}
                     />
                   </TableCell>
                   <TableCell>{asset.name}</TableCell>
