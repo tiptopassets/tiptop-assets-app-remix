@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Eye, ExternalLink, Users, TrendingUp } from 'lucide-react';
+import { Eye, ExternalLink, Users, TrendingUp, RefreshCw } from 'lucide-react';
 import { ServiceIntegration, PartnerClick } from '@/hooks/useServiceIntegrations';
 
 interface ServiceIntegrationsTableProps {
@@ -21,6 +21,7 @@ const ServiceIntegrationsTable = ({
 }: ServiceIntegrationsTableProps) => {
   const [selectedPartner, setSelectedPartner] = useState<string | null>(null);
   const [showClicksDialog, setShowClicksDialog] = useState(false);
+  const [updatingStatus, setUpdatingStatus] = useState<string | null>(null);
 
   const handleViewClicks = (partnerName: string) => {
     setSelectedPartner(partnerName);
@@ -28,6 +29,7 @@ const ServiceIntegrationsTable = ({
   };
 
   const handleStatusChange = async (id: string, newStatus: 'active' | 'pending' | 'inactive') => {
+    setUpdatingStatus(id);
     try {
       const result = await onUpdateStatus(id, newStatus);
       if (!result.success) {
@@ -35,6 +37,8 @@ const ServiceIntegrationsTable = ({
       }
     } catch (error) {
       console.error('Error updating status:', error);
+    } finally {
+      setUpdatingStatus(null);
     }
   };
 
@@ -60,15 +64,31 @@ const ServiceIntegrationsTable = ({
     );
   }
 
+  const totalClicks = integrations.reduce((sum, integration) => sum + integration.total_clicks, 0);
+  const totalProviders = integrations.length;
+  const activeProviders = integrations.filter(i => i.status === 'active').length;
+
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center mb-4">
-        <div className="text-sm text-gray-600">
-          Showing {integrations.length} service integrations
+        <div className="flex gap-4 text-sm text-gray-600">
+          <span>
+            <strong>{totalProviders}</strong> providers 
+            ({activeProviders} active)
+          </span>
+          <span>
+            <strong>{totalClicks}</strong> total clicks
+          </span>
         </div>
-        <div className="text-sm text-gray-600">
-          Total clicks: {integrations.reduce((sum, integration) => sum + integration.total_clicks, 0)}
-        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => window.location.reload()}
+          className="text-xs"
+        >
+          <RefreshCw className="h-3 w-3 mr-1" />
+          Refresh
+        </Button>
       </div>
 
       <div className="overflow-x-auto">
@@ -88,6 +108,7 @@ const ServiceIntegrationsTable = ({
             {integrations.map((integration) => {
               const clicks = partnerClicks[integration.partner_name] || [];
               const hasClicks = clicks.length > 0;
+              const isUpdating = updatingStatus === integration.id;
               
               return (
                 <tr key={integration.id} className="border-b hover:bg-gray-50">
@@ -153,6 +174,11 @@ const ServiceIntegrationsTable = ({
                       <span className={`font-medium ${hasClicks ? 'text-blue-600' : 'text-gray-500'}`}>
                         {integration.total_clicks}
                       </span>
+                      {hasClicks && (
+                        <Badge variant="secondary" className="text-xs">
+                          New!
+                        </Badge>
+                      )}
                     </div>
                   </td>
                   <td className="p-3">
@@ -167,7 +193,8 @@ const ServiceIntegrationsTable = ({
                     <select
                       value={integration.status}
                       onChange={(e) => handleStatusChange(integration.id, e.target.value as 'active' | 'pending' | 'inactive')}
-                      className="text-sm border rounded px-2 py-1 bg-white focus:border-blue-500 focus:outline-none"
+                      disabled={isUpdating}
+                      className="text-sm border rounded px-2 py-1 bg-white focus:border-blue-500 focus:outline-none disabled:opacity-50"
                     >
                       <option value="active">Active</option>
                       <option value="pending">Pending</option>

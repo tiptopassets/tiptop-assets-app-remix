@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -222,7 +223,7 @@ export const useServiceIntegrations = () => {
           };
         });
 
-        // Sort by total clicks (descending) then by priority (descending)
+        // Sort by total clicks (descending) then by revenue potential (descending)
         processedIntegrations.sort((a, b) => {
           if (a.total_clicks !== b.total_clicks) {
             return b.total_clicks - a.total_clicks;
