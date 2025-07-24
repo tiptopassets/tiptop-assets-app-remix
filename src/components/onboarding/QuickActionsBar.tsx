@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
-import { ChevronDown, ChevronUp } from 'lucide-react';
+import { ChevronDown, ChevronUp, Gamepad2 } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 interface QuickActionsBarProps {
@@ -93,6 +93,16 @@ const QuickActionsBar: React.FC<QuickActionsBarProps> = ({ isMobile = false }) =
           </Button>
           
           <Button
+            variant="outline"
+            size="sm"
+            className="w-full h-8 bg-purple-500/20 backdrop-blur-md border border-purple-500/30 hover:bg-purple-500/30 text-black hover:text-black font-medium text-xs shadow-lg hover:shadow-xl transition-all duration-200"
+            onClick={() => navigate('/gamified-property')}
+          >
+            <Gamepad2 className="h-3 w-3 mr-1" />
+            3D View
+          </Button>
+          
+          <Button
             variant="default"
             size="sm"
             className="w-full h-8 bg-[hsl(267,83%,60%)]/10 backdrop-blur-md border border-[hsl(267,83%,60%)]/30 text-black hover:bg-[hsl(267,83%,60%)]/20 font-medium text-xs shadow-lg hover:shadow-xl transition-all duration-200"
@@ -127,6 +137,16 @@ const QuickActionsBar: React.FC<QuickActionsBarProps> = ({ isMobile = false }) =
         onClick={() => navigate('/dashboard')}
       >
         My Dashboard
+      </Button>
+      
+      <Button
+        variant="outline"
+        size="sm"
+        className="w-36 h-9 bg-purple-500/20 backdrop-blur-md border border-purple-500/30 hover:bg-purple-500/30 text-black hover:text-black font-medium text-xs shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105"
+        onClick={() => navigate('/gamified-property')}
+      >
+        <Gamepad2 className="h-4 w-4 mr-1" />
+        3D View
       </Button>
       
       <Button
