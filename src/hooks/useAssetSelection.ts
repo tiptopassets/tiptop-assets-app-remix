@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { saveAssetSelection, loadUserAssetSelections } from '@/services/userAssetService';
@@ -32,21 +31,6 @@ export const useAssetSelection = () => {
         isAnonymous: !user
       });
 
-      // Ensure we have an analysis ID - critical for property-specific tracking
-      let finalAnalysisId = analysisId;
-      
-      if (!finalAnalysisId && user) {
-        // Try to get the most recent analysis ID for authenticated users
-        finalAnalysisId = await getRecentAnalysisId(user.id);
-        console.log('🔍 Retrieved recent analysis ID:', finalAnalysisId);
-      }
-      
-      if (!finalAnalysisId && !user) {
-        // For anonymous users, try stored analysis ID
-        finalAnalysisId = getStoredAnalysisId();
-        console.log('🔍 Retrieved stored analysis ID for anonymous user:', finalAnalysisId);
-      }
-
       // Use session-based storage for anonymous users or authenticated users
       const selectionId = await saveAssetSelectionAnonymous(
         assetType,
@@ -54,14 +38,14 @@ export const useAssetSelection = () => {
         monthlyRevenue,
         setupCost,
         roiMonths,
-        finalAnalysisId,
+        analysisId,
         user?.id
       );
 
       if (selectionId) {
         const successMessage = user 
-          ? `Successfully saved ${assetType} selection with $${monthlyRevenue}/month potential for this property.`
-          : `${assetType} selection saved for this property. Sign in later to access your saved selections.`;
+          ? `Successfully saved ${assetType} selection with $${monthlyRevenue}/month potential.`
+          : `${assetType} selection saved. Sign in later to access your saved selections.`;
           
         toast({
           title: "Asset Selection Saved",
@@ -71,7 +55,7 @@ export const useAssetSelection = () => {
         console.log('✅ Asset selection saved successfully:', {
           selectionId,
           assetType,
-          analysisId: finalAnalysisId,
+          analysisId,
           monthlyRevenue,
           isAnonymous: !user
         });
@@ -97,18 +81,14 @@ export const useAssetSelection = () => {
     }
   }, [user, toast]);
 
-  const loadSelections = useCallback(async (analysisId?: string) => {
+  const loadSelections = useCallback(async () => {
     setLoading(true);
     setError(null);
 
     try {
-      // Load selections for both authenticated and anonymous users, filtered by analysis ID
-      const selections = await loadAssetSelections(user?.id, analysisId);
-      console.log('✅ Loaded asset selections:', {
-        count: selections.length,
-        analysisId,
-        userType: user ? 'authenticated' : 'anonymous'
-      });
+      // Load selections for both authenticated and anonymous users
+      const selections = await loadAssetSelections(user?.id);
+      console.log('✅ Loaded asset selections:', selections.length, user ? 'for user' : 'for session');
       return selections;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to load asset selections';

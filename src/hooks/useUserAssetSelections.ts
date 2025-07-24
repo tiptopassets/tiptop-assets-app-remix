@@ -4,11 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { loadAssetSelections } from '@/services/sessionStorageService';
 import { UserAssetSelection } from '@/types/userData';
 
-interface UseUserAssetSelectionsProps {
-  analysisId?: string;
-}
-
-export const useUserAssetSelections = (options?: UseUserAssetSelectionsProps) => {
+export const useUserAssetSelections = () => {
   const { user } = useAuth();
   const [assetSelections, setAssetSelections] = useState<UserAssetSelection[]>([]);
   const [loading, setLoading] = useState(false);
@@ -19,26 +15,20 @@ export const useUserAssetSelections = (options?: UseUserAssetSelectionsProps) =>
       setLoading(true);
       setError(null);
       
-      console.log('🔍 Loading asset selections for user:', {
-        userId: user?.id || 'anonymous',
-        analysisId: options?.analysisId
-      });
-      
-      const selections = await loadAssetSelections(user?.id, options?.analysisId);
+      console.log('🔍 Loading asset selections for user:', user?.id || 'anonymous');
+      const selections = await loadAssetSelections(user?.id);
       setAssetSelections(selections);
       
       console.log('✅ Loaded asset selections for dashboard:', {
         count: selections.length,
         userId: user?.id,
-        analysisId: options?.analysisId,
         isAuthenticated: !!user,
         selections: selections.map(s => ({
           id: s.id,
           asset_type: s.asset_type,
           monthly_revenue: s.monthly_revenue,
           user_id: s.user_id,
-          analysis_id: s.analysis_id,
-          session_id: s.session_id || 'n/a'
+          session_id: s.session_id
         }))
       });
     } catch (err) {
@@ -51,7 +41,7 @@ export const useUserAssetSelections = (options?: UseUserAssetSelectionsProps) =>
 
   useEffect(() => {
     loadSelections();
-  }, [user?.id, options?.analysisId]); // Reload when user or analysis ID changes
+  }, [user?.id]); // Will load for both authenticated and anonymous users
 
   const isAssetConfigured = (assetType: string) => {
     return assetSelections.some(selection => 

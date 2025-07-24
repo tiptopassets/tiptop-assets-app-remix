@@ -28,27 +28,13 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
   analysesCount,
   onRefresh
 }) => {
-  // Use the latest analysis ID to filter asset selections for this specific property
-  const { assetSelections, isAssetConfigured } = useUserAssetSelections({
-    analysisId: latestAnalysis?.id
-  });
+  const analysisResults = latestAnalysis?.analysis_results;
+  const { assetSelections, isAssetConfigured } = useUserAssetSelections();
   
-  // Calculate actual totals based on user selections for THIS analysis only
+  // Calculate actual totals based on user selections with deduplication
   const hasUserSelections = assetSelections.length > 0;
   
-  console.log('📊 Dashboard Content - Asset Selection Context:', {
-    analysisId: latestAnalysis?.id,
-    primaryAddress,
-    assetSelectionsCount: assetSelections.length,
-    hasUserSelections,
-    selections: assetSelections.map(s => ({
-      asset_type: s.asset_type,
-      analysis_id: s.analysis_id,
-      monthly_revenue: s.monthly_revenue
-    }))
-  });
-  
-  // Deduplicate asset selections for accurate calculations (within this analysis)
+  // Deduplicate asset selections for accurate calculations
   const uniqueAssetSelections = hasUserSelections ? assetSelections.reduce((acc, selection) => {
     const existingIndex = acc.findIndex(existing => 
       existing.asset_type.toLowerCase() === selection.asset_type.toLowerCase()
@@ -78,74 +64,6 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
     ? uniqueAssetSelections.length 
     : totalOpportunities;
 
-  // Filter analysis results to only show selected assets for THIS analysis
-  const getFilteredAnalysisResults = () => {
-    const analysisResults = latestAnalysis?.analysis_results;
-    
-    if (!analysisResults || !hasUserSelections) {
-      return analysisResults;
-    }
-
-    console.log('🔍 Filtering analysis results for specific analysis:', {
-      analysisId: latestAnalysis?.id,
-      originalAnalysisResults: analysisResults,
-      userSelections: uniqueAssetSelections
-    });
-
-    const filtered = { ...analysisResults };
-    
-    // Create a set of selected asset types for efficient lookup
-    const selectedAssetTypes = new Set(
-      uniqueAssetSelections.map(selection => selection.asset_type.toLowerCase())
-    );
-
-    // Filter each asset type based on user selections for THIS analysis only
-    if (!selectedAssetTypes.has('rooftop') && !selectedAssetTypes.has('solar')) {
-      filtered.rooftop = { ...filtered.rooftop, revenue: 0, solarPotential: false };
-    }
-    
-    if (!selectedAssetTypes.has('garden') && !selectedAssetTypes.has('yard')) {
-      filtered.garden = { ...filtered.garden, revenue: 0, opportunity: 'Low' };
-    }
-    
-    if (!selectedAssetTypes.has('parking')) {
-      filtered.parking = { ...filtered.parking, revenue: 0, spaces: 0 };
-    }
-    
-    if (!selectedAssetTypes.has('pool')) {
-      filtered.pool = { ...filtered.pool, revenue: 0, present: false };
-    }
-    
-    if (!selectedAssetTypes.has('bandwidth') && !selectedAssetTypes.has('internet')) {
-      filtered.bandwidth = { ...filtered.bandwidth, revenue: 0, available: 0 };
-    }
-
-    // Update the filtered results with actual selected revenue values from THIS analysis
-    uniqueAssetSelections.forEach(selection => {
-      const assetType = selection.asset_type.toLowerCase();
-      
-      if (assetType.includes('rooftop') || assetType.includes('solar')) {
-        filtered.rooftop = { ...filtered.rooftop, revenue: selection.monthly_revenue };
-      } else if (assetType.includes('garden') || assetType.includes('yard')) {
-        filtered.garden = { ...filtered.garden, revenue: selection.monthly_revenue };
-      } else if (assetType.includes('parking')) {
-        filtered.parking = { ...filtered.parking, revenue: selection.monthly_revenue };
-      } else if (assetType.includes('pool')) {
-        filtered.pool = { ...filtered.pool, revenue: selection.monthly_revenue };
-      } else if (assetType.includes('bandwidth') || assetType.includes('internet')) {
-        filtered.bandwidth = { ...filtered.bandwidth, revenue: selection.monthly_revenue };
-      }
-    });
-
-    console.log('✅ Filtered analysis results for this property:', {
-      analysisId: latestAnalysis?.id,
-      filtered
-    });
-    return filtered;
-  };
-
-  const filteredAnalysisResults = getFilteredAnalysisResults();
-
   return (
     <div className="space-y-6">
       {/* Header with Property Info */}
@@ -159,7 +77,7 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
           onRefresh={onRefresh}
         />
 
-        {/* Stats Cards - showing data for current analysis only */}
+        {/* Stats Cards */}
         <DashboardStats 
           totalMonthlyRevenue={actualTotalRevenue}
           totalOpportunities={actualTotalOpportunities}
@@ -175,8 +93,8 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
         />
       )}
 
-      {/* Assets Table - Only show if user has selections for THIS analysis */}
-      {filteredAnalysisResults && hasUserSelections && (
+      {/* Assets Table */}
+      {analysisResults && (
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -185,14 +103,14 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
         >
           <Card>
             <CardHeader>
-              <CardTitle>Selected Assets</CardTitle>
+              <CardTitle>Potential Assets Analysis</CardTitle>
               <CardDescription>
-                Assets selected for this property analysis
+                Detailed breakdown of your property's monetization potential
               </CardDescription>
             </CardHeader>
             <CardContent>
               <AssetsTable 
-                analysisResults={filteredAnalysisResults} 
+                analysisResults={analysisResults} 
                 isAssetConfigured={isAssetConfigured}
                 analysisId={latestAnalysis?.id}
               />
@@ -201,32 +119,24 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
         </motion.div>
       )}
 
-      {/* Show message if no assets selected for this analysis */}
-      {!hasUserSelections && (
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="space-y-4"
-        >
-          <Card>
-            <CardHeader>
-              <CardTitle>No Assets Selected</CardTitle>
-              <CardDescription>
-                You haven't selected any assets for this property yet. Visit the property analysis page to choose your assets.
-              </CardDescription>
-            </CardHeader>
-          </Card>
-        </motion.div>
-      )}
-
       {/* Debug Component for Development */}
       <AssetSelectionDebug />
 
-      {/* Revenue Charts - Only show if user has selections for THIS analysis */}
-      {filteredAnalysisResults && hasUserSelections && (
+      {/* Saved Asset Selections - Hidden since info is now in Overview card */}
+      {/* 
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.3 }}
+      >
+        <SavedAssetSelections />
+      </motion.div>
+      */}
+
+      {/* Revenue Charts */}
+      {analysisResults && (
         <DashboardCharts 
-          analysisResults={filteredAnalysisResults}
+          analysisResults={analysisResults}
           totalMonthlyRevenue={actualTotalRevenue}
         />
       )}
