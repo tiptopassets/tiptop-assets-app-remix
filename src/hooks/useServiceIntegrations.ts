@@ -28,81 +28,76 @@ export type PartnerClick = {
   user_email?: string;
 };
 
-// Enhanced name matching function with comprehensive mapping for all partners
-const getPartnerNameVariations = (name: string): string[] => {
-  const variations = [name.toLowerCase().trim()];
+// Comprehensive partner name matching with exact database names
+const normalizePartnerName = (clickName: string): string => {
+  if (!clickName) return '';
   
-  // Comprehensive name mapping for all partners including new ones
-  const nameMap: Record<string, string[]> = {
+  const normalized = clickName.toLowerCase().trim();
+  
+  // Exact mappings to database partner names
+  const nameMap: Record<string, string> = {
     // Tesla variations
-    'tesla energy': ['tesla', 'tesla solar', 'tesla energy'],
-    'tesla': ['tesla energy', 'tesla solar'],
-    'tesla solar': ['tesla', 'tesla energy'],
+    'tesla': 'Tesla Energy',
+    'tesla solar': 'Tesla Energy',
+    'tesla energy': 'Tesla Energy',
     
-    // Airbnb variations (now with specific types)
-    'airbnb unit rental': ['airbnb', 'airbnb unit', 'airbnb rental', 'airbnb unit rental', 'airbnb hosting'],
-    'airbnb experience': ['airbnb', 'airbnb experience', 'airbnb experiences'],
-    'airbnb service': ['airbnb', 'airbnb service', 'airbnb services'],
-    'airbnb': ['airbnb unit rental', 'airbnb experience', 'airbnb service'],
+    // Airbnb variations
+    'airbnb': 'Airbnb Unit Rental',
+    'airbnb unit rental': 'Airbnb Unit Rental',
+    'airbnb experience': 'Airbnb Experience',
+    'airbnb service': 'Airbnb Service',
     
     // Kolonia variations
-    'kolonia energy': ['kolonia', 'kolonia energy', 'kolonia house'],
-    'kolonia': ['kolonia energy', 'kolonia house'],
-    'kolonia house': ['kolonia', 'kolonia energy'],
+    'kolonia': 'Kolonia Energy',
+    'kolonia house': 'Kolonia Energy',
+    'kolonia energy': 'Kolonia Energy',
     
     // Honeygain variations
-    'honeygain': ['honeygain', 'honey gain'],
-    'honey gain': ['honeygain'],
+    'honeygain': 'Honeygain',
+    'honey gain': 'Honeygain',
     
     // Gympass variations
-    'gympass': ['gympass', 'gym pass'],
-    'gym pass': ['gympass'],
+    'gympass': 'Gympass',
+    'gym pass': 'Gympass',
     
     // Neighbor variations
-    'neighbor.com': ['neighbor', 'neighbor.com'],
-    'neighbor': ['neighbor.com'],
+    'neighbor': 'Neighbor.com',
+    'neighbor.com': 'Neighbor.com',
     
-    // Other existing partners
-    'peerspace': ['peerspace', 'peer space'],
-    'peer space': ['peerspace'],
-    'swimply': ['swimply'],
-    'spothero': ['spothero', 'spot hero'],
-    'spot hero': ['spothero'],
-    'turo': ['turo'],
-    'chargepoint': ['chargepoint', 'charge point'],
-    'charge point': ['chargepoint'],
-    'evgo': ['evgo', 'ev go'],
-    'ev go': ['evgo'],
-    'little free library': ['little free library', 'library', 'free library']
+    // Other exact matches
+    'swimply': 'Swimply',
+    'peerspace': 'Peerspace',
+    'spothero': 'SpotHero',
+    'spot hero': 'SpotHero',
+    'turo': 'Turo',
+    'chargepoint': 'ChargePoint',
+    'charge point': 'ChargePoint',
+    'evgo': 'EVgo',
+    'ev go': 'EVgo',
+    'little free library': 'Little Free Library'
   };
   
-  const baseName = name.toLowerCase().trim();
-  
-  // Add exact matches and variations
-  Object.entries(nameMap).forEach(([key, values]) => {
-    if (values.includes(baseName) || key === baseName) {
-      variations.push(...values);
-      variations.push(key);
-    }
-  });
-  
-  return [...new Set(variations)];
+  return nameMap[normalized] || clickName;
 };
 
 const matchesPartnerName = (clickName: string, providerName: string): boolean => {
   if (!clickName || !providerName) return false;
   
-  const clickVariations = getPartnerNameVariations(clickName);
-  const providerVariations = getPartnerNameVariations(providerName);
+  const normalizedClickName = normalizePartnerName(clickName);
+  const normalizedProviderName = providerName.trim();
   
-  // Check for any overlap between variations
-  return clickVariations.some(clickVar => 
-    providerVariations.some(provVar => 
-      clickVar === provVar || 
-      clickVar.includes(provVar) || 
-      provVar.includes(clickVar)
-    )
-  );
+  // Exact match after normalization
+  if (normalizedClickName === normalizedProviderName) {
+    return true;
+  }
+  
+  // Fallback to loose matching
+  const clickLower = clickName.toLowerCase().trim();
+  const providerLower = providerName.toLowerCase().trim();
+  
+  return clickLower === providerLower || 
+         clickLower.includes(providerLower) || 
+         providerLower.includes(clickLower);
 };
 
 export const useServiceIntegrations = () => {
@@ -111,7 +106,7 @@ export const useServiceIntegrations = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
-  // Function to fetch user emails using our edge function
+  // Function to fetch user emails
   const fetchUserEmails = async (userIds: string[]): Promise<Record<string, string>> => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -148,9 +143,9 @@ export const useServiceIntegrations = () => {
       setError(null);
       
       try {
-        console.log('🔄 Fetching partner integrations data...');
+        console.log('🔄 Fetching enhanced service providers...');
         
-        // Fetch all active partner data from enhanced_service_providers
+        // Fetch all active providers from enhanced_service_providers
         const { data: providersData, error: providersError } = await supabase
           .from('enhanced_service_providers')
           .select('*')
@@ -163,9 +158,9 @@ export const useServiceIntegrations = () => {
         }
 
         console.log('✅ Fetched providers:', providersData?.length || 0);
-        providersData?.forEach(p => console.log('  📋 Provider:', p.name, '| Asset types:', p.asset_types?.join(', ')));
+        console.log('📋 Provider names:', providersData?.map(p => p.name) || []);
 
-        // Fetch click tracking data from partner_integration_progress
+        // Fetch click tracking data
         const { data: clicksData, error: clicksError } = await supabase
           .from('partner_integration_progress')
           .select('*')
@@ -178,24 +173,17 @@ export const useServiceIntegrations = () => {
         }
 
         console.log('✅ Fetched clicks:', clicksData?.length || 0);
-        clicksData?.forEach(c => console.log('  🔗 Click:', c.partner_name, 'at', c.created_at));
+        console.log('🔗 Click partner names:', [...new Set(clicksData?.map(c => c.partner_name) || [])]);
 
-        // Get unique user IDs and fetch their emails
+        // Get user emails
         const userIds = [...new Set(clicksData?.map(click => click.user_id).filter(Boolean) || [])];
         const userEmails = await fetchUserEmails(userIds);
-        
-        console.log('📧 Fetched user emails for', Object.keys(userEmails).length, 'users');
 
-        // Process the data with improved matching logic
+        // Process integrations
         const processedIntegrations: ServiceIntegration[] = (providersData || []).map(provider => {
-          // Use improved name matching with detailed logging
-          const providerClicks = clicksData?.filter(click => {
-            const matches = matchesPartnerName(click.partner_name, provider.name);
-            if (matches) {
-              console.log(`✅ Matched click "${click.partner_name}" to provider "${provider.name}"`);
-            }
-            return matches;
-          }) || [];
+          const providerClicks = clicksData?.filter(click => 
+            matchesPartnerName(click.partner_name, provider.name)
+          ) || [];
 
           const totalClicks = providerClicks.length;
           const completedRegistrations = providerClicks.filter(click => 
@@ -204,7 +192,7 @@ export const useServiceIntegrations = () => {
           
           const conversionRate = totalClicks > 0 ? (completedRegistrations / totalClicks) * 100 : 0;
 
-          console.log(`📊 Processing ${provider.name}: ${totalClicks} clicks, ${completedRegistrations} completed (${conversionRate.toFixed(1)}% conversion)`);
+          console.log(`📊 ${provider.name}: ${totalClicks} clicks, ${completedRegistrations} completed`);
 
           return {
             id: provider.id,
@@ -224,37 +212,25 @@ export const useServiceIntegrations = () => {
           };
         });
 
-        console.log('✅ Processed integrations:', processedIntegrations.length);
-        console.log('📈 Total clicks across all providers:', processedIntegrations.reduce((sum, p) => sum + p.total_clicks, 0));
         setIntegrations(processedIntegrations);
 
-        // Group clicks by partner for detailed view with user emails and improved matching
+        // Group clicks by partner
         const groupedClicks: Record<string, PartnerClick[]> = {};
         
-        // First, create groups for all providers
+        // Initialize groups for all providers
         for (const provider of providersData || []) {
           groupedClicks[provider.name] = [];
         }
         
-        // Then assign clicks to the best matching provider
+        // Assign clicks to providers
         for (const click of clicksData || []) {
           if (!click.partner_name) continue;
           
-          // Find the best matching provider using our enhanced matching
-          let bestMatch = null;
-          let bestProvider = null;
+          const matchingProvider = providersData?.find(provider => 
+            matchesPartnerName(click.partner_name, provider.name)
+          );
           
-          for (const provider of providersData || []) {
-            if (matchesPartnerName(click.partner_name, provider.name)) {
-              // Prefer exact matches or longer matches
-              if (!bestMatch || provider.name.length > bestMatch.length) {
-                bestMatch = provider.name;
-                bestProvider = provider;
-              }
-            }
-          }
-          
-          const targetGroup = bestMatch || click.partner_name;
+          const targetGroup = matchingProvider?.name || click.partner_name;
           
           if (!groupedClicks[targetGroup]) {
             groupedClicks[targetGroup] = [];
@@ -270,13 +246,6 @@ export const useServiceIntegrations = () => {
             user_email: userEmails[click.user_id] || `User ${click.user_id?.slice(0, 8)}...`
           });
         }
-
-        console.log('🔗 Grouped clicks by partner:', Object.keys(groupedClicks).length, 'partners');
-        Object.entries(groupedClicks).forEach(([partner, clicks]) => {
-          if (clicks.length > 0) {
-            console.log(`  📊 ${partner}: ${clicks.length} clicks`);
-          }
-        });
         
         setPartnerClicks(groupedClicks);
         
@@ -290,33 +259,11 @@ export const useServiceIntegrations = () => {
 
     fetchIntegrations();
 
-    // Set up real-time subscription for updates
+    // Set up real-time subscriptions
     const subscription = supabase
       .channel('service_integrations_changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'enhanced_service_providers'
-        },
-        () => {
-          console.log('🔄 Enhanced service providers updated, refreshing...');
-          fetchIntegrations();
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'partner_integration_progress'
-        },
-        () => {
-          console.log('🔄 Partner integration progress updated, refreshing...');
-          fetchIntegrations();
-        }
-      )
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'enhanced_service_providers' }, fetchIntegrations)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'partner_integration_progress' }, fetchIntegrations)
       .subscribe();
 
     return () => {
@@ -335,7 +282,8 @@ export const useServiceIntegrations = () => {
           avg_monthly_earnings_low: integration.monthly_revenue_low,
           avg_monthly_earnings_high: integration.monthly_revenue_high,
           login_url: integration.integration_url,
-          is_active: integration.status === 'active'
+          is_active: integration.status === 'active',
+          logo: integration.logo_url
         })
         .select()
         .single();
@@ -375,7 +323,7 @@ export const useServiceIntegrations = () => {
   };
 };
 
-// Helper function to get appropriate icon for asset type - updated with new asset types
+// Helper function to get appropriate icon for asset type
 function getIconForAssetType(assetType: string): string {
   const iconMap: Record<string, string> = {
     'short_term_rental': 'home',

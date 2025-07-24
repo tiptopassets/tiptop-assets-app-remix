@@ -51,6 +51,16 @@ const ServiceIntegrationsTable = ({
     );
   }
 
+  // Sort integrations by priority and name
+  const sortedIntegrations = [...integrations].sort((a, b) => {
+    // First sort by total clicks (descending)
+    if (a.total_clicks !== b.total_clicks) {
+      return b.total_clicks - a.total_clicks;
+    }
+    // Then by name (ascending)
+    return a.name.localeCompare(b.name);
+  });
+
   return (
     <div className="space-y-4">
       <div className="overflow-x-auto">
@@ -67,7 +77,7 @@ const ServiceIntegrationsTable = ({
             </tr>
           </thead>
           <tbody>
-            {integrations.map((integration) => {
+            {sortedIntegrations.map((integration) => {
               const clicks = partnerClicks[integration.partner_name] || [];
               const hasClicks = clicks.length > 0;
               
@@ -75,15 +85,22 @@ const ServiceIntegrationsTable = ({
                 <tr key={integration.id} className="border-b hover:bg-gray-50">
                   <td className="p-3">
                     <div className="flex items-center space-x-3">
-                      {integration.logo_url && (
+                      {integration.logo_url ? (
                         <img 
                           src={integration.logo_url} 
                           alt={integration.name}
-                          className="w-8 h-8 rounded"
+                          className="w-8 h-8 rounded object-contain"
                           onError={(e) => {
-                            e.currentTarget.style.display = 'none';
+                            const target = e.target as HTMLImageElement;
+                            target.style.display = 'none';
                           }}
                         />
+                      ) : (
+                        <div className="w-8 h-8 rounded bg-gray-200 flex items-center justify-center">
+                          <span className="text-xs font-medium text-gray-600">
+                            {integration.name.charAt(0)}
+                          </span>
+                        </div>
                       )}
                       <div>
                         <p className="font-medium">{integration.name}</p>
@@ -95,14 +112,14 @@ const ServiceIntegrationsTable = ({
                   </td>
                   <td className="p-3">
                     <div className="flex flex-wrap gap-1">
-                      {integration.asset_types.slice(0, 3).map((type) => (
+                      {integration.asset_types.slice(0, 2).map((type) => (
                         <Badge key={type} variant="outline" className="text-xs">
-                          {type}
+                          {type.replace('_', ' ')}
                         </Badge>
                       ))}
-                      {integration.asset_types.length > 3 && (
+                      {integration.asset_types.length > 2 && (
                         <Badge variant="outline" className="text-xs">
-                          +{integration.asset_types.length - 3}
+                          +{integration.asset_types.length - 2}
                         </Badge>
                       )}
                     </div>
@@ -131,7 +148,7 @@ const ServiceIntegrationsTable = ({
                     <select
                       value={integration.status}
                       onChange={(e) => handleStatusChange(integration.id, e.target.value as 'active' | 'pending' | 'inactive')}
-                      className="text-sm border rounded px-2 py-1"
+                      className="text-sm border rounded px-2 py-1 bg-white"
                     >
                       <option value="active">Active</option>
                       <option value="pending">Pending</option>
@@ -168,6 +185,13 @@ const ServiceIntegrationsTable = ({
           </tbody>
         </table>
       </div>
+
+      {/* Show message if no integrations */}
+      {sortedIntegrations.length === 0 && (
+        <div className="text-center py-8">
+          <p className="text-gray-600">No service integrations found.</p>
+        </div>
+      )}
 
       {/* Clicks Dialog */}
       <Dialog open={showClicksDialog} onOpenChange={setShowClicksDialog}>
