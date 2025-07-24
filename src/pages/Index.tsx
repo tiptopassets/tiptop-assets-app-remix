@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import SearchBar from '@/components/SearchBar';
@@ -27,6 +26,7 @@ const Index = () => {
   const { status } = useModelGeneration();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [showingFormSection, setShowingFormSection] = useState(false);
+  const [selectedAssets, setSelectedAssets] = useState<string[]>([]);
   const isMobile = useIsMobile();
   const hasAddress = !!address;
   const { user, loading } = useAuth();
@@ -48,6 +48,14 @@ const Index = () => {
       </div>
     );
   }
+
+  const handleAssetSelect = (assetId: string, selected: boolean) => {
+    if (selected) {
+      setSelectedAssets(prev => [...prev.filter(id => id !== assetId), assetId]);
+    } else {
+      setSelectedAssets(prev => prev.filter(id => id !== assetId));
+    }
+  };
 
   // Check if we should show the banner (hide during capturing, show during generating and error)
   const showBanner = status !== 'idle' && (status === 'generating' || status === 'error');
@@ -140,8 +148,17 @@ const Index = () => {
           {analysisComplete && analysisResults && (
             <div className={`w-full ${showingFormSection ? 'mt-0' : 'mt-64 sm:mt-72 md:mt-80 lg:mt-96'}`}>
               <AssetResultList 
-                analysisResults={analysisResults} 
-                onFormSectionToggle={setShowingFormSection}
+                propertyData={{
+                  availableAssets: analysisResults.topOpportunities?.map((opp, index) => ({
+                    id: `asset-${index}`,
+                    assetId: `asset-${index}`,
+                    name: opp.title,
+                    type: opp.title,
+                    monthlyRevenue: opp.monthlyRevenue
+                  })) || []
+                }}
+                onAssetSelect={handleAssetSelect}
+                selectedAssets={selectedAssets}
               />
             </div>
           )}

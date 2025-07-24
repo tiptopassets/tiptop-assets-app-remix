@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -16,7 +17,6 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { PropertyAnalysisData } from '@/hooks/useUserPropertyAnalysis';
-import { Asset } from '@/types/types';
 import ContinueButton from './ContinueButton';
 
 interface AssetResultListProps {
@@ -33,7 +33,7 @@ interface SelectedAsset {
 
 const AssetResultList = ({ propertyData, onAssetSelect, selectedAssets = [] }: AssetResultListProps) => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [filteredAssets, setFilteredAssets] = useState<Asset[]>([]);
+  const [filteredAssets, setFilteredAssets] = useState<any[]>([]);
   const [selectedAssetsData, setSelectedAssetsData] = useState<SelectedAsset[]>([]);
   const [allAssetsSelected, setAllAssetsSelected] = useState(false);
 
@@ -59,9 +59,9 @@ const AssetResultList = ({ propertyData, onAssetSelect, selectedAssets = [] }: A
   useEffect(() => {
     if (propertyData && selectedAssets) {
       const selectedData = propertyData.availableAssets
-        ?.filter(asset => selectedAssets.includes(asset.id))
+        ?.filter(asset => selectedAssets.includes(asset.assetId || asset.id))
         .map(asset => ({
-          asset_id: asset.id,
+          asset_id: asset.assetId || asset.id,
           asset_type: asset.type,
           monthly_revenue: asset.monthlyRevenue
         })) || [];
@@ -77,13 +77,12 @@ const AssetResultList = ({ propertyData, onAssetSelect, selectedAssets = [] }: A
     onAssetSelect(assetId, checked);
   };
 
-  const handleSelectAllChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const checked = e.target.checked;
+  const handleSelectAllChange = (checked: boolean) => {
     setAllAssetsSelected(checked);
 
     if (propertyData && propertyData.availableAssets) {
       propertyData.availableAssets.forEach(asset => {
-        onAssetSelect(asset.id, checked);
+        onAssetSelect(asset.assetId || asset.id, checked);
       });
     }
   };
@@ -118,7 +117,7 @@ const AssetResultList = ({ propertyData, onAssetSelect, selectedAssets = [] }: A
           <Checkbox
             id="select-all"
             checked={allAssetsSelected}
-            onCheckedChange={handleSelectAllChange}
+            onCheckedChange={(checked) => handleSelectAllChange(!!checked)}
           />
           <Label htmlFor="select-all" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
             Select All
@@ -139,14 +138,15 @@ const AssetResultList = ({ propertyData, onAssetSelect, selectedAssets = [] }: A
           </TableHeader>
           <TableBody>
             {filteredAssets.map((asset) => {
-              const isSelected = selectedAssets.includes(asset.id);
+              const assetId = asset.assetId || asset.id;
+              const isSelected = selectedAssets.includes(assetId);
               return (
-                <TableRow key={asset.id}>
+                <TableRow key={assetId}>
                   <TableCell className="font-medium">
                     <Checkbox
-                      id={`asset-${asset.id}`}
+                      id={`asset-${assetId}`}
                       checked={isSelected}
-                      onCheckedChange={(checked) => handleAssetCheckboxChange(asset.id, !!checked)}
+                      onCheckedChange={(checked) => handleAssetCheckboxChange(assetId, !!checked)}
                     />
                   </TableCell>
                   <TableCell>{asset.name}</TableCell>
@@ -159,7 +159,7 @@ const AssetResultList = ({ propertyData, onAssetSelect, selectedAssets = [] }: A
         </Table>
       </ScrollArea>
       
-      {/* Continue Button - Fixed props */}
+      {/* Continue Button */}
       <ContinueButton
         selectedAssets={selectedAssets}
         onContinue={handleContinue}
