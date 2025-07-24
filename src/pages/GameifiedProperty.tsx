@@ -97,7 +97,7 @@ function FloatingAsset({
         onClick={onClick}
         onPointerOver={() => setHovered(true)}
         onPointerOut={() => setHovered(false)}
-        scale={hovered ? 1.2 : 1}
+        scale={hovered ? [1.2, 1.2, 1.2] : [1, 1, 1]}
       >
         {getAssetShape()}
         <meshStandardMaterial 
