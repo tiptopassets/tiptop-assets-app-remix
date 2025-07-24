@@ -43,7 +43,7 @@ const ServiceIntegrationsTable = ({
       <div className="space-y-4">
         <div className="animate-pulse">
           <div className="h-8 bg-gray-200 rounded w-full mb-4"></div>
-          {Array.from({ length: 5 }).map((_, i) => (
+          {Array.from({ length: 8 }).map((_, i) => (
             <div key={i} className="h-16 bg-gray-200 rounded mb-2"></div>
           ))}
         </div>
@@ -51,18 +51,26 @@ const ServiceIntegrationsTable = ({
     );
   }
 
-  // Sort integrations by priority and name
-  const sortedIntegrations = [...integrations].sort((a, b) => {
-    // First sort by total clicks (descending)
-    if (a.total_clicks !== b.total_clicks) {
-      return b.total_clicks - a.total_clicks;
-    }
-    // Then by name (ascending)
-    return a.name.localeCompare(b.name);
-  });
+  if (integrations.length === 0) {
+    return (
+      <div className="text-center py-8">
+        <p className="text-gray-600">No service integrations found.</p>
+        <p className="text-sm text-gray-500 mt-2">Try refreshing the page or check your database connection.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
+      <div className="flex justify-between items-center mb-4">
+        <div className="text-sm text-gray-600">
+          Showing {integrations.length} service integrations
+        </div>
+        <div className="text-sm text-gray-600">
+          Total clicks: {integrations.reduce((sum, integration) => sum + integration.total_clicks, 0)}
+        </div>
+      </div>
+
       <div className="overflow-x-auto">
         <table className="w-full border-collapse">
           <thead>
@@ -77,7 +85,7 @@ const ServiceIntegrationsTable = ({
             </tr>
           </thead>
           <tbody>
-            {sortedIntegrations.map((integration) => {
+            {integrations.map((integration) => {
               const clicks = partnerClicks[integration.partner_name] || [];
               const hasClicks = clicks.length > 0;
               
@@ -89,29 +97,29 @@ const ServiceIntegrationsTable = ({
                         <img 
                           src={integration.logo_url} 
                           alt={integration.name}
-                          className="w-8 h-8 rounded object-contain"
+                          className="w-8 h-8 rounded object-contain bg-white"
                           onError={(e) => {
                             const target = e.target as HTMLImageElement;
                             target.style.display = 'none';
+                            target.nextElementSibling?.classList.remove('hidden');
                           }}
                         />
-                      ) : (
-                        <div className="w-8 h-8 rounded bg-gray-200 flex items-center justify-center">
-                          <span className="text-xs font-medium text-gray-600">
-                            {integration.name.charAt(0)}
-                          </span>
-                        </div>
-                      )}
-                      <div>
-                        <p className="font-medium">{integration.name}</p>
-                        <p className="text-sm text-gray-600 line-clamp-1">
+                      ) : null}
+                      <div className={`w-8 h-8 rounded bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center ${integration.logo_url ? 'hidden' : ''}`}>
+                        <span className="text-xs font-bold text-white">
+                          {integration.name.charAt(0)}
+                        </span>
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="font-medium text-gray-900 truncate">{integration.name}</p>
+                        <p className="text-sm text-gray-600 line-clamp-2">
                           {integration.description}
                         </p>
                       </div>
                     </div>
                   </td>
                   <td className="p-3">
-                    <div className="flex flex-wrap gap-1">
+                    <div className="flex flex-wrap gap-1 max-w-xs">
                       {integration.asset_types.slice(0, 2).map((type) => (
                         <Badge key={type} variant="outline" className="text-xs">
                           {type.replace('_', ' ')}
@@ -126,7 +134,7 @@ const ServiceIntegrationsTable = ({
                   </td>
                   <td className="p-3">
                     <div className="text-sm">
-                      <div className="font-medium">
+                      <div className="font-medium text-green-600">
                         ${integration.monthly_revenue_low} - ${integration.monthly_revenue_high}
                       </div>
                       <div className="text-gray-600">per month</div>
@@ -135,20 +143,24 @@ const ServiceIntegrationsTable = ({
                   <td className="p-3">
                     <div className="flex items-center space-x-2">
                       <Users className="h-4 w-4 text-gray-400" />
-                      <span className="font-medium">{integration.total_clicks}</span>
+                      <span className={`font-medium ${hasClicks ? 'text-blue-600' : 'text-gray-500'}`}>
+                        {integration.total_clicks}
+                      </span>
                     </div>
                   </td>
                   <td className="p-3">
                     <div className="flex items-center space-x-2">
                       <TrendingUp className="h-4 w-4 text-gray-400" />
-                      <span className="font-medium">{integration.conversion_rate}%</span>
+                      <span className={`font-medium ${integration.conversion_rate > 0 ? 'text-green-600' : 'text-gray-500'}`}>
+                        {integration.conversion_rate}%
+                      </span>
                     </div>
                   </td>
                   <td className="p-3">
                     <select
                       value={integration.status}
                       onChange={(e) => handleStatusChange(integration.id, e.target.value as 'active' | 'pending' | 'inactive')}
-                      className="text-sm border rounded px-2 py-1 bg-white"
+                      className="text-sm border rounded px-2 py-1 bg-white focus:border-blue-500 focus:outline-none"
                     >
                       <option value="active">Active</option>
                       <option value="pending">Pending</option>
@@ -162,9 +174,10 @@ const ServiceIntegrationsTable = ({
                           variant="outline"
                           size="sm"
                           onClick={() => handleViewClicks(integration.partner_name)}
+                          className="text-xs"
                         >
-                          <Eye className="h-4 w-4 mr-1" />
-                          View Clicks ({clicks.length})
+                          <Eye className="h-3 w-3 mr-1" />
+                          View ({clicks.length})
                         </Button>
                       )}
                       {integration.integration_url && (
@@ -172,8 +185,9 @@ const ServiceIntegrationsTable = ({
                           variant="outline"
                           size="sm"
                           onClick={() => window.open(integration.integration_url!, '_blank')}
+                          className="text-xs"
                         >
-                          <ExternalLink className="h-4 w-4 mr-1" />
+                          <ExternalLink className="h-3 w-3 mr-1" />
                           Visit
                         </Button>
                       )}
@@ -185,13 +199,6 @@ const ServiceIntegrationsTable = ({
           </tbody>
         </table>
       </div>
-
-      {/* Show message if no integrations */}
-      {sortedIntegrations.length === 0 && (
-        <div className="text-center py-8">
-          <p className="text-gray-600">No service integrations found.</p>
-        </div>
-      )}
 
       {/* Clicks Dialog */}
       <Dialog open={showClicksDialog} onOpenChange={setShowClicksDialog}>
@@ -214,7 +221,9 @@ const ServiceIntegrationsTable = ({
                     </tr>
                   </thead>
                   <tbody>
-                    {partnerClicks[selectedPartner].map((click) => (
+                    {partnerClicks[selectedPartner]
+                      .sort((a, b) => new Date(b.clicked_at).getTime() - new Date(a.clicked_at).getTime())
+                      .map((click) => (
                       <tr key={click.id} className="border-b hover:bg-gray-50">
                         <td className="p-2">
                           <div className="font-medium">

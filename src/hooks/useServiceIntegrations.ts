@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -28,21 +29,21 @@ export type PartnerClick = {
   user_email?: string;
 };
 
-// Comprehensive partner name matching with exact database names
+// Enhanced partner name matching with the new database structure
 const normalizePartnerName = (clickName: string): string => {
   if (!clickName) return '';
   
   const normalized = clickName.toLowerCase().trim();
   
-  // Exact mappings to database partner names
+  // Direct mappings to exact database partner names
   const nameMap: Record<string, string> = {
     // Tesla variations
     'tesla': 'Tesla Energy',
     'tesla solar': 'Tesla Energy',
     'tesla energy': 'Tesla Energy',
     
-    // Airbnb variations
-    'airbnb': 'Airbnb Unit Rental',
+    // Airbnb variations (now we have specific entries)
+    'airbnb': 'Airbnb Unit Rental', // Default to unit rental
     'airbnb unit rental': 'Airbnb Unit Rental',
     'airbnb experience': 'Airbnb Experience',
     'airbnb service': 'Airbnb Service',
@@ -88,6 +89,11 @@ const matchesPartnerName = (clickName: string, providerName: string): boolean =>
   
   // Exact match after normalization
   if (normalizedClickName === normalizedProviderName) {
+    return true;
+  }
+  
+  // Special handling for Airbnb variants
+  if (clickName.toLowerCase().includes('airbnb') && providerName.includes('Airbnb')) {
     return true;
   }
   
@@ -173,13 +179,12 @@ export const useServiceIntegrations = () => {
         }
 
         console.log('✅ Fetched clicks:', clicksData?.length || 0);
-        console.log('🔗 Click partner names:', [...new Set(clicksData?.map(c => c.partner_name) || [])]);
 
         // Get user emails
         const userIds = [...new Set(clicksData?.map(click => click.user_id).filter(Boolean) || [])];
         const userEmails = await fetchUserEmails(userIds);
 
-        // Process integrations
+        // Process integrations with improved matching
         const processedIntegrations: ServiceIntegration[] = (providersData || []).map(provider => {
           const providerClicks = clicksData?.filter(click => 
             matchesPartnerName(click.partner_name, provider.name)
@@ -192,7 +197,7 @@ export const useServiceIntegrations = () => {
           
           const conversionRate = totalClicks > 0 ? (completedRegistrations / totalClicks) * 100 : 0;
 
-          console.log(`📊 ${provider.name}: ${totalClicks} clicks, ${completedRegistrations} completed`);
+          console.log(`📊 ${provider.name}: ${totalClicks} clicks, ${completedRegistrations} completed, ${conversionRate.toFixed(1)}% conversion`);
 
           return {
             id: provider.id,
@@ -212,9 +217,17 @@ export const useServiceIntegrations = () => {
           };
         });
 
+        // Sort by total clicks (descending) then by priority (descending)
+        processedIntegrations.sort((a, b) => {
+          if (a.total_clicks !== b.total_clicks) {
+            return b.total_clicks - a.total_clicks;
+          }
+          return b.monthly_revenue_high - a.monthly_revenue_high;
+        });
+
         setIntegrations(processedIntegrations);
 
-        // Group clicks by partner
+        // Group clicks by provider with improved matching
         const groupedClicks: Record<string, PartnerClick[]> = {};
         
         // Initialize groups for all providers
@@ -222,7 +235,7 @@ export const useServiceIntegrations = () => {
           groupedClicks[provider.name] = [];
         }
         
-        // Assign clicks to providers
+        // Assign clicks to providers with better matching
         for (const click of clicksData || []) {
           if (!click.partner_name) continue;
           
@@ -248,6 +261,7 @@ export const useServiceIntegrations = () => {
         }
         
         setPartnerClicks(groupedClicks);
+        console.log('✅ Integration data processing complete');
         
       } catch (err) {
         console.error('❌ Error fetching integrations:', err);
