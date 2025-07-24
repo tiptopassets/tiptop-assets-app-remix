@@ -1,68 +1,67 @@
 
-import React from 'react';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, Check } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
+import { useGoogleMap } from '@/contexts/GoogleMapContext';
+import { SelectedAsset } from '@/types/analysis';
 
 interface ContinueButtonProps {
-  selectedAssets: string[];
+  selectedCount: number;
   onContinue: () => void;
-  isLoading?: boolean;
+  selectedAssetsData?: SelectedAsset[];
 }
 
-const ContinueButton = ({ selectedAssets, onContinue, isLoading = false }: ContinueButtonProps) => {
-  const hasSelections = selectedAssets.length > 0;
+const ContinueButton = ({ selectedCount, onContinue, selectedAssetsData }: ContinueButtonProps) => {
+  const navigate = useNavigate();
+  const { analysisResults, address } = useGoogleMap();
 
-  if (!hasSelections) {
-    return null;
-  }
+  const handleContinue = () => {
+    if (selectedCount < 2) {
+      return; // Don't proceed if less than 2 assets selected
+    }
+    
+    onContinue();
+    
+    // Pass analysis data AND selected assets through navigation state and sessionStorage
+    const navigationData = {
+      analysisResults,
+      address,
+      selectedAssetsData: selectedAssetsData || [],
+      timestamp: Date.now()
+    };
+    
+    // Store in sessionStorage as backup
+    sessionStorage.setItem('model-viewer-data', JSON.stringify(navigationData));
+    
+    // Navigate with state
+    navigate('/model-viewer', { 
+      state: navigationData
+    });
+  };
+
+  const getButtonText = () => {
+    if (selectedCount === 0) {
+      return 'Select at least 2 assets to continue';
+    } else if (selectedCount === 1) {
+      return 'Select at least one more asset to continue';
+    } else {
+      return `Continue with ${selectedCount} asset${selectedCount !== 1 ? 's' : ''}`;
+    }
+  };
+
+  const isDisabled = selectedCount < 2;
 
   return (
-    <div className="sticky bottom-0 bg-gradient-to-t from-black via-black/95 to-transparent p-6 mt-8">
-      <div className="max-w-4xl mx-auto">
-        <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <div className="bg-green-500 rounded-full p-2">
-                <Check className="h-4 w-4 text-white" />
-              </div>
-              <div>
-                <p className="text-white font-medium">
-                  {selectedAssets.length} Asset{selectedAssets.length > 1 ? 's' : ''} Selected
-                </p>
-                <p className="text-gray-400 text-sm">Ready to proceed with your selections</p>
-              </div>
-            </div>
-            
-            <div className="flex space-x-3">
-              <Button asChild variant="outline" size="sm">
-                <Link to="/dashboard">
-                  View Dashboard
-                </Link>
-              </Button>
-              
-              <Button 
-                onClick={onContinue}
-                disabled={isLoading}
-                className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white px-6"
-              >
-                {isLoading ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    Processing...
-                  </>
-                ) : (
-                  <>
-                    Continue Setup
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </>
-                )}
-              </Button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+    <Button 
+      onClick={handleContinue}
+      disabled={isDisabled}
+      className={`w-full border-none shadow-lg hover:shadow-xl transition-all duration-300 ${
+        isDisabled 
+          ? 'bg-gray-600 hover:bg-gray-600 text-gray-400 cursor-not-allowed' 
+          : 'bg-gradient-to-r from-tiptop-purple to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white'
+      }`}
+    >
+      {getButtonText()}
+    </Button>
   );
 };
 

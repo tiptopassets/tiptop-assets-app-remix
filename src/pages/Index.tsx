@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import SearchBar from '@/components/SearchBar';
@@ -26,7 +27,6 @@ const Index = () => {
   const { status } = useModelGeneration();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [showingFormSection, setShowingFormSection] = useState(false);
-  const [selectedAssets, setSelectedAssets] = useState<string[]>([]);
   const isMobile = useIsMobile();
   const hasAddress = !!address;
   const { user, loading } = useAuth();
@@ -48,14 +48,6 @@ const Index = () => {
       </div>
     );
   }
-
-  const handleAssetSelect = (assetId: string, selected: boolean) => {
-    if (selected) {
-      setSelectedAssets(prev => [...prev.filter(id => id !== assetId), assetId]);
-    } else {
-      setSelectedAssets(prev => prev.filter(id => id !== assetId));
-    }
-  };
 
   // Check if we should show the banner (hide during capturing, show during generating and error)
   const showBanner = status !== 'idle' && (status === 'generating' || status === 'error');
@@ -148,24 +140,8 @@ const Index = () => {
           {analysisComplete && analysisResults && (
             <div className={`w-full ${showingFormSection ? 'mt-0' : 'mt-64 sm:mt-72 md:mt-80 lg:mt-96'}`}>
               <AssetResultList 
-                propertyData={{
-                  availableAssets: analysisResults.topOpportunities?.map((opp, index) => ({
-                    type: opp.title.toLowerCase().replace(/\s+/g, '_'),
-                    name: opp.title,
-                    monthlyRevenue: opp.monthlyRevenue,
-                    setupCost: opp.setupCost || 0,
-                    description: opp.description || `Monetize your ${opp.title.toLowerCase()}`,
-                    hasRevenuePotential: (opp.monthlyRevenue || 0) > 0,
-                    isConfigured: false
-                  })) || [],
-                  analysisId: 'current',
-                  address: address || '',
-                  totalMonthlyRevenue: analysisResults.topOpportunities?.reduce((sum, opp) => sum + (opp.monthlyRevenue || 0), 0) || 0,
-                  totalOpportunities: analysisResults.topOpportunities?.length || 0,
-                  analysisResults
-                }}
-                onAssetSelect={handleAssetSelect}
-                selectedAssets={selectedAssets}
+                analysisResults={analysisResults} 
+                onFormSectionToggle={setShowingFormSection}
               />
             </div>
           )}

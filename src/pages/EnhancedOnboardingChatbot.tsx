@@ -307,50 +307,6 @@ const EnhancedOnboardingChatbot = () => {
     setSendMessageFunction(() => sendMessage);
   }, []);
 
-  // Add handlers for QuickActionsBar
-  const handleStartOver = useCallback(() => {
-    // Clear chat and reset state
-    setDetectedAssets([]);
-    setConversationStage('greeting');
-    setMessageCount(0);
-    setChatError(null);
-    setInitializationComplete(false);
-    
-    // Clear any stored data
-    sessionStorage.removeItem('triggerBubbleInteraction');
-    
-    toast({
-      title: "Chat Reset",
-      description: "Starting a new conversation.",
-    });
-  }, [toast]);
-
-  const handleExportChat = useCallback(() => {
-    // Simple export functionality
-    const chatData = {
-      propertyAddress: unifiedPropertyData?.address,
-      detectedAssets,
-      conversationStage,
-      messageCount,
-      timestamp: new Date().toISOString()
-    };
-    
-    const dataStr = JSON.stringify(chatData, null, 2);
-    const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
-    
-    const exportFileDefaultName = `chat-export-${Date.now()}.json`;
-    
-    const linkElement = document.createElement('a');
-    linkElement.setAttribute('href', dataUri);
-    linkElement.setAttribute('download', exportFileDefaultName);
-    linkElement.click();
-    
-    toast({
-      title: "Chat Exported",
-      description: "Your conversation has been downloaded.",
-    });
-  }, [unifiedPropertyData?.address, detectedAssets, conversationStage, messageCount, toast]);
-
   // Loading state - wait for auth and data
   const isLoading = authLoading || (propertyLoading && journeyLoading && !unifiedPropertyData);
 
@@ -384,11 +340,8 @@ const EnhancedOnboardingChatbot = () => {
         />
       </div>
 
-      {/* Floating Quick Actions Sidebar - Fixed props */}
-      <QuickActionsBar 
-        onStartOver={handleStartOver}
-        onExportChat={handleExportChat}
-      />
+      {/* Floating Quick Actions Sidebar */}
+      <QuickActionsBar />
 
       {/* Main Content - Full Height with proper flex layout */}
       <div className="h-screen flex flex-col">
