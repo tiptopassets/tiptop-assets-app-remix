@@ -28,26 +28,45 @@ export type PartnerClick = {
   user_email?: string;
 };
 
-// Improved name matching function
+// Enhanced name matching function with comprehensive mapping
 const getPartnerNameVariations = (name: string): string[] => {
   const variations = [name.toLowerCase().trim()];
   
-  // Add common variations
+  // Comprehensive name mapping for all partners
   const nameMap: Record<string, string[]> = {
+    // Tesla variations
     'tesla energy': ['tesla', 'tesla solar', 'tesla energy'],
     'tesla': ['tesla energy', 'tesla solar'],
-    'airbnb unit rental': ['airbnb', 'airbnb unit', 'airbnb rental'],
+    'tesla solar': ['tesla', 'tesla energy'],
+    
+    // Airbnb variations
+    'airbnb unit rental': ['airbnb', 'airbnb unit', 'airbnb rental', 'airbnb unit rental'],
     'airbnb experience': ['airbnb', 'airbnb experience', 'airbnb experiences'],
     'airbnb service': ['airbnb', 'airbnb service', 'airbnb services'],
+    'airbnb': ['airbnb unit rental', 'airbnb experience', 'airbnb service'],
+    
+    // Kolonia variations
     'kolonia energy': ['kolonia', 'kolonia energy', 'kolonia house'],
+    'kolonia': ['kolonia energy'],
+    'kolonia house': ['kolonia', 'kolonia energy'],
+    
+    // Honeygain variations
     'honeygain': ['honeygain', 'honey gain'],
+    'honey gain': ['honeygain'],
+    
+    // Other partners
     'peerspace': ['peerspace', 'peer space'],
+    'peer space': ['peerspace'],
     'neighbor.com': ['neighbor', 'neighbor.com'],
+    'neighbor': ['neighbor.com'],
     'swimply': ['swimply'],
     'spothero': ['spothero', 'spot hero'],
+    'spot hero': ['spothero'],
     'turo': ['turo'],
     'chargepoint': ['chargepoint', 'charge point'],
+    'charge point': ['chargepoint'],
     'evgo': ['evgo', 'ev go'],
+    'ev go': ['evgo'],
     'little free library': ['little free library', 'library', 'free library']
   };
   
@@ -57,6 +76,7 @@ const getPartnerNameVariations = (name: string): string[] => {
   Object.entries(nameMap).forEach(([key, values]) => {
     if (values.includes(baseName) || key === baseName) {
       variations.push(...values);
+      variations.push(key); // Also add the key itself
     }
   });
   
@@ -94,7 +114,7 @@ export const useServiceIntegrations = () => {
         return {};
       }
 
-      const response = await fetch('/supabase/functions/get-admin-user-details', {
+      const response = await fetch('/functions/v1/get-admin-user-details', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -122,7 +142,7 @@ export const useServiceIntegrations = () => {
       setError(null);
       
       try {
-        console.log('Fetching partner integrations data...');
+        console.log('🔄 Fetching partner integrations data...');
         
         // Fetch all active partner data from enhanced_service_providers
         const { data: providersData, error: providersError } = await supabase
@@ -132,12 +152,12 @@ export const useServiceIntegrations = () => {
           .order('priority', { ascending: false });
 
         if (providersError) {
-          console.error('Error fetching providers:', providersError);
+          console.error('❌ Error fetching providers:', providersError);
           throw providersError;
         }
 
-        console.log('Fetched providers:', providersData?.length || 0);
-        providersData?.forEach(p => console.log('Provider:', p.name));
+        console.log('✅ Fetched providers:', providersData?.length || 0);
+        providersData?.forEach(p => console.log('  📋 Provider:', p.name, '| Asset types:', p.asset_types?.join(', ')));
 
         // Fetch click tracking data from partner_integration_progress
         const { data: clicksData, error: clicksError } = await supabase
@@ -147,22 +167,22 @@ export const useServiceIntegrations = () => {
           .order('created_at', { ascending: false });
 
         if (clicksError) {
-          console.error('Error fetching clicks:', clicksError);
+          console.error('❌ Error fetching clicks:', clicksError);
           throw clicksError;
         }
 
-        console.log('Fetched clicks:', clicksData?.length || 0);
-        clicksData?.forEach(c => console.log('Click:', c.partner_name, 'at', c.created_at));
+        console.log('✅ Fetched clicks:', clicksData?.length || 0);
+        clicksData?.forEach(c => console.log('  🔗 Click:', c.partner_name, 'at', c.created_at));
 
         // Get unique user IDs and fetch their emails
         const userIds = [...new Set(clicksData?.map(click => click.user_id).filter(Boolean) || [])];
         const userEmails = await fetchUserEmails(userIds);
         
-        console.log('Fetched user emails for', Object.keys(userEmails).length, 'users');
+        console.log('📧 Fetched user emails for', Object.keys(userEmails).length, 'users');
 
         // Process the data with improved matching logic
         const processedIntegrations: ServiceIntegration[] = (providersData || []).map(provider => {
-          // Use improved name matching
+          // Use improved name matching with detailed logging
           const providerClicks = clicksData?.filter(click => {
             const matches = matchesPartnerName(click.partner_name, provider.name);
             if (matches) {
@@ -178,7 +198,7 @@ export const useServiceIntegrations = () => {
           
           const conversionRate = totalClicks > 0 ? (completedRegistrations / totalClicks) * 100 : 0;
 
-          console.log(`Processing ${provider.name}: ${totalClicks} clicks, ${completedRegistrations} completed`);
+          console.log(`📊 Processing ${provider.name}: ${totalClicks} clicks, ${completedRegistrations} completed (${conversionRate.toFixed(1)}% conversion)`);
 
           return {
             id: provider.id,
@@ -198,7 +218,8 @@ export const useServiceIntegrations = () => {
           };
         });
 
-        console.log('Processed integrations:', processedIntegrations.length);
+        console.log('✅ Processed integrations:', processedIntegrations.length);
+        console.log('📈 Total clicks across all providers:', processedIntegrations.reduce((sum, p) => sum + p.total_clicks, 0));
         setIntegrations(processedIntegrations);
 
         // Group clicks by partner for detailed view with user emails and improved matching
@@ -213,7 +234,7 @@ export const useServiceIntegrations = () => {
         for (const click of clicksData || []) {
           if (!click.partner_name) continue;
           
-          // Find the best matching provider
+          // Find the best matching provider using our enhanced matching
           let bestMatch = null;
           let bestProvider = null;
           
@@ -244,17 +265,17 @@ export const useServiceIntegrations = () => {
           });
         }
 
-        console.log('Grouped clicks by partner:', Object.keys(groupedClicks).length, 'partners');
+        console.log('🔗 Grouped clicks by partner:', Object.keys(groupedClicks).length, 'partners');
         Object.entries(groupedClicks).forEach(([partner, clicks]) => {
           if (clicks.length > 0) {
-            console.log(`${partner}: ${clicks.length} clicks`);
+            console.log(`  📊 ${partner}: ${clicks.length} clicks`);
           }
         });
         
         setPartnerClicks(groupedClicks);
         
       } catch (err) {
-        console.error('Error fetching integrations:', err);
+        console.error('❌ Error fetching integrations:', err);
         setError(err instanceof Error ? err : new Error('Unknown error'));
       } finally {
         setLoading(false);
@@ -274,7 +295,7 @@ export const useServiceIntegrations = () => {
           table: 'enhanced_service_providers'
         },
         () => {
-          console.log('Enhanced service providers updated, refreshing...');
+          console.log('🔄 Enhanced service providers updated, refreshing...');
           fetchIntegrations();
         }
       )
@@ -286,7 +307,7 @@ export const useServiceIntegrations = () => {
           table: 'partner_integration_progress'
         },
         () => {
-          console.log('Partner integration progress updated, refreshing...');
+          console.log('🔄 Partner integration progress updated, refreshing...');
           fetchIntegrations();
         }
       )

@@ -29,28 +29,46 @@ const PartnerRegistrationFlow: React.FC<PartnerRegistrationFlowProps> = ({
   const [currentStep, setCurrentStep] = useState(0);
   const { generateReferralLink, registerWithPartner, trackClick, isLoading } = useAffiliateIntegration();
 
-  // Normalize partner names for consistent tracking
+  // Enhanced partner name normalization with comprehensive mapping
   const normalizePartnerName = (partnerName: string): string => {
     const nameMap: Record<string, string> = {
-      'FlexOffers': 'FlexOffers',
-      'Honeygain': 'Honeygain',
+      // Tesla variations
       'Tesla Energy': 'Tesla Energy',
-      'Tesla Solar': 'Tesla Energy', // Normalize to Tesla Energy
-      'Tesla': 'Tesla Energy', // Normalize to Tesla Energy
-      'Swimply': 'Swimply',
+      'Tesla Solar': 'Tesla Energy',
+      'Tesla': 'Tesla Energy',
+      
+      // Airbnb variations - map to specific services
       'Airbnb': 'Airbnb Unit Rental', // Default to unit rental
-      'Booking.com': 'Booking.com',
-      'SpotHero': 'SpotHero',
-      'Rakuten': 'Rakuten',
+      'Airbnb Unit Rental': 'Airbnb Unit Rental',
+      'Airbnb Experience': 'Airbnb Experience',
+      'Airbnb Service': 'Airbnb Service',
+      
+      // Kolonia variations
       'Kolonia Energy': 'Kolonia Energy',
+      'Kolonia House': 'Kolonia Energy',
       'Kolonia': 'Kolonia Energy',
+      
+      // Other partners - maintain exact names
+      'Honeygain': 'Honeygain',
+      'Swimply': 'Swimply',
       'Peerspace': 'Peerspace',
       'Neighbor.com': 'Neighbor.com',
       'Neighbor': 'Neighbor.com',
-      'Little Free Library': 'Little Free Library'
+      'SpotHero': 'SpotHero',
+      'Turo': 'Turo',
+      'ChargePoint': 'ChargePoint',
+      'EVgo': 'EVgo',
+      'Little Free Library': 'Little Free Library',
+      
+      // Legacy mappings for backwards compatibility
+      'FlexOffers': 'FlexOffers',
+      'Booking.com': 'Booking.com',
+      'Rakuten': 'Rakuten'
     };
     
-    return nameMap[partnerName] || partnerName;
+    const normalized = nameMap[partnerName] || partnerName;
+    console.log(`🏷️ Partner name normalization: "${partnerName}" -> "${normalized}"`);
+    return normalized;
   };
 
   const handlePartnerRegistration = async (partner: Partner) => {
@@ -90,25 +108,38 @@ const PartnerRegistrationFlow: React.FC<PartnerRegistrationFlowProps> = ({
 
   const getPartnerUrl = (partnerName: string): string => {
     const urls: Record<string, string> = {
-      'FlexOffers': 'https://www.flexoffers.com/affiliate-programs',
-      'Honeygain': 'https://dashboard.honeygain.com/ref/TIPTOP',
+      // Tesla
       'Tesla Energy': 'https://www.tesla.com/solar-panels',
       'Tesla Solar': 'https://www.tesla.com/solar-panels',
       'Tesla': 'https://www.tesla.com/solar-panels',
-      'Swimply': 'https://swimply.com/for-hosts',
-      'Airbnb': 'https://www.airbnb.com/host/homes',
-      'Airbnb Unit Rental': 'https://www.airbnb.com/host/homes',
-      'Airbnb Experience': 'https://www.airbnb.com/experiences',
-      'Airbnb Service': 'https://www.airbnb.com/host/services',
-      'Booking.com': 'https://partner.booking.com/',
-      'SpotHero': 'https://spothero.com/partners',
-      'Rakuten': 'https://rakutenadvertising.com',
+      
+      // Airbnb
+      'Airbnb': 'https://www.airbnb.com/rp/tiptopa2?p=stay&s=67&unique_share_id=7d56143e-b489-4ef6-ba7f-c10c1241bce9',
+      'Airbnb Unit Rental': 'https://www.airbnb.com/rp/tiptopa2?p=stay&s=67&unique_share_id=7d56143e-b489-4ef6-ba7f-c10c1241bce9',
+      'Airbnb Experience': 'https://www.airbnb.com/rp/tiptopa2?p=experience&s=67&unique_share_id=560cba6c-7231-400c-84f2-9434c6a31c2a',
+      'Airbnb Service': 'https://www.airbnb.com/rp/tiptopa2?p=service&s=67&unique_share_id=6c478139-a138-490e-af41-58869ceb0d6b',
+      
+      // Kolonia
       'Kolonia Energy': 'https://koloniahouse.com',
+      'Kolonia House': 'https://koloniahouse.com',
       'Kolonia': 'https://koloniahouse.com',
+      
+      // Other partners
+      'Honeygain': 'https://r.honeygain.me/EDUARCE2A5',
+      'Swimply': 'https://swimply.com/referral?ref=MjQ0MTUyMw==&r=g&utm_medium=referral&utm_source=link&utm_campaign=2441523',
       'Peerspace': 'https://www.peerspace.com/claim/gr-jdO4oxx4LGzq',
       'Neighbor.com': 'http://www.neighbor.com/invited/eduardo-944857?program_version=1',
       'Neighbor': 'http://www.neighbor.com/invited/eduardo-944857?program_version=1',
-      'Little Free Library': 'https://littlefreelibrary.org/start/'
+      'SpotHero': 'https://spothero.com/partners',
+      'Turo': 'https://turo.com/us/en/list-your-car',
+      'ChargePoint': 'https://www.chargepoint.com/businesses/property-managers/',
+      'EVgo': 'https://www.evgo.com/partners/',
+      'Little Free Library': 'https://littlefreelibrary.org/start/',
+      
+      // Legacy partners
+      'FlexOffers': 'https://www.flexoffers.com/affiliate-programs',
+      'Booking.com': 'https://partner.booking.com/',
+      'Rakuten': 'https://rakutenadvertising.com'
     };
     return urls[partnerName] || '#';
   };
