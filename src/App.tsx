@@ -4,74 +4,77 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { GoogleMapProvider } from "@/contexts/GoogleMapContext";
-import { ModelGenerationProvider } from "@/contexts/ModelGeneration";
 import { AuthProvider } from "@/contexts/AuthContext";
-import { ServiceProviderProvider } from "@/contexts/ServiceProviders";
+import GoogleMapProvider from "@/contexts/GoogleMapContext/GoogleMapProvider";
+import { ServiceProviderProvider } from "@/contexts/ServiceProviders/ServiceProviderContext";
+import { ModelGenerationProvider } from "@/contexts/ModelGeneration/ModelGenerationContext";
+import ErrorBoundary from "@/components/ErrorBoundary";
+
+// Pages
 import Index from "./pages/Index";
-import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
+import AnalyticsDashboard from "./pages/AnalyticsDashboard";
+import RooftopDashboard from "./pages/RooftopDashboard";
+import InternetDashboard from "./pages/InternetDashboard";
+import EVChargingDashboard from "./pages/EVChargingDashboard";
+import ParkingDashboard from "./pages/ParkingDashboard";
+import SubmitProperty from "./pages/SubmitProperty";
+import AddAsset from "./pages/AddAsset";
+import AccountPage from "./pages/AccountPage";
+import AffiliateEarningsDashboard from "./pages/AffiliateEarningsDashboard";
+import AdminDashboard from "./pages/AdminDashboard";
 import OnboardingChatbot from "./pages/OnboardingChatbot";
 import EnhancedOnboardingChatbot from "./pages/EnhancedOnboardingChatbot";
 import ModelViewer from "./pages/ModelViewer";
-import GameifiedProperty from "./pages/GameifiedProperty";
-import AddAsset from "./pages/AddAsset";
 import Options from "./pages/Options";
-import SubmitProperty from "./pages/SubmitProperty";
-import AdminDashboard from "./pages/AdminDashboard";
-import AccountPage from "./pages/AccountPage";
 import SettingsPage from "./pages/SettingsPage";
 import NotFound from "./pages/NotFound";
-import RooftopDashboard from "./pages/RooftopDashboard";
-import ParkingDashboard from "./pages/ParkingDashboard";
-import InternetDashboard from "./pages/InternetDashboard";
-import EVChargingDashboard from "./pages/EVChargingDashboard";
-import AffiliateEarningsDashboard from "./pages/AffiliateEarningsDashboard";
-import AnalyticsDashboard from "./pages/AnalyticsDashboard";
+import Auth from "./pages/Auth";
 
 const queryClient = new QueryClient();
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <BrowserRouter>
+function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <AuthProvider>
-          <ServiceProviderProvider>
-            <GoogleMapProvider>
-              <ModelGenerationProvider>
-                <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black text-white">
-                  <Routes>
-                    <Route path="/" element={<Index />} />
-                    <Route path="/auth" element={<Auth />} />
-                    <Route path="/dashboard" element={<Dashboard />} />
-                    <Route path="/dashboard/onboarding" element={<OnboardingChatbot />} />
-                    <Route path="/dashboard/enhanced-onboarding" element={<EnhancedOnboardingChatbot />} />
-                    <Route path="/model-viewer" element={<ModelViewer />} />
-                    <Route path="/gamified-property" element={<GameifiedProperty />} />
-                    <Route path="/add-asset" element={<AddAsset />} />
-                    <Route path="/options" element={<Options />} />
-                    <Route path="/submit-property" element={<SubmitProperty />} />
-                    <Route path="/admin" element={<AdminDashboard />} />
-                    <Route path="/account" element={<AccountPage />} />
-                    <Route path="/settings" element={<SettingsPage />} />
-                    <Route path="/dashboard/rooftop" element={<RooftopDashboard />} />
-                    <Route path="/dashboard/parking" element={<ParkingDashboard />} />
-                    <Route path="/dashboard/internet" element={<InternetDashboard />} />
-                    <Route path="/dashboard/ev-charging" element={<EVChargingDashboard />} />
-                    <Route path="/dashboard/affiliate-earnings" element={<AffiliateEarningsDashboard />} />
-                    <Route path="/dashboard/analytics" element={<AnalyticsDashboard />} />
-                    <Route path="*" element={<NotFound />} />
-                  </Routes>
-                </div>
-                <Toaster />
-                <Sonner />
-              </ModelGenerationProvider>
-            </GoogleMapProvider>
-          </ServiceProviderProvider>
-        </AuthProvider>
+        <ErrorBoundary>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <AuthProvider>
+              <GoogleMapProvider>
+                <ModelGenerationProvider>
+                  <ServiceProviderProvider>
+                    <Routes>
+                      <Route path="/" element={<Index />} />
+                      <Route path="/auth" element={<Auth />} />
+                      <Route path="/dashboard" element={<Dashboard />} />
+                      <Route path="/dashboard/analytics" element={<AnalyticsDashboard />} />
+                      <Route path="/dashboard/rooftop" element={<RooftopDashboard />} />
+                      <Route path="/dashboard/internet" element={<InternetDashboard />} />
+                      <Route path="/dashboard/ev-charging" element={<EVChargingDashboard />} />
+                      <Route path="/dashboard/parking" element={<ParkingDashboard />} />
+                      <Route path="/dashboard/add-asset" element={<AddAsset />} />
+                      <Route path="/dashboard/affiliate" element={<AffiliateEarningsDashboard />} />
+                      <Route path="/dashboard/settings" element={<SettingsPage />} />
+                      <Route path="/dashboard/account" element={<AccountPage />} />
+                      <Route path="/dashboard/admin" element={<AdminDashboard />} />
+                      <Route path="/dashboard/onboarding" element={<EnhancedOnboardingChatbot />} />
+                      <Route path="/submit-property" element={<SubmitProperty />} />
+                      <Route path="/onboarding" element={<OnboardingChatbot />} />
+                      <Route path="/model-viewer" element={<ModelViewer />} />
+                      <Route path="/options" element={<Options />} />
+                      <Route path="*" element={<NotFound />} />
+                    </Routes>
+                  </ServiceProviderProvider>
+                </ModelGenerationProvider>
+              </GoogleMapProvider>
+            </AuthProvider>
+          </BrowserRouter>
+        </ErrorBoundary>
       </TooltipProvider>
-    </BrowserRouter>
-  </QueryClientProvider>
-);
+    </QueryClientProvider>
+  );
+}
 
 export default App;

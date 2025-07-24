@@ -1,18 +1,17 @@
 
 import { useState, useEffect } from 'react';
-import { Check, Info, ExternalLink, Gamepad2 } from 'lucide-react';
+import { Check, Info, ExternalLink } from 'lucide-react';
 import { useModelGeneration } from '@/contexts/ModelGeneration';
 import { useGoogleMap } from '@/contexts/GoogleMapContext';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
 import { Badge } from '@/components/ui/badge';
 
 const HomeModelViewer = () => {
   const { status, progress } = useModelGeneration();
-  const { analysisResults, isGeneratingAnalysis, address } = useGoogleMap();
+  const { analysisResults, isGeneratingAnalysis } = useGoogleMap();
   const location = useLocation();
-  const navigate = useNavigate();
   const [isVisible, setIsVisible] = useState(false);
   const [showFullAnalysis, setShowFullAnalysis] = useState(false);
   
@@ -38,15 +37,6 @@ const HomeModelViewer = () => {
   const toggleFullAnalysis = () => {
     setShowFullAnalysis(!showFullAnalysis);
   };
-
-  const handleGameifyClick = () => {
-    navigate('/gamified-property', {
-      state: {
-        analysisResults,
-        address
-      }
-    });
-  };
   
   return (
     <motion.div 
@@ -71,24 +61,14 @@ const HomeModelViewer = () => {
         </div>
         <div className="flex items-center gap-2">
           {isComplete && (
-            <>
-              <Button 
-                onClick={handleGameifyClick}
-                size="sm"
-                className="bg-gradient-to-r from-tiptop-purple to-purple-600 hover:opacity-90 text-white border-none"
-              >
-                <Gamepad2 className="h-4 w-4 mr-2" />
-                3D Experience
-              </Button>
-              <Button 
-                variant="ghost"
-                size="sm"
-                onClick={toggleFullAnalysis}
-                className="text-gray-400 hover:text-white"
-              >
-                {showFullAnalysis ? "Show Less" : "Show More"}
-              </Button>
-            </>
+            <Button 
+              variant="ghost"
+              size="sm"
+              onClick={toggleFullAnalysis}
+              className="text-gray-400 hover:text-white"
+            >
+              {showFullAnalysis ? "Show Less" : "Show More"}
+            </Button>
           )}
           <Button 
             variant="ghost" 
