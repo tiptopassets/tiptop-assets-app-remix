@@ -19,7 +19,7 @@ export interface PartnerPlatform {
 
 export class PartnerIntegrationService {
   private static platforms: PartnerPlatform[] = [
-    // Airbnb Partners (now separated by type)
+    // Airbnb Partners (now separated by type) - Updated to match database
     {
       id: 'airbnb-unit-rental',
       name: 'Airbnb Unit Rental',
@@ -172,7 +172,7 @@ export class PartnerIntegrationService {
       setupSteps: ['Location evaluation', 'Partnership agreement', 'Installation', 'Go live']
     },
     
-    // Existing Partners (updated)
+    // Existing Partners (keeping all existing ones)
     {
       id: 'neighbor',
       name: 'Neighbor.com',
@@ -242,6 +242,50 @@ export class PartnerIntegrationService {
       setupTime: '2-3 hours',
       requirements: ['Eligible vehicle', 'Insurance coverage', 'Clean car'],
       setupSteps: ['Vehicle inspection', 'Upload photos', 'Set pricing', 'List vehicle']
+    },
+    
+    // Legacy partners that users might be clicking on
+    {
+      id: 'giggster',
+      name: 'Giggster',
+      description: 'Rent your unique space for film and photo shoots',
+      briefDescription: 'Space rental for creative projects',
+      assetTypes: ['event_space', 'creative_space', 'property'],
+      earningRange: { min: 200, max: 1500 },
+      referralLink: 'https://giggster.com',
+      logoUrl: 'https://giggster.com/favicon.ico',
+      priority: 6,
+      setupTime: '2-3 hours',
+      requirements: ['Unique space', 'Professional photos', 'Flexible scheduling'],
+      setupSteps: ['Professional photography', 'Create listing', 'Set pricing', 'Manage bookings']
+    },
+    {
+      id: 'grass-io',
+      name: 'Grass.io',
+      description: 'Earn passive income by sharing your internet connection',
+      briefDescription: 'Internet bandwidth sharing platform',
+      assetTypes: ['internet', 'bandwidth', 'wifi'],
+      earningRange: { min: 15, max: 60 },
+      referralLink: 'https://grass.io',
+      logoUrl: 'https://grass.io/favicon.ico',
+      priority: 7,
+      setupTime: '10 minutes',
+      requirements: ['Stable internet', 'Web browser', 'Email account'],
+      setupSteps: ['Create account', 'Install extension', 'Verify connection', 'Start earning']
+    },
+    {
+      id: 'sniffspot',
+      name: 'Sniffspot',
+      description: 'Rent your yard as a private dog park',
+      briefDescription: 'Private dog park rental service',
+      assetTypes: ['yard', 'garden', 'outdoor_space'],
+      earningRange: { min: 30, max: 200 },
+      referralLink: 'https://sniffspot.com',
+      logoUrl: 'https://sniffspot.com/favicon.ico',
+      priority: 6,
+      setupTime: '1-2 hours',
+      requirements: ['Secure yard', 'Pet-friendly environment', 'Clear photos'],
+      setupSteps: ['Take yard photos', 'Set safety rules', 'Price per hour', 'List space']
     }
   ];
 
@@ -349,7 +393,10 @@ export class PartnerIntegrationService {
       'transportation': 'Transportation',
       'fitness': 'Fitness Services',
       'wellness': 'Wellness Services',
-      'home_gym': 'Home Gym'
+      'home_gym': 'Home Gym',
+      'yard': 'Yard Space',
+      'garden': 'Garden Space',
+      'outdoor_space': 'Outdoor Space'
     };
 
     return displayNames[assetType.toLowerCase()] || assetType.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());

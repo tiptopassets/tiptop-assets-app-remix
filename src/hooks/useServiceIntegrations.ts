@@ -42,7 +42,7 @@ const normalizePartnerName = (clickName: string): string => {
     'tesla solar': 'Tesla Energy',
     'tesla energy': 'Tesla Energy',
     
-    // Airbnb variations - handles all three types with better specificity
+    // Airbnb variations - improved specificity and handling
     'airbnb': 'Airbnb Unit Rental', // Default to unit rental for generic airbnb clicks
     'airbnb unit rental': 'Airbnb Unit Rental',
     'airbnb experience': 'Airbnb Experience',
@@ -53,6 +53,12 @@ const normalizePartnerName = (clickName: string): string => {
     'airbnb services': 'Airbnb Service',
     'airbnb stay': 'Airbnb Unit Rental',
     'airbnb host': 'Airbnb Unit Rental',
+    'airbnb room': 'Airbnb Unit Rental',
+    'airbnb property': 'Airbnb Unit Rental',
+    'airbnb tours': 'Airbnb Experience',
+    'airbnb activities': 'Airbnb Experience',
+    'airbnb cleaning': 'Airbnb Service',
+    'airbnb maintenance': 'Airbnb Service',
     
     // Kolonia variations
     'kolonia': 'Kolonia Energy',
@@ -82,7 +88,11 @@ const normalizePartnerName = (clickName: string): string => {
     'charge point': 'ChargePoint',
     'evgo': 'EVgo',
     'ev go': 'EVgo',
-    'little free library': 'Little Free Library'
+    'little free library': 'Little Free Library',
+    'giggster': 'Giggster',
+    'grass.io': 'Grass.io',
+    'grass': 'Grass.io',
+    'sniffspot': 'Sniffspot'
   };
   
   return nameMap[normalized] || clickName;
@@ -99,8 +109,39 @@ const matchesPartnerName = (clickName: string, providerName: string): boolean =>
     return true;
   }
   
-  // Special handling for Airbnb variants
+  // Special handling for Airbnb variants - more precise matching
   if (clickName.toLowerCase().includes('airbnb') && providerName.includes('Airbnb')) {
+    // Check for specific Airbnb variant keywords
+    const clickLower = clickName.toLowerCase();
+    if (clickLower.includes('experience') || clickLower.includes('tour') || clickLower.includes('activity')) {
+      return providerName === 'Airbnb Experience';
+    }
+    if (clickLower.includes('service') || clickLower.includes('cleaning') || clickLower.includes('maintenance')) {
+      return providerName === 'Airbnb Service';
+    }
+    // Default to Unit Rental for generic airbnb clicks
+    return providerName === 'Airbnb Unit Rental';
+  }
+  
+  // Special handling for energy/solar providers
+  if ((clickName.toLowerCase().includes('tesla') || clickName.toLowerCase().includes('solar')) && 
+      providerName === 'Tesla Energy') {
+    return true;
+  }
+  
+  if (clickName.toLowerCase().includes('kolonia') && providerName === 'Kolonia Energy') {
+    return true;
+  }
+  
+  // Special handling for internet/bandwidth providers
+  if ((clickName.toLowerCase().includes('honeygain') || clickName.toLowerCase().includes('honey')) && 
+      providerName === 'Honeygain') {
+    return true;
+  }
+  
+  // Special handling for fitness providers
+  if ((clickName.toLowerCase().includes('gympass') || clickName.toLowerCase().includes('gym')) && 
+      providerName === 'Gympass') {
     return true;
   }
   
@@ -171,6 +212,7 @@ export const useServiceIntegrations = () => {
         }
 
         console.log('✅ Fetched providers:', providersData?.length || 0);
+        console.log('📋 Provider names:', providersData?.map(p => p.name) || []);
 
         // Fetch click tracking data
         const { data: clicksData, error: clicksError } = await supabase
@@ -185,6 +227,7 @@ export const useServiceIntegrations = () => {
         }
 
         console.log('✅ Fetched clicks:', clicksData?.length || 0);
+        console.log('🎯 Click partner names:', [...new Set(clicksData?.map(c => c.partner_name) || [])]);
 
         // Get user emails
         const userIds = [...new Set(clicksData?.map(click => click.user_id).filter(Boolean) || [])];
@@ -204,6 +247,9 @@ export const useServiceIntegrations = () => {
           const conversionRate = totalClicks > 0 ? (completedRegistrations / totalClicks) * 100 : 0;
 
           console.log(`📊 ${provider.name}: ${totalClicks} clicks, ${completedRegistrations} completed, ${conversionRate.toFixed(1)}% conversion`);
+          if (totalClicks > 0) {
+            console.log(`  🔗 Matched clicks:`, providerClicks.map(c => c.partner_name));
+          }
 
           return {
             id: provider.id,
@@ -267,7 +313,8 @@ export const useServiceIntegrations = () => {
         }
         
         setPartnerClicks(groupedClicks);
-        console.log('✅ Integration data processing complete');
+        console.log('✅ Integration data processing complete - Updated with new partners');
+        console.log('🎯 Total providers with clicks:', Object.keys(groupedClicks).filter(key => groupedClicks[key].length > 0).length);
         
       } catch (err) {
         console.error('❌ Error fetching integrations:', err);
