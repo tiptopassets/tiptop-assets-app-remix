@@ -129,11 +129,9 @@ function MoneyFlow({ from, to, isActive }: { from: [number, number, number], to:
     if (particlesRef.current && isActive) {
       particlesRef.current.children.forEach((child, i) => {
         const progress = (state.clock.elapsedTime + i * 0.5) % 2 / 2;
-        child.position.lerpVectors(
-          new THREE.Vector3(...from),
-          new THREE.Vector3(...to),
-          progress
-        );
+        const fromVec = new THREE.Vector3(...from);
+        const toVec = new THREE.Vector3(...to);
+        child.position.lerpVectors(fromVec, toVec, progress);
         child.scale.setScalar(Math.sin(progress * Math.PI) * 0.5 + 0.5);
       });
     }
@@ -228,13 +226,13 @@ const GameifiedProperty = () => {
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [activeAssets]);
+  }, [activeAssets, assets]);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-900 via-purple-900 to-black text-white overflow-hidden relative">
       {/* Animated Background */}
       <div className="absolute inset-0 opacity-20">
-        <div className="absolute inset-0 bg-gradient-to-r from-tiptop-purple/20 to-purple-600/20 animate-pulse"></div>
+        <div className="absolute inset-0 bg-gradient-to-r from-purple-600/20 to-purple-600/20 animate-pulse"></div>
         {[...Array(50)].map((_, i) => (
           <motion.div
             key={i}
@@ -268,7 +266,7 @@ const GameifiedProperty = () => {
             Back
           </Button>
           <div>
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-tiptop-purple to-purple-400 bg-clip-text text-transparent">
+            <h1 className="text-2xl font-bold bg-gradient-to-r from-purple-400 to-purple-600 bg-clip-text text-transparent">
               Property Command Center
             </h1>
             <p className="text-gray-400 text-sm">{address}</p>
@@ -329,7 +327,7 @@ const GameifiedProperty = () => {
 
           {/* Instructions Overlay */}
           <div className="absolute top-4 left-4 bg-black/50 backdrop-blur-sm rounded-lg p-4">
-            <h3 className="text-lg font-semibold mb-2 text-tiptop-purple">How to Play</h3>
+            <h3 className="text-lg font-semibold mb-2 text-purple-400">How to Play</h3>
             <ul className="text-sm space-y-1 text-gray-300">
               <li>• Click on floating assets to activate them</li>
               <li>• Each asset generates passive income</li>
@@ -341,7 +339,7 @@ const GameifiedProperty = () => {
 
         {/* Asset Panel */}
         <div className="w-80 bg-black/50 backdrop-blur-sm border-l border-purple-800/50 p-6 overflow-y-auto">
-          <h2 className="text-xl font-bold mb-6 text-tiptop-purple">Asset Management</h2>
+          <h2 className="text-xl font-bold mb-6 text-purple-400">Asset Management</h2>
           
           <div className="space-y-4">
             {assets.map((asset) => {
@@ -353,9 +351,9 @@ const GameifiedProperty = () => {
                   key={asset.id}
                   className={`p-4 rounded-lg border transition-all ${
                     isActive 
-                      ? 'bg-tiptop-purple/20 border-tiptop-purple' 
+                      ? 'bg-purple-600/20 border-purple-400' 
                       : canAfford
-                        ? 'bg-gray-800/50 border-gray-600 hover:border-tiptop-purple cursor-pointer'
+                        ? 'bg-gray-800/50 border-gray-600 hover:border-purple-400 cursor-pointer'
                         : 'bg-gray-900/50 border-gray-700 opacity-50'
                   }`}
                   onClick={() => !isActive && canAfford && activateAsset(asset.id)}
@@ -386,7 +384,7 @@ const GameifiedProperty = () => {
           </div>
 
           {/* Stats */}
-          <div className="mt-8 p-4 bg-tiptop-purple/10 rounded-lg border border-tiptop-purple/30">
+          <div className="mt-8 p-4 bg-purple-600/10 rounded-lg border border-purple-600/30">
             <h3 className="font-semibold mb-3">Portfolio Stats</h3>
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
