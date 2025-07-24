@@ -1,4 +1,5 @@
 
+import React from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -35,45 +36,47 @@ const queryClient = new QueryClient();
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <ErrorBoundary>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <AuthProvider>
-              <GoogleMapProvider>
-                <ModelGenerationProvider>
-                  <ServiceProviderProvider>
-                    <Routes>
-                      <Route path="/" element={<Index />} />
-                      <Route path="/auth" element={<Auth />} />
-                      <Route path="/dashboard" element={<Dashboard />} />
-                      <Route path="/dashboard/analytics" element={<AnalyticsDashboard />} />
-                      <Route path="/dashboard/rooftop" element={<RooftopDashboard />} />
-                      <Route path="/dashboard/internet" element={<InternetDashboard />} />
-                      <Route path="/dashboard/ev-charging" element={<EVChargingDashboard />} />
-                      <Route path="/dashboard/parking" element={<ParkingDashboard />} />
-                      <Route path="/dashboard/add-asset" element={<AddAsset />} />
-                      <Route path="/dashboard/affiliate" element={<AffiliateEarningsDashboard />} />
-                      <Route path="/dashboard/settings" element={<SettingsPage />} />
-                      <Route path="/dashboard/account" element={<AccountPage />} />
-                      <Route path="/dashboard/admin" element={<AdminDashboard />} />
-                      <Route path="/dashboard/onboarding" element={<EnhancedOnboardingChatbot />} />
-                      <Route path="/submit-property" element={<SubmitProperty />} />
-                      <Route path="/onboarding" element={<OnboardingChatbot />} />
-                      <Route path="/model-viewer" element={<ModelViewer />} />
-                      <Route path="/options" element={<Options />} />
-                      <Route path="*" element={<NotFound />} />
-                    </Routes>
-                  </ServiceProviderProvider>
-                </ModelGenerationProvider>
-              </GoogleMapProvider>
-            </AuthProvider>
-          </BrowserRouter>
-        </ErrorBoundary>
-      </TooltipProvider>
-    </QueryClientProvider>
+    <React.StrictMode>
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <ErrorBoundary>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
+              <AuthProvider>
+                <GoogleMapProvider>
+                  <ModelGenerationProvider>
+                    <ServiceProviderProvider>
+                      <Routes>
+                        <Route path="/" element={<Index />} />
+                        <Route path="/auth" element={<Auth />} />
+                        <Route path="/dashboard" element={<Dashboard />} />
+                        <Route path="/dashboard/analytics" element={<AnalyticsDashboard />} />
+                        <Route path="/dashboard/rooftop" element={<RooftopDashboard />} />
+                        <Route path="/dashboard/internet" element={<InternetDashboard />} />
+                        <Route path="/dashboard/ev-charging" element={<EVChargingDashboard />} />
+                        <Route path="/dashboard/parking" element={<ParkingDashboard />} />
+                        <Route path="/dashboard/add-asset" element={<AddAsset />} />
+                        <Route path="/dashboard/affiliate" element={<AffiliateEarningsDashboard />} />
+                        <Route path="/dashboard/settings" element={<SettingsPage />} />
+                        <Route path="/dashboard/account" element={<AccountPage />} />
+                        <Route path="/dashboard/admin" element={<AdminDashboard />} />
+                        <Route path="/dashboard/onboarding" element={<EnhancedOnboardingChatbot />} />
+                        <Route path="/submit-property" element={<SubmitProperty />} />
+                        <Route path="/onboarding" element={<OnboardingChatbot />} />
+                        <Route path="/model-viewer" element={<ModelViewer />} />
+                        <Route path="/options" element={<Options />} />
+                        <Route path="*" element={<NotFound />} />
+                      </Routes>
+                    </ServiceProviderProvider>
+                  </ModelGenerationProvider>
+                </GoogleMapProvider>
+              </AuthProvider>
+            </BrowserRouter>
+          </ErrorBoundary>
+        </TooltipProvider>
+      </QueryClientProvider>
+    </React.StrictMode>
   );
 }
 
