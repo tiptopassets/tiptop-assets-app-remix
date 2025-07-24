@@ -2,12 +2,21 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls, Text, Box, Sphere, Cylinder } from '@react-three/drei';
-import { motion, AnimatePresence } from 'framer-motion';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Zap, DollarSign } from 'lucide-react';
+import { ArrowLeft, Zap, DollarSign, Loader2 } from 'lucide-react';
+import { useUserPropertyAnalysis } from '@/hooks/useUserPropertyAnalysis';
+import ModelViewerErrorBoundary from '@/components/ModelViewerErrorBoundary';
 import * as THREE from 'three';
+
+// Safe Three.js component wrapper to filter out invalid props
+const SafeThreeComponent = ({ children, ...props }: { children: React.ReactNode; [key: string]: any }) => {
+  // Filter out props that Three.js components don't understand
+  const { lov, ...threeProps } = props;
+  return <>{children}</>;
+};
 
 // 3D House Component
 function House3D() {
@@ -153,22 +162,72 @@ function MoneyFlow({ from, to, isActive }: { from: [number, number, number], to:
   );
 }
 
+// Loading component
+const LoadingScreen = () => (
+  <div className="min-h-screen bg-gradient-to-b from-gray-900 via-purple-900 to-black text-white flex items-center justify-center">
+    <div className="text-center">
+      <Loader2 className="h-12 w-12 animate-spin text-purple-400 mx-auto mb-4" />
+      <h2 className="text-xl font-bold mb-2">Loading Property Data</h2>
+      <p className="text-gray-400">Setting up your gamified property experience...</p>
+    </div>
+  </div>
+);
+
+// Error component
+const ErrorScreen = ({ error, onRetry }: { error: string; onRetry: () => void }) => (
+  <div className="min-h-screen bg-gradient-to-b from-gray-900 via-purple-900 to-black text-white flex items-center justify-center">
+    <div className="text-center max-w-md">
+      <h2 className="text-xl font-bold mb-4">Unable to Load Property</h2>
+      <p className="text-gray-400 mb-6">{error}</p>
+      <div className="space-x-4">
+        <Button onClick={onRetry} className="bg-purple-600 hover:bg-purple-700">
+          Try Again
+        </Button>
+        <Button variant="outline" onClick={() => window.location.href = '/'}>
+          Go Home
+        </Button>
+      </div>
+    </div>
+  </div>
+);
+
 const GameifiedProperty = () => {
   const navigate = useNavigate();
-  const location = useLocation();
+  const { propertyData, loading, error, hasPropertyData } = useUserPropertyAnalysis();
   const [activeAssets, setActiveAssets] = useState<Set<string>>(new Set());
   const [totalRevenue, setTotalRevenue] = useState(0);
   const [coins, setCoins] = useState(1000); // Starting coins
 
-  // Get analysis data from location state or fallback
-  const analysisData = location.state?.analysisResults || {
-    rooftop: { revenue: 150, area: 1200 },
-    parking: { revenue: 200, spaces: 2 },
-    garden: { revenue: 100, area: 500 },
-    pool: { revenue: 300, present: true }
+  // Loading state
+  if (loading) {
+    return <LoadingScreen />;
+  }
+
+  // Error state
+  if (error) {
+    return <ErrorScreen error={error} onRetry={() => window.location.reload()} />;
+  }
+
+  // No data state
+  if (!hasPropertyData || !propertyData) {
+    return (
+      <ErrorScreen 
+        error="No property analysis found. Please analyze a property first." 
+        onRetry={() => navigate('/')}
+      />
+    );
+  }
+
+  // Extract analysis data with fallbacks
+  const analysisResults = propertyData.analysisResults;
+  const analysisData = {
+    rooftop: analysisResults?.rooftop || { revenue: 150, area: 1200 },
+    parking: analysisResults?.parking || { revenue: 200, spaces: 2 },
+    garden: analysisResults?.garden || { revenue: 100, area: 500 },
+    pool: analysisResults?.pool || { revenue: 300, present: true }
   };
 
-  const address = location.state?.address || "Sample Property";
+  const address = propertyData.address || "Your Property";
 
   const assets = [
     {
@@ -231,30 +290,31 @@ const GameifiedProperty = () => {
   }, [activeAssets]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-900 via-purple-900 to-black text-white overflow-hidden relative">
-      {/* Animated Background */}
-      <div className="absolute inset-0 opacity-20">
-        <div className="absolute inset-0 bg-gradient-to-r from-purple-600/20 to-purple-600/20 animate-pulse"></div>
-        {[...Array(50)].map((_, i) => (
-          <motion.div
-            key={i}
-            className="absolute w-1 h-1 bg-white rounded-full"
-            style={{
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`,
-            }}
-            animate={{
-              opacity: [0, 1, 0],
-              scale: [0, 1, 0],
-            }}
-            transition={{
-              duration: 2 + Math.random() * 2,
-              repeat: Infinity,
-              delay: Math.random() * 2,
-            }}
-          />
-        ))}
-      </div>
+    <ModelViewerErrorBoundary>
+      <div className="min-h-screen bg-gradient-to-b from-gray-900 via-purple-900 to-black text-white overflow-hidden relative">
+        {/* Animated Background */}
+        <div className="absolute inset-0 opacity-20">
+          <div className="absolute inset-0 bg-gradient-to-r from-purple-600/20 to-purple-600/20 animate-pulse"></div>
+          {[...Array(50)].map((_, i) => (
+            <motion.div
+              key={i}
+              className="absolute w-1 h-1 bg-white rounded-full"
+              style={{
+                left: `${Math.random() * 100}%`,
+                top: `${Math.random() * 100}%`,
+              }}
+              animate={{
+                opacity: [0, 1, 0],
+                scale: [0, 1, 0],
+              }}
+              transition={{
+                duration: 2 + Math.random() * 2,
+                repeat: Infinity,
+                delay: Math.random() * 2,
+              }}
+            />
+          ))}
+        </div>
 
       {/* Header */}
       <div className="relative z-10 p-6 flex justify-between items-center border-b border-purple-800/50">
@@ -291,41 +351,53 @@ const GameifiedProperty = () => {
       <div className="flex h-screen">
         {/* 3D Scene */}
         <div className="flex-1 relative">
-          <Canvas
-            camera={{ position: [8, 6, 8], fov: 60 }}
-            style={{ background: 'transparent' }}
-          >
-            <ambientLight intensity={0.4} />
-            <pointLight position={[10, 10, 10]} intensity={1} />
-            <pointLight position={[-10, -10, -10]} intensity={0.5} color="#9b87f5" />
-            
-            <House3D />
-            
-            {assets.map((asset) => (
-              <group key={asset.id}>
-                <FloatingAsset
-                  position={asset.position}
-                  isActive={activeAssets.has(asset.id)}
-                  assetType={asset.type}
-                  onClick={() => activateAsset(asset.id)}
-                  revenue={asset.revenue}
-                />
-                <MoneyFlow
-                  from={asset.position}
-                  to={[0, 2, 0]}
-                  isActive={activeAssets.has(asset.id)}
-                />
-              </group>
-            ))}
-            
-            <OrbitControls
-              enablePan={false}
-              enableZoom={true}
-              enableRotate={true}
-              minDistance={5}
-              maxDistance={15}
-            />
-          </Canvas>
+          <ModelViewerErrorBoundary>
+            <Canvas
+              camera={{ position: [8, 6, 8], fov: 60 }}
+              style={{ background: 'transparent' }}
+              gl={{ preserveDrawingBuffer: true }}
+              onCreated={({ gl }) => {
+                gl.setClearColor('#000000', 0);
+              }}
+            >
+              <ambientLight intensity={0.4} />
+              <pointLight position={[10, 10, 10]} intensity={1} />
+              <pointLight position={[-10, -10, -10]} intensity={0.5} color="#9b87f5" />
+              
+              <SafeThreeComponent>
+                <House3D />
+              </SafeThreeComponent>
+              
+              {assets.map((asset) => (
+                <group key={asset.id}>
+                  <SafeThreeComponent>
+                    <FloatingAsset
+                      position={asset.position}
+                      isActive={activeAssets.has(asset.id)}
+                      assetType={asset.type}
+                      onClick={() => activateAsset(asset.id)}
+                      revenue={asset.revenue}
+                    />
+                  </SafeThreeComponent>
+                  <SafeThreeComponent>
+                    <MoneyFlow
+                      from={asset.position}
+                      to={[0, 2, 0]}
+                      isActive={activeAssets.has(asset.id)}
+                    />
+                  </SafeThreeComponent>
+                </group>
+              ))}
+              
+              <OrbitControls
+                enablePan={false}
+                enableZoom={true}
+                enableRotate={true}
+                minDistance={5}
+                maxDistance={15}
+              />
+            </Canvas>
+          </ModelViewerErrorBoundary>
 
           {/* Instructions Overlay */}
           <div className="absolute top-4 left-4 bg-black/50 backdrop-blur-sm rounded-lg p-4">
@@ -405,7 +477,8 @@ const GameifiedProperty = () => {
           </div>
         </div>
       </div>
-    </div>
+      </div>
+    </ModelViewerErrorBoundary>
   );
 };
 
