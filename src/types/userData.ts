@@ -40,6 +40,7 @@ export interface UserAssetSelection {
   roi_months?: number;
   selected_at: string;
   status: string;
+  session_id?: string;
 }
 
 export interface UserDashboardPreferences {

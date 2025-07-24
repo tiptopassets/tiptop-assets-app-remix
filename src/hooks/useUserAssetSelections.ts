@@ -38,7 +38,7 @@ export const useUserAssetSelections = (options?: UseUserAssetSelectionsProps) =>
           monthly_revenue: s.monthly_revenue,
           user_id: s.user_id,
           analysis_id: s.analysis_id,
-          session_id: s.session_id
+          session_id: s.session_id || 'n/a'
         }))
       });
     } catch (err) {
