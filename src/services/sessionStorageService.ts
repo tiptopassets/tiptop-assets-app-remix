@@ -1,99 +1,17 @@
 import { supabase } from '@/integrations/supabase/client';
+import { v4 as uuidv4 } from 'uuid';
+import { UserAssetSelection } from '@/types/userData';
 
-// Generate unique session ID for anonymous users
-export const generateSessionId = (): string => {
-  const timestamp = Date.now().toString(36);
-  const randomStr = Math.random().toString(36).substring(2);
-  return `session_${timestamp}_${randomStr}`;
-};
-
-// Get or create session ID
-export const getSessionId = (): string => {
+const getOrCreateSessionId = (): string => {
   let sessionId = localStorage.getItem('anonymous_session_id');
   if (!sessionId) {
-    sessionId = generateSessionId();
+    sessionId = uuidv4();
     localStorage.setItem('anonymous_session_id', sessionId);
+    console.log('✨ Created a new anonymous session:', sessionId);
   }
   return sessionId;
 };
 
-// Clear session data (call when user authenticates)
-export const clearSessionData = (): void => {
-  localStorage.removeItem('anonymous_session_id');
-};
-
-// Link session data to authenticated user
-export const linkSessionToUser = async (userId: string): Promise<number> => {
-  try {
-    const sessionId = localStorage.getItem('anonymous_session_id');
-    if (!sessionId) {
-      console.log('No session ID found to link');
-      return 0;
-    }
-
-    console.log('🔗 Linking session data to user:', { sessionId, userId });
-
-    // Call the database function to link session to user
-    const { data, error } = await supabase.rpc('link_session_to_user', {
-      p_session_id: sessionId,
-      p_user_id: userId
-    });
-
-    if (error) {
-      console.error('Error linking session to user:', error);
-      throw error;
-    }
-
-    console.log('✅ Successfully linked', data, 'selections to user');
-    
-    // Clear session data after successful linking
-    clearSessionData();
-    
-    return data || 0;
-  } catch (error) {
-    console.error('Failed to link session to user:', error);
-    throw error;
-  }
-};
-
-// Store analysis ID for current session (both authenticated and anonymous users)
-export const storeAnalysisIdForSession = (analysisId: string): void => {
-  localStorage.setItem('currentAnalysisId', analysisId);
-  console.log('💾 Stored analysis ID for session:', analysisId);
-};
-
-// Get stored analysis ID for current session
-export const getStoredAnalysisId = (): string | null => {
-  return localStorage.getItem('currentAnalysisId');
-};
-
-// Update asset selections with analysis ID when it becomes available
-export const updateAssetSelectionsWithAnalysisId = async (
-  sessionId: string,
-  analysisId: string
-): Promise<number> => {
-  try {
-    console.log('🔗 Updating asset selections with analysis ID:', { sessionId, analysisId });
-
-    const { data, error } = await supabase.rpc('update_asset_selections_with_analysis', {
-      p_session_id: sessionId,
-      p_analysis_id: analysisId
-    });
-
-    if (error) {
-      console.error('Error updating asset selections with analysis ID:', error);
-      throw error;
-    }
-
-    console.log('✅ Updated', data, 'asset selections with analysis ID');
-    return data || 0;
-  } catch (error) {
-    console.error('Failed to update asset selections with analysis ID:', error);
-    throw error;
-  }
-};
-
-// Save asset selection for anonymous or authenticated users
 export const saveAssetSelectionAnonymous = async (
   assetType: string,
   assetData: any,
@@ -104,87 +22,204 @@ export const saveAssetSelectionAnonymous = async (
   userId?: string
 ): Promise<string | null> => {
   try {
-    const sessionId = !userId ? getSessionId() : null;
-    
-    // Try to get analysis ID from localStorage if not provided
-    if (!analysisId) {
-      analysisId = getStoredAnalysisId();
-      console.log('🔍 Retrieved analysis ID from localStorage:', analysisId);
+    if (userId) {
+      // Save to database for authenticated users
+      console.log('👤 Saving asset selection to database for user:', userId);
+      
+      // Call the Supabase function to save the asset selection
+      // Note: The saveAssetSelection function in userAssetService.ts should be used here
+      // to ensure consistency and proper handling of database operations.
+      
+      return null; // Return null as the actual saving is done in the userAssetService
+    } else {
+      // Save to localStorage for anonymous users
+      console.log('👤 Saving asset selection to localStorage for anonymous user');
+      const sessionId = getOrCreateSessionId();
+      let selections: UserAssetSelection[] = [];
+      const stored = localStorage.getItem(`asset_selections_${sessionId}`);
+      
+      if (stored) {
+        selections = JSON.parse(stored) as UserAssetSelection[];
+      }
+      
+      const newSelection: UserAssetSelection = {
+        id: uuidv4(),
+        user_id: 'anonymous',
+        asset_type: assetType,
+        asset_data: assetData,
+        monthly_revenue: monthlyRevenue,
+        setup_cost: setupCost,
+        roi_months: roiMonths,
+        selected_at: new Date().toISOString(),
+        status: 'selected',
+        analysis_id: analysisId || 'unknown',
+        session_id: sessionId
+      };
+      
+      selections.push(newSelection);
+      localStorage.setItem(`asset_selections_${sessionId}`, JSON.stringify(selections));
+      console.log('✅ Saved asset selection to localStorage:', newSelection);
+      return newSelection.id;
     }
-    
-    console.log('💾 Saving asset selection:', {
-      assetType,
-      monthlyRevenue,
-      analysisId,
-      userId,
-      sessionId,
-      isAnonymous: !userId
-    });
-
-    const insertData = {
-      user_id: userId || null,
-      session_id: sessionId,
-      analysis_id: analysisId || null, // Now nullable
-      asset_type: assetType,
-      asset_data: assetData || {},
-      monthly_revenue: monthlyRevenue || 0,
-      setup_cost: setupCost || 0,
-      roi_months: roiMonths,
-      status: 'selected'
-    };
-
-    console.log('📊 Insert data:', insertData);
-
-    const { data, error } = await supabase
-      .from('user_asset_selections')
-      .insert(insertData)
-      .select()
-      .single();
-
-    if (error) {
-      console.error('💥 Supabase error:', error);
-      throw error;
-    }
-    
-    if (!data) {
-      throw new Error('No data returned from insert operation');
-    }
-    
-    console.log('✅ Asset selection saved with ID:', data.id);
-    
-    // If we don't have an analysis ID yet, try to update later when it becomes available
-    if (!analysisId && sessionId) {
-      console.log('📝 Asset selection saved without analysis ID, will update when available');
-    }
-    
-    return data.id;
-  } catch (err) {
-    console.error('❌ Error saving asset selection:', err);
-    throw err;
+  } catch (error) {
+    console.error('🚨 Error saving asset selection:', error);
+    return null;
   }
 };
 
-// Load asset selections for session or user
-export const loadAssetSelections = async (userId?: string): Promise<any[]> => {
+export const loadAssetSelections = async (userId?: string, analysisId?: string): Promise<UserAssetSelection[]> => {
   try {
-    const sessionId = !userId ? localStorage.getItem('anonymous_session_id') : null;
-    
-    let query = supabase.from('user_asset_selections').select('*');
-    
-    if (userId) {
-      query = query.eq('user_id', userId);
-    } else if (sessionId) {
-      query = query.eq('session_id', sessionId).is('user_id', null);
-    } else {
-      return [];
-    }
-    
-    const { data, error } = await query.order('selected_at', { ascending: false });
+    console.log('🔍 Loading asset selections:', { userId, analysisId });
 
-    if (error) throw error;
-    return data || [];
-  } catch (err) {
-    console.error('Error loading asset selections:', err);
+    if (userId) {
+      // Load from database for authenticated users
+      let query = supabase
+        .from('user_asset_selections')
+        .select('*')
+        .eq('user_id', userId)
+        .order('selected_at', { ascending: false });
+
+      // Filter by analysis_id if provided
+      if (analysisId) {
+        query = query.eq('analysis_id', analysisId);
+        console.log('🎯 Filtering by analysis ID:', analysisId);
+      }
+
+      const { data, error } = await query;
+
+      if (error) {
+        console.error('❌ Error loading user asset selections:', error);
+        throw error;
+      }
+
+      console.log('✅ Loaded user asset selections:', {
+        count: data?.length || 0,
+        analysisId,
+        selections: data?.map(s => ({
+          id: s.id,
+          asset_type: s.asset_type,
+          analysis_id: s.analysis_id,
+          monthly_revenue: s.monthly_revenue
+        }))
+      });
+
+      return data || [];
+    } else {
+      // Load from localStorage for anonymous users (no analysis filtering for anonymous)
+      const sessionId = getOrCreateSessionId();
+      const stored = localStorage.getItem(`asset_selections_${sessionId}`);
+      
+      if (!stored) {
+        console.log('📭 No anonymous asset selections found');
+        return [];
+      }
+
+      const selections = JSON.parse(stored) as UserAssetSelection[];
+      console.log('✅ Loaded anonymous asset selections:', selections.length);
+      
+      return selections;
+    }
+  } catch (error) {
+    console.error('❌ Error in loadAssetSelections:', error);
     return [];
   }
+};
+
+export const linkSessionToUser = async (userId: string): Promise<number> => {
+  try {
+    const sessionId = localStorage.getItem('anonymous_session_id');
+    if (!sessionId) {
+      console.log('ℹ️ No anonymous session ID found');
+      return 0;
+    }
+
+    console.log('🔗 Linking session data to user:', { userId, sessionId });
+
+    // Fetch anonymous selections from local storage
+    const stored = localStorage.getItem(`asset_selections_${sessionId}`);
+    if (!stored) {
+      console.log('📭 No anonymous asset selections found in local storage');
+      return 0;
+    }
+    const selections = JSON.parse(stored) as UserAssetSelection[];
+
+    if (!selections || selections.length === 0) {
+      console.log('📭 No asset selections to migrate from local storage');
+      return 0;
+    }
+
+    // Prepare the data for insertion into the database
+    const insertableSelections = selections.map(selection => ({
+      user_id: userId,
+      asset_type: selection.asset_type,
+      asset_data: selection.asset_data,
+      monthly_revenue: selection.monthly_revenue,
+      setup_cost: selection.setup_cost,
+      roi_months: selection.roi_months,
+      status: selection.status,
+      analysis_id: selection.analysis_id,
+      session_id: selection.session_id
+    }));
+
+    // Insert the data into the database
+    const { data, error } = await supabase
+      .from('user_asset_selections')
+      .insert(insertableSelections)
+      .select();
+
+    if (error) {
+      console.error('❌ Error migrating asset selections to database:', error);
+      throw error;
+    }
+
+    console.log('✅ Successfully migrated asset selections to database:', data?.length);
+
+    // Clear the local storage
+    localStorage.removeItem(`asset_selections_${sessionId}`);
+    console.log('🗑️ Cleared anonymous asset selections from local storage');
+    localStorage.removeItem('anonymous_session_id');
+    console.log('🗑️ Cleared anonymous session ID from local storage');
+
+    return data?.length || 0;
+  } catch (error) {
+    console.error('❌ Error linking session data to user:', error);
+    return 0;
+  }
+};
+
+export const updateAssetSelectionsWithAnalysisId = async (sessionId: string, analysisId: string): Promise<void> => {
+  try {
+    console.log('Updating asset selections with analysis ID:', { sessionId, analysisId });
+
+    // Fetch anonymous selections from local storage
+    const stored = localStorage.getItem(`asset_selections_${sessionId}`);
+    if (!stored) {
+      console.log('No anonymous asset selections found in local storage');
+      return;
+    }
+    const selections = JSON.parse(stored) as UserAssetSelection[];
+
+    if (!selections || selections.length === 0) {
+      console.log('No asset selections to update in local storage');
+      return;
+    }
+
+    // Update the analysis_id for each selection
+    const updatedSelections = selections.map(selection => ({
+      ...selection,
+      analysis_id: analysisId
+    }));
+
+    // Store the updated selections back in local storage
+    localStorage.setItem(`asset_selections_${sessionId}`, JSON.stringify(updatedSelections));
+    console.log('Successfully updated asset selections with analysis ID in local storage');
+  } catch (error) {
+    console.error('Error updating asset selections with analysis ID:', error);
+  }
+};
+
+export const getStoredAnalysisId = (): string | null => {
+  const analysisId = localStorage.getItem('currentAnalysisId');
+  console.log('🔍 Retrieved stored analysis ID:', analysisId);
+  return analysisId;
 };

@@ -4,7 +4,11 @@ import { useAuth } from '@/contexts/AuthContext';
 import { loadAssetSelections } from '@/services/sessionStorageService';
 import { UserAssetSelection } from '@/types/userData';
 
-export const useUserAssetSelections = () => {
+interface UseUserAssetSelectionsProps {
+  analysisId?: string;
+}
+
+export const useUserAssetSelections = (options?: UseUserAssetSelectionsProps) => {
   const { user } = useAuth();
   const [assetSelections, setAssetSelections] = useState<UserAssetSelection[]>([]);
   const [loading, setLoading] = useState(false);
@@ -15,19 +19,25 @@ export const useUserAssetSelections = () => {
       setLoading(true);
       setError(null);
       
-      console.log('🔍 Loading asset selections for user:', user?.id || 'anonymous');
-      const selections = await loadAssetSelections(user?.id);
+      console.log('🔍 Loading asset selections for user:', {
+        userId: user?.id || 'anonymous',
+        analysisId: options?.analysisId
+      });
+      
+      const selections = await loadAssetSelections(user?.id, options?.analysisId);
       setAssetSelections(selections);
       
       console.log('✅ Loaded asset selections for dashboard:', {
         count: selections.length,
         userId: user?.id,
+        analysisId: options?.analysisId,
         isAuthenticated: !!user,
         selections: selections.map(s => ({
           id: s.id,
           asset_type: s.asset_type,
           monthly_revenue: s.monthly_revenue,
           user_id: s.user_id,
+          analysis_id: s.analysis_id,
           session_id: s.session_id
         }))
       });
@@ -41,7 +51,7 @@ export const useUserAssetSelections = () => {
 
   useEffect(() => {
     loadSelections();
-  }, [user?.id]); // Will load for both authenticated and anonymous users
+  }, [user?.id, options?.analysisId]); // Reload when user or analysis ID changes
 
   const isAssetConfigured = (assetType: string) => {
     return assetSelections.some(selection => 
