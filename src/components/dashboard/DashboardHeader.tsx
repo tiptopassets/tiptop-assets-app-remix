@@ -3,6 +3,7 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { MapPin, RefreshCw, MessageSquare, Gamepad2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useAdmin } from '@/hooks/useAdmin';
 
 interface DashboardHeaderProps {
   primaryAddress?: string;
@@ -13,6 +14,8 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   primaryAddress, 
   onRefresh 
 }) => {
+  const { isAdmin } = useAdmin();
+
   return (
     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
       <div>
@@ -35,12 +38,14 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
           <MessageSquare className="h-4 w-4 sm:mr-2" />
           <span className="sm:inline">Quick Survey</span>
         </Button>
-        <Button asChild variant="outline" size="sm" className="bg-purple-500 text-white border-purple-500 hover:bg-purple-600 hover:border-purple-600 w-full sm:w-auto">
-          <Link to="/gamified-property">
-            <Gamepad2 className="h-4 w-4 sm:mr-2" />
-            <span className="sm:inline">3D View</span>
-          </Link>
-        </Button>
+        {isAdmin && (
+          <Button asChild variant="outline" size="sm" className="bg-purple-500 text-white border-purple-500 hover:bg-purple-600 hover:border-purple-600 w-full sm:w-auto">
+            <Link to="/gamified-property">
+              <Gamepad2 className="h-4 w-4 sm:mr-2" />
+              <span className="sm:inline">3D View (Admin)</span>
+            </Link>
+          </Button>
+        )}
         <Button asChild variant="outline" className="w-full sm:w-auto" size="sm">
           <Link to="/">
             <MapPin className="h-4 w-4 sm:mr-2" />

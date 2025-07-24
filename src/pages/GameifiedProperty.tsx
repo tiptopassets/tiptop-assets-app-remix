@@ -7,7 +7,7 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, Zap, DollarSign, Loader2 } from 'lucide-react';
-import { useUserPropertyAnalysis } from '@/hooks/useUserPropertyAnalysis';
+import { useDashboardJourneyData } from '@/hooks/useDashboardJourneyData';
 import ModelViewerErrorBoundary from '@/components/ModelViewerErrorBoundary';
 import * as THREE from 'three';
 
@@ -193,10 +193,19 @@ const ErrorScreen = ({ error, onRetry }: { error: string; onRetry: () => void })
 
 const GameifiedProperty = () => {
   const navigate = useNavigate();
-  const { propertyData, loading, error, hasPropertyData } = useUserPropertyAnalysis();
+  const { journeyData, loading, error } = useDashboardJourneyData();
   const [activeAssets, setActiveAssets] = useState<Set<string>>(new Set());
   const [totalRevenue, setTotalRevenue] = useState(0);
   const [coins, setCoins] = useState(1000); // Starting coins
+
+  console.log('🎮 GameifiedProperty data state:', {
+    loading,
+    error,
+    hasJourneyData: !!journeyData,
+    propertyAddress: journeyData?.propertyAddress,
+    totalRevenue: journeyData?.totalMonthlyRevenue,
+    analysisResults: !!journeyData?.analysisResults
+  });
 
   // Loading state
   if (loading) {
@@ -209,7 +218,7 @@ const GameifiedProperty = () => {
   }
 
   // No data state
-  if (!hasPropertyData || !propertyData) {
+  if (!journeyData || !journeyData.analysisResults) {
     return (
       <ErrorScreen 
         error="No property analysis found. Please analyze a property first." 
@@ -219,7 +228,7 @@ const GameifiedProperty = () => {
   }
 
   // Extract analysis data with fallbacks
-  const analysisResults = propertyData.analysisResults;
+  const analysisResults = journeyData.analysisResults;
   const analysisData = {
     rooftop: analysisResults?.rooftop || { revenue: 150, area: 1200 },
     parking: analysisResults?.parking || { revenue: 200, spaces: 2 },
@@ -227,7 +236,7 @@ const GameifiedProperty = () => {
     pool: analysisResults?.pool || { revenue: 300, present: true }
   };
 
-  const address = propertyData.address || "Your Property";
+  const address = journeyData.propertyAddress || "Your Property";
 
   const assets = [
     {
