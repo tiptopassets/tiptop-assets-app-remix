@@ -97,7 +97,6 @@ function FloatingAsset({
         onClick={onClick}
         onPointerOver={() => setHovered(true)}
         onPointerOut={() => setHovered(false)}
-        scale={hovered ? [1.2, 1.2, 1.2] : [1, 1, 1]}
       >
         {getAssetShape()}
         <meshStandardMaterial 
@@ -131,8 +130,11 @@ function MoneyFlow({ from, to, isActive }: { from: [number, number, number], to:
         const progress = (state.clock.elapsedTime + i * 0.5) % 2 / 2;
         const fromVec = new THREE.Vector3(...from);
         const toVec = new THREE.Vector3(...to);
-        child.position.lerpVectors(fromVec, toVec, progress);
-        child.scale.setScalar(Math.sin(progress * Math.PI) * 0.5 + 0.5);
+        const mesh = child as THREE.Mesh;
+        if (mesh.position) {
+          mesh.position.lerpVectors(fromVec, toVec, progress);
+          mesh.scale.setScalar(Math.sin(progress * Math.PI) * 0.5 + 0.5);
+        }
       });
     }
   });
