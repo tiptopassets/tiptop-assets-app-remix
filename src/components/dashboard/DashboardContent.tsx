@@ -64,6 +64,69 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
     ? uniqueAssetSelections.length 
     : totalOpportunities;
 
+  // Filter analysis results to only show selected assets
+  const getFilteredAnalysisResults = () => {
+    if (!analysisResults || !hasUserSelections) {
+      return analysisResults;
+    }
+
+    console.log('🔍 Filtering analysis results based on user selections:', {
+      originalAnalysisResults: analysisResults,
+      userSelections: uniqueAssetSelections
+    });
+
+    const filtered = { ...analysisResults };
+    
+    // Create a set of selected asset types for efficient lookup
+    const selectedAssetTypes = new Set(
+      uniqueAssetSelections.map(selection => selection.asset_type.toLowerCase())
+    );
+
+    // Filter each asset type based on user selections
+    // Only include assets that have been selected by the user
+    if (!selectedAssetTypes.has('rooftop') && !selectedAssetTypes.has('solar')) {
+      filtered.rooftop = { ...filtered.rooftop, revenue: 0, solarPotential: false };
+    }
+    
+    if (!selectedAssetTypes.has('garden') && !selectedAssetTypes.has('yard')) {
+      filtered.garden = { ...filtered.garden, revenue: 0, opportunity: 'Low' };
+    }
+    
+    if (!selectedAssetTypes.has('parking')) {
+      filtered.parking = { ...filtered.parking, revenue: 0, spaces: 0 };
+    }
+    
+    if (!selectedAssetTypes.has('pool')) {
+      filtered.pool = { ...filtered.pool, revenue: 0, present: false };
+    }
+    
+    if (!selectedAssetTypes.has('bandwidth') && !selectedAssetTypes.has('internet')) {
+      filtered.bandwidth = { ...filtered.bandwidth, revenue: 0, available: 0 };
+    }
+
+    // Update the filtered results with actual selected revenue values
+    uniqueAssetSelections.forEach(selection => {
+      const assetType = selection.asset_type.toLowerCase();
+      
+      if (assetType.includes('rooftop') || assetType.includes('solar')) {
+        filtered.rooftop = { ...filtered.rooftop, revenue: selection.monthly_revenue };
+      } else if (assetType.includes('garden') || assetType.includes('yard')) {
+        filtered.garden = { ...filtered.garden, revenue: selection.monthly_revenue };
+      } else if (assetType.includes('parking')) {
+        filtered.parking = { ...filtered.parking, revenue: selection.monthly_revenue };
+      } else if (assetType.includes('pool')) {
+        filtered.pool = { ...filtered.pool, revenue: selection.monthly_revenue };
+      } else if (assetType.includes('bandwidth') || assetType.includes('internet')) {
+        filtered.bandwidth = { ...filtered.bandwidth, revenue: selection.monthly_revenue };
+      }
+    });
+
+    console.log('✅ Filtered analysis results:', filtered);
+    return filtered;
+  };
+
+  const filteredAnalysisResults = getFilteredAnalysisResults();
+
   return (
     <div className="space-y-6">
       {/* Header with Property Info */}
@@ -93,8 +156,8 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
         />
       )}
 
-      {/* Assets Table */}
-      {analysisResults && (
+      {/* Assets Table - Only show if user has selections */}
+      {filteredAnalysisResults && hasUserSelections && (
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -103,14 +166,14 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
         >
           <Card>
             <CardHeader>
-              <CardTitle>Potential Assets Analysis</CardTitle>
+              <CardTitle>Selected Assets</CardTitle>
               <CardDescription>
-                Detailed breakdown of your property's monetization potential
+                Your chosen property monetization assets
               </CardDescription>
             </CardHeader>
             <CardContent>
               <AssetsTable 
-                analysisResults={analysisResults} 
+                analysisResults={filteredAnalysisResults} 
                 isAssetConfigured={isAssetConfigured}
                 analysisId={latestAnalysis?.id}
               />
@@ -119,24 +182,32 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
         </motion.div>
       )}
 
+      {/* Show message if no assets selected */}
+      {!hasUserSelections && (
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="space-y-4"
+        >
+          <Card>
+            <CardHeader>
+              <CardTitle>No Assets Selected</CardTitle>
+              <CardDescription>
+                You haven't selected any assets for monetization yet. Visit the property analysis page to choose your assets.
+              </CardDescription>
+            </CardHeader>
+          </Card>
+        </motion.div>
+      )}
+
       {/* Debug Component for Development */}
       <AssetSelectionDebug />
 
-      {/* Saved Asset Selections - Hidden since info is now in Overview card */}
-      {/* 
-      <motion.div 
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.3 }}
-      >
-        <SavedAssetSelections />
-      </motion.div>
-      */}
-
-      {/* Revenue Charts */}
-      {analysisResults && (
+      {/* Revenue Charts - Only show if user has selections */}
+      {filteredAnalysisResults && hasUserSelections && (
         <DashboardCharts 
-          analysisResults={analysisResults}
+          analysisResults={filteredAnalysisResults}
           totalMonthlyRevenue={actualTotalRevenue}
         />
       )}
