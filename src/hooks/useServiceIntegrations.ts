@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -29,24 +28,28 @@ export type PartnerClick = {
   user_email?: string;
 };
 
-// Enhanced partner name matching with the new database structure
+// Enhanced partner name matching with comprehensive variations
 const normalizePartnerName = (clickName: string): string => {
   if (!clickName) return '';
   
   const normalized = clickName.toLowerCase().trim();
   
-  // Direct mappings to exact database partner names
+  // Comprehensive mapping to exact database partner names
   const nameMap: Record<string, string> = {
     // Tesla variations
     'tesla': 'Tesla Energy',
     'tesla solar': 'Tesla Energy',
     'tesla energy': 'Tesla Energy',
     
-    // Airbnb variations (now we have specific entries)
+    // Airbnb variations - now handles all three types
     'airbnb': 'Airbnb Unit Rental', // Default to unit rental
     'airbnb unit rental': 'Airbnb Unit Rental',
     'airbnb experience': 'Airbnb Experience',
     'airbnb service': 'Airbnb Service',
+    'airbnb rental': 'Airbnb Unit Rental',
+    'airbnb hosting': 'Airbnb Unit Rental',
+    'airbnb experiences': 'Airbnb Experience',
+    'airbnb services': 'Airbnb Service',
     
     // Kolonia variations
     'kolonia': 'Kolonia Energy',
@@ -64,6 +67,7 @@ const normalizePartnerName = (clickName: string): string => {
     // Neighbor variations
     'neighbor': 'Neighbor.com',
     'neighbor.com': 'Neighbor.com',
+    'neighbor storage': 'Neighbor.com',
     
     // Other exact matches
     'swimply': 'Swimply',
@@ -97,7 +101,7 @@ const matchesPartnerName = (clickName: string, providerName: string): boolean =>
     return true;
   }
   
-  // Fallback to loose matching
+  // Fallback to loose matching for edge cases
   const clickLower = clickName.toLowerCase().trim();
   const providerLower = providerName.toLowerCase().trim();
   
@@ -164,7 +168,6 @@ export const useServiceIntegrations = () => {
         }
 
         console.log('✅ Fetched providers:', providersData?.length || 0);
-        console.log('📋 Provider names:', providersData?.map(p => p.name) || []);
 
         // Fetch click tracking data
         const { data: clicksData, error: clicksError } = await supabase

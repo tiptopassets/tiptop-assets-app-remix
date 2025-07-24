@@ -94,22 +94,29 @@ const ServiceIntegrationsTable = ({
                   <td className="p-3">
                     <div className="flex items-center space-x-3">
                       {integration.logo_url ? (
-                        <img 
-                          src={integration.logo_url} 
-                          alt={integration.name}
-                          className="w-8 h-8 rounded object-contain bg-white"
-                          onError={(e) => {
-                            const target = e.target as HTMLImageElement;
-                            target.style.display = 'none';
-                            target.nextElementSibling?.classList.remove('hidden');
-                          }}
-                        />
-                      ) : null}
-                      <div className={`w-8 h-8 rounded bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center ${integration.logo_url ? 'hidden' : ''}`}>
-                        <span className="text-xs font-bold text-white">
-                          {integration.name.charAt(0)}
-                        </span>
-                      </div>
+                        <div className="w-8 h-8 rounded bg-white border flex items-center justify-center overflow-hidden">
+                          <img 
+                            src={integration.logo_url} 
+                            alt={integration.name}
+                            className="w-6 h-6 object-contain"
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement;
+                              target.style.display = 'none';
+                              const fallback = target.parentElement?.querySelector('.fallback-logo') as HTMLElement;
+                              if (fallback) fallback.style.display = 'flex';
+                            }}
+                          />
+                          <div className="fallback-logo w-6 h-6 rounded bg-gradient-to-br from-blue-500 to-purple-600 items-center justify-center text-xs font-bold text-white" style={{ display: 'none' }}>
+                            {integration.name.charAt(0)}
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="w-8 h-8 rounded bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+                          <span className="text-xs font-bold text-white">
+                            {integration.name.charAt(0)}
+                          </span>
+                        </div>
+                      )}
                       <div className="min-w-0 flex-1">
                         <p className="font-medium text-gray-900 truncate">{integration.name}</p>
                         <p className="text-sm text-gray-600 line-clamp-2">
