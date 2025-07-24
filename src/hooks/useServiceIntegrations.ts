@@ -41,8 +41,8 @@ const normalizePartnerName = (clickName: string): string => {
     'tesla solar': 'Tesla Energy',
     'tesla energy': 'Tesla Energy',
     
-    // Airbnb variations - now handles all three types
-    'airbnb': 'Airbnb Unit Rental', // Default to unit rental
+    // Airbnb variations - handles all three types with better specificity
+    'airbnb': 'Airbnb Unit Rental', // Default to unit rental for generic airbnb clicks
     'airbnb unit rental': 'Airbnb Unit Rental',
     'airbnb experience': 'Airbnb Experience',
     'airbnb service': 'Airbnb Service',
@@ -50,6 +50,8 @@ const normalizePartnerName = (clickName: string): string => {
     'airbnb hosting': 'Airbnb Unit Rental',
     'airbnb experiences': 'Airbnb Experience',
     'airbnb services': 'Airbnb Service',
+    'airbnb stay': 'Airbnb Unit Rental',
+    'airbnb host': 'Airbnb Unit Rental',
     
     // Kolonia variations
     'kolonia': 'Kolonia Energy',

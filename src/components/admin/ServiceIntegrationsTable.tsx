@@ -94,7 +94,7 @@ const ServiceIntegrationsTable = ({
                   <td className="p-3">
                     <div className="flex items-center space-x-3">
                       {integration.logo_url ? (
-                        <div className="w-8 h-8 rounded bg-white border flex items-center justify-center overflow-hidden">
+                        <div className="w-8 h-8 rounded bg-white border flex items-center justify-center overflow-hidden relative">
                           <img 
                             src={integration.logo_url} 
                             alt={integration.name}
@@ -106,7 +106,7 @@ const ServiceIntegrationsTable = ({
                               if (fallback) fallback.style.display = 'flex';
                             }}
                           />
-                          <div className="fallback-logo w-6 h-6 rounded bg-gradient-to-br from-blue-500 to-purple-600 items-center justify-center text-xs font-bold text-white" style={{ display: 'none' }}>
+                          <div className="fallback-logo absolute inset-0 w-full h-full rounded bg-gradient-to-br from-blue-500 to-purple-600 items-center justify-center text-xs font-bold text-white" style={{ display: 'none' }}>
                             {integration.name.charAt(0)}
                           </div>
                         </div>
