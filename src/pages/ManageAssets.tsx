@@ -68,39 +68,64 @@ const ManageAssets: React.FC = () => {
     );
   };
 
-  // Enhanced function to get all matching partners for an asset type
+  // Fixed function with precise matching logic
   const getMatchingPartnersForAsset = (assetType: string) => {
     const normalizedAssetType = assetType.toLowerCase().trim();
     console.log('🔍 Finding partners for asset type:', normalizedAssetType);
     
-    // Get all platforms and filter them manually for better matching
+    // Normalize asset type - convert spaces to underscores for consistency
+    const normalizedForMatching = normalizedAssetType.replace(/\s+/g, '_');
+    
+    // Get all platforms and filter them with precise matching
     const allPlatforms = PartnerIntegrationService.getAllPlatforms();
     
     const matchingPartners = allPlatforms.filter(platform => {
       const hasMatch = platform.assetTypes.some(type => {
-        const normalizedType = type.toLowerCase();
+        const normalizedPlatformType = type.toLowerCase().replace(/\s+/g, '_');
         
-        // Check for exact matches first
-        if (normalizedType === normalizedAssetType) return true;
+        // Exact match first
+        if (normalizedPlatformType === normalizedForMatching) {
+          console.log('✅ Exact match:', platform.name, 'for', normalizedForMatching);
+          return true;
+        }
         
-        // Check for partial matches
-        if (normalizedType.includes(normalizedAssetType) || normalizedAssetType.includes(normalizedType)) return true;
+        // Specific mappings for known variations
+        const assetMappings: Record<string, string[]> = {
+          'storage_space': ['storage', 'garage', 'basement', 'shed'],
+          'parking_space': ['parking', 'driveway', 'garage_parking'],
+          'coworking_space': ['coworking_space', 'office_space', 'meeting_room'],
+          'event_space': ['event_space', 'creative_space'],
+          'pool': ['pool', 'swimming_pool', 'hot_tub'],
+          'internet': ['internet', 'bandwidth', 'wifi'],
+          'solar': ['solar', 'rooftop', 'energy', 'renewable_energy']
+        };
         
-        // Special handling for event space variations
-        if (normalizedAssetType.includes('event') && normalizedType.includes('event')) return true;
-        if (normalizedAssetType.includes('space') && normalizedType.includes('space')) return true;
+        // Check if the current asset type has specific mappings
+        const mappedTypes = assetMappings[normalizedForMatching];
+        if (mappedTypes && mappedTypes.includes(normalizedPlatformType)) {
+          console.log('✅ Mapped match:', platform.name, 'for', normalizedForMatching, 'via', normalizedPlatformType);
+          return true;
+        }
+        
+        // Check reverse mapping (if platform type has mappings that include our asset)
+        for (const [key, values] of Object.entries(assetMappings)) {
+          if (values.includes(normalizedForMatching) && normalizedPlatformType === key) {
+            console.log('✅ Reverse mapped match:', platform.name, 'for', normalizedForMatching, 'via', key);
+            return true;
+          }
+        }
         
         return false;
       });
-      
-      if (hasMatch) {
-        console.log('✅ Partner', platform.name, 'matches asset type', normalizedAssetType);
-      }
       
       return hasMatch;
     });
     
     console.log('🎯 Found', matchingPartners.length, 'matching partners for', normalizedAssetType);
+    matchingPartners.forEach(partner => {
+      console.log('  - Partner:', partner.name, 'Asset types:', partner.assetTypes.join(', '));
+    });
+    
     return matchingPartners.sort((a, b) => (b.priority || 0) - (a.priority || 0));
   };
 
