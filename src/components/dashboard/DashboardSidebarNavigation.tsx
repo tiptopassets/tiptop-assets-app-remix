@@ -18,6 +18,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { TooltipProvider } from '@/components/ui/tooltip';
 import { useDashboardJourneyData } from '@/hooks/useDashboardJourneyData';
 import { useState, useEffect } from 'react';
 
@@ -122,110 +123,112 @@ const DashboardSidebarNavigation = () => {
   ];
 
   return (
-    <div className="flex-1 overflow-y-auto min-h-0">
-      <nav className="p-4 space-y-2">
-        {/* Main Navigation Section - Always Visible */}
-        <div className="mb-6">
-          {mainNavigationItems.map((item) => {
-            const isActive = location.pathname === item.href;
-            return (
-              <Link
-                key={item.name}
-                to={item.href}
-                className={cn(
-                  'flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors group mb-1',
-                  isActive 
-                    ? 'bg-tiptop-purple text-white' 
-                    : 'text-gray-300 hover:bg-gray-800 hover:text-white'
-                )}
-              >
-                <item.icon size={18} />
-                <div className="flex-1">
-                  <div className="font-medium">{item.name}</div>
-                </div>
-              </Link>
-            );
-          })}
-        </div>
-
-        {/* Collapsible Assets Section */}
-        <Collapsible open={isAssetsOpen} onOpenChange={handleAssetsToggle}>
+    <TooltipProvider>
+      <div className="flex-1 overflow-y-auto min-h-0">
+        <nav className="p-4 space-y-2">
+          {/* Main Navigation Section - Always Visible */}
           <div className="mb-6">
-            <CollapsibleTrigger asChild>
-              <Button
-                variant="ghost"
-                className="w-full justify-between p-0 h-auto font-semibold text-gray-400 uppercase tracking-wider text-xs hover:text-gray-300 mb-3"
-              >
-                Assets
-                {isAssetsOpen ? (
-                  <ChevronUp className="h-4 w-4" />
-                ) : (
-                  <ChevronDown className="h-4 w-4" />
-                )}
-              </Button>
-            </CollapsibleTrigger>
-            
-            <CollapsibleContent className="space-y-1 max-h-60 overflow-y-auto">
-              {assetNavigationItems.map((item) => {
-                const isActive = location.pathname === item.href;
-                return (
-                  <Link
-                    key={item.name}
-                    to={item.href}
-                    className={cn(
-                      'flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors group mb-1',
-                      isActive 
-                        ? 'bg-tiptop-purple text-white' 
-                        : 'text-gray-300 hover:bg-gray-800 hover:text-white'
-                    )}
-                  >
-                    <item.icon size={18} />
-                    <div className="flex-1 min-w-0">
-                      <div className="font-medium truncate">{item.name}</div>
-                    </div>
-                    {item.badge && (
-                      <Badge variant="secondary" className="text-xs px-1.5 py-0.5 h-5 text-[10px] font-medium shrink-0">
-                        {item.badge}
-                      </Badge>
-                    )}
-                  </Link>
-                );
-              })}
-            </CollapsibleContent>
-          </div>
-        </Collapsible>
-
-        {/* Tools Section */}
-        <div className="mb-6">
-          <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Tools</h3>
-          {toolsItems.map((item) => {
-            const isActive = location.pathname === item.href;
-            return (
-              <Link
-                key={item.name}
-                to={item.href}
-                className={cn(
-                  'flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors group mb-1',
-                  isActive 
-                    ? 'bg-tiptop-purple text-white' 
-                    : 'text-gray-300 hover:bg-gray-800 hover:text-white'
-                )}
-              >
-                <item.icon size={18} />
-                <div className="flex-1">
-                  <div className="font-medium">{item.name}</div>
-                  {item.description && (
-                    <div className="text-xs text-gray-500 group-hover:text-gray-400">
-                      {item.description}
-                    </div>
+            {mainNavigationItems.map((item) => {
+              const isActive = location.pathname === item.href;
+              return (
+                <Link
+                  key={item.name}
+                  to={item.href}
+                  className={cn(
+                    'flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors group mb-1',
+                    isActive 
+                      ? 'bg-tiptop-purple text-white' 
+                      : 'text-gray-300 hover:bg-gray-800 hover:text-white'
                   )}
-                </div>
-              </Link>
-            );
-          })}
-        </div>
-      </nav>
-    </div>
+                >
+                  <item.icon size={18} />
+                  <div className="flex-1">
+                    <div className="font-medium">{item.name}</div>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+
+          {/* Collapsible Assets Section */}
+          <Collapsible open={isAssetsOpen} onOpenChange={handleAssetsToggle}>
+            <div className="mb-6">
+              <CollapsibleTrigger asChild>
+                <Button
+                  variant="ghost"
+                  className="w-full justify-between p-0 h-auto font-semibold text-gray-400 uppercase tracking-wider text-xs hover:text-gray-300 mb-3"
+                >
+                  Assets
+                  {isAssetsOpen ? (
+                    <ChevronUp className="h-4 w-4" />
+                  ) : (
+                    <ChevronDown className="h-4 w-4" />
+                  )}
+                </Button>
+              </CollapsibleTrigger>
+              
+              <CollapsibleContent className="space-y-1 max-h-60 overflow-y-auto">
+                {assetNavigationItems.map((item) => {
+                  const isActive = location.pathname === item.href;
+                  return (
+                    <Link
+                      key={item.name}
+                      to={item.href}
+                      className={cn(
+                        'flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors group mb-1',
+                        isActive 
+                          ? 'bg-tiptop-purple text-white' 
+                          : 'text-gray-300 hover:bg-gray-800 hover:text-white'
+                      )}
+                    >
+                      <item.icon size={18} />
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium truncate">{item.name}</div>
+                      </div>
+                      {item.badge && (
+                        <Badge variant="secondary" className="text-xs px-1.5 py-0.5 h-5 text-[10px] font-medium shrink-0">
+                          {item.badge}
+                        </Badge>
+                      )}
+                    </Link>
+                  );
+                })}
+              </CollapsibleContent>
+            </div>
+          </Collapsible>
+
+          {/* Tools Section */}
+          <div className="mb-6">
+            <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Tools</h3>
+            {toolsItems.map((item) => {
+              const isActive = location.pathname === item.href;
+              return (
+                <Link
+                  key={item.name}
+                  to={item.href}
+                  className={cn(
+                    'flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors group mb-1',
+                    isActive 
+                      ? 'bg-tiptop-purple text-white' 
+                      : 'text-gray-300 hover:bg-gray-800 hover:text-white'
+                  )}
+                >
+                  <item.icon size={18} />
+                  <div className="flex-1">
+                    <div className="font-medium">{item.name}</div>
+                    {item.description && (
+                      <div className="text-xs text-gray-500 group-hover:text-gray-400">
+                        {item.description}
+                      </div>
+                    )}
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        </nav>
+      </div>
+    </TooltipProvider>
   );
 };
 

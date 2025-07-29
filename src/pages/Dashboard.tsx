@@ -8,6 +8,7 @@ import DashboardLoadingState from '@/components/dashboard/DashboardLoadingState'
 import DashboardErrorState from '@/components/dashboard/DashboardErrorState';
 import DashboardAuthGuard from '@/components/dashboard/DashboardAuthGuard';
 import DashboardContent from '@/components/dashboard/DashboardContent';
+import DashboardErrorBoundary from '@/components/dashboard/DashboardErrorBoundary';
 import JourneyTracker from '@/components/JourneyTracker';
 
 const Dashboard = () => {
@@ -61,75 +62,77 @@ const Dashboard = () => {
     }
   }, [user, journeyData, refreshJourneyData]);
 
-  // Show loading state while auth is loading
-  if (authLoading) {
-    return <DashboardLoadingState message="Loading authentication..." />;
-  }
-
-  // Redirect to login if not authenticated
-  if (!user) {
-    return <DashboardAuthGuard />;
-  }
-
-  // Show loading state while data is loading
-  if (dataLoading) {
-    return <DashboardLoadingState message="Loading your dashboard data..." />;
-  }
-
-  // Show error state if there's an error
-  if (error) {
-    return (
-      <DashboardErrorState 
-        error={error}
-        onRefresh={refreshJourneyData}
-        onReload={refreshJourneyData}
-      />
-    );
-  }
-
-  // Show empty state if no journey data is found
-  if (!journeyData) {
-    console.log('❌ No journey data available, showing empty state');
-    return (
-      <DashboardLayout>
-        <JourneyTracker />
-        <DashboardEmptyState />
-      </DashboardLayout>
-    );
-  }
-
-  // Extract coordinates from analysis results - try multiple possible locations
-  const coordinates = journeyData.analysisResults?.coordinates || 
-                    journeyData.analysisResults?.propertyCoordinates ||
-                    (journeyData.analysisResults?.rooftop?.coordinates) ||
-                    null;
-
-  console.log('🗺️ Coordinates found for satellite image:', coordinates);
-  console.log('🏠 Using property address:', journeyData.propertyAddress);
-
-  // Convert journey data to the format expected by DashboardContent
-  const mockLatestAnalysis = {
-    id: journeyData.analysisId || journeyData.journeyId, // Use analysis_id if available, fallback to journey_id
-    analysis_results: journeyData.analysisResults,
-    total_monthly_revenue: journeyData.totalMonthlyRevenue,
-    total_opportunities: journeyData.totalOpportunities,
-    created_at: journeyData.journeyProgress?.journey_start || new Date().toISOString(),
-    satellite_image_url: journeyData.analysisResults?.rooftop?.satelliteImageUrl,
-    coordinates: coordinates
-  };
-
   return (
-    <DashboardLayout>
-      <JourneyTracker />
-      <DashboardContent
-        primaryAddress={journeyData.propertyAddress}
-        latestAnalysis={mockLatestAnalysis}
-        totalMonthlyRevenue={journeyData.totalMonthlyRevenue}
-        totalOpportunities={journeyData.totalOpportunities}
-        analysesCount={1} // We have journey data, so at least 1 analysis
-        onRefresh={refreshJourneyData}
-      />
-    </DashboardLayout>
+    <DashboardErrorBoundary>
+      {/* Show loading state while auth is loading */}
+      {authLoading && (
+        <DashboardLoadingState message="Loading authentication..." />
+      )}
+
+      {/* Redirect to login if not authenticated */}
+      {!authLoading && !user && (
+        <DashboardAuthGuard />
+      )}
+
+      {/* Show loading state while data is loading */}
+      {!authLoading && user && dataLoading && (
+        <DashboardLoadingState message="Loading your dashboard data..." />
+      )}
+
+      {/* Show error state if there's an error */}
+      {!authLoading && user && !dataLoading && error && (
+        <DashboardErrorState 
+          error={error}
+          onRefresh={refreshJourneyData}
+          onReload={refreshJourneyData}
+        />
+      )}
+
+      {/* Show empty state if no journey data is found */}
+      {!authLoading && user && !dataLoading && !error && !journeyData && (
+        <DashboardLayout>
+          <JourneyTracker />
+          <DashboardEmptyState />
+        </DashboardLayout>
+      )}
+
+      {/* Show dashboard content if we have data */}
+      {!authLoading && user && !dataLoading && !error && journeyData && (() => {
+        // Extract coordinates from analysis results - try multiple possible locations
+        const coordinates = journeyData.analysisResults?.coordinates || 
+                          journeyData.analysisResults?.propertyCoordinates ||
+                          (journeyData.analysisResults?.rooftop?.coordinates) ||
+                          null;
+
+        console.log('🗺️ Coordinates found for satellite image:', coordinates);
+        console.log('🏠 Using property address:', journeyData.propertyAddress);
+
+        // Convert journey data to the format expected by DashboardContent
+        const mockLatestAnalysis = {
+          id: journeyData.analysisId || journeyData.journeyId, // Use analysis_id if available, fallback to journey_id
+          analysis_results: journeyData.analysisResults,
+          total_monthly_revenue: journeyData.totalMonthlyRevenue,
+          total_opportunities: journeyData.totalOpportunities,
+          created_at: journeyData.journeyProgress?.journey_start || new Date().toISOString(),
+          satellite_image_url: journeyData.analysisResults?.rooftop?.satelliteImageUrl,
+          coordinates: coordinates
+        };
+
+        return (
+          <DashboardLayout>
+            <JourneyTracker />
+            <DashboardContent
+              primaryAddress={journeyData.propertyAddress}
+              latestAnalysis={mockLatestAnalysis}
+              totalMonthlyRevenue={journeyData.totalMonthlyRevenue}
+              totalOpportunities={journeyData.totalOpportunities}
+              analysesCount={1} // We have journey data, so at least 1 analysis
+              onRefresh={refreshJourneyData}
+            />
+          </DashboardLayout>
+        );
+      })()}
+    </DashboardErrorBoundary>
   );
 };
 
