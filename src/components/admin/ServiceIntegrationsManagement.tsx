@@ -5,6 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Plus, RefreshCw } from 'lucide-react';
 import ServiceIntegrationsTable from './ServiceIntegrationsTable';
 import AddServiceIntegrationForm, { ServiceIntegrationFormValues } from './AddServiceIntegrationForm';
+import ServiceProviderSync from './ServiceProviderSync';
 import { useServiceIntegrations } from '@/hooks/useServiceIntegrations';
 
 const ServiceIntegrationsManagement = () => {
@@ -46,6 +47,9 @@ const ServiceIntegrationsManagement = () => {
           </Button>
         </div>
       </div>
+
+      {/* Add the sync component */}
+      <ServiceProviderSync />
 
       <div className="glass-effect rounded-lg border p-1">
         <ServiceIntegrationsTable
