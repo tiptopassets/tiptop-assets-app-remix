@@ -1,10 +1,11 @@
-
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Eye, ExternalLink, Users, TrendingUp, RefreshCw } from 'lucide-react';
 import { ServiceIntegration, PartnerClick } from '@/hooks/useServiceIntegrations';
+import { useAffiliateIntegration } from '@/hooks/useAffiliateIntegration';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface ServiceIntegrationsTableProps {
   integrations: ServiceIntegration[];
@@ -22,6 +23,10 @@ const ServiceIntegrationsTable = ({
   const [selectedPartner, setSelectedPartner] = useState<string | null>(null);
   const [showClicksDialog, setShowClicksDialog] = useState(false);
   const [updatingStatus, setUpdatingStatus] = useState<string | null>(null);
+  const [trackingClick, setTrackingClick] = useState<string | null>(null);
+  
+  const { trackClick } = useAffiliateIntegration();
+  const { user } = useAuth();
 
   const handleViewClicks = (partnerName: string) => {
     setSelectedPartner(partnerName);
@@ -39,6 +44,33 @@ const ServiceIntegrationsTable = ({
       console.error('Error updating status:', error);
     } finally {
       setUpdatingStatus(null);
+    }
+  };
+
+  const handleVisitPartner = async (integration: ServiceIntegration) => {
+    if (!integration.integration_url) return;
+    
+    setTrackingClick(integration.id);
+    
+    try {
+      // Track the click if user is available
+      if (user) {
+        console.log('🎯 Tracking admin click for:', integration.name);
+        await trackClick(integration.name, {
+          referralLink: integration.integration_url,
+          source: 'admin_dashboard',
+          timestamp: new Date().toISOString(),
+          userAgent: navigator.userAgent,
+          referrer: window.location.href
+        });
+        console.log('✅ Admin click tracked successfully');
+      }
+    } catch (error) {
+      console.warn('Click tracking failed, but continuing with visit:', error);
+    } finally {
+      setTrackingClick(null);
+      // Always open the link regardless of tracking success
+      window.open(integration.integration_url, '_blank');
     }
   };
 
@@ -109,6 +141,7 @@ const ServiceIntegrationsTable = ({
               const clicks = partnerClicks[integration.partner_name] || [];
               const hasClicks = clicks.length > 0;
               const isUpdating = updatingStatus === integration.id;
+              const isTrackingClick = trackingClick === integration.id;
               
               return (
                 <tr key={integration.id} className="border-b hover:bg-gray-50">
@@ -218,11 +251,12 @@ const ServiceIntegrationsTable = ({
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => window.open(integration.integration_url!, '_blank')}
+                          onClick={() => handleVisitPartner(integration)}
+                          disabled={isTrackingClick}
                           className="text-xs"
                         >
                           <ExternalLink className="h-3 w-3 mr-1" />
-                          Visit
+                          {isTrackingClick ? 'Tracking...' : 'Visit'}
                         </Button>
                       )}
                     </div>
