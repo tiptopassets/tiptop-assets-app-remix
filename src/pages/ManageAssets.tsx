@@ -68,6 +68,42 @@ const ManageAssets: React.FC = () => {
     );
   };
 
+  // Enhanced function to get all matching partners for an asset type
+  const getMatchingPartnersForAsset = (assetType: string) => {
+    const normalizedAssetType = assetType.toLowerCase().trim();
+    console.log('🔍 Finding partners for asset type:', normalizedAssetType);
+    
+    // Get all platforms and filter them manually for better matching
+    const allPlatforms = PartnerIntegrationService.getAllPlatforms();
+    
+    const matchingPartners = allPlatforms.filter(platform => {
+      const hasMatch = platform.assetTypes.some(type => {
+        const normalizedType = type.toLowerCase();
+        
+        // Check for exact matches first
+        if (normalizedType === normalizedAssetType) return true;
+        
+        // Check for partial matches
+        if (normalizedType.includes(normalizedAssetType) || normalizedAssetType.includes(normalizedType)) return true;
+        
+        // Special handling for event space variations
+        if (normalizedAssetType.includes('event') && normalizedType.includes('event')) return true;
+        if (normalizedAssetType.includes('space') && normalizedType.includes('space')) return true;
+        
+        return false;
+      });
+      
+      if (hasMatch) {
+        console.log('✅ Partner', platform.name, 'matches asset type', normalizedAssetType);
+      }
+      
+      return hasMatch;
+    });
+    
+    console.log('🎯 Found', matchingPartners.length, 'matching partners for', normalizedAssetType);
+    return matchingPartners.sort((a, b) => (b.priority || 0) - (a.priority || 0));
+  };
+
   if (loading) {
     return (
       <DashboardLayout>
@@ -122,7 +158,8 @@ const ManageAssets: React.FC = () => {
         {/* Asset Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
           {uniqueAssetSelections.map((selection, index) => {
-            const partners = PartnerIntegrationService.getPlatformsByAsset(selection.asset_type);
+            // Use the enhanced partner matching function
+            const partners = getMatchingPartnersForAsset(selection.asset_type);
             
             return (
               <motion.div
