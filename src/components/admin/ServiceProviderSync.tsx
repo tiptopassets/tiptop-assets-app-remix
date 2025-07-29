@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Sync, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
+import { RefreshCw, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -82,7 +82,7 @@ const ServiceProviderSync = () => {
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <Sync className="h-5 w-5" />
+          <RefreshCw className="h-5 w-5" />
           Service Provider Sync
         </CardTitle>
         <CardDescription>
@@ -102,7 +102,7 @@ const ServiceProviderSync = () => {
             </>
           ) : (
             <>
-              <Sync className="mr-2 h-4 w-4" />
+              <RefreshCw className="mr-2 h-4 w-4" />
               Sync Service Providers
             </>
           )}
