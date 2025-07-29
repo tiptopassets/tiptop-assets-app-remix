@@ -142,13 +142,13 @@ export class PartnerIntegrationService {
       setupSteps: ['Choose location', 'Build or buy library box', 'Register with organization', 'Stock with books']
     },
     
-    // EV Charging Partners
+    // EV Charging Partners (Fixed: removed 'parking' from asset types)
     {
       id: 'chargepoint',
       name: 'ChargePoint',
       description: 'Install EV charging stations and earn from usage fees',
       briefDescription: 'EV charging network for businesses',
-      assetTypes: ['ev_charging', 'parking', 'charging', 'electric_vehicle'],
+      assetTypes: ['ev_charging', 'charging', 'electric_vehicle'],
       earningRange: { min: 100, max: 500 },
       referralLink: 'https://www.chargepoint.com/businesses/property-managers/',
       logoUrl: 'https://www.chargepoint.com/favicon.ico',
@@ -162,7 +162,7 @@ export class PartnerIntegrationService {
       name: 'EVgo',
       description: 'Partner with EVgo to install fast charging stations',
       briefDescription: 'Fast charging network partnership',
-      assetTypes: ['ev_charging', 'parking', 'charging', 'electric_vehicle'],
+      assetTypes: ['ev_charging', 'charging', 'electric_vehicle'],
       earningRange: { min: 150, max: 600 },
       referralLink: 'https://www.evgo.com/partners/',
       logoUrl: 'https://www.evgo.com/favicon.ico',
@@ -172,13 +172,13 @@ export class PartnerIntegrationService {
       setupSteps: ['Location evaluation', 'Partnership agreement', 'Installation', 'Go live']
     },
     
-    // Existing Partners (keeping all existing ones)
+    // Storage and Parking Partners (Fixed: added 'parking' to Neighbor.com)
     {
       id: 'neighbor',
       name: 'Neighbor.com',
-      description: 'Rent out your extra storage space to neighbors',
-      briefDescription: 'Peer-to-peer storage space rental',
-      assetTypes: ['storage', 'garage', 'basement', 'shed'],
+      description: 'Rent out your extra storage space or parking spots to neighbors',
+      briefDescription: 'Peer-to-peer storage and parking space rental',
+      assetTypes: ['storage', 'garage', 'basement', 'shed', 'parking', 'driveway'],
       earningRange: { min: 50, max: 300 },
       referralLink: 'http://www.neighbor.com/invited/eduardo-944857?program_version=1',
       logoUrl: 'https://www.neighbor.com/favicon.ico',
@@ -186,34 +186,6 @@ export class PartnerIntegrationService {
       setupTime: '1-2 hours',
       requirements: ['Clean storage space', 'Secure access', 'Clear photos'],
       setupSteps: ['Clean and organize space', 'Take photos', 'Set pricing', 'List space']
-    },
-    {
-      id: 'swimply',
-      name: 'Swimply',
-      description: 'Rent your pool by the hour to guests',
-      briefDescription: 'Pool rental marketplace',
-      assetTypes: ['pool', 'swimming_pool', 'hot_tub'],
-      earningRange: { min: 150, max: 800 },
-      referralLink: 'https://swimply.com/referral?ref=MjQ0MTUyMw==&r=g&utm_medium=referral&utm_source=link&utm_campaign=2441523',
-      logoUrl: 'https://swimply.com/favicon.ico',
-      priority: 10,
-      setupTime: '2-3 hours',
-      requirements: ['Pool insurance', 'Safety equipment', 'High-quality photos'],
-      setupSteps: ['Take pool photos', 'Set up insurance', 'Create listing', 'Set availability']
-    },
-    {
-      id: 'peerspace',
-      name: 'Peerspace',
-      description: 'Rent your unique space for events and meetings',
-      briefDescription: 'Unique space rental for events',
-      assetTypes: ['event_space', 'creative_space', 'meeting_room'],
-      earningRange: { min: 100, max: 500 },
-      referralLink: 'http://www.peerspace.com/claim/gr-jdO4oxx4LGzq',
-      logoUrl: 'https://www.peerspace.com/favicon.ico',
-      priority: 8,
-      setupTime: '2-3 hours',
-      requirements: ['Unique space', 'Professional photos', 'Basic amenities'],
-      setupSteps: ['Professional photography', 'Create listing', 'Set pricing', 'Manage bookings']
     },
     {
       id: 'spothero',
@@ -229,6 +201,40 @@ export class PartnerIntegrationService {
       requirements: ['Available parking space', 'Clear access', 'Photos'],
       setupSteps: ['Take parking photos', 'Set availability', 'Price competitively', 'Go live']
     },
+    
+    // Pool Partners
+    {
+      id: 'swimply',
+      name: 'Swimply',
+      description: 'Rent your pool by the hour to guests',
+      briefDescription: 'Pool rental marketplace',
+      assetTypes: ['pool', 'swimming_pool', 'hot_tub'],
+      earningRange: { min: 150, max: 800 },
+      referralLink: 'https://swimply.com/referral?ref=MjQ0MTUyMw==&r=g&utm_medium=referral&utm_source=link&utm_campaign=2441523',
+      logoUrl: 'https://swimply.com/favicon.ico',
+      priority: 10,
+      setupTime: '2-3 hours',
+      requirements: ['Pool insurance', 'Safety equipment', 'High-quality photos'],
+      setupSteps: ['Take pool photos', 'Set up insurance', 'Create listing', 'Set availability']
+    },
+    
+    // Event Space Partners
+    {
+      id: 'peerspace',
+      name: 'Peerspace',
+      description: 'Rent your unique space for events and meetings',
+      briefDescription: 'Unique space rental for events',
+      assetTypes: ['event_space', 'creative_space', 'meeting_room'],
+      earningRange: { min: 100, max: 500 },
+      referralLink: 'http://www.peerspace.com/claim/gr-jdO4oxx4LGzq',
+      logoUrl: 'https://www.peerspace.com/favicon.ico',
+      priority: 8,
+      setupTime: '2-3 hours',
+      requirements: ['Unique space', 'Professional photos', 'Basic amenities'],
+      setupSteps: ['Professional photography', 'Create listing', 'Set pricing', 'Manage bookings']
+    },
+    
+    // Vehicle Partners
     {
       id: 'turo',
       name: 'Turo',
