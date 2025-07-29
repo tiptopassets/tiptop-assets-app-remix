@@ -40,10 +40,10 @@ const queryClient = new QueryClient({
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <GoogleMapProvider>
-          <ServiceProviderProvider>
-            <Router>
+      <Router>
+        <AuthProvider>
+          <GoogleMapProvider>
+            <ServiceProviderProvider>
               <Routes>
                 <Route path="/" element={<Index />} />
                 <Route path="/auth" element={<Auth />} />
@@ -67,10 +67,10 @@ function App() {
                 <Route path="*" element={<NotFound />} />
               </Routes>
               <Toaster />
-            </Router>
-          </ServiceProviderProvider>
-        </GoogleMapProvider>
-      </AuthProvider>
+            </ServiceProviderProvider>
+          </GoogleMapProvider>
+        </AuthProvider>
+      </Router>
     </QueryClientProvider>
   );
 }
