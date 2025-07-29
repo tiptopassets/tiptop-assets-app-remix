@@ -16,6 +16,8 @@ export const getAssetTypesForService = (serviceName: string): string[] => {
     case 'sunrun':
     case 'tesla solar':
       return ['rooftop', 'solar'];
+    case 'peerspace':
+      return ['event_space', 'creative_space', 'meeting_room', 'coworking_space', 'office_space'];
     case 'flexoffers': 
       return ['internet', 'solar', 'pool', 'storage', 'parking'];
     default:

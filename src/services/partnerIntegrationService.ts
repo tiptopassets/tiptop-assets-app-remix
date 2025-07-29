@@ -218,13 +218,13 @@ export class PartnerIntegrationService {
       setupSteps: ['Take pool photos', 'Set up insurance', 'Create listing', 'Set availability']
     },
     
-    // Event Space Partners
+    // Event Space Partners - INCLUDING PEERSPACE FOR COWORKING SPACES
     {
       id: 'peerspace',
       name: 'Peerspace',
-      description: 'Rent your unique space for events and meetings',
-      briefDescription: 'Unique space rental for events',
-      assetTypes: ['event_space', 'creative_space', 'meeting_room'],
+      description: 'Rent your unique space for events, meetings, and coworking',
+      briefDescription: 'Unique space rental for events and coworking',
+      assetTypes: ['event_space', 'creative_space', 'meeting_room', 'coworking_space', 'office_space'],
       earningRange: { min: 100, max: 500 },
       referralLink: 'http://www.peerspace.com/claim/gr-jdO4oxx4LGzq',
       logoUrl: 'https://www.peerspace.com/favicon.ico',
@@ -389,6 +389,8 @@ export class PartnerIntegrationService {
       'event_space': 'Event Space',
       'creative_space': 'Creative Space',
       'meeting_room': 'Meeting Room',
+      'coworking_space': 'Coworking Space',
+      'office_space': 'Office Space',
       'driveway': 'Driveway Parking',
       'garage_parking': 'Garage Parking',
       'internet': 'Internet Sharing',
