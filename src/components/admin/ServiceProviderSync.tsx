@@ -29,24 +29,15 @@ const ServiceProviderSync = () => {
     try {
       console.log('🔄 Starting service provider sync...');
 
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.access_token) {
-        throw new Error('No authentication token available');
-      }
-
-      const response = await fetch('/functions/v1/sync-service-providers', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`,
-        },
+      const { data, error } = await supabase.functions.invoke('sync-service-providers', {
+        method: 'POST'
       });
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+      if (error) {
+        throw new Error(error.message || 'Sync failed');
       }
 
-      const result: SyncResult = await response.json();
+      const result: SyncResult = data;
       setLastSyncResult(result);
 
       if (result.success) {
