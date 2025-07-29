@@ -113,20 +113,20 @@ async function generateReferralLink(userId: string, provider: string, destinatio
 }
 
 async function registerWithPartner(userId: string, provider: string, registrationData: any) {
-  // Update user journey
-  const { error: journeyError } = await supabase
-    .from('user_affiliate_journeys')
-    .update({
-      registrations_completed: supabase.rpc('jsonb_array_append', {
-        target: 'registrations_completed',
-        new_value: { provider, timestamp: new Date().toISOString() }
-      }),
-      journey_status: 'registrations_completed'
-    })
-    .eq('user_id', userId);
+  // Insert registration record into partner_integration_progress
+  const { error: registrationError } = await supabase
+    .from('partner_integration_progress')
+    .insert({
+      user_id: userId,
+      partner_name: provider,
+      integration_status: 'completed',
+      registration_data: registrationData,
+      onboarding_id: `registration_${Date.now()}`,
+      next_steps: getNextSteps(provider)
+    });
 
-  if (journeyError) {
-    console.error('Journey update error:', journeyError);
+  if (registrationError) {
+    console.error('Registration tracking error:', registrationError);
   }
 
   // Initialize earnings tracking
@@ -154,26 +154,55 @@ async function registerWithPartner(userId: string, provider: string, registratio
 }
 
 async function trackAffiliateClick(userId: string, provider: string, clickData: any) {
-  const { error } = await supabase
-    .from('user_affiliate_journeys')
-    .update({
-      affiliate_clicks: supabase.rpc('jsonb_array_append', {
-        target: 'affiliate_clicks',
-        new_value: { 
-          provider, 
-          timestamp: new Date().toISOString(),
-          ...clickData 
+  console.log(`🔄 Tracking click for user ${userId} on provider ${provider}`, clickData);
+
+  try {
+    // Insert click record into partner_integration_progress table
+    const { data, error } = await supabase
+      .from('partner_integration_progress')
+      .insert({
+        user_id: userId,
+        partner_name: provider,
+        integration_status: 'pending',
+        referral_link: clickData?.referralLink || '',
+        onboarding_id: `click_${Date.now()}_${userId.substring(0, 8)}`,
+        registration_data: {
+          click_timestamp: new Date().toISOString(),
+          user_agent: clickData?.userAgent || '',
+          referrer: clickData?.referrer || '',
+          ...clickData
         }
       })
-    })
-    .eq('user_id', userId);
+      .select()
+      .single();
 
-  return new Response(JSON.stringify({
-    success: !error,
-    tracked: true
-  }), {
-    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-  });
+    if (error) {
+      console.error('❌ Error tracking click:', error);
+      throw error;
+    }
+
+    console.log('✅ Click tracked successfully:', data);
+
+    return new Response(JSON.stringify({
+      success: true,
+      tracked: true,
+      clickId: data.id
+    }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+
+  } catch (error) {
+    console.error('❌ Failed to track click:', error);
+    
+    // Return success even if tracking fails to not break user experience
+    return new Response(JSON.stringify({
+      success: true,
+      tracked: false,
+      error: error.message
+    }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
 }
 
 async function syncPartnerEarnings(userId: string, provider: string) {
@@ -246,6 +275,12 @@ function getNextSteps(provider: string): string[] {
       'Create your pool listing on Swimply',
       'Upload high-quality photos',
       'Set competitive pricing for your area'
+    ],
+    'Little Free Library': [
+      'Choose location for your library',
+      'Build or purchase library box',
+      'Register with Little Free Library organization',
+      'Stock with books and maintain'
     ]
   };
 
