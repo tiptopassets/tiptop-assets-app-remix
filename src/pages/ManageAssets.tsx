@@ -50,21 +50,22 @@ const ManageAssets: React.FC = () => {
     }
   };
 
-  const getPartnerIcon = (partnerName: string) => {
-    const name = partnerName.toLowerCase();
-    if (name.includes('airbnb')) return '🏠';
-    if (name.includes('spothero')) return '🅿️';
-    if (name.includes('neighbor')) return '🏠';
-    if (name.includes('swimply')) return '🏊';
-    if (name.includes('honeygain')) return '🍯';
-    if (name.includes('grass')) return '🌱';
-    if (name.includes('tesla')) return '⚡';
-    if (name.includes('kolonia')) return '☀️';
-    if (name.includes('chargepoint')) return '🔌';
-    if (name.includes('evgo')) return '⚡';
-    if (name.includes('turo')) return '🚗';
-    if (name.includes('peerspace')) return '📍';
-    return '💼';
+  const getPartnerLogo = (partner: any) => {
+    return (
+      <div className="w-10 h-10 rounded border border-gray-200 overflow-hidden bg-white flex items-center justify-center">
+        <img 
+          src={partner.logoUrl} 
+          alt={partner.name}
+          className="w-6 h-6 object-contain"
+          onError={(e) => {
+            // Fallback to favicon if logo fails to load
+            const img = e.target as HTMLImageElement;
+            const domain = new URL(partner.referralLink).hostname;
+            img.src = `https://www.google.com/s2/favicons?domain=${domain}&sz=64`;
+          }}
+        />
+      </div>
+    );
   };
 
   if (loading) {
@@ -166,7 +167,7 @@ const ManageAssets: React.FC = () => {
                         </div>
                       )}
 
-                      {/* Partner Icons */}
+                      {/* Partner Logos */}
                       <div className="pt-3 border-t">
                         <p className="text-gray-500 text-sm mb-3">Available Partners:</p>
                         <div className="flex flex-wrap gap-2">
@@ -176,17 +177,15 @@ const ManageAssets: React.FC = () => {
                               variant="outline"
                               size="sm"
                               onClick={() => handlePartnerClick(partner.id)}
-                              className="h-10 w-10 p-0 hover:bg-tiptop-purple/10 hover:border-tiptop-purple relative group"
+                              className="h-12 w-12 p-1 hover:bg-tiptop-purple/10 hover:border-tiptop-purple relative group"
                               title={`Visit ${partner.name} - ${partner.briefDescription}`}
                             >
-                              <span className="text-lg">
-                                {getPartnerIcon(partner.name)}
-                              </span>
+                              {getPartnerLogo(partner)}
                               <ExternalLink className="w-3 h-3 absolute -top-1 -right-1 opacity-0 group-hover:opacity-100 transition-opacity text-tiptop-purple" />
                             </Button>
                           ))}
                           {partners.length > 6 && (
-                            <div className="h-10 w-10 border border-gray-200 rounded flex items-center justify-center text-gray-500 text-xs">
+                            <div className="h-12 w-12 border border-gray-200 rounded flex items-center justify-center text-gray-500 text-xs">
                               +{partners.length - 6}
                             </div>
                           )}
