@@ -12,7 +12,8 @@ import {
   User,
   DollarSign,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  Settings
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -61,6 +62,13 @@ const DashboardSidebarNavigation = () => {
 
   // Asset navigation items - collapsible
   const assetNavigationItems = [
+    {
+      name: 'Manage Assets',
+      href: '/dashboard/manage',
+      icon: Settings,
+      description: 'Manage your monetized assets',
+      badge: 'New'
+    },
     // Conditionally include solar dashboard
     ...(hasSolarPotential ? [{
       name: 'Solar System',
@@ -157,7 +165,7 @@ const DashboardSidebarNavigation = () => {
               </Button>
             </CollapsibleTrigger>
             
-            <CollapsibleContent className="space-y-1">
+            <CollapsibleContent className="space-y-1 max-h-60 overflow-y-auto">
               {assetNavigationItems.map((item) => {
                 const isActive = location.pathname === item.href;
                 return (
