@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useUserAssetSelections } from '@/hooks/useUserAssetSelections';
 import { PartnerIntegrationService } from '@/services/partnerIntegrationService';
@@ -68,65 +67,19 @@ const ManageAssets: React.FC = () => {
     );
   };
 
-  // Fixed function with precise matching logic
+  // Use the same proven method that the chatbot uses
   const getMatchingPartnersForAsset = (assetType: string) => {
-    const normalizedAssetType = assetType.toLowerCase().trim();
-    console.log('🔍 Finding partners for asset type:', normalizedAssetType);
+    console.log('🔍 Finding partners for asset type:', assetType);
     
-    // Normalize asset type - convert spaces to underscores for consistency
-    const normalizedForMatching = normalizedAssetType.replace(/\s+/g, '_');
+    // Use the exact same method that works in the chatbot
+    const matchingPartners = PartnerIntegrationService.getPlatformsByAsset(assetType);
     
-    // Get all platforms and filter them with precise matching
-    const allPlatforms = PartnerIntegrationService.getAllPlatforms();
-    
-    const matchingPartners = allPlatforms.filter(platform => {
-      const hasMatch = platform.assetTypes.some(type => {
-        const normalizedPlatformType = type.toLowerCase().replace(/\s+/g, '_');
-        
-        // Exact match first
-        if (normalizedPlatformType === normalizedForMatching) {
-          console.log('✅ Exact match:', platform.name, 'for', normalizedForMatching);
-          return true;
-        }
-        
-        // Specific mappings for known variations
-        const assetMappings: Record<string, string[]> = {
-          'storage_space': ['storage', 'garage', 'basement', 'shed'],
-          'parking_space': ['parking', 'driveway', 'garage_parking'],
-          'coworking_space': ['coworking_space', 'office_space', 'meeting_room'],
-          'event_space': ['event_space', 'creative_space'],
-          'pool': ['pool', 'swimming_pool', 'hot_tub'],
-          'internet': ['internet', 'bandwidth', 'wifi'],
-          'solar': ['solar', 'rooftop', 'energy', 'renewable_energy']
-        };
-        
-        // Check if the current asset type has specific mappings
-        const mappedTypes = assetMappings[normalizedForMatching];
-        if (mappedTypes && mappedTypes.includes(normalizedPlatformType)) {
-          console.log('✅ Mapped match:', platform.name, 'for', normalizedForMatching, 'via', normalizedPlatformType);
-          return true;
-        }
-        
-        // Check reverse mapping (if platform type has mappings that include our asset)
-        for (const [key, values] of Object.entries(assetMappings)) {
-          if (values.includes(normalizedForMatching) && normalizedPlatformType === key) {
-            console.log('✅ Reverse mapped match:', platform.name, 'for', normalizedForMatching, 'via', key);
-            return true;
-          }
-        }
-        
-        return false;
-      });
-      
-      return hasMatch;
-    });
-    
-    console.log('🎯 Found', matchingPartners.length, 'matching partners for', normalizedAssetType);
+    console.log('🎯 Found', matchingPartners.length, 'matching partners for', assetType);
     matchingPartners.forEach(partner => {
       console.log('  - Partner:', partner.name, 'Asset types:', partner.assetTypes.join(', '));
     });
     
-    return matchingPartners.sort((a, b) => (b.priority || 0) - (a.priority || 0));
+    return matchingPartners;
   };
 
   if (loading) {
@@ -183,7 +136,7 @@ const ManageAssets: React.FC = () => {
         {/* Asset Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
           {uniqueAssetSelections.map((selection, index) => {
-            // Use the enhanced partner matching function
+            // Use the same partner matching method as the chatbot
             const partners = getMatchingPartnersForAsset(selection.asset_type);
             
             return (
