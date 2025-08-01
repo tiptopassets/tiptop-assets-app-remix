@@ -27,7 +27,7 @@ export const PropertyOverviewCard = ({
             <div className="h-full min-h-[200px] bg-gray-100 flex items-center justify-center">
               <div className="text-center">
                 <Loader2 className="h-6 w-6 animate-spin mx-auto mb-2 text-tiptop-purple" />
-                <span className="text-sm text-white">Loading satellite view...</span>
+                <span className="text-sm text-gray-500">Loading satellite view...</span>
               </div>
             </div>
           ) : imageUrl ? (
@@ -49,21 +49,21 @@ export const PropertyOverviewCard = ({
                 }}
               />
               <div className="h-full min-h-[200px] bg-gray-200 items-center justify-center hidden">
-                <span className="text-white">Satellite View Unavailable</span>
+                <span className="text-gray-400">Satellite View Unavailable</span>
               </div>
             </div>
           ) : (
             <div className="h-full min-h-[200px] bg-gray-200 flex items-center justify-center">
-              <span className="text-white">Satellite View Unavailable</span>
+              <span className="text-gray-400">Satellite View Unavailable</span>
             </div>
           )}
         </div>
         <div className="lg:col-span-2 p-6">
           <CardHeader className="p-0 pb-4">
-            <CardTitle className="text-xl font-bold text-white">{address || "Property Address"}</CardTitle>
+            <CardTitle className="text-xl font-bold text-gray-900">{address || "Property Address"}</CardTitle>
           </CardHeader>
           <CardContent className="p-0">
-            <p className="text-white">{description || "No property analysis available yet."}</p>
+            <p className="text-gray-600">{description || "No property analysis available yet."}</p>
           </CardContent>
         </div>
       </div>

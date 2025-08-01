@@ -190,7 +190,7 @@ export const additionalOpportunities: AdditionalOpportunity[] = [
   },
   {
     title: "Art Studio Space",
-    icon: "art",
+    icon: "storage",
     monthlyRevenue: 150,
     description: "Creative space for artists, painters, and crafters.",
     setupCost: 250,

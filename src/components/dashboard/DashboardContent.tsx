@@ -60,14 +60,9 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
     ? uniqueAssetSelections.reduce((sum, selection) => sum + (selection.monthly_revenue || 0), 0)
     : totalMonthlyRevenue;
   
-  // Fix: Calculate opportunities based on analysis results, not just user selections
-  const actualTotalOpportunities = (() => {
-    if (analysisResults?.topOpportunities && analysisResults.topOpportunities.length > 0) {
-      // Count opportunities with revenue > 0
-      return analysisResults.topOpportunities.filter((opp: any) => opp.monthlyRevenue > 0).length;
-    }
-    return totalOpportunities;
-  })();
+  const actualTotalOpportunities = hasUserSelections 
+    ? uniqueAssetSelections.length 
+    : totalOpportunities;
 
   return (
     <div className="space-y-6">
