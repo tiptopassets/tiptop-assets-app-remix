@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { Check, Plus, Filter, TrendingUp, TrendingDown, Minus } from 'lucide-react';
@@ -42,7 +41,7 @@ const EnhancedAdditionalAssetsCarousel = ({
   opportunitiesByCategory
 }: EnhancedAdditionalAssetsCarouselProps) => {
   const [filterType, setFilterType] = useState<string>("all");
-  const [sortBy, setSortBy] = useState<string>("revenue");
+  const [sortBy, setSortBy] = useState<string>("name");
   const isMobile = useIsMobile();
 
   // Get filtered opportunities based on current filter
@@ -233,10 +232,10 @@ const EnhancedAdditionalAssetsCarousel = ({
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
+              <SelectItem value="name">Name</SelectItem>
               <SelectItem value="revenue">Revenue</SelectItem>
               <SelectItem value="roi">ROI</SelectItem>
               <SelectItem value="setup-cost">Setup Cost</SelectItem>
-              <SelectItem value="name">Name</SelectItem>
             </SelectContent>
           </Select>
         </div>
