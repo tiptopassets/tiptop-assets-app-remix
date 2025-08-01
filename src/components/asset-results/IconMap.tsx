@@ -71,6 +71,14 @@ const iconMap: Record<string, React.ReactNode> = {
       className="w-8 h-8 object-contain"
       style={{ filter: 'drop-shadow(0 0 5px rgba(167, 139, 250, 0.6))' }}
     />
+  ),
+  "art": (
+    <img 
+      src="/lovable-uploads/4f7c90c5-00ec-4e81-a6a1-5768da1b97e9.png" 
+      alt="Art Studio Icon" 
+      className="w-8 h-8 object-contain"
+      style={{ filter: 'drop-shadow(0 0 5px rgba(245, 101, 101, 0.6))' }}
+    />
   )
 };
 
