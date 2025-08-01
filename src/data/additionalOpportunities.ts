@@ -5,7 +5,7 @@ export const additionalOpportunities: AdditionalOpportunity[] = [
   // High Revenue Tier ($200+ /month)
   {
     title: "Airbnb Rental",
-    icon: "storage",
+    icon: "airbnb",
     monthlyRevenue: 1200,
     description: "Rent out your property or unit on Airbnb for consistent income.",
     provider: "Airbnb",
