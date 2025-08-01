@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -177,16 +178,16 @@ const AnalyzeButton = () => {
         )}
       </Button>
       
-      {/* Progress Bar - Made more transparent */}
+      {/* Progress Bar */}
       {isLoading && (
         <div className="mt-4 space-y-2">
           <Progress 
             value={progress} 
-            className="h-2 bg-black/5 backdrop-blur-lg border border-white/5"
+            className="h-2 bg-black/40 border border-white/10"
           />
-          <div className="flex justify-between text-xs text-gray-300">
-            <span className="bg-black/10 backdrop-blur-sm px-2 py-1 rounded">{currentStep}</span>
-            <span className="bg-black/10 backdrop-blur-sm px-2 py-1 rounded">{Math.round(progress)}%</span>
+          <div className="flex justify-between text-xs text-gray-400">
+            <span>{currentStep}</span>
+            <span>{Math.round(progress)}%</span>
           </div>
         </div>
       )}
