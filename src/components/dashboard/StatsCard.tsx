@@ -23,30 +23,30 @@ export const StatsCard = ({
   const getTrendColor = () => {
     switch (trend) {
       case "up":
-        return "text-emerald-400 font-semibold";
+        return "text-green-400";
       case "down":
-        return "text-red-400 font-semibold";
+        return "text-red-400";
       default:
-        return "text-slate-200 font-medium";
+        return "text-white";
     }
   };
 
   return (
-    <Card className={`glassmorphism-card border-white/10 bg-white/10 backdrop-blur-md ${className}`}>
+    <Card className={`glassmorphism-card border-white/10 ${className}`}>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-xs md:text-sm font-semibold text-white drop-shadow-sm">
+        <CardTitle className="text-xs md:text-sm font-medium text-white">
           {title}
         </CardTitle>
-        <div className="text-white opacity-90 drop-shadow-sm">
+        <div className="text-white opacity-80">
           {icon}
         </div>
       </CardHeader>
       <CardContent>
-        <div className="text-xl md:text-2xl font-bold text-white mb-1 drop-shadow-sm">
+        <div className="text-xl md:text-2xl font-bold text-white mb-1">
           {value}
         </div>
         {trendValue && (
-          <p className={`text-xs ${getTrendColor()} drop-shadow-sm`}>
+          <p className={`text-xs ${getTrendColor()} font-medium`}>
             {trendValue}
           </p>
         )}

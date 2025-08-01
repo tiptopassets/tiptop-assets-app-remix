@@ -132,10 +132,7 @@ export const generatePropertyAnalysis = async (
   // Generate top opportunities based on building type and actual revenue potential - IMPROVED LOGIC
   results.topOpportunities = generateBuildingTypeAwareOpportunities(results, buildingTypeInfo, analysisData);
 
-  console.log('✅ Enhanced property analysis completed successfully');
-  console.log('📊 Final opportunities count:', results.topOpportunities.length);
-  console.log('💰 Total monthly revenue:', results.totalMonthlyRevenue);
-
+  console.log('Enhanced property analysis completed successfully');
   return results;
 };
 
@@ -349,40 +346,67 @@ function generateBuildingTypeAwareOpportunities(
 ) {
   const opportunities = [];
 
-  console.log('🏢 Building type:', buildingTypeInfo.type);
-  console.log('🏢 Results data:', { bandwidth: results.bandwidth, storage: results.storage });
-  console.log('🏢 Analysis data:', { internet: analysisData.internet, storage: analysisData.storage });
-
   // For apartments, focus only on available opportunities and ensure both are included
   if (buildingTypeInfo.type === 'apartment') {
     console.log('🏢 Generating apartment-specific opportunities');
+    console.log('🏢 Results data:', { bandwidth: results.bandwidth, storage: results.storage });
+    console.log('🏢 Analysis data:', { internet: analysisData.internet, storage: analysisData.storage });
     
-    // Internet bandwidth sharing - always check and include if revenue > 0
-    const internetRevenue = results.bandwidth.revenue || analysisData.internet?.monthlyRevenue || 0;
-    if (internetRevenue > 0) {
-      console.log('🏢 Adding Internet opportunity:', internetRevenue);
+    // Internet bandwidth sharing - always available for apartments
+    if (results.bandwidth.revenue > 0) {
+      console.log('🏢 Adding Internet opportunity:', results.bandwidth.revenue);
       opportunities.push({
         title: 'Internet Bandwidth Sharing',
         icon: 'wifi',
-        monthlyRevenue: internetRevenue,
+        monthlyRevenue: results.bandwidth.revenue,
         description: `Share unused internet bandwidth for passive income. Available for apartment residents.`,
         setupCost: 0,
         roi: 0
       });
     }
 
-    // Personal storage rental - always check and include if revenue > 0
-    const storageRevenue = results.storage.revenue || analysisData.storage?.monthlyRevenue || 0;
-    if (storageRevenue > 0) {
-      console.log('🏢 Adding Storage opportunity:', storageRevenue);
+    // Personal storage rental - available for apartments
+    if (results.storage.revenue > 0) {
+      console.log('🏢 Adding Storage opportunity from results:', results.storage.revenue);
       opportunities.push({
         title: 'Personal Storage Rental',
         icon: 'storage',
-        monthlyRevenue: storageRevenue,
+        monthlyRevenue: results.storage.revenue,
         description: `Rent out personal storage space within your unit to neighbors or visitors.`,
         setupCost: 0,
         roi: 0
       });
+    }
+
+    // Fallback: check analysisData if results don't have it
+    if (analysisData.internet?.monthlyRevenue > 0) {
+      const hasInternet = opportunities.some(opp => opp.title.includes('Internet'));
+      if (!hasInternet) {
+        console.log('🏢 Adding Internet opportunity from analysisData:', analysisData.internet.monthlyRevenue);
+        opportunities.push({
+          title: 'Internet Bandwidth Sharing',
+          icon: 'wifi',
+          monthlyRevenue: analysisData.internet.monthlyRevenue,
+          description: 'Share unused internet bandwidth for passive income',
+          setupCost: 0,
+          roi: 0
+        });
+      }
+    }
+    
+    if (analysisData.storage?.monthlyRevenue > 0) {
+      const hasStorage = opportunities.some(opp => opp.title.includes('Storage'));
+      if (!hasStorage) {
+        console.log('🏢 Adding Storage opportunity from analysisData:', analysisData.storage.monthlyRevenue);
+        opportunities.push({
+          title: 'Unit Storage Rental',
+          icon: 'storage',
+          monthlyRevenue: analysisData.storage.monthlyRevenue,
+          description: 'Rent out available storage space within the unit',
+          setupCost: 0,
+          roi: 0
+        });
+      }
     }
 
     console.log('🏢 Final apartment opportunities:', opportunities);
