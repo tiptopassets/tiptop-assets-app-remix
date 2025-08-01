@@ -31,11 +31,6 @@ const AnalysisTabs = ({
   coordinates,
   address 
 }: AnalysisTabsProps) => {
-  // Calculate totals for MetricsGrid
-  const totalOpportunities = localAnalysis?.topOpportunities?.length || 0;
-  const selectedAssetsCount = 0; // This would be calculated based on user selections
-  const totalSetupCost = localAnalysis?.topOpportunities?.reduce((sum, opp) => sum + (opp.setupCost || 0), 0) || 0;
-
   return (
     <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">
       <TabsList className="grid w-full grid-cols-3 bg-black/40">
@@ -49,9 +44,7 @@ const AnalysisTabs = ({
       
       <TabsContent value="overview" className="space-y-6">
         {/* Property Type and Summary */}
-        <PropertyTypeDisplay 
-          propertyType={localAnalysis.propertyType}
-        />
+        <PropertyTypeDisplay analysisResults={localAnalysis} />
         
         {/* Manual Adjustment Controls */}
         <ManualAdjustmentControls 
@@ -63,15 +56,10 @@ const AnalysisTabs = ({
         />
         
         {/* Key Metrics */}
-        <MetricsGrid 
-          analysisResults={localAnalysis}
-          totalOpportunities={totalOpportunities}
-          selectedAssetsCount={selectedAssetsCount}
-          totalSetupCost={totalSetupCost}
-        />
+        <MetricsGrid analysisResults={localAnalysis} />
         
         {/* Top Opportunities Section */}
-        <TopOpportunities opportunities={localAnalysis.topOpportunities || []} />
+        <TopOpportunities analysisResults={localAnalysis} />
       </TabsContent>
       
       <TabsContent value="solar">
