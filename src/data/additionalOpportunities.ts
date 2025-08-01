@@ -20,7 +20,7 @@ export const additionalOpportunities: AdditionalOpportunity[] = [
   },
   {
     title: "Rent Your Pool",
-    icon: "swimming-pool",
+    icon: "pool",
     monthlyRevenue: 450,
     description: "Transform your pool into a revenue stream by renting it out by the hour.",
     provider: "Swimply",
@@ -34,7 +34,7 @@ export const additionalOpportunities: AdditionalOpportunity[] = [
   },
   {
     title: "Event Space Rental",
-    icon: "garden",
+    icon: "house",
     monthlyRevenue: 350,
     description: "Transform your space into a venue for parties, meetings, and celebrations.",
     provider: "Peerspace",
@@ -49,7 +49,7 @@ export const additionalOpportunities: AdditionalOpportunity[] = [
   },
   {
     title: "Event Space Rental (Large)",
-    icon: "storage",
+    icon: "house",
     monthlyRevenue: 320,
     description: "Rent out large rooms for events, meetings, and celebrations.",
     provider: "Eventbrite",
@@ -63,7 +63,7 @@ export const additionalOpportunities: AdditionalOpportunity[] = [
   },
   {
     title: "EV Charging Station",
-    icon: "ev-charger",
+    icon: "evcharger",
     monthlyRevenue: 300,
     description: "Install and rent out electric vehicle charging stations.",
     provider: "ChargePoint",
@@ -77,7 +77,7 @@ export const additionalOpportunities: AdditionalOpportunity[] = [
   },
   {
     title: "Co-working Space",
-    icon: "storage",
+    icon: "house",
     monthlyRevenue: 280,
     description: "Rent out rooms or areas as dedicated workspace for remote workers.",
     provider: "Breather",
@@ -105,7 +105,7 @@ export const additionalOpportunities: AdditionalOpportunity[] = [
   },
   {
     title: "Home Gym Rental",
-    icon: "storage",
+    icon: "house",
     monthlyRevenue: 220,
     description: "Rent out your home gym space for personal training sessions.",
     provider: "Gympass",
@@ -119,7 +119,7 @@ export const additionalOpportunities: AdditionalOpportunity[] = [
   },
   {
     title: "Photography Studio",
-    icon: "storage",
+    icon: "house",
     monthlyRevenue: 220,
     description: "Convert spaces into rental photography or videography studios.",
     provider: "Peerspace",
@@ -163,7 +163,7 @@ export const additionalOpportunities: AdditionalOpportunity[] = [
   },
   {
     title: "Music Lessons",
-    icon: "storage",
+    icon: "house",
     monthlyRevenue: 160,
     description: "Teach music lessons from your home studio space.",
     setupCost: 0,
@@ -176,7 +176,7 @@ export const additionalOpportunities: AdditionalOpportunity[] = [
   },
   {
     title: "Fitness Studio",
-    icon: "garden",
+    icon: "house",
     monthlyRevenue: 160,
     description: "Transform garage or basement into rentable fitness space.",
     provider: "Splacer",
@@ -190,7 +190,7 @@ export const additionalOpportunities: AdditionalOpportunity[] = [
   },
   {
     title: "Art Studio Space",
-    icon: "storage",
+    icon: "house",
     monthlyRevenue: 150,
     description: "Creative space for artists, painters, and crafters.",
     setupCost: 250,
@@ -244,7 +244,7 @@ export const additionalOpportunities: AdditionalOpportunity[] = [
   },
   {
     title: "Game Room Rental",
-    icon: "storage",
+    icon: "house",
     monthlyRevenue: 100,
     description: "Rent out game rooms for parties and entertainment.",
     setupCost: 400,
@@ -271,7 +271,7 @@ export const additionalOpportunities: AdditionalOpportunity[] = [
   },
   {
     title: "Music Practice Room",
-    icon: "storage",
+    icon: "house",
     monthlyRevenue: 90,
     description: "Soundproofed space for musicians to practice and record.",
     setupCost: 500,
@@ -298,7 +298,7 @@ export const additionalOpportunities: AdditionalOpportunity[] = [
   },
   {
     title: "Meeting Room Rental",
-    icon: "storage",
+    icon: "house",
     monthlyRevenue: 75,
     description: "Professional meeting space for small businesses.",
     setupCost: 200,
@@ -341,7 +341,7 @@ export const additionalOpportunities: AdditionalOpportunity[] = [
   },
   {
     title: "Gift Wrapping Service",
-    icon: "storage",
+    icon: "house",
     monthlyRevenue: 45,
     description: "Seasonal gift wrapping service for holidays and special occasions.",
     setupCost: 75,
