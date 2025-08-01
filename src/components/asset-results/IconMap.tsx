@@ -74,7 +74,7 @@ const iconMap: Record<string, React.ReactNode> = {
   ),
   "airbnb": (
     <img 
-      src="/lovable-uploads/945316e5-4983-47c7-b231-ed89d12f2ebe.png" 
+      src="/lovable-uploads/55b3ec9d-11b2-4d20-8a7c-34161f2c03af.png" 
       alt="House Icon" 
       className="w-8 h-8 object-contain"
       style={{ filter: 'drop-shadow(0 0 5px rgba(255, 91, 91, 0.6))' }}
@@ -82,7 +82,7 @@ const iconMap: Record<string, React.ReactNode> = {
   ),
   "house": (
     <img 
-      src="/lovable-uploads/945316e5-4983-47c7-b231-ed89d12f2ebe.png" 
+      src="/lovable-uploads/55b3ec9d-11b2-4d20-8a7c-34161f2c03af.png" 
       alt="House Icon" 
       className="w-8 h-8 object-contain"
       style={{ filter: 'drop-shadow(0 0 5px rgba(255, 91, 91, 0.6))' }}
@@ -90,7 +90,7 @@ const iconMap: Record<string, React.ReactNode> = {
   ),
   "rental": (
     <img 
-      src="/lovable-uploads/945316e5-4983-47c7-b231-ed89d12f2ebe.png" 
+      src="/lovable-uploads/55b3ec9d-11b2-4d20-8a7c-34161f2c03af.png" 
       alt="House Icon" 
       className="w-8 h-8 object-contain"
       style={{ filter: 'drop-shadow(0 0 5px rgba(255, 91, 91, 0.6))' }}
