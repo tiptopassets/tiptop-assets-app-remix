@@ -71,6 +71,30 @@ const iconMap: Record<string, React.ReactNode> = {
       className="w-8 h-8 object-contain"
       style={{ filter: 'drop-shadow(0 0 5px rgba(167, 139, 250, 0.6))' }}
     />
+  ),
+  "airbnb": (
+    <img 
+      src="/lovable-uploads/db512ac8-f0c9-42d7-9c43-d42a4d1cab1b.png" 
+      alt="House Icon" 
+      className="w-8 h-8 object-contain"
+      style={{ filter: 'drop-shadow(0 0 5px rgba(255, 91, 91, 0.6))' }}
+    />
+  ),
+  "house": (
+    <img 
+      src="/lovable-uploads/db512ac8-f0c9-42d7-9c43-d42a4d1cab1b.png" 
+      alt="House Icon" 
+      className="w-8 h-8 object-contain"
+      style={{ filter: 'drop-shadow(0 0 5px rgba(255, 91, 91, 0.6))' }}
+    />
+  ),
+  "rental": (
+    <img 
+      src="/lovable-uploads/db512ac8-f0c9-42d7-9c43-d42a4d1cab1b.png" 
+      alt="House Icon" 
+      className="w-8 h-8 object-contain"
+      style={{ filter: 'drop-shadow(0 0 5px rgba(255, 91, 91, 0.6))' }}
+    />
   )
 };
 
