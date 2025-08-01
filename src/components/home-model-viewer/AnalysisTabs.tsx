@@ -51,7 +51,6 @@ const AnalysisTabs = ({
         {/* Property Type and Summary */}
         <PropertyTypeDisplay 
           propertyType={localAnalysis.propertyType}
-          buildingTypeRestrictions={localAnalysis.buildingTypeRestrictions}
         />
         
         {/* Manual Adjustment Controls */}
