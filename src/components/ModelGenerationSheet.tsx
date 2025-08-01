@@ -90,21 +90,21 @@ const ModelGenerationSheet = () => {
       transition={{ duration: 0.4, ease: "easeOut" }}
       className="w-full max-w-4xl mx-auto"
     >
-      <div className="bg-white/20 dark:bg-gray-900/20 backdrop-blur-sm border border-gray-200/30 dark:border-gray-700/30 rounded-xl shadow-2xl p-4 md:p-6">
+      <div className="bg-white/10 dark:bg-gray-900/10 backdrop-blur-md border border-gray-200/20 dark:border-gray-700/20 rounded-xl shadow-2xl p-4 md:p-6">
           {/* Header */}
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3 flex-1 min-w-0">
               <StatusIndicator status={status} />
               <div className="min-w-0 flex-1">
                 <h3 className="font-semibold text-lg md:text-xl truncate text-white">{title}</h3>
-                <p className="text-xs md:text-sm text-gray-300 dark:text-gray-400 truncate">{description}</p>
+                <p className="text-xs md:text-sm text-gray-200 dark:text-gray-300 truncate">{description}</p>
               </div>
             </div>
             <Button
               variant="ghost"
               size="sm"
               onClick={handleClose}
-              className="text-gray-300 hover:text-white h-8 w-8 p-0 flex-shrink-0 ml-2"
+              className="text-gray-200 hover:text-white h-8 w-8 p-0 flex-shrink-0 ml-2 hover:bg-white/10"
             >
               ✕
             </Button>
@@ -121,7 +121,7 @@ const ModelGenerationSheet = () => {
                     <img 
                       src={propertyImages.satellite || "https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=100&h=100&fit=crop&crop=center"} 
                       alt="Satellite view" 
-                      className="w-12 h-12 md:w-16 md:h-16 object-cover rounded-lg border-2 border-gray-200"
+                      className="w-12 h-12 md:w-16 md:h-16 object-cover rounded-lg border-2 border-gray-200/30"
                     />
                     <span className="absolute -bottom-1 -right-1 bg-blue-500 text-white text-[8px] md:text-[10px] px-1 py-0.5 rounded">
                       Satellite
@@ -131,7 +131,7 @@ const ModelGenerationSheet = () => {
                     <img 
                       src={propertyImages.streetView || "https://images.unsplash.com/photo-1426604966848-d7adac402bff?w=100&h=100&fit=crop&crop=center"} 
                       alt="Street view" 
-                      className="w-12 h-12 md:w-16 md:h-16 object-cover rounded-lg border-2 border-gray-200"
+                      className="w-12 h-12 md:w-16 md:h-16 object-cover rounded-lg border-2 border-gray-200/30"
                     />
                     <span className="absolute -bottom-1 -right-1 bg-green-500 text-white text-[8px] md:text-[10px] px-1 py-0.5 rounded">
                       Street
@@ -141,13 +141,13 @@ const ModelGenerationSheet = () => {
                 
                 {/* Centered progress bar */}
                 <div className="flex-1">
-                  <div className="w-full bg-gray-200/50 dark:bg-gray-700/50 rounded-full h-2 md:h-3">
+                  <div className="w-full bg-gray-200/30 dark:bg-gray-700/30 rounded-full h-2 md:h-3">
                     <div 
                       className="bg-tiptop-purple h-2 md:h-3 rounded-full transition-all duration-300"
                       style={{ width: `${progress}%` }}
                     />
                   </div>
-                  <p className="text-xs text-right mt-1 text-gray-300">{progress}%</p>
+                  <p className="text-xs text-right mt-1 text-gray-200">{progress}%</p>
                 </div>
               </div>
             </div>
@@ -161,13 +161,13 @@ const ModelGenerationSheet = () => {
               <div className="flex-grow order-2 md:order-none">
                 <div className="flex items-center justify-center gap-6 md:gap-8">
                   <div className="text-center">
-                    <p className="text-xs text-gray-300 mb-1">Monthly Revenue</p>
+                    <p className="text-xs text-gray-200 mb-1">Monthly Revenue</p>
                     <p className="text-xl md:text-2xl font-bold text-green-400">
                       ${analysisResults.topOpportunities.reduce((sum, opp) => sum + opp.monthlyRevenue, 0)}
                     </p>
                   </div>
                   <div className="text-center">
-                    <p className="text-xs text-gray-300 mb-1">Opportunities</p>
+                    <p className="text-xs text-gray-200 mb-1">Opportunities</p>
                     <p className="text-xl md:text-2xl font-bold text-tiptop-purple">{analysisResults.topOpportunities.length}</p>
                   </div>
                 </div>
@@ -189,10 +189,10 @@ const ModelGenerationSheet = () => {
               <div className="flex-grow flex flex-col items-center justify-center gap-3 order-2 md:order-none">
                 <p className="text-red-400 text-sm text-center">{errorMessage}</p>
                 <div className="flex flex-col md:flex-row gap-3 w-full md:w-auto">
-                  <Button variant="outline" size="sm" onClick={handleRetry} className="w-full md:w-auto border-gray-300/50 text-white hover:bg-white/10">
+                  <Button variant="outline" size="sm" onClick={handleRetry} className="w-full md:w-auto border-gray-300/30 text-white hover:bg-white/10">
                     Retry
                   </Button>
-                  <Button variant="ghost" size="sm" onClick={handleClose} className="w-full md:w-auto text-gray-300 hover:text-white hover:bg-white/10">
+                  <Button variant="ghost" size="sm" onClick={handleClose} className="w-full md:w-auto text-gray-200 hover:text-white hover:bg-white/10">
                     Close
                   </Button>
                 </div>
