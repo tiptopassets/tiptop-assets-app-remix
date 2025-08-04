@@ -14,7 +14,212 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      affiliate_earnings: {
+        Row: {
+          created_at: string | null
+          earnings_amount: number | null
+          id: string
+          source: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          earnings_amount?: number | null
+          id?: string
+          source?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          earnings_amount?: number | null
+          id?: string
+          source?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      service_integrations: {
+        Row: {
+          configuration: Json | null
+          created_at: string | null
+          description: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          provider: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          configuration?: Json | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          provider?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          configuration?: Json | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          provider?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      user_addresses: {
+        Row: {
+          address: string | null
+          created_at: string | null
+          formatted_address: string | null
+          id: string
+          latitude: number | null
+          longitude: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          address?: string | null
+          created_at?: string | null
+          formatted_address?: string | null
+          id?: string
+          latitude?: number | null
+          longitude?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          address?: string | null
+          created_at?: string | null
+          formatted_address?: string | null
+          id?: string
+          latitude?: number | null
+          longitude?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_journey_complete: {
+        Row: {
+          analysis_id: string | null
+          analysis_results: Json | null
+          created_at: string | null
+          id: string
+          property_address: string | null
+          total_monthly_revenue: number | null
+          total_opportunities: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          analysis_id?: string | null
+          analysis_results?: Json | null
+          created_at?: string | null
+          id?: string
+          property_address?: string | null
+          total_monthly_revenue?: number | null
+          total_opportunities?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          analysis_id?: string | null
+          analysis_results?: Json | null
+          created_at?: string | null
+          id?: string
+          property_address?: string | null
+          total_monthly_revenue?: number | null
+          total_opportunities?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_login_stats: {
+        Row: {
+          created_at: string | null
+          first_login_at: string | null
+          id: string
+          last_login_at: string | null
+          last_user_agent: string | null
+          login_count: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          first_login_at?: string | null
+          id?: string
+          last_login_at?: string | null
+          last_user_agent?: string | null
+          login_count?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          first_login_at?: string | null
+          id?: string
+          last_login_at?: string | null
+          last_user_agent?: string | null
+          login_count?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_property_analyses: {
+        Row: {
+          address_id: string | null
+          analysis_results: Json | null
+          created_at: string | null
+          id: string
+          property_type: string | null
+          total_monthly_revenue: number | null
+          total_opportunities: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          address_id?: string | null
+          analysis_results?: Json | null
+          created_at?: string | null
+          id?: string
+          property_type?: string | null
+          total_monthly_revenue?: number | null
+          total_opportunities?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          address_id?: string | null
+          analysis_results?: Json | null
+          created_at?: string | null
+          id?: string
+          property_type?: string | null
+          total_monthly_revenue?: number | null
+          total_opportunities?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_property_analyses_address_id_fkey"
+            columns: ["address_id"]
+            isOneToOne: false
+            referencedRelation: "user_addresses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
