@@ -43,7 +43,7 @@ const HomeModelViewer = () => {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      className="w-full max-w-7xl mx-auto mt-8 mb-12 bg-black/40 backdrop-blur-sm rounded-lg overflow-hidden border border-white/10 relative"
+      className="w-full max-w-7xl mx-auto mt-8 mb-12 bg-black/20 backdrop-blur-sm rounded-lg overflow-hidden border border-white/10 relative"
     >
       <div className="p-4 md:p-6 flex justify-between items-center border-b border-white/10">
         <div>
