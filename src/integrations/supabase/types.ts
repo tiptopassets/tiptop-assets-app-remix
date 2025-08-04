@@ -82,10 +82,14 @@ export type Database = {
           bundle_selection_id: string | null
           created_at: string | null
           id: string
+          last_sync_at: string | null
           provider_id: string | null
           provider_name: string
           registration_data: Json | null
+          registration_status: string | null
           status: string | null
+          total_earnings: number | null
+          tracking_code: string | null
           updated_at: string | null
           user_id: string
         }
@@ -93,10 +97,14 @@ export type Database = {
           bundle_selection_id?: string | null
           created_at?: string | null
           id?: string
+          last_sync_at?: string | null
           provider_id?: string | null
           provider_name: string
           registration_data?: Json | null
+          registration_status?: string | null
           status?: string | null
+          total_earnings?: number | null
+          tracking_code?: string | null
           updated_at?: string | null
           user_id: string
         }
@@ -104,10 +112,14 @@ export type Database = {
           bundle_selection_id?: string | null
           created_at?: string | null
           id?: string
+          last_sync_at?: string | null
           provider_id?: string | null
           provider_name?: string
           registration_data?: Json | null
+          registration_status?: string | null
           status?: string | null
+          total_earnings?: number | null
+          tracking_code?: string | null
           updated_at?: string | null
           user_id?: string
         }
@@ -290,6 +302,42 @@ export type Database = {
         }
         Relationships: []
       }
+      partner_clicks: {
+        Row: {
+          click_count: number | null
+          conversion_count: number | null
+          created_at: string | null
+          id: string
+          integration_status: string | null
+          partner_name: string
+          referral_link: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          click_count?: number | null
+          conversion_count?: number | null
+          created_at?: string | null
+          id?: string
+          integration_status?: string | null
+          partner_name: string
+          referral_link?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          click_count?: number | null
+          conversion_count?: number | null
+          created_at?: string | null
+          id?: string
+          integration_status?: string | null
+          partner_name?: string
+          referral_link?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       service_integrations: {
         Row: {
           configuration: Json | null
@@ -449,6 +497,54 @@ export type Database = {
         }
         Relationships: []
       }
+      user_asset_selections: {
+        Row: {
+          analysis_id: string | null
+          asset_data: Json | null
+          asset_type: string
+          created_at: string | null
+          id: string
+          monthly_revenue: number | null
+          roi_months: number | null
+          selected_at: string | null
+          session_id: string | null
+          setup_cost: number | null
+          status: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          analysis_id?: string | null
+          asset_data?: Json | null
+          asset_type: string
+          created_at?: string | null
+          id?: string
+          monthly_revenue?: number | null
+          roi_months?: number | null
+          selected_at?: string | null
+          session_id?: string | null
+          setup_cost?: number | null
+          status?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          analysis_id?: string | null
+          asset_data?: Json | null
+          asset_type?: string
+          created_at?: string | null
+          id?: string
+          monthly_revenue?: number | null
+          roi_months?: number | null
+          selected_at?: string | null
+          session_id?: string | null
+          setup_cost?: number | null
+          status?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_bundle_selections: {
         Row: {
           bundle_data: Json | null
@@ -477,6 +573,36 @@ export type Database = {
           id?: string
           property_address?: string | null
           selected_at?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_dashboard_preferences: {
+        Row: {
+          created_at: string | null
+          dashboard_layout: Json | null
+          id: string
+          notification_settings: Json | null
+          primary_address_id: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          dashboard_layout?: Json | null
+          id?: string
+          notification_settings?: Json | null
+          primary_address_id?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          dashboard_layout?: Json | null
+          id?: string
+          notification_settings?: Json | null
+          primary_address_id?: string | null
           updated_at?: string | null
           user_id?: string
         }
@@ -558,6 +684,7 @@ export type Database = {
         Row: {
           address_id: string | null
           analysis_results: Json | null
+          coordinates: Json | null
           created_at: string | null
           id: string
           property_type: string | null
@@ -569,6 +696,7 @@ export type Database = {
         Insert: {
           address_id?: string | null
           analysis_results?: Json | null
+          coordinates?: Json | null
           created_at?: string | null
           id?: string
           property_type?: string | null
@@ -580,6 +708,7 @@ export type Database = {
         Update: {
           address_id?: string | null
           analysis_results?: Json | null
+          coordinates?: Json | null
           created_at?: string | null
           id?: string
           property_type?: string | null

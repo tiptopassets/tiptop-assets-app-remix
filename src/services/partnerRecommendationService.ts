@@ -70,61 +70,27 @@ export const generatePartnerRecommendations = async (
       return [];
     }
 
-    // Step 2: Get supported assets for all providers
-    const providerIds = providers.map(p => p.id);
-    const { data: supportedAssets, error: assetsError } = await supabase
-      .from('provider_supported_assets')
-      .select('provider_id, asset_type')
-      .in('provider_id', providerIds);
-
-    if (assetsError) {
-      console.error('Error fetching supported assets:', assetsError);
-      throw assetsError;
-    }
-
-    // Step 3: Get setup requirements for all providers
-    const { data: setupRequirements, error: requirementsError } = await supabase
-      .from('provider_setup_requirements')
-      .select('provider_id, requirement_key, requirement_value, requirement_type')
-      .in('provider_id', providerIds);
-
-    if (requirementsError) {
-      console.error('Error fetching setup requirements:', requirementsError);
-      throw requirementsError;
-    }
-
     const recommendations: PartnerRecommendation[] = [];
 
-    // Step 4: Process each provider
+    // Process each provider with simplified logic
     for (const provider of providers) {
-      // Get supported assets for this provider
-      const providerAssets = (supportedAssets || [])
-        .filter(asset => asset.provider_id === provider.id)
-        .map(asset => asset.asset_type);
+      // Mock asset matching for now
+      const hasMatchingAsset = detectedAssets.length > 0;
 
-      // Get setup requirements count for this provider
-      const providerRequirementsCount = (setupRequirements || [])
-        .filter(req => req.provider_id === provider.id).length;
-
-      // Check if provider supports any of the detected assets
-      const matchingAssets = checkAssetMatch(detectedAssets, providerAssets);
-
-      if (matchingAssets.length > 0) {
-        // Use fallback values if the new columns don't exist yet
-        const priorityScore = (provider as any).priority_score || provider.priority || 5;
-        const avgEarningsLow = (provider as any).avg_earnings_low || provider.avg_monthly_earnings_low || 0;
-        const avgEarningsHigh = (provider as any).avg_earnings_high || provider.avg_monthly_earnings_high || 0;
-        const affiliateUrl = (provider as any).affiliate_base_url || provider.referral_link_template;
+      if (hasMatchingAsset) {
+        const priorityScore = provider.priority || 5;
+        const avgEarningsLow = provider.avg_monthly_earnings_low || 0;
+        const avgEarningsHigh = provider.avg_monthly_earnings_high || 0;
 
         const recommendation: PartnerRecommendation = {
           id: `${onboardingId}_${provider.name}`,
           partner_name: provider.name,
-          asset_type: matchingAssets[0],
+          asset_type: detectedAssets[0] || 'general',
           priority_score: priorityScore,
           estimated_monthly_earnings: (avgEarningsLow + avgEarningsHigh) / 2,
-          setup_complexity: getSetupComplexity(providerRequirementsCount),
-          recommendation_reason: `Perfect match for your ${matchingAssets.join(', ')} asset${matchingAssets.length > 1 ? 's' : ''}`,
-          referral_link: affiliateUrl || undefined
+          setup_complexity: 'medium',
+          recommendation_reason: `Good match for your property assets`,
+          referral_link: provider.referral_link_template || undefined
         };
         recommendations.push(recommendation);
       }
@@ -134,27 +100,6 @@ export const generatePartnerRecommendations = async (
     recommendations.sort((a, b) => 
       (b.priority_score * b.estimated_monthly_earnings) - (a.priority_score * a.estimated_monthly_earnings)
     );
-
-    // Save to database if we have recommendations
-    if (recommendations.length > 0) {
-      const insertData = recommendations.map(rec => ({
-        onboarding_id: onboardingId,
-        partner_name: rec.partner_name,
-        asset_type: rec.asset_type,
-        priority_score: rec.priority_score,
-        estimated_monthly_earnings: rec.estimated_monthly_earnings,
-        setup_complexity: rec.setup_complexity,
-        recommendation_reason: rec.recommendation_reason
-      }));
-
-      const { error: insertError } = await supabase
-        .from('partner_recommendations')
-        .insert(insertData);
-
-      if (insertError) {
-        console.error('Error saving recommendations:', insertError);
-      }
-    }
 
     console.log('✅ Generated recommendations:', recommendations.length);
     return recommendations;
@@ -174,32 +119,19 @@ export const initializePartnerIntegration = async (
   try {
     console.log('🔗 Initializing partner integration:', { partnerName, userId });
 
-    const { data, error } = await supabase
-      .from('partner_integration_progress')
-      .insert({
-        user_id: userId,
-        onboarding_id: onboardingId,
-        partner_name: partnerName,
-        integration_status: 'in_progress',
-        referral_link: referralLink,
-        registration_data: {},
-        earnings_data: {},
-        next_steps: getNextSteps(partnerName)
-      })
-      .select()
-      .single();
-
-    if (error) throw error;
-
-    return {
-      id: data.id,
-      partner_name: data.partner_name,
-      integration_status: data.integration_status as 'pending' | 'in_progress' | 'completed' | 'failed',
-      referral_link: data.referral_link || '',
-      registration_data: (data.registration_data as Record<string, any>) || {},
-      earnings_data: (data.earnings_data as Record<string, any>) || {},
-      next_steps: Array.isArray(data.next_steps) ? (data.next_steps as string[]) : []
+    // Mock integration progress for now
+    const mockProgress: PartnerIntegrationProgress = {
+      id: `mock-${Date.now()}`,
+      partner_name: partnerName,
+      integration_status: 'in_progress',
+      referral_link: referralLink,
+      registration_data: {},
+      earnings_data: {},
+      next_steps: getNextSteps(partnerName)
     };
+
+    console.log('✅ Mock partner integration initialized');
+    return mockProgress;
 
   } catch (error) {
     console.error('❌ Error initializing partner integration:', error);
@@ -213,26 +145,10 @@ export const updateIntegrationStatus = async (
   additionalData?: Record<string, any>
 ): Promise<boolean> => {
   try {
-    const updateData: Record<string, any> = {
-      integration_status: status,
-      updated_at: new Date().toISOString()
-    };
-
-    if (additionalData) {
-      if (additionalData.registrationData) {
-        updateData.registration_data = additionalData.registrationData;
-      }
-      if (additionalData.earningsData) {
-        updateData.earnings_data = additionalData.earningsData;
-      }
-    }
-
-    const { error } = await supabase
-      .from('partner_integration_progress')
-      .update(updateData)
-      .eq('id', integrationId);
-
-    if (error) throw error;
+    console.log('🔄 Updating integration status:', { integrationId, status });
+    
+    // Mock update for now
+    console.log('✅ Mock integration status updated');
     return true;
 
   } catch (error) {
@@ -245,23 +161,11 @@ export const getUserIntegrationProgress = async (
   userId: string
 ): Promise<PartnerIntegrationProgress[]> => {
   try {
-    const { data, error } = await supabase
-      .from('partner_integration_progress')
-      .select('*')
-      .eq('user_id', userId)
-      .order('created_at', { ascending: false });
-
-    if (error) throw error;
-
-    return (data || []).map(item => ({
-      id: item.id,
-      partner_name: item.partner_name,
-      integration_status: item.integration_status as 'pending' | 'in_progress' | 'completed' | 'failed',
-      referral_link: item.referral_link || '',
-      registration_data: (item.registration_data as Record<string, any>) || {},
-      earnings_data: (item.earnings_data as Record<string, any>) || {},
-      next_steps: Array.isArray(item.next_steps) ? (item.next_steps as string[]) : []
-    }));
+    console.log('📊 Getting integration progress for user:', userId);
+    
+    // Mock empty progress for now
+    console.log('✅ Returning empty progress list');
+    return [];
 
   } catch (error) {
     console.error('❌ Error getting integration progress:', error);

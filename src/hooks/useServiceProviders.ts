@@ -68,10 +68,13 @@ export const useServiceProviders = () => {
 
       if (error) throw error;
       
-      // Type cast to ensure proper typing
+      // Type cast and map to ensure proper typing
       const typedData = (data || []).map(item => ({
         ...item,
-        registration_status: item.registration_status as 'pending' | 'completed' | 'failed'
+        registration_status: (item.status || 'pending') as 'pending' | 'completed' | 'failed',
+        tracking_code: item.tracking_code || '',
+        total_earnings: item.total_earnings || 0,
+        last_sync_at: item.last_sync_at || item.updated_at
       }));
       
       setConnectedProviders(typedData);

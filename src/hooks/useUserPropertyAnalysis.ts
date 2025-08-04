@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -65,7 +64,7 @@ export const useUserPropertyAnalysis = (targetAnalysisId?: string) => {
           return;
         }
 
-        // Fetch analysis data with address information
+        // Fetch analysis data
         const { data: analysisData, error: analysisError } = await supabase
           .from('user_property_analyses')
           .select(`
@@ -74,15 +73,11 @@ export const useUserPropertyAnalysis = (targetAnalysisId?: string) => {
             total_monthly_revenue,
             total_opportunities,
             coordinates,
-            user_addresses!inner(
-              address,
-              formatted_address,
-              coordinates
-            )
+            address_id
           `)
           .eq('id', analysisId)
           .eq('user_id', user.id)
-          .single();
+          .maybeSingle();
 
         if (analysisError) {
           console.error('❌ [PROPERTY-ANALYSIS] Error fetching analysis:', analysisError);
@@ -96,9 +91,21 @@ export const useUserPropertyAnalysis = (targetAnalysisId?: string) => {
           return;
         }
 
+        // Get address data separately if we have an address_id
+        let address = 'Address not available';
+        if (analysisData.address_id) {
+          const { data: addressData } = await supabase
+            .from('user_addresses')
+            .select('address, formatted_address')
+            .eq('id', analysisData.address_id)
+            .maybeSingle();
+          
+          address = addressData?.formatted_address || addressData?.address || 'Address not available';
+        }
+
         console.log('✅ [PROPERTY-ANALYSIS] Analysis data retrieved:', {
           id: analysisData.id,
-          address: analysisData.user_addresses?.address,
+          address: address,
           totalRevenue: analysisData.total_monthly_revenue,
           totalOpportunities: analysisData.total_opportunities
         });
@@ -125,16 +132,10 @@ export const useUserPropertyAnalysis = (targetAnalysisId?: string) => {
           }
         }
 
-        // Ensure we have address information
-        const addressInfo = analysisData.user_addresses;
-        if (!addressInfo) {
-          throw new Error('Address information not found for analysis');
-        }
-
         const propertyData: PropertyAnalysisData = {
           analysisId: analysisData.id,
-          address: addressInfo.formatted_address || addressInfo.address,
-          coordinates: analysisData.coordinates || addressInfo.coordinates,
+          address: address,
+          coordinates: analysisData.coordinates,
           totalMonthlyRevenue: analysisData.total_monthly_revenue || 0,
           totalOpportunities: analysisData.total_opportunities || 0,
           availableAssets,

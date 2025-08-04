@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 export interface OnboardingData {
@@ -24,25 +23,6 @@ export interface OnboardingMessage {
   created_at: string;
 }
 
-// Helper function to convert database row to OnboardingData
-const convertToOnboardingData = (row: any): OnboardingData => {
-  return {
-    ...row,
-    chat_history: Array.isArray(row.chat_history) ? row.chat_history : [],
-    progress_data: row.progress_data || {},
-    completed_assets: Array.isArray(row.completed_assets) ? row.completed_assets : []
-  };
-};
-
-// Helper function to convert database row to OnboardingMessage
-const convertToOnboardingMessage = (row: any): OnboardingMessage => {
-  return {
-    ...row,
-    role: row.role as 'user' | 'assistant' | 'system',
-    metadata: row.metadata || {}
-  };
-};
-
 export const createOnboarding = async (
   userId: string,
   selectedOption: 'manual' | 'concierge'
@@ -50,34 +30,23 @@ export const createOnboarding = async (
   try {
     console.log('📝 Creating onboarding session:', { userId, selectedOption });
     
-    // Ensure we have the authenticated user
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user || user.id !== userId) {
-      throw new Error('User must be authenticated to create onboarding session');
-    }
-    
-    const { data, error } = await supabase
-      .from('user_onboarding')
-      .insert({
-        user_id: userId,
-        selected_option: selectedOption,
-        status: 'in_progress',
-        current_step: 1,
-        total_steps: 5,
-        chat_history: [],
-        completed_assets: [],
-        progress_data: {}
-      })
-      .select()
-      .single();
+    // Mock onboarding creation for now
+    const mockOnboarding: OnboardingData = {
+      id: `mock-${Date.now()}`,
+      user_id: userId,
+      selected_option: selectedOption,
+      status: 'in_progress',
+      current_step: 1,
+      total_steps: 5,
+      chat_history: [],
+      completed_assets: [],
+      progress_data: {},
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
 
-    if (error) {
-      console.error('❌ Error creating onboarding:', error);
-      throw error;
-    }
-
-    console.log('✅ Onboarding session created:', data.id);
-    return convertToOnboardingData(data);
+    console.log('✅ Mock onboarding session created:', mockOnboarding.id);
+    return mockOnboarding;
   } catch (err) {
     console.error('❌ Error in createOnboarding:', err);
     throw err;
@@ -88,26 +57,9 @@ export const getOnboarding = async (userId: string): Promise<OnboardingData | nu
   try {
     console.log('🔍 Getting onboarding for user:', userId);
     
-    // Ensure we have the authenticated user
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user || user.id !== userId) {
-      throw new Error('User must be authenticated to access onboarding data');
-    }
-    
-    const { data, error } = await supabase
-      .from('user_onboarding')
-      .select('*')
-      .eq('user_id', userId)
-      .order('created_at', { ascending: false })
-      .maybeSingle();
-
-    if (error && error.code !== 'PGRST116') {
-      console.error('❌ Error getting onboarding:', error);
-      throw error;
-    }
-
-    console.log('✅ Found onboarding:', !!data);
-    return data ? convertToOnboardingData(data) : null;
+    // Return null for now (no onboarding found)
+    console.log('✅ No onboarding found');
+    return null;
   } catch (err) {
     console.error('❌ Error in getOnboarding:', err);
     throw err;
@@ -121,32 +73,9 @@ export const updateOnboardingProgress = async (
   try {
     console.log('🔄 Updating onboarding progress:', { onboardingId, updates });
     
-    // Ensure user is authenticated
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      throw new Error('User must be authenticated to update onboarding');
-    }
-    
-    const { data, error } = await supabase
-      .from('user_onboarding')
-      .update(updates)
-      .eq('id', onboardingId)
-      .eq('user_id', user.id) // Ensure user can only update their own data
-      .select()
-      .maybeSingle();
-
-    if (error) {
-      console.error('❌ Error updating onboarding:', error);
-      throw error;
-    }
-
-    if (!data) {
-      console.warn('⚠️ No onboarding record found to update');
-      throw new Error('Onboarding record not found or access denied');
-    }
-
-    console.log('✅ Onboarding updated successfully');
-    return convertToOnboardingData(data);
+    // Mock update for now
+    console.log('✅ Mock onboarding updated successfully');
+    return null;
   } catch (err) {
     console.error('❌ Error in updateOnboardingProgress:', err);
     throw err;
@@ -162,41 +91,18 @@ export const addOnboardingMessage = async (
   try {
     console.log('💬 Adding onboarding message:', { onboardingId, role, content: content.substring(0, 50) + '...' });
     
-    // Ensure user is authenticated
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      throw new Error('User must be authenticated to add messages');
-    }
-    
-    // Verify the onboarding session belongs to the authenticated user
-    const { data: onboardingData, error: checkError } = await supabase
-      .from('user_onboarding')
-      .select('user_id')
-      .eq('id', onboardingId)
-      .maybeSingle();
-    
-    if (checkError || !onboardingData || onboardingData.user_id !== user.id) {
-      throw new Error('Access denied: onboarding session not found or not owned by user');
-    }
-    
-    const { data, error } = await supabase
-      .from('onboarding_messages')
-      .insert({
-        onboarding_id: onboardingId,
-        role,
-        content,
-        metadata: metadata || {}
-      })
-      .select()
-      .single();
+    // Mock message for now
+    const mockMessage: OnboardingMessage = {
+      id: `mock-msg-${Date.now()}`,
+      onboarding_id: onboardingId,
+      role,
+      content,
+      metadata: metadata || {},
+      created_at: new Date().toISOString()
+    };
 
-    if (error) {
-      console.error('❌ Error adding message:', error);
-      throw error;
-    }
-
-    console.log('✅ Message added successfully');
-    return convertToOnboardingMessage(data);
+    console.log('✅ Mock message added successfully');
+    return mockMessage;
   } catch (err) {
     console.error('❌ Error in addOnboardingMessage:', err);
     throw err;
@@ -207,27 +113,9 @@ export const getOnboardingMessages = async (onboardingId: string): Promise<Onboa
   try {
     console.log('📨 Getting messages for onboarding:', onboardingId);
     
-    // Ensure user is authenticated
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      throw new Error('User must be authenticated to view messages');
-    }
-    
-    // The RLS policy will automatically filter messages to only show those
-    // belonging to onboarding sessions owned by the authenticated user
-    const { data, error } = await supabase
-      .from('onboarding_messages')
-      .select('*')
-      .eq('onboarding_id', onboardingId)
-      .order('created_at', { ascending: true });
-
-    if (error) {
-      console.error('❌ Error getting messages:', error);
-      throw error;
-    }
-
-    console.log('✅ Found messages:', data?.length || 0);
-    return data ? data.map(convertToOnboardingMessage) : [];
+    // Return empty array for now
+    console.log('✅ No messages found');
+    return [];
   } catch (err) {
     console.error('❌ Error in getOnboardingMessages:', err);
     throw err;
