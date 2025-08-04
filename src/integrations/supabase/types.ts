@@ -41,6 +41,72 @@ export type Database = {
         }
         Relationships: []
       }
+      enhanced_service_providers: {
+        Row: {
+          asset_types: string[] | null
+          avg_monthly_earnings_high: number | null
+          avg_monthly_earnings_low: number | null
+          commission_rate: number | null
+          connected: boolean | null
+          created_at: string | null
+          description: string | null
+          id: string
+          is_active: boolean | null
+          login_url: string | null
+          logo: string | null
+          name: string
+          priority: number | null
+          referral_link_template: string | null
+          setup_instructions: string | null
+          setup_requirements: Json | null
+          supported_assets: string[] | null
+          updated_at: string | null
+          url: string | null
+        }
+        Insert: {
+          asset_types?: string[] | null
+          avg_monthly_earnings_high?: number | null
+          avg_monthly_earnings_low?: number | null
+          commission_rate?: number | null
+          connected?: boolean | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          login_url?: string | null
+          logo?: string | null
+          name: string
+          priority?: number | null
+          referral_link_template?: string | null
+          setup_instructions?: string | null
+          setup_requirements?: Json | null
+          supported_assets?: string[] | null
+          updated_at?: string | null
+          url?: string | null
+        }
+        Update: {
+          asset_types?: string[] | null
+          avg_monthly_earnings_high?: number | null
+          avg_monthly_earnings_low?: number | null
+          commission_rate?: number | null
+          connected?: boolean | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          login_url?: string | null
+          logo?: string | null
+          name?: string
+          priority?: number | null
+          referral_link_template?: string | null
+          setup_instructions?: string | null
+          setup_requirements?: Json | null
+          supported_assets?: string[] | null
+          updated_at?: string | null
+          url?: string | null
+        }
+        Relationships: []
+      }
       service_integrations: {
         Row: {
           configuration: Json | null
