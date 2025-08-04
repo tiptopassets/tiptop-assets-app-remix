@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useGoogleMap } from '@/contexts/GoogleMapContext';
 import { useToast } from '@/hooks/use-toast';
@@ -12,6 +11,7 @@ export const useAddressSearch = () => {
     setAddress,
     mapLoaded,
     setAddressCoordinates,
+    addressCoordinates,
     generatePropertyAnalysis,
     analysisError,
     setAnalysisError
@@ -25,6 +25,25 @@ export const useAddressSearch = () => {
   const [isRetrying, setIsRetrying] = useState(false);
   const { capturePropertyImages } = useModelGeneration();
   const userData = useUserData();
+
+  // Auto-update hasSelectedAddress when address and coordinates are available
+  useEffect(() => {
+    const hasValidData = !!(address && addressCoordinates);
+    console.log('useAddressSearch: Checking address validity:', {
+      address,
+      coordinates: addressCoordinates,
+      hasValidData,
+      currentHasSelected: hasSelectedAddress
+    });
+    
+    if (hasValidData && !hasSelectedAddress) {
+      console.log('useAddressSearch: Auto-setting hasSelectedAddress to true');
+      setHasSelectedAddress(true);
+    } else if (!hasValidData && hasSelectedAddress) {
+      console.log('useAddressSearch: Auto-setting hasSelectedAddress to false');
+      setHasSelectedAddress(false);
+    }
+  }, [address, addressCoordinates, hasSelectedAddress]);
 
   // Start analysis function
   const startAnalysis = useCallback((addressToAnalyze: string) => {

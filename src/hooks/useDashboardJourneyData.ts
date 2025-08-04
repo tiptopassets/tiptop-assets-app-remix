@@ -47,22 +47,23 @@ export const useDashboardJourneyData = () => {
       // Strategy 1: Try the user journey service
       let data = await getUserDashboardData(user.id);
       
-      if (data) {
+      if (data && typeof data === 'object' && !Array.isArray(data)) {
+        const journeyDataObj = data as any; // Type assertion for property access
         console.log('✅ [DASHBOARD] Found journey data via service:', {
-          journeyId: data.journey_id,
-          analysisId: data.analysis_id,
-          address: data.property_address,
-          revenue: data.total_monthly_revenue,
-          analysisResults: !!data.analysis_results
+          journeyId: journeyDataObj.journey_id,
+          analysisId: journeyDataObj.analysis_id,
+          address: journeyDataObj.property_address,
+          revenue: journeyDataObj.total_monthly_revenue,
+          analysisResults: !!journeyDataObj.analysis_results
         });
         
         // Extract data from analysis_results if journey-level fields are empty
-        let propertyAddress = data.property_address;
-        let totalRevenue = data.total_monthly_revenue || 0;
-        let totalOpportunities = data.total_opportunities || 0;
+        let propertyAddress = journeyDataObj.property_address;
+        let totalRevenue = journeyDataObj.total_monthly_revenue || 0;
+        let totalOpportunities = journeyDataObj.total_opportunities || 0;
         
-        if (data.analysis_results && typeof data.analysis_results === 'object' && !Array.isArray(data.analysis_results)) {
-          const analysisResults = data.analysis_results as any; // Cast to any for property access
+        if (journeyDataObj.analysis_results && typeof journeyDataObj.analysis_results === 'object' && !Array.isArray(journeyDataObj.analysis_results)) {
+          const analysisResults = journeyDataObj.analysis_results as any; // Cast to any for property access
           
           // Extract property address from analysis_results if not set at journey level
           if (!propertyAddress && analysisResults.propertyAddress) {
@@ -86,16 +87,16 @@ export const useDashboardJourneyData = () => {
         }
         
         setJourneyData({
-          journeyId: data.journey_id,
-          analysisId: data.analysis_id,
+          journeyId: journeyDataObj.journey_id,
+          analysisId: journeyDataObj.analysis_id,
           propertyAddress: propertyAddress || 'Unknown Address',
-          analysisResults: data.analysis_results,
+          analysisResults: journeyDataObj.analysis_results,
           totalMonthlyRevenue: totalRevenue,
           totalOpportunities: totalOpportunities,
-          selectedServices: data.selected_services || [],
-          selectedOption: data.selected_option || 'manual',
-          journeyProgress: typeof data.journey_progress === 'object' && data.journey_progress !== null 
-            ? data.journey_progress as {
+          selectedServices: journeyDataObj.selected_services || [],
+          selectedOption: journeyDataObj.selected_option || 'manual',
+          journeyProgress: typeof journeyDataObj.journey_progress === 'object' && journeyDataObj.journey_progress !== null 
+            ? journeyDataObj.journey_progress as {
                 steps_completed: string[];
                 current_step: string;
                 journey_start: string;
@@ -126,12 +127,7 @@ export const useDashboardJourneyData = () => {
             id,
             analysis_results,
             total_monthly_revenue,
-            total_opportunities,
-            coordinates,
-            user_addresses!inner(
-              address,
-              formatted_address
-            )
+            total_opportunities
           `)
           .eq('id', recentAnalysisId)
           .eq('user_id', user.id)
@@ -140,22 +136,21 @@ export const useDashboardJourneyData = () => {
         if (!analysisError && analysisData) {
           console.log('✅ [DASHBOARD] Created fallback journey data from analysis', {
             analysisId: analysisData.id,
-            address: analysisData.user_addresses?.formatted_address || analysisData.user_addresses?.address,
             revenue: analysisData.total_monthly_revenue,
             opportunities: analysisData.total_opportunities,
             hasAnalysisResults: !!analysisData.analysis_results
           });
           
           // Extract data from analysis_results if direct fields are empty
-          let propertyAddress = analysisData.user_addresses?.formatted_address || analysisData.user_addresses?.address;
+          let propertyAddress = 'Unknown Address';
           let totalRevenue = analysisData.total_monthly_revenue || 0;
           let totalOpportunities = analysisData.total_opportunities || 0;
           
           if (analysisData.analysis_results && typeof analysisData.analysis_results === 'object' && !Array.isArray(analysisData.analysis_results)) {
             const analysisResults = analysisData.analysis_results as any; // Cast to any for property access
             
-            // Extract property address from analysis_results if not available from user_addresses
-            if (!propertyAddress && analysisResults.propertyAddress) {
+            // Extract property address from analysis_results
+            if (analysisResults.propertyAddress) {
               propertyAddress = analysisResults.propertyAddress;
               console.log('📍 [DASHBOARD] Using address from analysis_results in fallback:', propertyAddress);
             }

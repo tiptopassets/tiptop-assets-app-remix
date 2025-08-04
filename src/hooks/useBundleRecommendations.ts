@@ -120,11 +120,9 @@ export const useBundleRecommendations = (selectedAssets: string[] = []) => {
         .from('user_bundle_selections')
         .insert({
           user_id: user.id,
-          bundle_id: bundleId,
+          bundle_name: bundleId,
           property_address: propertyAddress,
-          selected_assets: selectedAssets,
-          selected_providers: [],
-          status: 'pending'
+          bundle_data: { assets: selectedAssets, providers: [] }
         })
         .select()
         .single();
