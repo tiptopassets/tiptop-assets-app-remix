@@ -4,20 +4,22 @@ import { AnalysisResults } from '@/contexts/GoogleMapContext/types';
 export interface PropertyAnalysisRecord {
   id: string;
   user_id: string;
-  address_id: string;
+  address_id: string | null;
   analysis_results: any; // Use any to match Supabase Json type
   total_monthly_revenue: number;
   total_opportunities: number;
-  property_type?: string;
-  satellite_image_url?: string;
+  property_type?: string | null;
+  satellite_image_url?: string | null;
   coordinates?: any;
-  created_at: string;
-  updated_at: string;
+  created_at: string | null;
+  updated_at: string | null;
+  analysis_version?: string | null;
+  using_real_solar_data?: boolean | null;
   user_addresses?: {
     address: string;
     formatted_address: string;
     coordinates: any;
-  };
+  } | null;
 }
 
 // Save a new property analysis
@@ -198,14 +200,24 @@ export const getPropertyAnalysis = async (analysisId: string): Promise<PropertyA
         )
       `)
       .eq('id', analysisId)
-      .single();
+      .maybeSingle();
 
     if (error) {
       console.error('❌ Error fetching property analysis:', error);
       return null;
     }
 
-    return data;
+    if (!data) return null;
+
+    // Handle potential query error in user_addresses join
+    const transformedData: PropertyAnalysisRecord = {
+      ...data,
+      user_addresses: (data.user_addresses && typeof data.user_addresses === 'object' && !('error' in (data.user_addresses as any))) 
+        ? data.user_addresses as any 
+        : null
+    };
+
+    return transformedData;
   } catch (err) {
     console.error('❌ Error in getPropertyAnalysis:', err);
     return null;
@@ -233,7 +245,17 @@ export const getUserAnalyses = async (userId: string): Promise<PropertyAnalysisR
       return [];
     }
 
-    return data || [];
+    if (!data) return [];
+
+    // Transform data to handle potential query errors in user_addresses join
+    const transformedData: PropertyAnalysisRecord[] = data.map(item => ({
+      ...item,
+      user_addresses: (item.user_addresses && typeof item.user_addresses === 'object' && !('error' in (item.user_addresses as any))) 
+        ? item.user_addresses as any 
+        : null
+    }));
+
+    return transformedData;
   } catch (err) {
     console.error('❌ Error in getUserAnalyses:', err);
     return [];
