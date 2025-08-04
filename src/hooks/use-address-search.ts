@@ -98,7 +98,7 @@ export const useAddressSearch = () => {
       title: "Address Selected",
       description: `Selected: ${formattedAddress}. Click "Analyze Now" to start analysis.`,
     });
-  }, [mapInstance, setAddress, setAddressCoordinates, toast, setHasSelectedAddress, analysisError, setAnalysisError]);
+  }, [mapInstance, setAddress, setAddressCoordinates, toast, setHasSelectedAddress, setAnalysisError]);
 
   // Handle autocomplete dropdown clicks with multiple fallback methods
   const handleAutocompleteClick = useCallback(async () => {
