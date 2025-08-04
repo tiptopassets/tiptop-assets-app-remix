@@ -90,7 +90,7 @@ const ModelGenerationSheet = () => {
       transition={{ duration: 0.4, ease: "easeOut" }}
       className="w-full max-w-4xl mx-auto"
     >
-      <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-2xl p-4 md:p-6">
+      <div className="bg-white/20 dark:bg-gray-900/20 backdrop-blur-md border border-white/20 dark:border-gray-700/30 rounded-xl shadow-lg p-4 md:p-6">
           {/* Header */}
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3 flex-1 min-w-0">
