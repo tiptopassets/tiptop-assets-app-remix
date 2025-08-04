@@ -34,13 +34,12 @@ export const LoginStatsSummary = () => {
           
         if (usersError) throw usersError;
         
-        // Get sum of all logins
-        // Fix: Properly handle the RPC response type with explicit typing
-        const { data: loginCountData, error: loginError } = await supabase
-          .rpc('sum_login_count');
+        // Get sum of all logins directly from the table
+        const { data: allStats, error: loginError } = await supabase
+          .from('user_login_stats')
+          .select('login_count');
           
-        // Safely extract the numeric value from the response
-        const totalLogins = typeof loginCountData === 'number' ? loginCountData : 0;
+        const totalLogins = allStats?.reduce((sum, stat) => sum + (stat.login_count || 0), 0) || 0;
         
         if (loginError) throw loginError;
         

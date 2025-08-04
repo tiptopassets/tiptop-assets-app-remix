@@ -23,7 +23,8 @@ export const useProviderActions = (
         .insert({
           user_id: userId,
           provider_id: providerId,
-          registration_status: 'pending'
+          provider_name: providerId, // Add required provider_name field
+          status: 'pending'
         })
         .select()
         .single();
@@ -106,10 +107,9 @@ export const useProviderActions = (
           .from('user_bundle_selections')
           .insert({
             user_id: userId,
+            bundle_name: 'default-bundle',
             property_address: formData.propertyAddress,
-            selected_assets: [formData.assetType],
-            selected_providers: [formData.providerId],
-            status: 'pending'
+            bundle_data: { assets: [formData.assetType], providers: [formData.providerId] }
           })
           .select()
           .single();
@@ -125,7 +125,8 @@ export const useProviderActions = (
           user_id: userId,
           bundle_selection_id: bundleSelectionId,
           provider_id: formData.providerId,
-          registration_status: 'pending'
+          provider_name: formData.providerId, // Add required provider_name field
+          status: 'pending'
         })
         .select()
         .single();
