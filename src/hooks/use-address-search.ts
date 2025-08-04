@@ -62,7 +62,7 @@ export const useAddressSearch = () => {
     return place;
   }, []);
 
-  // Process selected place
+  // Process selected place - ONLY handle address selection, no analysis
   const processSelectedPlace = useCallback(async (place: google.maps.places.PlaceResult) => {
     if (!mapInstance || !place.formatted_address || !place.geometry?.location) return;
     
@@ -84,30 +84,21 @@ export const useAddressSearch = () => {
     setAddressCoordinates(coordinates);
     setIsRetrying(false);
     
-    // Center map and zoom
+    // Center map and zoom to 12 (as requested)
     mapInstance.setCenter(place.geometry.location);
-    mapInstance.setZoom(18);
+    mapInstance.setZoom(12);
     
-    // Save address to database in background
-    try {
-      await userData.saveAddress(formattedAddress, coordinates, formattedAddress);
-      console.log('Address saved to database');
-    } catch (error) {
-      console.error('Failed to save address to database:', error);
+    // Clear any previous analysis errors
+    if (analysisError) {
+      setAnalysisError(null);
     }
-    
-    // Capture property images
-    capturePropertyImages(formattedAddress, coordinates);
-    
-    // Start analysis
-    startAnalysis(formattedAddress);
     
     // Show success toast
     toast({
       title: "Address Selected",
-      description: `Selected: ${formattedAddress}`,
+      description: `Selected: ${formattedAddress}. Click "Analyze Now" to start analysis.`,
     });
-  }, [mapInstance, setAddress, setAddressCoordinates, capturePropertyImages, startAnalysis, toast, setHasSelectedAddress, userData]);
+  }, [mapInstance, setAddress, setAddressCoordinates, toast, setHasSelectedAddress, analysisError, setAnalysisError]);
 
   // Handle autocomplete dropdown clicks with multiple fallback methods
   const handleAutocompleteClick = useCallback(async () => {

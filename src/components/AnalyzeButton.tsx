@@ -6,12 +6,15 @@ import { useGoogleMap } from '@/contexts/GoogleMapContext';
 import { useEnhancedAnalysis } from '@/hooks/useEnhancedAnalysis';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAddressSearch } from '@/hooks/use-address-search';
+import { useModelGeneration } from '@/contexts/ModelGeneration';
+import { useUserData } from '@/hooks/useUserData';
 import { Zap, CheckCircle, Database, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const AnalyzeButton = () => {
   const { 
     address, 
+    addressCoordinates,
     generatePropertyAnalysis, 
     isAnalyzing,
     analysisError,
@@ -20,6 +23,8 @@ const AnalyzeButton = () => {
   } = useGoogleMap();
   const { analyzeProperty, isLoading: isEnhancedLoading } = useEnhancedAnalysis();
   const { hasSelectedAddress, isRetrying } = useAddressSearch();
+  const { capturePropertyImages } = useModelGeneration();
+  const userData = useUserData();
   const { user } = useAuth();
   const { toast } = useToast();
   const [analysisStarted, setAnalysisStarted] = useState(false);
@@ -73,13 +78,32 @@ const AnalyzeButton = () => {
     }, 500);
     
     try {
-      // First run the basic analysis
-      setProgress(30);
+      // Step 1: Save address to database if authenticated
+      setProgress(10);
+      setCurrentStep('Saving address...');
+      if (user && addressCoordinates) {
+        try {
+          await userData.saveAddress(address, addressCoordinates, address);
+          console.log('Address saved to database');
+        } catch (error) {
+          console.error('Failed to save address to database:', error);
+        }
+      }
+      
+      // Step 2: Capture property images
+      setProgress(20);
+      setCurrentStep('Capturing property images...');
+      if (addressCoordinates) {
+        capturePropertyImages(address, addressCoordinates);
+      }
+      
+      // Step 3: Run the basic analysis
+      setProgress(40);
       setCurrentStep('Processing property data...');
       await generatePropertyAnalysis(address);
       setProgress(60);
       
-      // If user is authenticated, also run enhanced analysis
+      // Step 4: If user is authenticated, also run enhanced analysis
       if (user) {
         setCurrentStep('Running enhanced analysis...');
         const enhancedResult = await analyzeProperty(address);
