@@ -14,12 +14,44 @@ export type Database = {
   }
   public: {
     Tables: {
+      affiliate_credentials: {
+        Row: {
+          created_at: string | null
+          credentials: Json | null
+          id: string
+          is_active: boolean | null
+          provider_name: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          credentials?: Json | null
+          id?: string
+          is_active?: boolean | null
+          provider_name: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          credentials?: Json | null
+          id?: string
+          is_active?: boolean | null
+          provider_name?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       affiliate_earnings: {
         Row: {
           created_at: string | null
           earnings_amount: number | null
           id: string
+          provider_name: string | null
           source: string | null
+          status: string | null
           updated_at: string | null
           user_id: string
         }
@@ -27,7 +59,9 @@ export type Database = {
           created_at?: string | null
           earnings_amount?: number | null
           id?: string
+          provider_name?: string | null
           source?: string | null
+          status?: string | null
           updated_at?: string | null
           user_id: string
         }
@@ -35,7 +69,39 @@ export type Database = {
           created_at?: string | null
           earnings_amount?: number | null
           id?: string
+          provider_name?: string | null
           source?: string | null
+          status?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      affiliate_registrations: {
+        Row: {
+          created_at: string | null
+          id: string
+          provider_name: string
+          registration_data: Json | null
+          status: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          provider_name: string
+          registration_data?: Json | null
+          status?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          provider_name?: string
+          registration_data?: Json | null
+          status?: string | null
           updated_at?: string | null
           user_id?: string
         }
@@ -140,6 +206,39 @@ export type Database = {
         }
         Relationships: []
       }
+      services: {
+        Row: {
+          category: string | null
+          configuration: Json | null
+          created_at: string | null
+          description: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          updated_at: string | null
+        }
+        Insert: {
+          category?: string | null
+          configuration?: Json | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          updated_at?: string | null
+        }
+        Update: {
+          category?: string | null
+          configuration?: Json | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       user_addresses: {
         Row: {
           address: string | null
@@ -168,6 +267,36 @@ export type Database = {
           id?: string
           latitude?: number | null
           longitude?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_bundle_selections: {
+        Row: {
+          bundle_data: Json | null
+          bundle_name: string
+          created_at: string | null
+          id: string
+          selected_at: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          bundle_data?: Json | null
+          bundle_name: string
+          created_at?: string | null
+          id?: string
+          selected_at?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          bundle_data?: Json | null
+          bundle_name?: string
+          created_at?: string | null
+          id?: string
+          selected_at?: string | null
           updated_at?: string | null
           user_id?: string
         }
@@ -214,6 +343,7 @@ export type Database = {
           created_at: string | null
           first_login_at: string | null
           id: string
+          last_ip: string | null
           last_login_at: string | null
           last_user_agent: string | null
           login_count: number | null
@@ -224,6 +354,7 @@ export type Database = {
           created_at?: string | null
           first_login_at?: string | null
           id?: string
+          last_ip?: string | null
           last_login_at?: string | null
           last_user_agent?: string | null
           login_count?: number | null
@@ -234,6 +365,7 @@ export type Database = {
           created_at?: string | null
           first_login_at?: string | null
           id?: string
+          last_ip?: string | null
           last_login_at?: string | null
           last_user_agent?: string | null
           login_count?: number | null
