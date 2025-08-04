@@ -155,7 +155,7 @@ const ManageAssets: React.FC = () => {
                         </div>
                         <div>
                           <CardTitle className="text-lg">
-                            {PartnerIntegrationService.getAssetTypeDisplayName(selection.asset_type)}
+                            {selection.asset_type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
                           </CardTitle>
                           <p className="text-gray-500 text-sm">
                             Selected {new Date(selection.selected_at).toLocaleDateString()}
