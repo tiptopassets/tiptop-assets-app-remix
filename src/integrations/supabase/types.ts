@@ -993,7 +993,7 @@ export type Database = {
           total_monthly_revenue: number | null
           total_opportunities: number | null
           updated_at: string | null
-          user_id: string
+          user_id: string | null
         }
         Insert: {
           address_entered_at?: string | null
@@ -1019,7 +1019,7 @@ export type Database = {
           total_monthly_revenue?: number | null
           total_opportunities?: number | null
           updated_at?: string | null
-          user_id: string
+          user_id?: string | null
         }
         Update: {
           address_entered_at?: string | null
@@ -1045,7 +1045,7 @@ export type Database = {
           total_monthly_revenue?: number | null
           total_opportunities?: number | null
           updated_at?: string | null
-          user_id?: string
+          user_id?: string | null
         }
         Relationships: []
       }
