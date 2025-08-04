@@ -125,7 +125,7 @@ const PropertySummaryCard: React.FC<PropertySummaryCardProps> = ({
         <div className="bg-black/20 rounded-xl p-4 text-center">
           <TrendingUp className="w-6 h-6 text-blue-400 mx-auto mb-2" />
           <p className="text-blue-400 text-2xl font-bold">{opportunitiesCount}</p>
-          <p className="text-gray-400 text-sm">Opportunities</p>
+          <p className="text-white text-sm">Opportunities</p>
         </div>
 
         <div className="bg-black/20 rounded-xl p-4 text-center">
