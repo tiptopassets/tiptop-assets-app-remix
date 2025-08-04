@@ -125,6 +125,54 @@ export type Database = {
         }
         Relationships: []
       }
+      available_services: {
+        Row: {
+          analysis_id: string | null
+          created_at: string | null
+          id: string
+          is_available: boolean | null
+          monthly_revenue_high: number | null
+          monthly_revenue_low: number | null
+          priority_score: number | null
+          provider_info: Json | null
+          requirements: Json | null
+          roi_months: number | null
+          service_name: string
+          service_type: string
+          setup_cost: number | null
+        }
+        Insert: {
+          analysis_id?: string | null
+          created_at?: string | null
+          id?: string
+          is_available?: boolean | null
+          monthly_revenue_high?: number | null
+          monthly_revenue_low?: number | null
+          priority_score?: number | null
+          provider_info?: Json | null
+          requirements?: Json | null
+          roi_months?: number | null
+          service_name: string
+          service_type: string
+          setup_cost?: number | null
+        }
+        Update: {
+          analysis_id?: string | null
+          created_at?: string | null
+          id?: string
+          is_available?: boolean | null
+          monthly_revenue_high?: number | null
+          monthly_revenue_low?: number | null
+          priority_score?: number | null
+          provider_info?: Json | null
+          requirements?: Json | null
+          roi_months?: number | null
+          service_name?: string
+          service_type?: string
+          setup_cost?: number | null
+        }
+        Relationships: []
+      }
       bundle_configurations: {
         Row: {
           asset_requirements: string[] | null
@@ -236,6 +284,57 @@ export type Database = {
         }
         Relationships: []
       }
+      enhanced_solar_cache: {
+        Row: {
+          annual_savings: number | null
+          coordinates: Json | null
+          created_at: string | null
+          expires_at: string | null
+          formatted_solar_data: Json | null
+          id: string
+          panel_count: number | null
+          property_address: string
+          raw_solar_response: Json | null
+          roof_area_sqft: number | null
+          setup_cost: number | null
+          solar_potential_kwh: number | null
+          updated_at: string | null
+          using_real_data: boolean | null
+        }
+        Insert: {
+          annual_savings?: number | null
+          coordinates?: Json | null
+          created_at?: string | null
+          expires_at?: string | null
+          formatted_solar_data?: Json | null
+          id?: string
+          panel_count?: number | null
+          property_address: string
+          raw_solar_response?: Json | null
+          roof_area_sqft?: number | null
+          setup_cost?: number | null
+          solar_potential_kwh?: number | null
+          updated_at?: string | null
+          using_real_data?: boolean | null
+        }
+        Update: {
+          annual_savings?: number | null
+          coordinates?: Json | null
+          created_at?: string | null
+          expires_at?: string | null
+          formatted_solar_data?: Json | null
+          id?: string
+          panel_count?: number | null
+          property_address?: string
+          raw_solar_response?: Json | null
+          roof_area_sqft?: number | null
+          setup_cost?: number | null
+          solar_potential_kwh?: number | null
+          updated_at?: string | null
+          using_real_data?: boolean | null
+        }
+        Relationships: []
+      }
       flexoffers_transactions: {
         Row: {
           click_date: string | null
@@ -302,6 +401,102 @@ export type Database = {
         }
         Relationships: []
       }
+      journey_analytics: {
+        Row: {
+          address_conversion_rate: number | null
+          addresses_entered: number | null
+          analyses_completed: number | null
+          analysis_conversion_rate: number | null
+          auth_conversion_rate: number | null
+          auths_completed: number | null
+          created_at: string | null
+          dashboard_conversion_rate: number | null
+          dashboards_accessed: number | null
+          date: string
+          id: string
+          manual_vs_concierge: Json | null
+          option_selection_rate: number | null
+          options_selected: number | null
+          popular_services: Json | null
+          returning_visitors: number | null
+          service_view_rate: number | null
+          services_viewed: number | null
+          total_visitors: number | null
+          unique_visitors: number | null
+        }
+        Insert: {
+          address_conversion_rate?: number | null
+          addresses_entered?: number | null
+          analyses_completed?: number | null
+          analysis_conversion_rate?: number | null
+          auth_conversion_rate?: number | null
+          auths_completed?: number | null
+          created_at?: string | null
+          dashboard_conversion_rate?: number | null
+          dashboards_accessed?: number | null
+          date?: string
+          id?: string
+          manual_vs_concierge?: Json | null
+          option_selection_rate?: number | null
+          options_selected?: number | null
+          popular_services?: Json | null
+          returning_visitors?: number | null
+          service_view_rate?: number | null
+          services_viewed?: number | null
+          total_visitors?: number | null
+          unique_visitors?: number | null
+        }
+        Update: {
+          address_conversion_rate?: number | null
+          addresses_entered?: number | null
+          analyses_completed?: number | null
+          analysis_conversion_rate?: number | null
+          auth_conversion_rate?: number | null
+          auths_completed?: number | null
+          created_at?: string | null
+          dashboard_conversion_rate?: number | null
+          dashboards_accessed?: number | null
+          date?: string
+          id?: string
+          manual_vs_concierge?: Json | null
+          option_selection_rate?: number | null
+          options_selected?: number | null
+          popular_services?: Json | null
+          returning_visitors?: number | null
+          service_view_rate?: number | null
+          services_viewed?: number | null
+          total_visitors?: number | null
+          unique_visitors?: number | null
+        }
+        Relationships: []
+      }
+      onboarding_messages: {
+        Row: {
+          content: string
+          created_at: string | null
+          id: string
+          metadata: Json | null
+          onboarding_id: string
+          role: string
+        }
+        Insert: {
+          content: string
+          created_at?: string | null
+          id?: string
+          metadata?: Json | null
+          onboarding_id: string
+          role: string
+        }
+        Update: {
+          content?: string
+          created_at?: string | null
+          id?: string
+          metadata?: Json | null
+          onboarding_id?: string
+          role?: string
+        }
+        Relationships: []
+      }
       partner_clicks: {
         Row: {
           click_count: number | null
@@ -335,6 +530,138 @@ export type Database = {
           referral_link?: string | null
           updated_at?: string | null
           user_id?: string
+        }
+        Relationships: []
+      }
+      partner_integration_progress: {
+        Row: {
+          created_at: string | null
+          earnings_data: Json | null
+          id: string
+          integration_status: string | null
+          next_steps: string[] | null
+          onboarding_id: string
+          partner_name: string
+          referral_link: string | null
+          registration_data: Json | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          earnings_data?: Json | null
+          id?: string
+          integration_status?: string | null
+          next_steps?: string[] | null
+          onboarding_id: string
+          partner_name: string
+          referral_link?: string | null
+          registration_data?: Json | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          earnings_data?: Json | null
+          id?: string
+          integration_status?: string | null
+          next_steps?: string[] | null
+          onboarding_id?: string
+          partner_name?: string
+          referral_link?: string | null
+          registration_data?: Json | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      partner_recommendations: {
+        Row: {
+          asset_type: string
+          created_at: string | null
+          estimated_monthly_earnings: number | null
+          id: string
+          onboarding_id: string
+          partner_name: string
+          priority_score: number | null
+          recommendation_reason: string | null
+          referral_link: string | null
+          setup_complexity: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          asset_type: string
+          created_at?: string | null
+          estimated_monthly_earnings?: number | null
+          id?: string
+          onboarding_id: string
+          partner_name: string
+          priority_score?: number | null
+          recommendation_reason?: string | null
+          referral_link?: string | null
+          setup_complexity?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          asset_type?: string
+          created_at?: string | null
+          estimated_monthly_earnings?: number | null
+          id?: string
+          onboarding_id?: string
+          partner_name?: string
+          priority_score?: number | null
+          recommendation_reason?: string | null
+          referral_link?: string | null
+          setup_complexity?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      provider_setup_requirements: {
+        Row: {
+          created_at: string
+          id: string
+          provider_id: string
+          requirement_key: string
+          requirement_type: string | null
+          requirement_value: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          provider_id: string
+          requirement_key: string
+          requirement_type?: string | null
+          requirement_value: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          provider_id?: string
+          requirement_key?: string
+          requirement_type?: string | null
+          requirement_value?: string
+        }
+        Relationships: []
+      }
+      provider_supported_assets: {
+        Row: {
+          asset_type: string
+          created_at: string
+          id: string
+          provider_id: string
+        }
+        Insert: {
+          asset_type: string
+          created_at?: string
+          id?: string
+          provider_id: string
+        }
+        Update: {
+          asset_type?: string
+          created_at?: string
+          id?: string
+          provider_id?: string
         }
         Relationships: []
       }
@@ -464,12 +791,43 @@ export type Database = {
         }
         Relationships: []
       }
+      solar_api_cache: {
+        Row: {
+          cached_at: string | null
+          coordinates: Json | null
+          created_at: string | null
+          expires_at: string | null
+          id: string
+          property_address: string
+          solar_data: Json
+        }
+        Insert: {
+          cached_at?: string | null
+          coordinates?: Json | null
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          property_address: string
+          solar_data: Json
+        }
+        Update: {
+          cached_at?: string | null
+          coordinates?: Json | null
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          property_address?: string
+          solar_data?: Json
+        }
+        Relationships: []
+      }
       user_addresses: {
         Row: {
           address: string | null
           created_at: string | null
           formatted_address: string | null
           id: string
+          is_primary: boolean | null
           latitude: number | null
           longitude: number | null
           updated_at: string | null
@@ -480,6 +838,7 @@ export type Database = {
           created_at?: string | null
           formatted_address?: string | null
           id?: string
+          is_primary?: boolean | null
           latitude?: number | null
           longitude?: number | null
           updated_at?: string | null
@@ -490,6 +849,7 @@ export type Database = {
           created_at?: string | null
           formatted_address?: string | null
           id?: string
+          is_primary?: boolean | null
           latitude?: number | null
           longitude?: number | null
           updated_at?: string | null
@@ -511,7 +871,7 @@ export type Database = {
           setup_cost: number | null
           status: string | null
           updated_at: string | null
-          user_id: string
+          user_id: string | null
         }
         Insert: {
           analysis_id?: string | null
@@ -526,7 +886,7 @@ export type Database = {
           setup_cost?: number | null
           status?: string | null
           updated_at?: string | null
-          user_id: string
+          user_id?: string | null
         }
         Update: {
           analysis_id?: string | null
@@ -541,7 +901,7 @@ export type Database = {
           setup_cost?: number | null
           status?: string | null
           updated_at?: string | null
-          user_id?: string
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -644,6 +1004,66 @@ export type Database = {
         }
         Relationships: []
       }
+      user_journey_progress: {
+        Row: {
+          address_data: Json | null
+          address_entered: boolean | null
+          analysis_completed: boolean | null
+          analysis_id: string | null
+          auth_completed: boolean | null
+          created_at: string | null
+          current_step: string | null
+          dashboard_accessed: boolean | null
+          extra_data: Json | null
+          extra_data_filled: boolean | null
+          id: string
+          option_selected: string | null
+          services_viewed: boolean | null
+          session_id: string | null
+          step_completed_at: Json | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          address_data?: Json | null
+          address_entered?: boolean | null
+          analysis_completed?: boolean | null
+          analysis_id?: string | null
+          auth_completed?: boolean | null
+          created_at?: string | null
+          current_step?: string | null
+          dashboard_accessed?: boolean | null
+          extra_data?: Json | null
+          extra_data_filled?: boolean | null
+          id?: string
+          option_selected?: string | null
+          services_viewed?: boolean | null
+          session_id?: string | null
+          step_completed_at?: Json | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          address_data?: Json | null
+          address_entered?: boolean | null
+          analysis_completed?: boolean | null
+          analysis_id?: string | null
+          auth_completed?: boolean | null
+          created_at?: string | null
+          current_step?: string | null
+          dashboard_accessed?: boolean | null
+          extra_data?: Json | null
+          extra_data_filled?: boolean | null
+          id?: string
+          option_selected?: string | null
+          services_viewed?: boolean | null
+          session_id?: string | null
+          step_completed_at?: Json | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       user_login_stats: {
         Row: {
           created_at: string | null
@@ -680,42 +1100,96 @@ export type Database = {
         }
         Relationships: []
       }
-      user_property_analyses: {
+      user_onboarding: {
         Row: {
-          address_id: string | null
-          analysis_results: Json | null
-          coordinates: Json | null
+          chat_history: Json | null
+          completed_assets: string[] | null
           created_at: string | null
+          current_step: number | null
           id: string
-          property_type: string | null
-          total_monthly_revenue: number | null
-          total_opportunities: number | null
+          onboarding_data: Json | null
+          progress_data: Json | null
+          selected_option: Database["public"]["Enums"]["onboarding_option"]
+          status: Database["public"]["Enums"]["onboarding_status"]
+          total_steps: number | null
           updated_at: string | null
           user_id: string
         }
         Insert: {
-          address_id?: string | null
-          analysis_results?: Json | null
-          coordinates?: Json | null
+          chat_history?: Json | null
+          completed_assets?: string[] | null
           created_at?: string | null
+          current_step?: number | null
           id?: string
-          property_type?: string | null
-          total_monthly_revenue?: number | null
-          total_opportunities?: number | null
+          onboarding_data?: Json | null
+          progress_data?: Json | null
+          selected_option: Database["public"]["Enums"]["onboarding_option"]
+          status?: Database["public"]["Enums"]["onboarding_status"]
+          total_steps?: number | null
           updated_at?: string | null
           user_id: string
         }
         Update: {
+          chat_history?: Json | null
+          completed_assets?: string[] | null
+          created_at?: string | null
+          current_step?: number | null
+          id?: string
+          onboarding_data?: Json | null
+          progress_data?: Json | null
+          selected_option?: Database["public"]["Enums"]["onboarding_option"]
+          status?: Database["public"]["Enums"]["onboarding_status"]
+          total_steps?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_property_analyses: {
+        Row: {
+          address_id: string | null
+          analysis_results: Json | null
+          analysis_version: string | null
+          coordinates: Json | null
+          created_at: string | null
+          id: string
+          property_type: string | null
+          satellite_image_url: string | null
+          total_monthly_revenue: number | null
+          total_opportunities: number | null
+          updated_at: string | null
+          user_id: string
+          using_real_solar_data: boolean | null
+        }
+        Insert: {
           address_id?: string | null
           analysis_results?: Json | null
+          analysis_version?: string | null
           coordinates?: Json | null
           created_at?: string | null
           id?: string
           property_type?: string | null
+          satellite_image_url?: string | null
+          total_monthly_revenue?: number | null
+          total_opportunities?: number | null
+          updated_at?: string | null
+          user_id: string
+          using_real_solar_data?: boolean | null
+        }
+        Update: {
+          address_id?: string | null
+          analysis_results?: Json | null
+          analysis_version?: string | null
+          coordinates?: Json | null
+          created_at?: string | null
+          id?: string
+          property_type?: string | null
+          satellite_image_url?: string | null
           total_monthly_revenue?: number | null
           total_opportunities?: number | null
           updated_at?: string | null
           user_id?: string
+          using_real_solar_data?: boolean | null
         }
         Relationships: [
           {
@@ -726,6 +1200,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      user_property_images: {
+        Row: {
+          analysis_id: string | null
+          created_at: string | null
+          id: string
+          image_base64: string | null
+          image_metadata: Json | null
+          image_type: string
+          image_url: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          analysis_id?: string | null
+          created_at?: string | null
+          id?: string
+          image_base64?: string | null
+          image_metadata?: Json | null
+          image_type: string
+          image_url?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          analysis_id?: string | null
+          created_at?: string | null
+          id?: string
+          image_base64?: string | null
+          image_metadata?: Json | null
+          image_type?: string
+          image_url?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
       }
       user_roles: {
         Row: {
@@ -751,6 +1261,177 @@ export type Database = {
         }
         Relationships: []
       }
+      user_service_selections: {
+        Row: {
+          available_service_id: string | null
+          created_at: string | null
+          id: string
+          journey_id: string | null
+          notes: string | null
+          priority: number | null
+          selected_at: string | null
+          selection_type: string | null
+          user_id: string | null
+        }
+        Insert: {
+          available_service_id?: string | null
+          created_at?: string | null
+          id?: string
+          journey_id?: string | null
+          notes?: string | null
+          priority?: number | null
+          selected_at?: string | null
+          selection_type?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          available_service_id?: string | null
+          created_at?: string | null
+          id?: string
+          journey_id?: string | null
+          notes?: string | null
+          priority?: number | null
+          selected_at?: string | null
+          selection_type?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      user_supplier_connections: {
+        Row: {
+          analysis_id: string | null
+          asset_type: string
+          connection_status: string | null
+          created_at: string | null
+          estimated_revenue: number | null
+          id: string
+          notes: string | null
+          referral_link: string | null
+          setup_cost: number | null
+          supplier_data: Json | null
+          supplier_name: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          analysis_id?: string | null
+          asset_type: string
+          connection_status?: string | null
+          created_at?: string | null
+          estimated_revenue?: number | null
+          id?: string
+          notes?: string | null
+          referral_link?: string | null
+          setup_cost?: number | null
+          supplier_data?: Json | null
+          supplier_name: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          analysis_id?: string | null
+          asset_type?: string
+          connection_status?: string | null
+          created_at?: string | null
+          estimated_revenue?: number | null
+          id?: string
+          notes?: string | null
+          referral_link?: string | null
+          setup_cost?: number | null
+          supplier_data?: Json | null
+          supplier_name?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      visitor_sessions: {
+        Row: {
+          address_entered_at: string | null
+          analysis_completed_at: string | null
+          analysis_data: Json | null
+          auth_completed_at: string | null
+          completed_at: string | null
+          conversion_type: string | null
+          created_at: string | null
+          current_step: string | null
+          dashboard_accessed_at: string | null
+          extra_data: Json | null
+          id: string
+          ip_address: unknown | null
+          journey_data: Json | null
+          landing_page: string | null
+          options_selected_at: string | null
+          property_address: string | null
+          referrer: string | null
+          selected_option: string | null
+          selected_services: Json | null
+          services_viewed_at: string | null
+          session_id: string
+          started_at: string | null
+          total_time_seconds: number | null
+          updated_at: string | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          address_entered_at?: string | null
+          analysis_completed_at?: string | null
+          analysis_data?: Json | null
+          auth_completed_at?: string | null
+          completed_at?: string | null
+          conversion_type?: string | null
+          created_at?: string | null
+          current_step?: string | null
+          dashboard_accessed_at?: string | null
+          extra_data?: Json | null
+          id?: string
+          ip_address?: unknown | null
+          journey_data?: Json | null
+          landing_page?: string | null
+          options_selected_at?: string | null
+          property_address?: string | null
+          referrer?: string | null
+          selected_option?: string | null
+          selected_services?: Json | null
+          services_viewed_at?: string | null
+          session_id: string
+          started_at?: string | null
+          total_time_seconds?: number | null
+          updated_at?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          address_entered_at?: string | null
+          analysis_completed_at?: string | null
+          analysis_data?: Json | null
+          auth_completed_at?: string | null
+          completed_at?: string | null
+          conversion_type?: string | null
+          created_at?: string | null
+          current_step?: string | null
+          dashboard_accessed_at?: string | null
+          extra_data?: Json | null
+          id?: string
+          ip_address?: unknown | null
+          journey_data?: Json | null
+          landing_page?: string | null
+          options_selected_at?: string | null
+          property_address?: string | null
+          referrer?: string | null
+          selected_option?: string | null
+          selected_services?: Json | null
+          services_viewed_at?: string | null
+          session_id?: string
+          started_at?: string | null
+          total_time_seconds?: number | null
+          updated_at?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -763,6 +1444,8 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "user" | "moderator"
+      onboarding_option: "manual" | "concierge"
+      onboarding_status: "not_started" | "in_progress" | "completed" | "paused"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -891,6 +1574,8 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "user", "moderator"],
+      onboarding_option: ["manual", "concierge"],
+      onboarding_status: ["not_started", "in_progress", "completed", "paused"],
     },
   },
 } as const
