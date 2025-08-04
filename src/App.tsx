@@ -3,7 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from './contexts/AuthContext';
 import { GoogleMapProvider } from './contexts/GoogleMapContext';
-import { ServiceProviderProvider } from './contexts/ServiceProviders';
+
 import { ModelGenerationProvider } from './contexts/ModelGeneration';
 import { Toaster } from './components/ui/toaster';
 
@@ -45,31 +45,29 @@ function App() {
         <AuthProvider>
           <GoogleMapProvider>
             <ModelGenerationProvider>
-              <ServiceProviderProvider>
-                <Routes>
-                  <Route path="/" element={<Index />} />
-                  <Route path="/auth" element={<Auth />} />
-                  <Route path="/dashboard" element={<Dashboard />} />
-                  <Route path="/dashboard/manage" element={<ManageAssets />} />
-                  <Route path="/dashboard/admin" element={<AdminDashboard />} />
-                  <Route path="/dashboard/add-asset" element={<AddAsset />} />
-                  <Route path="/dashboard/rooftop" element={<RooftopDashboard />} />
-                  <Route path="/dashboard/ev-charging" element={<EVChargingDashboard />} />
-                  <Route path="/dashboard/internet" element={<InternetDashboard />} />
-                  <Route path="/dashboard/parking" element={<ParkingDashboard />} />
-                  <Route path="/dashboard/analytics" element={<AnalyticsDashboard />} />
-                  <Route path="/dashboard/affiliate" element={<AffiliateEarningsDashboard />} />
-                  <Route path="/dashboard/onboarding" element={<EnhancedOnboardingChatbot />} />
-                  <Route path="/dashboard/settings" element={<SettingsPage />} />
-                  <Route path="/dashboard/account" element={<AccountPage />} />
-                  <Route path="/model-viewer" element={<ModelViewer />} />
-                  <Route path="/chatbot" element={<OnboardingChatbot />} />
-                  <Route path="/submit-property" element={<SubmitProperty />} />
-                  <Route path="/options" element={<Options />} />
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
-                <Toaster />
-              </ServiceProviderProvider>
+              <Routes>
+                <Route path="/" element={<Index />} />
+                <Route path="/auth" element={<Auth />} />
+                <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/dashboard/manage" element={<ManageAssets />} />
+                <Route path="/dashboard/admin" element={<AdminDashboard />} />
+                <Route path="/dashboard/add-asset" element={<AddAsset />} />
+                <Route path="/dashboard/rooftop" element={<RooftopDashboard />} />
+                <Route path="/dashboard/ev-charging" element={<EVChargingDashboard />} />
+                <Route path="/dashboard/internet" element={<InternetDashboard />} />
+                <Route path="/dashboard/parking" element={<ParkingDashboard />} />
+                <Route path="/dashboard/analytics" element={<AnalyticsDashboard />} />
+                <Route path="/dashboard/affiliate" element={<AffiliateEarningsDashboard />} />
+                <Route path="/dashboard/onboarding" element={<EnhancedOnboardingChatbot />} />
+                <Route path="/dashboard/settings" element={<SettingsPage />} />
+                <Route path="/dashboard/account" element={<AccountPage />} />
+                <Route path="/model-viewer" element={<ModelViewer />} />
+                <Route path="/chatbot" element={<OnboardingChatbot />} />
+                <Route path="/submit-property" element={<SubmitProperty />} />
+                <Route path="/options" element={<Options />} />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+              <Toaster />
             </ModelGenerationProvider>
           </GoogleMapProvider>
         </AuthProvider>
