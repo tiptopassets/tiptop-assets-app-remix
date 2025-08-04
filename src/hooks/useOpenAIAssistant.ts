@@ -92,11 +92,11 @@ export const useOpenAIAssistant = (propertyData: PropertyAnalysisData | null) =>
       // Load onboarding progress for authenticated users
       if (user?.id) {
         try {
-          const { data: onboardingData, error: onboardingError } = await supabase
-            .from('user_onboarding')
-            .select('*')
-            .eq('user_id', user.id)
-            .maybeSingle();
+        const { data: onboardingData, error: onboardingError } = await supabase
+          .from('user_analysis' as any)
+          .select('*')
+          .eq('user_id', user.id)
+          .maybeSingle();
           
           if (onboardingError) {
             console.warn('⚠️ [ASSISTANT] Onboarding load failed:', onboardingError.message);

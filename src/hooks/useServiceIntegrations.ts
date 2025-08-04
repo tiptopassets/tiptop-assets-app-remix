@@ -216,7 +216,7 @@ export const useServiceIntegrations = () => {
 
         // Fetch click tracking data
         const { data: clicksData, error: clicksError } = await supabase
-          .from('partner_integration_progress')
+          .from('affiliate_registrations' as any)
           .select('*')
           .not('referral_link', 'is', null)
           .order('created_at', { ascending: false });
@@ -227,10 +227,10 @@ export const useServiceIntegrations = () => {
         }
 
         console.log('✅ Fetched clicks:', clicksData?.length || 0);
-        console.log('🎯 Click partner names:', [...new Set(clicksData?.map(c => c.partner_name) || [])]);
+        console.log('🎯 Click partner names:', [...new Set(clicksData?.map((c: any) => c.partner_name) || [])]);
 
         // Get user emails
-        const userIds = [...new Set(clicksData?.map(click => click.user_id).filter(Boolean) || [])];
+        const userIds = [...new Set(clicksData?.map((click: any) => click.user_id).filter(Boolean) || [])];
         const userEmails = await fetchUserEmails(userIds);
 
         // Process integrations with improved matching

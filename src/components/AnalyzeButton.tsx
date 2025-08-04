@@ -234,7 +234,7 @@ const AnalyzeButton = () => {
         </div>
       )}
       
-      {!analysisStarted && !hasError && (
+      {!analysisStarted && !hasError && !isLoading && (
         <p className="text-center text-sm text-gray-400 mt-2">
           {!hasAddress ? (
             <>📍 Enter an address above to start analysis</>
@@ -248,10 +248,8 @@ const AnalyzeButton = () => {
           ) : user ? (
             <>🚀 Multi-source analysis with Google Solar + GPT-4o<br/>
             <span className="text-xs">✅ Results will be saved to your dashboard</span></>
-          ) : (
-            <>🏠 Basic property analysis - sign in for enhanced features<br/>
-            <span className="text-xs">ℹ️ Sign in to save results to dashboard</span></>
-          )}
+          ) : null
+          }
         </p>
       )}
     </div>
