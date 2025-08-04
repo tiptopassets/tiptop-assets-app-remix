@@ -53,7 +53,7 @@ const HomeModelViewer = () => {
               <><Check className="text-green-500 h-6 w-6 mr-2" />Property Analysis Complete</>
             }
           </h2>
-          <p className="text-sm text-gray-400">
+          <p className="text-sm text-white">
             {isGenerating 
               ? "Please wait while our AI analyzes your property" 
               : "View your property's monetization insights below"}
@@ -65,7 +65,7 @@ const HomeModelViewer = () => {
               variant="ghost"
               size="sm"
               onClick={toggleFullAnalysis}
-              className="text-gray-400 hover:text-white"
+              className="text-gray-200 hover:text-white"
             >
               {showFullAnalysis ? "Show Less" : "Show More"}
             </Button>
@@ -74,7 +74,7 @@ const HomeModelViewer = () => {
             variant="ghost" 
             size="sm" 
             onClick={() => setIsVisible(false)} 
-            className="text-gray-400 hover:text-white"
+            className="text-gray-200 hover:text-white"
           >
             <Info className="h-4 w-4" />
           </Button>
@@ -97,12 +97,12 @@ const HomeModelViewer = () => {
             <div className="flex flex-wrap gap-2 mb-2">
               <Badge className="bg-tiptop-purple/80">{analysisResults.propertyType}</Badge>
               {analysisResults.amenities && analysisResults.amenities.slice(0, 3).map((amenity, i) => (
-                <Badge key={i} variant="outline" className="text-gray-300">{amenity}</Badge>
+                <Badge key={i} variant="outline" className="text-white">{amenity}</Badge>
               ))}
             </div>
             
             {analysisResults.imageAnalysisSummary && (
-              <p className="text-gray-300 mt-2 text-sm bg-white/5 p-2 rounded">
+              <p className="text-white mt-2 text-sm bg-white/5 p-2 rounded">
                 <span className="font-semibold text-tiptop-purple">Image Analysis:</span> {analysisResults.imageAnalysisSummary}
               </p>
             )}
@@ -112,7 +112,7 @@ const HomeModelViewer = () => {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
             {analysisResults.rooftop && (
               <div className="bg-white/5 p-3 rounded-lg">
-                <p className="text-xs text-gray-400">Roof Area</p>
+                <p className="text-xs text-gray-200">Roof Area</p>
                 <p className="text-lg font-semibold text-white">{analysisResults.rooftop.area} sq ft</p>
                 <div className="flex justify-between items-center">
                   <p className="text-xs text-tiptop-purple">${analysisResults.rooftop.revenue}/mo</p>
@@ -126,7 +126,7 @@ const HomeModelViewer = () => {
             )}
             {analysisResults.garden && (
               <div className="bg-white/5 p-3 rounded-lg">
-                <p className="text-xs text-gray-400">Garden Area</p>
+                <p className="text-xs text-gray-200">Garden Area</p>
                 <p className="text-lg font-semibold text-white">{analysisResults.garden.area} sq ft</p>
                 <div className="flex justify-between items-center">
                   <p className="text-xs text-tiptop-purple">${analysisResults.garden.revenue}/mo</p>
@@ -138,7 +138,7 @@ const HomeModelViewer = () => {
             )}
             {analysisResults.parking && (
               <div className="bg-white/5 p-3 rounded-lg">
-                <p className="text-xs text-gray-400">Parking</p>
+                <p className="text-xs text-gray-200">Parking</p>
                 <p className="text-lg font-semibold text-white">{analysisResults.parking.spaces} spaces</p>
                 <div className="flex justify-between items-center">
                   <p className="text-xs text-tiptop-purple">${analysisResults.parking.revenue}/mo</p>
@@ -152,7 +152,7 @@ const HomeModelViewer = () => {
             )}
             {analysisResults.pool && analysisResults.pool.present && (
               <div className="bg-white/5 p-3 rounded-lg">
-                <p className="text-xs text-gray-400">Pool</p>
+                <p className="text-xs text-gray-200">Pool</p>
                 <p className="text-lg font-semibold text-white">{analysisResults.pool.area} sq ft</p>
                 <div className="flex justify-between items-center">
                   <p className="text-xs text-tiptop-purple">${analysisResults.pool.revenue}/mo</p>
@@ -180,7 +180,7 @@ const HomeModelViewer = () => {
                         <div key={idx} className="flex justify-between items-center text-sm border-b border-white/5 pb-1 last:border-0">
                           <span className="text-white">{provider.name}</span>
                           <div className="flex items-center">
-                            <span className="text-xs text-gray-400 mr-2">
+                            <span className="text-xs text-gray-200 mr-2">
                               ${provider.setupCost} • ROI: {provider.roi} mo
                             </span>
                             {provider.url && (
@@ -209,7 +209,7 @@ const HomeModelViewer = () => {
                         <div key={idx} className="flex justify-between items-center text-sm border-b border-white/5 pb-1 last:border-0">
                           <span className="text-white">{provider.name}</span>
                           <div className="flex items-center">
-                            <span className="text-xs text-gray-400 mr-2">
+                            <span className="text-xs text-gray-200 mr-2">
                               {provider.fee ? `${provider.fee}% fee` : `$${provider.setupCost || 0} setup`}
                             </span>
                             {provider.url && (
@@ -238,7 +238,7 @@ const HomeModelViewer = () => {
                         <div key={idx} className="flex justify-between items-center text-sm border-b border-white/5 pb-1 last:border-0">
                           <span className="text-white">{provider.name}</span>
                           <div className="flex items-center">
-                            <span className="text-xs text-gray-400 mr-2">
+                            <span className="text-xs text-gray-200 mr-2">
                               {provider.fee ? `${provider.fee}% fee` : ''}
                             </span>
                             {provider.url && (
@@ -267,7 +267,7 @@ const HomeModelViewer = () => {
                   {analysisResults.permits?.length > 0 && (
                     <div className="mb-2">
                       <p className="text-xs font-medium text-yellow-200">Required Permits:</p>
-                      <ul className="list-disc list-inside text-xs text-gray-300">
+                      <ul className="list-disc list-inside text-xs text-white">
                         {analysisResults.permits.slice(0, 3).map((permit, i) => (
                           <li key={i}>{permit}</li>
                         ))}
@@ -278,7 +278,7 @@ const HomeModelViewer = () => {
                   {analysisResults.restrictions && (
                     <div>
                       <p className="text-xs font-medium text-yellow-200">Restrictions:</p>
-                      <p className="text-xs text-gray-300">{analysisResults.restrictions}</p>
+                      <p className="text-xs text-white">{analysisResults.restrictions}</p>
                     </div>
                   )}
                 </div>
@@ -296,12 +296,12 @@ const HomeModelViewer = () => {
                     <div className="flex items-center">
                       <span className="text-tiptop-purple font-medium">{opp.title}</span>
                       {opp.provider && (
-                        <span className="text-xs text-gray-400 ml-2">via {opp.provider}</span>
+                        <span className="text-xs text-gray-200 ml-2">via {opp.provider}</span>
                       )}
                     </div>
                     <div className="flex items-center">
                       {opp.setupCost > 0 && (
-                        <span className="text-xs text-gray-400 mr-2">${opp.setupCost} setup</span>
+                        <span className="text-xs text-gray-200 mr-2">${opp.setupCost} setup</span>
                       )}
                       <span className="text-sm text-green-400">${opp.monthlyRevenue}/mo</span>
                     </div>
