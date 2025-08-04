@@ -258,6 +258,15 @@ export const trackAuthCompleted = async (userId: string) => {
       console.log('✅ Journey linked to authenticated user:', userId);
     }
 
+    // Also link session asset selections to the authenticated user
+    try {
+      const { linkSessionToUser } = await import('./sessionStorageService');
+      const linkedAssetCount = await linkSessionToUser(userId);
+      console.log('✅ Linked', linkedAssetCount, 'asset selections to user:', userId);
+    } catch (linkAssetError) {
+      console.error('❌ Error linking asset selections to user:', linkAssetError);
+    }
+
     // Enhanced recovery: link any recent unlinked data that matches this user's session patterns
     const { error: recoveryError } = await supabase
       .from('user_journey_complete')

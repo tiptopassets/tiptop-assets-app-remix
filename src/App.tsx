@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from './contexts/AuthContext';
 import { GoogleMapProvider } from './contexts/GoogleMapContext';
+import JourneyTracker from './components/JourneyTracker';
 
 import { ModelGenerationProvider } from './contexts/ModelGeneration';
 import { Toaster } from './components/ui/toaster';
@@ -45,6 +46,7 @@ function App() {
         <AuthProvider>
           <GoogleMapProvider>
             <ModelGenerationProvider>
+              <JourneyTracker />
               <Routes>
                 <Route path="/" element={<Index />} />
                 <Route path="/auth" element={<Auth />} />

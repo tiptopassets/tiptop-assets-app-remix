@@ -264,6 +264,18 @@ async function saveToDatabaseIfAuthenticated(
   setCurrentAnalysisId?: (id: string | null) => void,
   setCurrentAddressId?: (id: string | null) => void
 ) {
+  // Always track the analysis completion for journey tracking (authenticated or not)
+  try {
+    const { trackAnalysisCompleted } = await import('@/services/userJourneyService');
+    console.log('📊 Tracking analysis completion for journey...');
+    
+    // Track analysis completion - this works for both authenticated and anonymous users
+    await trackAnalysisCompleted(propertyAddress, analysisResults, coordinates);
+    console.log('✅ Analysis completion tracked in journey');
+  } catch (error) {
+    console.error('❌ Error tracking analysis completion:', error);
+  }
+
   if (!userId || !saveAddress || !savePropertyAnalysis) {
     console.log('📝 User not authenticated or save functions not available, skipping database save');
     return;
@@ -294,6 +306,26 @@ async function saveToDatabaseIfAuthenticated(
       // Store the analysis ID in context for asset saving
       if (setCurrentAnalysisId) {
         setCurrentAnalysisId(analysisId);
+      }
+
+      // Update journey tracking with the analysis ID now that we have it
+      try {
+        const { trackAnalysisCompleted } = await import('@/services/userJourneyService');
+        console.log('🔗 Updating journey tracking with analysis ID:', analysisId);
+        await trackAnalysisCompleted(propertyAddress, analysisResults, coordinates, analysisId);
+      } catch (error) {
+        console.error('❌ Error updating journey tracking with analysis ID:', error);
+      }
+
+      // Update any existing asset selections with the analysis ID
+      try {
+        const { updateAssetSelectionsWithAnalysisId, getSessionId } = await import('@/services/sessionStorageService');
+        const sessionId = getSessionId();
+        console.log('🔗 Updating asset selections with analysis ID:', { sessionId, analysisId });
+        const updatedCount = await updateAssetSelectionsWithAnalysisId(sessionId, analysisId);
+        console.log('✅ Updated', updatedCount, 'asset selections with analysis ID');
+      } catch (error) {
+        console.error('❌ Error updating asset selections with analysis ID:', error);
       }
       
       // Refresh user data to update dashboard
