@@ -119,7 +119,7 @@ const PropertySummaryCard: React.FC<PropertySummaryCardProps> = ({
           <p className="text-green-400 text-2xl font-bold">
             ${analysisRevenue.toLocaleString()}
           </p>
-          <p className="text-gray-400 text-sm">Monthly Potential</p>
+          <p className="text-white text-sm">Monthly Potential</p>
         </div>
 
         <div className="bg-black/20 rounded-xl p-4 text-center">
@@ -131,7 +131,7 @@ const PropertySummaryCard: React.FC<PropertySummaryCardProps> = ({
         <div className="bg-black/20 rounded-xl p-4 text-center">
           <Building2 className="w-6 h-6 text-purple-400 mx-auto mb-2" />
           <p className="text-purple-400 text-2xl font-bold">{selectedAssetsCount}</p>
-          <p className="text-gray-400 text-sm">Selected Assets</p>
+          <p className="text-white text-sm">Selected Assets</p>
         </div>
 
         <div className="bg-black/20 rounded-xl p-4 text-center">
@@ -139,7 +139,7 @@ const PropertySummaryCard: React.FC<PropertySummaryCardProps> = ({
           <p className="text-orange-400 text-2xl font-bold">
             ${totalSetupCost.toLocaleString()}
           </p>
-          <p className="text-gray-400 text-sm">Setup Investment</p>
+          <p className="text-white text-sm">Setup Investment</p>
         </div>
       </div>
 
