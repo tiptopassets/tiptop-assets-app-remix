@@ -970,33 +970,78 @@ export type Database = {
       }
       user_journey_complete: {
         Row: {
+          address_entered_at: string | null
+          analysis_completed_at: string | null
           analysis_id: string | null
           analysis_results: Json | null
+          auth_completed_at: string | null
           created_at: string | null
+          current_step: string | null
+          dashboard_accessed_at: string | null
+          extra_data_filled_at: string | null
+          extra_form_data: Json | null
           id: string
+          interested_services: Json | null
+          journey_start_at: string | null
+          options_selected_at: string | null
           property_address: string | null
+          property_coordinates: Json | null
+          selected_option: string | null
+          selected_services: Json | null
+          services_viewed_at: string | null
+          session_id: string | null
           total_monthly_revenue: number | null
           total_opportunities: number | null
           updated_at: string | null
           user_id: string
         }
         Insert: {
+          address_entered_at?: string | null
+          analysis_completed_at?: string | null
           analysis_id?: string | null
           analysis_results?: Json | null
+          auth_completed_at?: string | null
           created_at?: string | null
+          current_step?: string | null
+          dashboard_accessed_at?: string | null
+          extra_data_filled_at?: string | null
+          extra_form_data?: Json | null
           id?: string
+          interested_services?: Json | null
+          journey_start_at?: string | null
+          options_selected_at?: string | null
           property_address?: string | null
+          property_coordinates?: Json | null
+          selected_option?: string | null
+          selected_services?: Json | null
+          services_viewed_at?: string | null
+          session_id?: string | null
           total_monthly_revenue?: number | null
           total_opportunities?: number | null
           updated_at?: string | null
           user_id: string
         }
         Update: {
+          address_entered_at?: string | null
+          analysis_completed_at?: string | null
           analysis_id?: string | null
           analysis_results?: Json | null
+          auth_completed_at?: string | null
           created_at?: string | null
+          current_step?: string | null
+          dashboard_accessed_at?: string | null
+          extra_data_filled_at?: string | null
+          extra_form_data?: Json | null
           id?: string
+          interested_services?: Json | null
+          journey_start_at?: string | null
+          options_selected_at?: string | null
           property_address?: string | null
+          property_coordinates?: Json | null
+          selected_option?: string | null
+          selected_services?: Json | null
+          services_viewed_at?: string | null
+          session_id?: string | null
           total_monthly_revenue?: number | null
           total_opportunities?: number | null
           updated_at?: string | null
