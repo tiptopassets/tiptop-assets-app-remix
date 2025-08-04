@@ -1441,6 +1441,36 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      get_user_dashboard_data: {
+        Args: { p_user_id: string }
+        Returns: {
+          journey_id: string
+          property_address: string
+          analysis_results: Json
+          analysis_id: string
+          total_monthly_revenue: number
+          total_opportunities: number
+          selected_services: Json
+          selected_option: string
+          journey_progress: Json
+        }[]
+      }
+      link_journey_to_user: {
+        Args: { p_session_id: string; p_user_id: string }
+        Returns: undefined
+      }
+      link_session_to_user: {
+        Args: { p_session_id: string; p_user_id: string }
+        Returns: number
+      }
+      update_asset_selections_with_analysis: {
+        Args: { p_session_id: string; p_analysis_id: string }
+        Returns: number
+      }
+      update_journey_step: {
+        Args: { p_session_id: string; p_step: string; p_data?: Json }
+        Returns: string
+      }
     }
     Enums: {
       app_role: "admin" | "user" | "moderator"
