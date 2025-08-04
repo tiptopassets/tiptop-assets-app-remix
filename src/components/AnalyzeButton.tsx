@@ -164,6 +164,17 @@ const AnalyzeButton = () => {
   const hasAddress = !!address;
   const hasError = !!analysisError;
 
+  // Debug logging
+  console.log('AnalyzeButton state:', {
+    address,
+    hasSelectedAddress,
+    isRetrying,
+    hasAddress,
+    isLoading,
+    hasError,
+    addressCoordinates
+  });
+
   return (
     <div className="w-full max-w-md mx-auto">
       <Button
