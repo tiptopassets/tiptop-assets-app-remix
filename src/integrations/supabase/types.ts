@@ -79,8 +79,10 @@ export type Database = {
       }
       affiliate_registrations: {
         Row: {
+          bundle_selection_id: string | null
           created_at: string | null
           id: string
+          provider_id: string | null
           provider_name: string
           registration_data: Json | null
           status: string | null
@@ -88,8 +90,10 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          bundle_selection_id?: string | null
           created_at?: string | null
           id?: string
+          provider_id?: string | null
           provider_name: string
           registration_data?: Json | null
           status?: string | null
@@ -97,13 +101,60 @@ export type Database = {
           user_id: string
         }
         Update: {
+          bundle_selection_id?: string | null
           created_at?: string | null
           id?: string
+          provider_id?: string | null
           provider_name?: string
           registration_data?: Json | null
           status?: string | null
           updated_at?: string | null
           user_id?: string
+        }
+        Relationships: []
+      }
+      bundle_configurations: {
+        Row: {
+          asset_requirements: string[] | null
+          created_at: string | null
+          description: string | null
+          id: string
+          is_active: boolean | null
+          max_providers_per_asset: number | null
+          min_assets: number | null
+          name: string
+          total_monthly_earnings_high: number | null
+          total_monthly_earnings_low: number | null
+          total_setup_cost: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          asset_requirements?: string[] | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          max_providers_per_asset?: number | null
+          min_assets?: number | null
+          name: string
+          total_monthly_earnings_high?: number | null
+          total_monthly_earnings_low?: number | null
+          total_setup_cost?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          asset_requirements?: string[] | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          max_providers_per_asset?: number | null
+          min_assets?: number | null
+          name?: string
+          total_monthly_earnings_high?: number | null
+          total_monthly_earnings_low?: number | null
+          total_setup_cost?: number | null
+          updated_at?: string | null
         }
         Relationships: []
       }
@@ -173,6 +224,72 @@ export type Database = {
         }
         Relationships: []
       }
+      flexoffers_transactions: {
+        Row: {
+          click_date: string | null
+          commission: number
+          created_at: string | null
+          id: string
+          payload: Json | null
+          program_name: string
+          status: string
+          transaction_date: string
+          transaction_id: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          click_date?: string | null
+          commission: number
+          created_at?: string | null
+          id?: string
+          payload?: Json | null
+          program_name: string
+          status: string
+          transaction_date: string
+          transaction_id: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          click_date?: string | null
+          commission?: number
+          created_at?: string | null
+          id?: string
+          payload?: Json | null
+          program_name?: string
+          status?: string
+          transaction_date?: string
+          transaction_id?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      flexoffers_user_mapping: {
+        Row: {
+          created_at: string | null
+          id: string
+          sub_affiliate_id: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          sub_affiliate_id: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          sub_affiliate_id?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       service_integrations: {
         Row: {
           configuration: Json | null
@@ -203,6 +320,66 @@ export type Database = {
           name?: string
           provider?: string | null
           updated_at?: string | null
+        }
+        Relationships: []
+      }
+      service_providers: {
+        Row: {
+          affiliate_program_url: string | null
+          avg_monthly_earnings_high: number | null
+          avg_monthly_earnings_low: number | null
+          category: string | null
+          commission_rate: number | null
+          conversion_rate: number | null
+          created_at: string | null
+          description: string | null
+          id: string
+          is_active: boolean | null
+          logo_url: string | null
+          name: string
+          priority: number | null
+          referral_link_template: string | null
+          setup_cost: number | null
+          updated_at: string | null
+          website_url: string | null
+        }
+        Insert: {
+          affiliate_program_url?: string | null
+          avg_monthly_earnings_high?: number | null
+          avg_monthly_earnings_low?: number | null
+          category?: string | null
+          commission_rate?: number | null
+          conversion_rate?: number | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          logo_url?: string | null
+          name: string
+          priority?: number | null
+          referral_link_template?: string | null
+          setup_cost?: number | null
+          updated_at?: string | null
+          website_url?: string | null
+        }
+        Update: {
+          affiliate_program_url?: string | null
+          avg_monthly_earnings_high?: number | null
+          avg_monthly_earnings_low?: number | null
+          category?: string | null
+          commission_rate?: number | null
+          conversion_rate?: number | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          logo_url?: string | null
+          name?: string
+          priority?: number | null
+          referral_link_template?: string | null
+          setup_cost?: number | null
+          updated_at?: string | null
+          website_url?: string | null
         }
         Relationships: []
       }
@@ -278,6 +455,7 @@ export type Database = {
           bundle_name: string
           created_at: string | null
           id: string
+          property_address: string | null
           selected_at: string | null
           updated_at: string | null
           user_id: string
@@ -287,6 +465,7 @@ export type Database = {
           bundle_name: string
           created_at?: string | null
           id?: string
+          property_address?: string | null
           selected_at?: string | null
           updated_at?: string | null
           user_id: string
@@ -296,6 +475,7 @@ export type Database = {
           bundle_name?: string
           created_at?: string | null
           id?: string
+          property_address?: string | null
           selected_at?: string | null
           updated_at?: string | null
           user_id?: string
@@ -418,15 +598,42 @@ export type Database = {
           },
         ]
       }
+      user_roles: {
+        Row: {
+          created_at: string | null
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_current_user_role: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "user" | "moderator"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -553,6 +760,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "user", "moderator"],
+    },
   },
 } as const
