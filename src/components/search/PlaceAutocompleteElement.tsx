@@ -23,6 +23,8 @@ const PlaceAutocompleteElement: React.FC<Props> = ({ onSelect, placeholder = 'Se
     const init = async () => {
       try {
         await loadGoogleMaps();
+        // Ensure the places library is initialized (defensive)
+        try { await (google.maps as any).importLibrary?.('places'); } catch {}
         if (!window.google?.maps?.places) return;
 
         // Create the element
@@ -32,19 +34,28 @@ const PlaceAutocompleteElement: React.FC<Props> = ({ onSelect, placeholder = 'Se
         try { el.setAttribute('aria-label', placeholder); } catch {}
         try { el.setAttribute('placeholder', placeholder); } catch {}
         try { el.setAttribute('id', 'place-autocomplete'); } catch {}
-        // Restrict to addresses for better UX
+        // Restrict to addresses for better UX (best-effort)
         try { el.setAttribute('types', 'address'); } catch {}
 
-        // Listen for selection
+        // Make it blend with our UI container
+        try {
+          (el as HTMLElement).style.width = '100%';
+          (el as HTMLElement).style.minWidth = '0';
+          (el as HTMLElement).style.background = 'transparent';
+          (el as HTMLElement).style.border = 'none';
+          (el as HTMLElement).style.boxShadow = 'none';
+        } catch {}
+
+        // Listen for selection (support both event names)
         const selectHandler = async (e: any) => {
           try {
-            const place = e?.place;
+            const place = e?.place || e?.detail?.place;
             if (!place) return;
             if (typeof place.fetchFields === 'function') {
-              await place.fetchFields({ fields: ['formattedAddress', 'location', 'id'] });
+              await place.fetchFields({ fields: ['formattedAddress', 'location', 'id', 'displayName'] });
             }
 
-            const formattedAddress: string | undefined = place.formattedAddress || place.displayName || undefined;
+            const formattedAddress: string | undefined = place.formattedAddress || place.displayName || place.display_name || undefined;
             const loc = place.location as google.maps.LatLng | google.maps.LatLngLiteral | null | undefined;
 
             let coordinates: google.maps.LatLngLiteral | null = null;
@@ -65,7 +76,10 @@ const PlaceAutocompleteElement: React.FC<Props> = ({ onSelect, placeholder = 'Se
           }
         };
 
-        el.addEventListener('gmp-placeselect', selectHandler as EventListener);
+        const evNames = ['gmp-placeselect', 'gmpx-placeselect'];
+        evNames.forEach((name) => {
+          try { el.addEventListener(name, selectHandler as EventListener); } catch {}
+        });
 
         if (containerRef.current) {
           containerRef.current.innerHTML = '';
@@ -76,10 +90,13 @@ const PlaceAutocompleteElement: React.FC<Props> = ({ onSelect, placeholder = 'Se
 
         cleanup = () => {
           try {
-            el.removeEventListener('gmp-placeselect', selectHandler as EventListener);
+            const evs = ['gmp-placeselect', 'gmpx-placeselect'];
+            evs.forEach((name) => {
+              try { (el as any).removeEventListener?.(name, selectHandler as unknown as EventListener); } catch {}
+            });
           } catch {}
           try {
-            if (containerRef.current && el.parentElement === containerRef.current) {
+            if (containerRef.current && (el as any).parentElement === containerRef.current) {
               containerRef.current.removeChild(el as unknown as Node);
             }
           } catch {}
