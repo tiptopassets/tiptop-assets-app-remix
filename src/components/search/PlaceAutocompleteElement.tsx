@@ -56,6 +56,7 @@ const PlaceAutocompleteElement: React.FC<Props> = ({ onSelect, placeholder = 'Se
         } catch {}
 
         // Listen for selection (support both event names)
+        let selectionHandled = false;
         const selectHandler = async (e: any) => {
           try {
             const place = e?.place || e?.detail?.place;
@@ -68,11 +69,10 @@ const PlaceAutocompleteElement: React.FC<Props> = ({ onSelect, placeholder = 'Se
               }
             } catch {}
 
-
-            const formattedAddress: string | undefined = place.formattedAddress || place.displayName || place.display_name || undefined;
+            let formattedAddress: string | undefined = place.formattedAddress || place.displayName || place.display_name || undefined;
             const loc = place.location as google.maps.LatLng | google.maps.LatLngLiteral | null | undefined;
-
             let coordinates: google.maps.LatLngLiteral | null = null;
+
             if (loc) {
               if (typeof (loc as google.maps.LatLng).lat === 'function') {
                 const ll = loc as google.maps.LatLng;
@@ -82,6 +82,30 @@ const PlaceAutocompleteElement: React.FC<Props> = ({ onSelect, placeholder = 'Se
               }
             }
 
+            // Fallback: Places Details via placeId if needed
+            try {
+              const pAny: any = place;
+              let selectedPlaceId: string | undefined = pAny?.id || pAny?.placeId || pAny?.place_id;
+              if ((!formattedAddress || !coordinates) && selectedPlaceId && window.google?.maps?.places?.PlacesService) {
+                const details: any = await new Promise((resolve) => {
+                  const svc = new google.maps.places.PlacesService(document.createElement('div'));
+                  svc.getDetails(
+                    { placeId: selectedPlaceId, fields: ['formatted_address', 'geometry', 'place_id'] },
+                    (res: any, status: any) => resolve({ res, status })
+                  );
+                });
+                if (details?.res && details.status === (google.maps.places as any).PlacesServiceStatus.OK) {
+                  if (!formattedAddress) formattedAddress = details.res.formatted_address as string | undefined;
+                  if (!coordinates && details.res.geometry?.location) {
+                    const ll = details.res.geometry.location as google.maps.LatLng;
+                    coordinates = { lat: ll.lat(), lng: ll.lng() };
+                  }
+                  selectedPlaceId = details.res.place_id ?? selectedPlaceId;
+                }
+              }
+            } catch {}
+
+            // Fallback: Geocode if we have an address but no coordinates
             if (formattedAddress && !coordinates) {
               try {
                 const geocoded = await geocodeAddress(formattedAddress);
@@ -90,10 +114,33 @@ const PlaceAutocompleteElement: React.FC<Props> = ({ onSelect, placeholder = 'Se
             }
 
             if (formattedAddress && coordinates) {
-              onSelect({ address: formattedAddress, coordinates, placeId: place.id });
+              selectionHandled = true;
+              const pAny: any = place;
+              const pid = pAny?.id || pAny?.placeId || pAny?.place_id;
+              onSelect({ address: formattedAddress, coordinates, placeId: pid });
             }
           } catch (err) {
             console.error('PlaceAutocompleteElement: error handling selection', err);
+          }
+        };
+
+        // Enter key fallback: if the element doesn't emit a select event, geocode the current value
+        const keydownHandler = (ev: KeyboardEvent) => {
+          if (ev.key === 'Enter') {
+            window.setTimeout(async () => {
+              try {
+                if (selectionHandled) return;
+                const rawVal = (el as any)?.value ?? (el as any)?.getAttribute?.('value');
+                const val = typeof rawVal === 'string' ? rawVal.trim() : '';
+                if (val && val.length > 5) {
+                  const coords = await geocodeAddress(val);
+                  if (coords) {
+                    selectionHandled = true;
+                    onSelect({ address: val, coordinates: coords });
+                  }
+                }
+              } catch {}
+            }, 600);
           }
         };
 
@@ -101,6 +148,7 @@ const PlaceAutocompleteElement: React.FC<Props> = ({ onSelect, placeholder = 'Se
         evNames.forEach((name) => {
           try { el.addEventListener(name, selectHandler as EventListener, { once: false } as any); } catch {}
         });
+        try { el.addEventListener('keydown', keydownHandler as unknown as EventListener); } catch {}
 
         if (containerRef.current) {
           containerRef.current.innerHTML = '';
@@ -115,6 +163,7 @@ const PlaceAutocompleteElement: React.FC<Props> = ({ onSelect, placeholder = 'Se
             evs.forEach((name) => {
               try { (el as any).removeEventListener?.(name, selectHandler as unknown as EventListener); } catch {}
             });
+            try { (el as any).removeEventListener?.('keydown', keydownHandler as unknown as EventListener); } catch {}
           } catch {}
           try {
             if (containerRef.current && (el as any).parentElement === containerRef.current) {
