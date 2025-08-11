@@ -14,280 +14,121 @@ interface Props {
 }
 
 const PlaceAutocompleteElement: React.FC<Props> = ({ onSelect, placeholder = 'Search your address', className }) => {
-  const containerRef = useRef<HTMLDivElement | null>(null);
-  const elementRef = useRef<google.maps.places.PlaceAutocompleteElement | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
 
   useEffect(() => {
-    let cleanup = () => {};
-
     const init = async () => {
       try {
         await loadGoogleMaps();
         
-        // Load Places Library explicitly for Extended Components
-        const placesLib = await (google.maps as any).importLibrary('places');
-        console.log('Places Library loaded:', placesLib);
-        
-        if (!window.google?.maps?.places) {
-          console.error('Places library not available');
+        if (!inputRef.current || !google.maps.places.Autocomplete) {
+          console.error('Required elements not available');
           return;
         }
 
-        // Create the element
-        const el = document.createElement('gmp-place-autocomplete') as google.maps.places.PlaceAutocompleteElement;
-        console.log('Created element:', el, 'Constructor:', el.constructor.name);
-
-        // Configure element attributes
-        el.setAttribute('placeholder', placeholder);
-        el.setAttribute('types', 'address');
-        
-        // Style the element with proper theme colors
-        Object.assign(el.style, {
-          width: '100%',
-          height: '40px',
-          borderRadius: '6px',
-          fontSize: '14px',
-          fontFamily: 'inherit',
-          padding: '8px 12px',
-          border: '1px solid hsl(var(--border))',
-          backgroundColor: 'hsl(var(--background))',
-          color: 'hsl(var(--foreground))',
-          '--gmp-color-primary': 'hsl(var(--primary))',
-          '--gmp-color-surface': 'hsl(var(--background))',
-          '--gmp-color-on-surface': 'hsl(var(--foreground))',
-          '--gmp-font-family': 'inherit',
-          '--gmp-font-size': '14px'
+        // Create traditional Autocomplete
+        const autocomplete = new google.maps.places.Autocomplete(inputRef.current, {
+          types: ['address'],
+          fields: ['formatted_address', 'geometry', 'place_id']
         });
 
-        // Inject global styles for Shadow DOM theming
-        const styleId = 'gmp-places-global-styles';
-        if (!document.getElementById(styleId)) {
-          const style = document.createElement('style');
-          style.id = styleId;
-          style.textContent = `
-            gmp-place-autocomplete {
-              --gmp-color-surface: hsl(var(--background));
-              --gmp-color-on-surface: hsl(var(--foreground));
-              --gmp-color-on-surface-variant: hsl(var(--muted-foreground));
-              --gmp-color-primary: hsl(var(--primary));
-              --gmp-color-outline: hsl(var(--border));
-            }
-          `;
-          document.head.appendChild(style);
-        }
+        autocompleteRef.current = autocomplete;
 
-        // Comprehensive debugging and event handling
-        let isProcessing = false;
-        
-        const processPlaceSelection = async (eventData: any, source: string) => {
-          if (isProcessing) return;
-          isProcessing = true;
-          
-          console.log(`🔍 Processing place selection from ${source}`);
-          console.log('Event data structure:', eventData);
-          console.log('Element properties:', Object.getOwnPropertyNames(el));
-          
-          // Check multiple possible sources for place data
-          let place = null;
-          
-          // Method 1: From event data
-          if (eventData?.place) place = eventData.place;
-          if (!place && eventData?.detail?.place) place = eventData.detail.place;
-          
-          // Method 2: From element properties  
-          if (!place && (el as any).place) place = (el as any).place;
-          if (!place && (el as any).getPlace) {
-            try {
-              place = (el as any).getPlace();
-            } catch (e) {
-              console.log('getPlace() method failed:', e);
+        // Handle place selection
+        const handlePlaceChanged = () => {
+          const place = autocomplete.getPlace();
+          console.log('Place selected:', place);
+
+          if (!place.geometry || !place.geometry.location) {
+            console.log('No geometry, trying geocoding fallback');
+            // Fallback to geocoding
+            const inputValue = inputRef.current?.value;
+            if (inputValue) {
+              geocodeAddress(inputValue)
+                .then(coords => {
+                  onSelect({
+                    address: inputValue,
+                    coordinates: coords,
+                    placeId: place.place_id
+                  });
+                })
+                .catch(console.error);
             }
-          }
-          
-          // Method 3: Check for any place-related properties on element
-          if (!place) {
-            const placeProps = Object.getOwnPropertyNames(el).filter(prop => 
-              prop.toLowerCase().includes('place') || prop.toLowerCase().includes('selected')
-            );
-            console.log('Place-related properties on element:', placeProps);
-            for (const prop of placeProps) {
-              try {
-                const val = (el as any)[prop];
-                if (val && typeof val === 'object') {
-                  console.log(`Found potential place object in ${prop}:`, val);
-                  place = val;
-                  break;
-                }
-              } catch (e) {
-                console.log(`Error accessing ${prop}:`, e);
-              }
-            }
-          }
-          
-          console.log('Final place object:', place);
-          
-          if (!place) {
-            console.log('❌ No place object found anywhere. Trying input value fallback...');
-            // Fallback: Get text from input and geocode
-            const inputEl = el.querySelector('input') || el;
-            const value = (inputEl as any)?.value || el.getAttribute('value') || '';
-            console.log('Input value for fallback:', value);
-            
-            if (value && value.length > 3) {
-              try {
-                const coords = await geocodeAddress(value);
-                if (coords) {
-                  console.log('✅ Geocoded fallback successful');
-                  onSelect({ address: value, coordinates: coords });
-                }
-              } catch (e) {
-                console.error('Geocoding fallback failed:', e);
-              }
-            }
-            isProcessing = false;
             return;
           }
-          
-          // Process the place object
-          try {
-            // First try to fetch fields if method exists
-            if (place.fetchFields && typeof place.fetchFields === 'function') {
-              try {
-                await place.fetchFields({ fields: ['formattedAddress', 'location', 'id'] });
-                console.log('Fields fetched successfully');
-              } catch (e) {
-                console.log('fetchFields failed:', e);
-              }
-            }
-            
-            // Extract address
-            let address = place.formattedAddress || 
-                         place.formatted_address || 
-                         place.displayName ||
-                         place.display_name ||
-                         place.name;
-            
-            // Extract coordinates
-            let coordinates = null;
-            const loc = place.location || place.geometry?.location;
-            if (loc) {
-              if (typeof loc.lat === 'function') {
-                coordinates = { lat: loc.lat(), lng: loc.lng() };
-              } else if (loc.lat && loc.lng) {
-                coordinates = { lat: loc.lat, lng: loc.lng };
-              }
-            }
-            
-            // Extract place ID
-            const placeId = place.id || place.placeId || place.place_id;
-            
-            console.log('Extracted data:', { address, coordinates, placeId });
-            
-            if (address && coordinates) {
-              console.log('✅ Successfully processed place selection');
-              onSelect({ address, coordinates, placeId });
-            } else {
-              console.log('❌ Incomplete place data, trying Places Details API...');
-              
-              // Try Places Details API if we have a place ID
-              if (placeId && google.maps.places.PlacesService) {
-                const service = new google.maps.places.PlacesService(document.createElement('div'));
-                service.getDetails(
-                  { placeId, fields: ['formatted_address', 'geometry'] },
-                  (result, status) => {
-                    if (status === google.maps.places.PlacesServiceStatus.OK && result) {
-                      const addr = result.formatted_address;
-                      const geom = result.geometry?.location;
-                      if (addr && geom) {
-                        const coords = { lat: geom.lat(), lng: geom.lng() };
-                        console.log('✅ Places Details API successful');
-                        onSelect({ address: addr, coordinates: coords, placeId });
-                      }
-                    } else {
-                      console.error('Places Details API failed:', status);
-                    }
-                  }
-                );
-              }
-            }
-          } catch (e) {
-            console.error('Error processing place:', e);
-          } finally {
-            isProcessing = false;
-          }
-        };
 
-        // Primary event handler for place selection
-        const handlePlaceSelect = (e: any) => {
-          console.log('🎯 gmp-placeselect event fired');
-          console.log('Event object:', e);
-          console.log('Event type:', e.type);
-          console.log('Event target:', e.target);
-          processPlaceSelection(e, 'gmp-placeselect');
-        };
+          const location = place.geometry.location;
+          const coordinates = {
+            lat: location.lat(),
+            lng: location.lng()
+          };
 
-        // Add event listener
-        el.addEventListener('gmp-placeselect', handlePlaceSelect);
-        
-        // Also try alternative event names in case the API uses different events
-        const alternativeEvents = ['place_changed', 'placeselect', 'place-select', 'selection'];
-        alternativeEvents.forEach(eventName => {
-          el.addEventListener(eventName, (e) => {
-            console.log(`🎯 Alternative event fired: ${eventName}`);
-            processPlaceSelection(e, eventName);
+          onSelect({
+            address: place.formatted_address || inputRef.current?.value || '',
+            coordinates,
+            placeId: place.place_id
           });
-        });
-
-        // Keyboard fallback
-        el.addEventListener('keydown', (e: KeyboardEvent) => {
-          if (e.key === 'Enter') {
-            setTimeout(() => {
-              if (!isProcessing) {
-                console.log('🎯 Enter key fallback triggered');
-                processPlaceSelection({ type: 'keydown' }, 'enter-fallback');
-              }
-            }, 200);
-          }
-        });
-
-        // Mount element
-        if (containerRef.current) {
-          containerRef.current.innerHTML = '';
-          containerRef.current.appendChild(el);
-        }
-
-        elementRef.current = el;
-        console.log('✅ Places Element initialized and mounted');
-
-        cleanup = () => {
-          el.removeEventListener('gmp-placeselect', handlePlaceSelect);
-          alternativeEvents.forEach(eventName => {
-            el.removeEventListener(eventName, handlePlaceSelect);
-          });
-          if (containerRef.current?.contains(el)) {
-            containerRef.current.removeChild(el);
-          }
-          elementRef.current = null;
         };
+
+        autocomplete.addListener('place_changed', handlePlaceChanged);
+
+        // Style the dropdown container
+        const style = document.createElement('style');
+        style.textContent = `
+          .pac-container {
+            background-color: hsl(var(--background));
+            border: 1px solid hsl(var(--border));
+            border-radius: 6px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            z-index: 10000 !important;
+            font-family: inherit;
+          }
+          .pac-item {
+            color: hsl(var(--foreground));
+            padding: 8px 12px;
+            border-bottom: 1px solid hsl(var(--border));
+          }
+          .pac-item:hover {
+            background-color: hsl(var(--accent));
+          }
+          .pac-item-selected {
+            background-color: hsl(var(--accent));
+          }
+          .pac-item-query {
+            color: hsl(var(--foreground));
+            font-weight: 500;
+          }
+          .pac-matched {
+            color: hsl(var(--primary));
+            font-weight: 600;
+          }
+          .pac-icon {
+            background-image: none;
+          }
+        `;
+        document.head.appendChild(style);
 
       } catch (error) {
-        console.error('❌ PlaceAutocompleteElement initialization failed:', error);
+        console.error('Autocomplete initialization failed:', error);
       }
     };
 
     init();
-    return () => cleanup();
-  }, [onSelect, placeholder]);
+
+    return () => {
+      if (autocompleteRef.current) {
+        google.maps.event.clearInstanceListeners(autocompleteRef.current);
+      }
+    };
+  }, [onSelect]);
 
   return (
-    <div 
-      ref={containerRef} 
-      className={className ? className : 'w-full'} 
-      style={{ 
-        position: 'relative',
-        zIndex: 9999,
-        backgroundColor: 'transparent'
-      }}
+    <input
+      ref={inputRef}
+      type="text"
+      placeholder={placeholder}
+      className={`w-full h-10 px-3 py-2 text-sm border border-input bg-background text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent ${className || ''}`}
     />
   );
 };
