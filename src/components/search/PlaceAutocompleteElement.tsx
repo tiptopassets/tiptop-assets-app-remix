@@ -47,8 +47,12 @@ const PlaceAutocompleteElement: React.FC<Props> = ({ onSelect, placeholder = 'Se
           host.style.border = 'none';
           host.style.boxShadow = 'none';
           host.style.position = 'relative';
-          host.style.zIndex = '1000';
+          host.style.zIndex = '9999';
           host.style.color = 'hsl(var(--primary-foreground))';
+          // Improve visibility and theming via CSS variables
+          host.style.setProperty('--gmpx-color-on-surface', 'hsl(var(--primary-foreground))');
+          host.style.setProperty('--gmpx-color-surface', 'hsl(var(--popover))');
+          host.style.setProperty('--gmpx-color-outline', 'hsl(var(--border))');
         } catch {}
 
         // Listen for selection (support both event names)
@@ -56,10 +60,14 @@ const PlaceAutocompleteElement: React.FC<Props> = ({ onSelect, placeholder = 'Se
           try {
             const place = e?.place || e?.detail?.place;
             if (!place) return;
-            // Avoid fetchFields to prevent version errors; rely on defaults
-            // if (typeof place.fetchFields === 'function') {
-            //   await place.fetchFields({ fields: ['formattedAddress', 'location', 'id', 'displayName'] });
-            // }
+            // Attempt to fetch needed fields to ensure we have address + location
+            try {
+              const p: any = place;
+              if (typeof p.fetchFields === 'function') {
+                await p.fetchFields({ fields: ['formattedAddress', 'location', 'id'] });
+              }
+            } catch {}
+
 
             const formattedAddress: string | undefined = place.formattedAddress || place.displayName || place.display_name || undefined;
             const loc = place.location as google.maps.LatLng | google.maps.LatLngLiteral | null | undefined;
@@ -74,13 +82,11 @@ const PlaceAutocompleteElement: React.FC<Props> = ({ onSelect, placeholder = 'Se
               }
             }
 
-            if (formattedAddress) {
-              if (!coordinates) {
-                try {
-                  const geocoded = await geocodeAddress(formattedAddress);
-                  if (geocoded) coordinates = geocoded;
-                } catch {}
-              }
+            if (formattedAddress && !coordinates) {
+              try {
+                const geocoded = await geocodeAddress(formattedAddress);
+                if (geocoded) coordinates = geocoded;
+              } catch {}
             }
 
             if (formattedAddress && coordinates) {
@@ -93,7 +99,7 @@ const PlaceAutocompleteElement: React.FC<Props> = ({ onSelect, placeholder = 'Se
 
         const evNames = ['gmp-placeselect', 'gmpx-placeselect'];
         evNames.forEach((name) => {
-          try { el.addEventListener(name, selectHandler as EventListener); } catch {}
+          try { el.addEventListener(name, selectHandler as EventListener, { once: false } as any); } catch {}
         });
 
         if (containerRef.current) {
