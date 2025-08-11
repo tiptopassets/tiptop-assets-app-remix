@@ -53,7 +53,7 @@ const SearchBar = ({ isCollapsed }: SearchBarProps) => {
   };
 
   return (
-    <div className={`relative w-full ${isCollapsed ? 'max-w-md' : 'max-w-xl'} transition-all duration-500 ease-in-out`}>
+    <div className={`relative w-full ${isCollapsed ? 'max-w-md' : 'max-w-xl'} transition-all duration-500 ease-in-out z-50`}>
       <div className="glass-effect flex items-center h-14 px-4 rounded-full relative glow-effect overflow-visible">
         <PlaceAutocompleteElement
           className="flex-1 min-w-0 relative z-20"

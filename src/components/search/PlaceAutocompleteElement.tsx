@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { loadGoogleMaps } from '@/utils/googleMapsLoader';
+import { loadGoogleMaps, geocodeAddress } from '@/utils/googleMapsLoader';
 
 export type PlaceSelection = {
   address: string;
@@ -40,11 +40,15 @@ const PlaceAutocompleteElement: React.FC<Props> = ({ onSelect, placeholder = 'Se
 
         // Make it blend with our UI container
         try {
-          (el as HTMLElement).style.width = '100%';
-          (el as HTMLElement).style.minWidth = '0';
-          (el as HTMLElement).style.background = 'transparent';
-          (el as HTMLElement).style.border = 'none';
-          (el as HTMLElement).style.boxShadow = 'none';
+          const host = el as HTMLElement;
+          host.style.width = '100%';
+          host.style.minWidth = '0';
+          host.style.background = 'transparent';
+          host.style.border = 'none';
+          host.style.boxShadow = 'none';
+          host.style.position = 'relative';
+          host.style.zIndex = '1000';
+          host.style.color = 'hsl(var(--primary-foreground))';
         } catch {}
 
         // Listen for selection (support both event names)
@@ -67,6 +71,15 @@ const PlaceAutocompleteElement: React.FC<Props> = ({ onSelect, placeholder = 'Se
                 coordinates = { lat: ll.lat(), lng: ll.lng() };
               } else {
                 coordinates = loc as google.maps.LatLngLiteral;
+              }
+            }
+
+            if (formattedAddress) {
+              if (!coordinates) {
+                try {
+                  const geocoded = await geocodeAddress(formattedAddress);
+                  if (geocoded) coordinates = geocoded;
+                } catch {}
               }
             }
 
