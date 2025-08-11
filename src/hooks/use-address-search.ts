@@ -244,6 +244,31 @@ export const useAddressSearch = () => {
       }
     };
   }, [mapLoaded, mapInstance, handlePlaceChanged, handleAutocompleteClick, toast]);
+  // New: applySelectedAddress for Places Element
+  const applySelectedAddress = useCallback((formattedAddress: string, coordinates: google.maps.LatLngLiteral) => {
+    if (!mapInstance) return;
+
+    // Update state
+    setAddress(formattedAddress);
+    setHasSelectedAddress(true);
+    setAddressCoordinates(coordinates);
+    setIsRetrying(false);
+
+    // Clear any previous analysis errors
+    if (analysisError) {
+      setAnalysisError(null);
+    }
+
+    // Center map and set zoom
+    mapInstance.setCenter(coordinates);
+    mapInstance.setZoom(12);
+
+    // Show success toast
+    toast({
+      title: "Address Selected",
+      description: `Selected: ${formattedAddress}. Click "Analyze Now" to start analysis.`,
+    });
+  }, [mapInstance, setAddress, setHasSelectedAddress, setAddressCoordinates, setIsRetrying, analysisError, setAnalysisError, toast]);
 
   return {
     searchInputRef,
@@ -254,6 +279,7 @@ export const useAddressSearch = () => {
     analysisError,
     setAnalysisError,
     startAnalysis,
-    isRetrying
+    isRetrying,
+    applySelectedAddress,
   };
 };

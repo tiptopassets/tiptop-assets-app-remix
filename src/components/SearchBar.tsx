@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { useModelGeneration } from '@/contexts/ModelGeneration';
 import ClearSearchButton from './search/ClearSearchButton';
 import GeoLocationButton from './search/GeoLocationButton';
+import PlaceAutocompleteElement from './search/PlaceAutocompleteElement';
 
 type SearchBarProps = {
   isCollapsed: boolean;
@@ -26,12 +27,12 @@ const SearchBar = ({ isCollapsed }: SearchBarProps) => {
   } = useGoogleMap();
   
   const {
-    searchInputRef,
     hasSelectedAddress,
     setHasSelectedAddress,
     analysisError,
     setAnalysisError,
-    startAnalysis
+    startAnalysis,
+    applySelectedAddress,
   } = useAddressSearch();
   
   const { resetGeneration, capturePropertyImages } = useModelGeneration();
@@ -69,27 +70,17 @@ const SearchBar = ({ isCollapsed }: SearchBarProps) => {
     <div className={`relative w-full ${isCollapsed ? 'max-w-md' : 'max-w-xl'} transition-all duration-500 ease-in-out`}>
       <div className="glass-effect flex items-center h-14 pl-4 pr-2 rounded-full relative overflow-hidden glow-effect">
         <Search className="text-tiptop-purple h-5 w-5 mr-2" />
-        <input
-          ref={searchInputRef}
-          type="text"
+        <PlaceAutocompleteElement
+          className="flex-1"
           placeholder="Search your address"
-          value={address}
-          onChange={(e) => {
-            setAddress(e.target.value);
-            setHasSelectedAddress(false);
-            
-            // Clear error state when user starts typing
-            if (analysisError) {
-              setAnalysisError(null);
-            }
+          onSelect={({ address: selectedAddress, coordinates }) => {
+            applySelectedAddress(selectedAddress, coordinates);
           }}
-          className="flex-1 bg-transparent outline-none text-white placeholder-gray-300"
         />
         
-        {/* Clear button */}
         {address && <ClearSearchButton onClear={clearSearch} />}
         
-        {/* Geolocation button */}
+        
         <GeoLocationButton 
           onLocationFound={handleLocationFound}
           disabled={isGeneratingAnalysis || !mapLoaded}
