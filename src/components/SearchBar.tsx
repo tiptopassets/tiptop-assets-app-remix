@@ -38,15 +38,18 @@ const SearchBar = ({ isCollapsed }: SearchBarProps) => {
   const { resetGeneration, capturePropertyImages } = useModelGeneration();
 
 
-  // Handle geolocation success - only position and enable button
+  // Handle geolocation success - simplified
   const handleLocationFound = (formattedAddress: string, coordinates: google.maps.LatLngLiteral) => {
     console.log('SearchBar: Location found:', formattedAddress, coordinates);
     setAddress(formattedAddress);
     setHasSelectedAddress(true);
     setAddressCoordinates(coordinates);
     
-    // Only capture images for positioning, don't start analysis
+    // Capture property images
     capturePropertyImages(formattedAddress, coordinates);
+    
+    // Start analysis
+    startAnalysis(formattedAddress);
   };
 
   return (
@@ -56,10 +59,11 @@ const SearchBar = ({ isCollapsed }: SearchBarProps) => {
           className="flex-1 min-w-0 relative z-20"
           placeholder="Search your address"
           onSelect={({ address: selectedAddress, coordinates }) => {
-            // Only apply selection (centers map and sets zoom) - don't start analysis
+            // Apply selection (centers map and sets zoom)
             applySelectedAddress(selectedAddress, coordinates);
-            // Capture images for positioning only
+            // Kick off capture + analysis automatically after selection
             capturePropertyImages(selectedAddress, coordinates);
+            startAnalysis(selectedAddress);
           }}
         />
         
