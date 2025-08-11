@@ -35,38 +35,39 @@ const PlaceAutocompleteElement: React.FC<Props> = ({ onSelect, placeholder = 'Se
         el.setAttribute('placeholder', placeholder);
         el.setAttribute('types', 'address');
         
-        // Apply styling using supported CSS custom properties
+        // Apply basic styling to the element
         const host = el as HTMLElement;
         host.style.width = '100%';
         host.style.height = '40px';
-        host.style.background = 'transparent';
-        host.style.border = 'none';
-        host.style.outline = 'none';
+        host.style.background = 'hsl(var(--background))';
+        host.style.border = '1px solid hsl(var(--border))';
+        host.style.borderRadius = '6px';
         host.style.fontSize = '14px';
         host.style.fontFamily = 'inherit';
+        host.style.padding = '8px 12px';
+        host.style.color = 'hsl(var(--foreground))';
         
-        // Set CSS custom properties for theming the shadow DOM
-        host.style.setProperty('--gmp-dropdown-background-color', 'hsl(var(--popover))');
-        host.style.setProperty('--gmp-dropdown-border-color', 'hsl(var(--border))');
-        host.style.setProperty('--gmp-option-text-color', 'hsl(var(--foreground))');
-        host.style.setProperty('--gmp-option-background-color', 'hsl(var(--popover))');
-        host.style.setProperty('--gmp-option-background-color-hover', 'hsl(var(--accent))');
-        host.style.setProperty('--gmp-primary-color', 'hsl(var(--primary))');
-        host.style.setProperty('--gmp-text-color', 'hsl(var(--foreground))');
+        // Google Places Element CSS variables (verified working properties)
+        host.style.setProperty('--gmp-dropdown-background-color', 'hsl(var(--background))');
+        host.style.setProperty('--gmp-dropdown-border', '1px solid hsl(var(--border))');
+        host.style.setProperty('--gmp-dropdown-item-background-color', 'transparent');
+        host.style.setProperty('--gmp-dropdown-item-background-color-hover', 'hsl(var(--accent))');
+        host.style.setProperty('--gmp-dropdown-item-text-color', 'hsl(var(--foreground))');
+        host.style.setProperty('--gmp-dropdown-item-text-color-hover', 'hsl(var(--accent-foreground))');
         host.style.setProperty('--gmp-font-family', 'inherit');
         host.style.setProperty('--gmp-font-size', '14px');
 
-        // Listen for selection with proper event handling
+        // Listen for selection with improved event handling
         let selectionHandled = false;
         const selectHandler = async (e: any) => {
-          console.log('Place selection event fired:', e);
-          console.log('Event type:', e.type);
-          console.log('Event data:', { place: e.place, detail: e.detail });
+          console.log('🔍 Place selection event fired:', e);
+          console.log('📧 Event type:', e.type);
+          console.log('📦 Raw event object:', e);
           
           try {
-            // Access place directly from event (correct pattern for gmp-placeselect)
-            const place = e.place;
-            console.log('Place object:', place);
+            // Try multiple ways to access the place object
+            let place = e.place || e.detail?.place || e.target?.place;
+            console.log('🏠 Place object found:', place);
             
             if (!place) {
               console.log('No place found in event');
