@@ -47,27 +47,25 @@ const PlaceAutocompleteElement: React.FC<Props> = ({ onSelect, placeholder = 'Se
         host.style.padding = '8px 12px';
         host.style.color = 'hsl(var(--foreground))';
         
-        // Google Places Element CSS variables (verified working properties)
-        host.style.setProperty('--gmp-dropdown-background-color', 'hsl(var(--background))');
-        host.style.setProperty('--gmp-dropdown-border', '1px solid hsl(var(--border))');
-        host.style.setProperty('--gmp-dropdown-item-background-color', 'transparent');
-        host.style.setProperty('--gmp-dropdown-item-background-color-hover', 'hsl(var(--accent))');
-        host.style.setProperty('--gmp-dropdown-item-text-color', 'hsl(var(--foreground))');
-        host.style.setProperty('--gmp-dropdown-item-text-color-hover', 'hsl(var(--accent-foreground))');
-        host.style.setProperty('--gmp-font-family', 'inherit');
-        host.style.setProperty('--gmp-font-size', '14px');
+        // Google Places Element CSS variables for proper theming
+        host.style.setProperty('--gmp-option-background-color', 'hsl(var(--background))');
+        host.style.setProperty('--gmp-option-background-color-hover', 'hsl(var(--accent))');
+        host.style.setProperty('--gmp-option-text-color', 'hsl(var(--foreground))');
+        host.style.setProperty('--gmp-option-text-color-hover', 'hsl(var(--accent-foreground))');
+        host.style.setProperty('--gmp-option-border-color', 'hsl(var(--border))');
+        host.style.setProperty('--gmp-outline-color', 'transparent');
+        host.style.setProperty('--gmp-dropdown-shadow', '0 4px 6px -1px rgb(0 0 0 / 0.1)');
+        host.style.setProperty('--gmp-option-border-radius', '6px');
 
-        // Listen for selection with improved event handling
+        // Listen for selection with simplified event handling
         let selectionHandled = false;
         const selectHandler = async (e: any) => {
-          console.log('🔍 Place selection event fired:', e);
-          console.log('📧 Event type:', e.type);
-          console.log('📦 Raw event object:', e);
+          console.log('🔍 Place selection event fired');
           
           try {
-            // Try multiple ways to access the place object
-            let place = e.place || e.detail?.place || e.target?.place;
-            console.log('🏠 Place object found:', place);
+            // Access the place object from event or element
+            const place = e.place || (el as any).place;
+            console.log('🏠 Place object:', place);
             
             if (!place) {
               console.log('No place found in event');
@@ -172,9 +170,17 @@ const PlaceAutocompleteElement: React.FC<Props> = ({ onSelect, placeholder = 'Se
           }
         };
 
-        // Add event listeners (use only the correct Google event)
-        el.addEventListener('gmp-placeselect', selectHandler as EventListener);
-        el.addEventListener('keydown', keydownHandler as unknown as EventListener);
+        // Add event listeners with proper handling
+        el.addEventListener('gmp-placeselect', selectHandler);
+        el.addEventListener('keydown', keydownHandler);
+        
+        // Also listen for click events on the dropdown items as fallback
+        el.addEventListener('click', async (e: any) => {
+          console.log('Click event on Places Element');
+          // Small delay to let Google handle the selection first
+          setTimeout(() => selectHandler(e), 100);
+        });
+        
         console.log('Event listeners added to element');
 
         if (containerRef.current) {
