@@ -16,10 +16,9 @@ export const connectToFlexOffers = async (
       .from('affiliate_earnings')
       .insert({
         user_id: userId,
-        provider_name: 'FlexOffers', // Use current column name
-        service_type: 'affiliate',
-        earnings_amount: 0, // Use current column name
-        status: 'pending' // Use current column name
+        provider_name: 'FlexOffers',
+        earnings_amount: 0,
+        status: 'pending'
       });
     
     if (earningsError) throw earningsError;

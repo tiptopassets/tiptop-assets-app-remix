@@ -84,26 +84,26 @@ const processFlexOffersTransaction = async (
     // Update the affiliate_earnings table for the user
     const { data: existingEarnings, error: fetchError } = await supabase
       .from('affiliate_earnings')
-      .select('earnings')
+      .select('earnings_amount')
       .eq('user_id', userId)
-      .eq('service', 'FlexOffers')
-      .single()
+      .eq('provider_name', 'FlexOffers')
+      .maybeSingle()
     
-    if (fetchError && fetchError.code !== 'PGRST116') { // PGRST116 is "no rows returned" which is ok
+    if (fetchError && (fetchError as any).code !== 'PGRST116') { // PGRST116 is "no rows returned"
       console.error('Error fetching existing earnings:', fetchError)
       return false
     }
     
     // Determine if we need to insert or update
     if (!existingEarnings) {
-      // Insert new earnings record
+      // Insert new earnings record using current schema
       const { error: insertError } = await supabase
         .from('affiliate_earnings')
         .insert({
           user_id: userId,
-          service: 'FlexOffers',
-          earnings: commission,
-          last_sync_status: 'success',
+          provider_name: 'FlexOffers',
+          earnings_amount: parseFloat(commission),
+          status: 'success',
           updated_at: new Date().toISOString(),
         })
       
@@ -113,17 +113,18 @@ const processFlexOffersTransaction = async (
       }
     } else {
       // Update existing earnings
-      const newEarnings = (existingEarnings.earnings || 0) + parseFloat(commission)
+      const current = Number(existingEarnings.earnings_amount || 0)
+      const newEarnings = current + parseFloat(commission)
       
       const { error: updateError } = await supabase
         .from('affiliate_earnings')
         .update({
-          earnings: newEarnings,
-          last_sync_status: 'success',
+          earnings_amount: newEarnings,
+          status: 'success',
           updated_at: new Date().toISOString(),
         })
         .eq('user_id', userId)
-        .eq('service', 'FlexOffers')
+        .eq('provider_name', 'FlexOffers')
       
       if (updateError) {
         console.error('Error updating earnings:', updateError)
