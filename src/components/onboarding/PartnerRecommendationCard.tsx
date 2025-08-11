@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { ExternalLink, CheckCircle, Loader2, DollarSign, Clock, Wifi, Check, Car, Home } from 'lucide-react';
 import { motion } from 'framer-motion';
 import type { PartnerRecommendation } from '@/services/partnerRecommendationService';
+import { getAssetIcon as getRegistryAssetIcon } from '@/icons/registry';
 
 interface PartnerRecommendationCardProps {
   recommendation: PartnerRecommendation;
@@ -63,18 +64,8 @@ const PartnerRecommendationCard: React.FC<PartnerRecommendationCardProps> = ({
   };
 
   const getAssetIcon = (assetType: string) => {
-    const iconMap: { [key: string]: React.ReactNode } = {
-      'internet': <Wifi className="w-3 h-3" />,
-      'bandwidth': <Wifi className="w-3 h-3" />,
-      'wifi': <Wifi className="w-3 h-3" />,
-      'parking': <Car className="w-3 h-3" />,
-      'driveway': <Car className="w-3 h-3" />,
-      'storage': <Home className="w-3 h-3" />,
-      'garage': <Home className="w-3 h-3" />,
-      'basement': <Home className="w-3 h-3" />,
-      'general': <Home className="w-3 h-3" />
-    };
-    return iconMap[assetType] || <Home className="w-3 h-3" />;
+    // Centralized via icon registry for consistency across the app
+    return getRegistryAssetIcon(assetType, { variant: 'lucide', className: 'w-3 h-3' });
   };
 
   // Get key requirements based on partner name (simplified version)
