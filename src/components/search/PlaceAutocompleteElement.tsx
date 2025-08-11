@@ -27,40 +27,51 @@ const PlaceAutocompleteElement: React.FC<Props> = ({ onSelect, placeholder = 'Se
         try { await (google.maps as any).importLibrary?.('places'); } catch {}
         if (!window.google?.maps?.places) return;
 
-        // Create the element
-        const el = new (google as any).maps.places.PlaceAutocompleteElement() as any;
+        // Create the element using correct constructor
+        const el = document.createElement('gmp-place-autocomplete') as google.maps.places.PlaceAutocompleteElement;
+        console.log('Created Places Element:', el);
 
         // Set attributes/options
-        try { el.setAttribute('aria-label', placeholder); } catch {}
-        try { el.setAttribute('placeholder', placeholder); } catch {}
-        try { el.setAttribute('id', 'place-autocomplete'); } catch {}
-        // Restrict to addresses for better UX (best-effort)
-        // Some versions may not support setting types; keep it best-effort and silent
-        try { el.setAttribute('types', 'address'); } catch {}
+        el.setAttribute('placeholder', placeholder);
+        el.setAttribute('types', 'address');
+        
+        // Apply styling using supported CSS custom properties
+        const host = el as HTMLElement;
+        host.style.width = '100%';
+        host.style.height = '40px';
+        host.style.background = 'transparent';
+        host.style.border = 'none';
+        host.style.outline = 'none';
+        host.style.fontSize = '14px';
+        host.style.fontFamily = 'inherit';
+        
+        // Set CSS custom properties for theming the shadow DOM
+        host.style.setProperty('--gmp-dropdown-background-color', 'hsl(var(--popover))');
+        host.style.setProperty('--gmp-dropdown-border-color', 'hsl(var(--border))');
+        host.style.setProperty('--gmp-option-text-color', 'hsl(var(--foreground))');
+        host.style.setProperty('--gmp-option-background-color', 'hsl(var(--popover))');
+        host.style.setProperty('--gmp-option-background-color-hover', 'hsl(var(--accent))');
+        host.style.setProperty('--gmp-primary-color', 'hsl(var(--primary))');
+        host.style.setProperty('--gmp-text-color', 'hsl(var(--foreground))');
+        host.style.setProperty('--gmp-font-family', 'inherit');
+        host.style.setProperty('--gmp-font-size', '14px');
 
-        // Make it blend with our UI container
-        try {
-          const host = el as HTMLElement;
-          host.style.width = '100%';
-          host.style.minWidth = '0';
-          host.style.background = 'transparent';
-          host.style.border = 'none';
-          host.style.boxShadow = 'none';
-          host.style.position = 'relative';
-          host.style.zIndex = '9999';
-          host.style.color = 'hsl(var(--foreground))';
-          // Improve visibility and theming via CSS variables
-          host.style.setProperty('--gmpx-color-on-surface', 'hsl(var(--foreground))');
-          host.style.setProperty('--gmpx-color-surface', 'hsl(var(--popover))');
-          host.style.setProperty('--gmpx-color-outline', 'hsl(var(--border))');
-        } catch {}
-
-        // Listen for selection (support both event names)
+        // Listen for selection with proper event handling
         let selectionHandled = false;
         const selectHandler = async (e: any) => {
+          console.log('Place selection event fired:', e);
+          console.log('Event type:', e.type);
+          console.log('Event data:', { place: e.place, detail: e.detail });
+          
           try {
-            const place = e?.place || e?.detail?.place;
-            if (!place) return;
+            // Access place directly from event (correct pattern for gmp-placeselect)
+            const place = e.place;
+            console.log('Place object:', place);
+            
+            if (!place) {
+              console.log('No place found in event');
+              return;
+            }
             // Attempt to fetch needed fields to ensure we have address + location
             try {
               const p: any = place;
@@ -160,11 +171,10 @@ const PlaceAutocompleteElement: React.FC<Props> = ({ onSelect, placeholder = 'Se
           }
         };
 
-        const evNames = ['gmp-placeselect', 'gmpx-placeselect'];
-        evNames.forEach((name) => {
-          try { el.addEventListener(name, selectHandler as EventListener, { once: false } as any); } catch {}
-        });
-        try { el.addEventListener('keydown', keydownHandler as unknown as EventListener); } catch {}
+        // Add event listeners (use only the correct Google event)
+        el.addEventListener('gmp-placeselect', selectHandler as EventListener);
+        el.addEventListener('keydown', keydownHandler as unknown as EventListener);
+        console.log('Event listeners added to element');
 
         if (containerRef.current) {
           containerRef.current.innerHTML = '';
@@ -175,14 +185,11 @@ const PlaceAutocompleteElement: React.FC<Props> = ({ onSelect, placeholder = 'Se
 
         cleanup = () => {
           try {
-            const evs = ['gmp-placeselect', 'gmpx-placeselect'];
-            evs.forEach((name) => {
-              try { (el as any).removeEventListener?.(name, selectHandler as unknown as EventListener); } catch {}
-            });
-            try { (el as any).removeEventListener?.('keydown', keydownHandler as unknown as EventListener); } catch {}
+            el.removeEventListener('gmp-placeselect', selectHandler as EventListener);
+            el.removeEventListener('keydown', keydownHandler as unknown as EventListener);
           } catch {}
           try {
-            if (containerRef.current && (el as any).parentElement === containerRef.current) {
+            if (containerRef.current && el.parentElement === containerRef.current) {
               containerRef.current.removeChild(el as unknown as Node);
             }
           } catch {}
@@ -197,7 +204,17 @@ const PlaceAutocompleteElement: React.FC<Props> = ({ onSelect, placeholder = 'Se
     return () => cleanup();
   }, [onSelect, placeholder]);
 
-  return <div ref={containerRef} className={className ? className : 'w-full'} />;
+  return (
+    <div 
+      ref={containerRef} 
+      className={className ? className : 'w-full'} 
+      style={{ 
+        position: 'relative',
+        zIndex: 9999,
+        backgroundColor: 'transparent'
+      }}
+    />
+  );
 };
 
 export default PlaceAutocompleteElement;
