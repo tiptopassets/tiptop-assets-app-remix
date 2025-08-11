@@ -72,7 +72,7 @@ const PropertyTypeDisplay = ({ analysisResults }: PropertyTypeDisplayProps) => {
     <div className="mb-4">
       <h3 className="text-lg font-medium text-white border-b border-white/10 pb-2 mb-2">Property Analysis</h3>
       <div className="flex flex-wrap gap-2 mb-2">
-        <Badge className="bg-tiptop-purple/80">{analysisResults.propertyType}</Badge>
+        <Badge className="bg-purple-600 text-white hover:bg-purple-700">{analysisResults.propertyType}</Badge>
         {analysisResults.amenities && analysisResults.amenities.slice(0, 3).map((amenity, i) => (
           <Badge key={i} variant="outline" className="text-gray-300">{amenity}</Badge>
         ))}
