@@ -47,35 +47,63 @@ const PlaceAutocompleteElement: React.FC<Props> = ({ onSelect, placeholder = 'Se
         host.style.padding = '8px 12px';
         host.style.color = 'hsl(var(--foreground))';
         
-        // Google Places Element CSS variables for proper theming
-        host.style.setProperty('--gmp-option-background-color', 'hsl(var(--background))');
-        host.style.setProperty('--gmp-option-background-color-hover', 'hsl(var(--accent))');
-        host.style.setProperty('--gmp-option-text-color', 'hsl(var(--foreground))');
-        host.style.setProperty('--gmp-option-text-color-hover', 'hsl(var(--accent-foreground))');
-        host.style.setProperty('--gmp-option-border-color', 'hsl(var(--border))');
-        host.style.setProperty('--gmp-outline-color', 'transparent');
-        host.style.setProperty('--gmp-dropdown-shadow', '0 4px 6px -1px rgb(0 0 0 / 0.1)');
-        host.style.setProperty('--gmp-option-border-radius', '6px');
+        // Correct Google Places Element CSS variables (research-verified property names)
+        host.style.setProperty('--gmp-color-primary', 'hsl(var(--primary))');
+        host.style.setProperty('--gmp-font-family', 'inherit');
+        host.style.setProperty('--gmp-font-size', '14px');
+        
+        // Add global styles for the dropdown (penetrates Shadow DOM)
+        const styleId = 'gmp-places-styles';
+        if (!document.getElementById(styleId)) {
+          const style = document.createElement('style');
+          style.id = styleId;
+          style.textContent = `
+            gmp-place-autocomplete {
+              --gmp-color-surface: hsl(var(--background)) !important;
+              --gmp-color-on-surface: hsl(var(--foreground)) !important;
+              --gmp-color-on-surface-variant: hsl(var(--muted-foreground)) !important;
+              --gmp-color-primary: hsl(var(--primary)) !important;
+              --gmp-color-outline: hsl(var(--border)) !important;
+              border-radius: 6px !important;
+            }
+            
+            gmp-place-autocomplete::part(option) {
+              background-color: hsl(var(--background)) !important;
+              color: hsl(var(--foreground)) !important;
+              border-color: hsl(var(--border)) !important;
+            }
+            
+            gmp-place-autocomplete::part(option):hover {
+              background-color: hsl(var(--accent)) !important;
+              color: hsl(var(--accent-foreground)) !important;
+            }
+          `;
+          document.head.appendChild(style);
+        }
 
-        // Listen for selection with simplified event handling
+        // Comprehensive event handling with debugging
         let selectionHandled = false;
-        const selectHandler = async (e: any) => {
-          console.log('🔍 Place selection event fired');
+        
+        const handlePlaceSelection = async (place: any, eventSource: string) => {
+          console.log(`🔍 Place selection from ${eventSource}:`, place);
+          
+          if (selectionHandled) {
+            console.log('Selection already handled, skipping');
+            return;
+          }
+
+          if (!place) {
+            console.log('❌ No place object found');
+            return;
+          }
+
+          selectionHandled = true;
           
           try {
-            // Access the place object from event or element
-            const place = e.place || (el as any).place;
-            console.log('🏠 Place object:', place);
-            
-            if (!place) {
-              console.log('No place found in event');
-              return;
-            }
             // Attempt to fetch needed fields to ensure we have address + location
             try {
-              const p: any = place;
-              if (typeof p.fetchFields === 'function') {
-                await p.fetchFields({ fields: ['formattedAddress', 'location', 'id'] });
+              if (typeof place.fetchFields === 'function') {
+                await place.fetchFields({ fields: ['formattedAddress', 'location', 'id'] });
               }
             } catch {}
 
@@ -83,25 +111,25 @@ const PlaceAutocompleteElement: React.FC<Props> = ({ onSelect, placeholder = 'Se
             let formattedAddress: string | undefined;
             let locAny: any;
             let pidSafe: string | undefined;
-            try { formattedAddress = (place as any).formattedAddress as string | undefined; } catch {}
-            try { if (!formattedAddress) formattedAddress = (place as any).displayName as string | undefined; } catch {}
-            try { if (!formattedAddress) formattedAddress = (place as any).display_name as string | undefined; } catch {}
-            try { locAny = (place as any).location; } catch {}
-            try { pidSafe = (place as any).id || (place as any).placeId || (place as any).place_id; } catch {}
+            
+            try { formattedAddress = place.formattedAddress; } catch {}
+            try { if (!formattedAddress) formattedAddress = place.displayName; } catch {}
+            try { if (!formattedAddress) formattedAddress = place.display_name; } catch {}
+            try { locAny = place.location; } catch {}
+            try { pidSafe = place.id || place.placeId || place.place_id; } catch {}
 
             let coordinates: google.maps.LatLngLiteral | null = null;
             if (locAny) {
-              if (typeof (locAny as google.maps.LatLng).lat === 'function') {
-                const ll = locAny as google.maps.LatLng;
-                coordinates = { lat: ll.lat(), lng: ll.lng() };
+              if (typeof locAny.lat === 'function') {
+                coordinates = { lat: locAny.lat(), lng: locAny.lng() };
               } else {
-                coordinates = locAny as google.maps.LatLngLiteral;
+                coordinates = locAny;
               }
             }
 
             // Fallback: Places Details via placeId if needed
-            try {
-              if ((!formattedAddress || !coordinates) && pidSafe && window.google?.maps?.places?.PlacesService) {
+            if ((!formattedAddress || !coordinates) && pidSafe && window.google?.maps?.places?.PlacesService) {
+              try {
                 const details: any = await new Promise((resolve) => {
                   const svc = new google.maps.places.PlacesService(document.createElement('div'));
                   svc.getDetails(
@@ -109,16 +137,16 @@ const PlaceAutocompleteElement: React.FC<Props> = ({ onSelect, placeholder = 'Se
                     (res: any, status: any) => resolve({ res, status })
                   );
                 });
-                if (details?.res && details.status === (google.maps.places as any).PlacesServiceStatus.OK) {
-                  if (!formattedAddress) formattedAddress = details.res.formatted_address as string | undefined;
+                if (details?.res && details.status === google.maps.places.PlacesServiceStatus.OK) {
+                  if (!formattedAddress) formattedAddress = details.res.formatted_address;
                   if (!coordinates && details.res.geometry?.location) {
-                    const ll = details.res.geometry.location as google.maps.LatLng;
+                    const ll = details.res.geometry.location;
                     coordinates = { lat: ll.lat(), lng: ll.lng() };
                   }
                   pidSafe = details.res.place_id ?? pidSafe;
                 }
-              }
-            } catch {}
+              } catch {}
+            }
 
             // Fallback: Geocode if we have an address but no coordinates
             if (formattedAddress && !coordinates) {
@@ -129,7 +157,7 @@ const PlaceAutocompleteElement: React.FC<Props> = ({ onSelect, placeholder = 'Se
             }
 
             if (formattedAddress && coordinates) {
-              selectionHandled = true;
+              console.log('✅ Calling onSelect with:', { address: formattedAddress, coordinates, placeId: pidSafe });
               onSelect({ address: formattedAddress, coordinates, placeId: pidSafe });
             } else {
               // Last resort: read current input value and geocode
@@ -139,15 +167,29 @@ const PlaceAutocompleteElement: React.FC<Props> = ({ onSelect, placeholder = 'Se
                 try {
                   const coords = await geocodeAddress(val);
                   if (coords) {
-                    selectionHandled = true;
+                    console.log('✅ Calling onSelect with geocoded address:', { address: val, coordinates: coords });
                     onSelect({ address: val, coordinates: coords });
                   }
                 } catch {}
               }
             }
+            
+            // Reset flag after delay
+            setTimeout(() => {
+              selectionHandled = false;
+            }, 1000);
+            
           } catch (err) {
-            console.error('PlaceAutocompleteElement: error handling selection', err);
+            console.error('❌ Error in place selection:', err);
+            selectionHandled = false;
           }
+        };
+
+        // Event handlers using the unified function
+        const selectHandler = async (e: any) => {
+          console.log('gmp-placeselect event triggered');
+          const place = e.detail?.place || e.place || (el as any).place;
+          await handlePlaceSelection(place, 'gmp-placeselect');
         };
 
         // Enter key fallback: if the element doesn't emit a select event, geocode the current value
