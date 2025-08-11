@@ -225,52 +225,8 @@ export const useAddressSearch = () => {
       // Add event listener for normal place_changed events
       autocompleteRef.current.addListener('place_changed', handlePlaceChanged);
 
-      // Use MutationObserver to dynamically detect .pac-container creation
-      const observer = new MutationObserver((mutations) => {
-        mutations.forEach((mutation) => {
-          mutation.addedNodes.forEach((node) => {
-            if (node instanceof Element && node.classList?.contains('pac-container')) {
-              console.log('useAddressSearch: pac-container detected, adding click listener');
-              node.addEventListener('click', (event) => {
-                const target = event.target as HTMLElement;
-                if (target.closest('.pac-item')) {
-                  console.log('useAddressSearch: Detected click on .pac-item');
-                  setTimeout(() => {
-                    handleAutocompleteClick();
-                  }, 10); // Even faster response
-                }
-              });
-            }
-          });
-        });
-      });
-
-      // Start observing for pac-container additions
-      observer.observe(document.body, { childList: true, subtree: true });
-
-      // Also try immediate detection in case container already exists
-      const addClickListener = () => {
-        const pacContainer = document.querySelector('.pac-container');
-        if (pacContainer) {
-          console.log('useAddressSearch: Found existing pac-container, adding click listener');
-          pacContainer.addEventListener('click', (event) => {
-            const target = event.target as HTMLElement;
-            if (target.closest('.pac-item')) {
-              console.log('useAddressSearch: Detected click on .pac-item');
-              setTimeout(() => {
-                handleAutocompleteClick();
-              }, 10);
-            }
-          });
-        }
-      };
-
-      // Check immediately and after short delays
-      addClickListener();
-      setTimeout(addClickListener, 100);
-      setTimeout(addClickListener, 500);
-
-      console.log('useAddressSearch: Autocomplete initialized successfully');
+      // Simplified: rely on standard place_changed event only (no DOM observers)
+      console.log('useAddressSearch: Autocomplete initialized (place_changed listener attached)');
 
     } catch (error) {
       console.error("useAddressSearch: Error initializing autocomplete:", error);
