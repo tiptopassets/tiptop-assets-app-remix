@@ -54,9 +54,9 @@ const SearchBar = ({ isCollapsed }: SearchBarProps) => {
 
   return (
     <div className={`relative w-full ${isCollapsed ? 'max-w-md' : 'max-w-xl'} transition-all duration-500 ease-in-out`}>
-      <div className="glass-effect flex items-center h-14 px-4 rounded-full relative overflow-hidden glow-effect">
+      <div className="glass-effect flex items-center h-14 px-4 rounded-full relative glow-effect overflow-visible">
         <PlaceAutocompleteElement
-          className="flex-1 min-w-0"
+          className="flex-1 min-w-0 relative z-20"
           placeholder="Search your address"
           onSelect={({ address: selectedAddress, coordinates }) => {
             applySelectedAddress(selectedAddress, coordinates);
@@ -70,14 +70,6 @@ const SearchBar = ({ isCollapsed }: SearchBarProps) => {
           disabled={isGeneratingAnalysis || !mapLoaded}
         />
         
-        {/* Light reflection effect */}
-        <div 
-          className="absolute inset-0 pointer-events-none" 
-          style={{
-            background: 'linear-gradient(135deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 50%)',
-            borderRadius: 'inherit'
-          }}
-        ></div>
       </div>
     </div>
   );

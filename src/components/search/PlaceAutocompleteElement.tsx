@@ -35,6 +35,7 @@ const PlaceAutocompleteElement: React.FC<Props> = ({ onSelect, placeholder = 'Se
         try { el.setAttribute('placeholder', placeholder); } catch {}
         try { el.setAttribute('id', 'place-autocomplete'); } catch {}
         // Restrict to addresses for better UX (best-effort)
+        // Some versions may not support setting types; keep it best-effort and silent
         try { el.setAttribute('types', 'address'); } catch {}
 
         // Make it blend with our UI container
@@ -51,9 +52,10 @@ const PlaceAutocompleteElement: React.FC<Props> = ({ onSelect, placeholder = 'Se
           try {
             const place = e?.place || e?.detail?.place;
             if (!place) return;
-            if (typeof place.fetchFields === 'function') {
-              await place.fetchFields({ fields: ['formattedAddress', 'location', 'id', 'displayName'] });
-            }
+            // Avoid fetchFields to prevent version errors; rely on defaults
+            // if (typeof place.fetchFields === 'function') {
+            //   await place.fetchFields({ fields: ['formattedAddress', 'location', 'id', 'displayName'] });
+            // }
 
             const formattedAddress: string | undefined = place.formattedAddress || place.displayName || place.display_name || undefined;
             const loc = place.location as google.maps.LatLng | google.maps.LatLngLiteral | null | undefined;
