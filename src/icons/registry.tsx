@@ -54,10 +54,11 @@ const IMAGE_SOURCES: Record<AssetKey, { src: string; alt: string; style?: React.
     alt: 'EV Charger Icon',
     style: { filter: 'drop-shadow(0 0 5px rgba(167, 139, 250, 0.6))' },
   },
-  // No image asset provided for art-studio; will use Lucide Paintbrush for lucide variant
+  // Updated to use uploaded Art Studio icon image
   'art-studio': {
-    src: '/lovable-uploads/33b65ff0-5489-400b-beba-1248db897a30.png', // placeholder (not used normally)
+    src: '/lovable-uploads/a896cdf2-8269-40d0-a685-d80e9a89f27d.png',
     alt: 'Art Studio Icon',
+    style: { filter: 'drop-shadow(0 0 6px rgba(236, 72, 153, 0.5))' },
   },
 };
 
