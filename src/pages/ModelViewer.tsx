@@ -17,6 +17,8 @@ import SwimmingPoolIcon from '@/components/asset-icons/SwimmingPoolIcon';
 import WifiIcon from '@/components/asset-icons/WifiIcon';
 import CarIcon from '@/components/asset-icons/CarIcon';
 import './ModelViewerSummary.css';
+import { getAssetIcon as registryGetAssetIcon } from '@/icons/registry';
+
 
 const ModelViewer = () => {
   const location = useLocation();
@@ -30,20 +32,9 @@ const ModelViewer = () => {
   const [address, setAddress] = useState<string>('');
   const [isLoading, setIsLoading] = useState(true);
 
-  // Icon mapping for different asset types
-  const getAssetIcon = (assetType: string) => {
-    const type = assetType.toLowerCase();
-    if (type.includes('solar') || type.includes('rooftop')) return <SolarPanelIcon />;
-    if (type.includes('garden') || type.includes('space')) return <GardenIcon />;
-    if (type.includes('parking')) return <ParkingIcon />;
-    if (type.includes('storage')) return <StorageIcon />;
-    if (type.includes('pool')) return <SwimmingPoolIcon />;
-    if (type.includes('bandwidth') || type.includes('internet')) return <WifiIcon />;
-    if (type.includes('rental') || type.includes('term')) return <CarIcon />;
-    return <div className="w-8 h-8 md:w-12 md:h-12 bg-tiptop-purple/20 rounded-lg flex items-center justify-center">
-      <div className="w-4 h-4 md:w-6 md:h-6 bg-tiptop-purple rounded"></div>
-    </div>;
-  };
+  // Centralized icon from registry
+  const getAssetIcon = (assetType: string) =>
+    registryGetAssetIcon(assetType, { className: 'w-8 h-8 md:w-12 md:h-12 object-contain' });
 
   useEffect(() => {
     // Get data from navigation state or sessionStorage

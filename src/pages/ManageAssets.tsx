@@ -5,9 +5,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Calendar } from '@/components/ui/calendar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { ExternalLink, Car, Wifi, Sun, Zap, Home, MapPin } from 'lucide-react';
+import { ExternalLink, MapPin } from 'lucide-react';
 import { motion } from 'framer-motion';
 import DashboardLayout from '@/components/dashboard/DashboardLayout';
+import { getAssetIcon as registryGetAssetIcon } from '@/icons/registry';
 
 const ManageAssets: React.FC = () => {
   const { assetSelections, loading, error } = useUserAssetSelections();
@@ -33,14 +34,7 @@ const ManageAssets: React.FC = () => {
     return acc;
   }, [] as typeof assetSelections);
 
-  const getAssetIcon = (assetType: string) => {
-    const type = assetType.toLowerCase();
-    if (type.includes('parking')) return <Car className="w-5 h-5" />;
-    if (type.includes('internet') || type.includes('wifi') || type.includes('bandwidth')) return <Wifi className="w-5 h-5" />;
-    if (type.includes('solar') || type.includes('rooftop')) return <Sun className="w-5 h-5" />;
-    if (type.includes('ev') || type.includes('charging')) return <Zap className="w-5 h-5" />;
-    return <Home className="w-5 h-5" />;
-  };
+  const getAssetIcon = (assetType: string) => registryGetAssetIcon(assetType, { className: 'w-5 h-5 object-contain' });
 
   const handlePartnerClick = (partnerId: string) => {
     const partner = PartnerIntegrationService.getPlatformById(partnerId);

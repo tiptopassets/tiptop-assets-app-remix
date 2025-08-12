@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { AdditionalOpportunity } from "@/types/analysis";
 import { glowColorMap } from "./AssetCard";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { getAssetIcon } from '@/icons/registry';
 
 interface EnhancedAdditionalAssetsCarouselProps {
   opportunities: AdditionalOpportunity[];
@@ -139,17 +140,7 @@ const EnhancedAdditionalAssetsCarousel = ({
         {/* Background Image with Icon */}
         <div className="absolute inset-0 bg-gradient-to-br from-gray-800 via-gray-700 to-gray-900">
           <div className="absolute inset-0 flex items-center justify-center opacity-20">
-            <img 
-              src={`/lovable-uploads/${
-                iconType === 'wifi' ? 'f5bf9c32-688f-4a52-8a95-4d803713d2ff.png' : 
-                iconType === 'storage' ? '417dfc9f-434d-4b41-aec2-fca0d8c4cb23.png' :
-                iconType === 'pool' ? '6f86ef27-873e-4a4f-b5ec-05f2a25d3a83.png' :
-                'ef52333e-7ea8-4692-aeed-9a222da95b75.png'
-              }`}
-              alt={`${opportunity.title} Icon`}
-              className="w-16 h-16 sm:w-20 sm:h-20 object-contain"
-              style={{ filter: `drop-shadow(0 0 10px ${glowColor})` }}
-            />
+            {getAssetIcon(opportunity.icon, { className: 'w-16 h-16 sm:w-20 sm:h-20 object-contain' })}
           </div>
         </div>
 
@@ -173,17 +164,7 @@ const EnhancedAdditionalAssetsCarousel = ({
         <div className="absolute inset-0 p-3 flex flex-col justify-between z-10">
           {/* Top: Small icon and title */}
           <div className="flex items-center gap-2">
-            <img 
-              src={`/lovable-uploads/${
-                iconType === 'wifi' ? 'f5bf9c32-688f-4a52-8a95-4d803713d2ff.png' : 
-                iconType === 'storage' ? '417dfc9f-434d-4b41-aec2-fca0d8c4cb23.png' :
-                iconType === 'pool' ? '6f86ef27-873e-4a4f-b5ec-05f2a25d3a83.png' :
-                'ef52333e-7ea8-4692-aeed-9a222da95b75.png'
-              }`}
-              alt={`${opportunity.title} Icon`}
-              className={`${isMobile ? 'w-6 h-6' : 'w-8 h-8'} object-contain`}
-              style={{ filter: `drop-shadow(0 0 4px ${glowColor})` }}
-            />
+            {getAssetIcon(opportunity.icon, { className: `${isMobile ? 'w-6 h-6' : 'w-8 h-8'} object-contain` })}
             {getRevenueTierIcon(opportunity.monthlyRevenue)}
           </div>
           
