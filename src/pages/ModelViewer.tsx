@@ -9,13 +9,6 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Check, Plus, X } from 'lucide-react';
 import { motion } from 'framer-motion';
-import SolarPanelIcon from '@/components/asset-icons/SolarPanelIcon';
-import GardenIcon from '@/components/asset-icons/GardenIcon';
-import ParkingIcon from '@/components/asset-icons/ParkingIcon';
-import StorageIcon from '@/components/asset-icons/StorageIcon';
-import SwimmingPoolIcon from '@/components/asset-icons/SwimmingPoolIcon';
-import WifiIcon from '@/components/asset-icons/WifiIcon';
-import CarIcon from '@/components/asset-icons/CarIcon';
 import './ModelViewerSummary.css';
 import { getAssetIcon as registryGetAssetIcon } from '@/icons/registry';
 

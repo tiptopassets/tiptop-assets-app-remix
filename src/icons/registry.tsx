@@ -1,5 +1,5 @@
 import React from 'react';
-import { Car, Sun, Wifi, BatteryCharging, Paintbrush, Home } from 'lucide-react';
+import { Car, Sun, Wifi, BatteryCharging, Paintbrush, Home, Laptop } from 'lucide-react';
 
 // Centralized icon registry with normalization and dual variants (image | lucide)
 export type AssetKey =
@@ -11,7 +11,8 @@ export type AssetKey =
   | 'pool'
   | 'car'
   | 'evcharger'
-  | 'art-studio';
+  | 'art-studio'
+  | 'coworking';
 
 const IMAGE_SOURCES: Record<AssetKey, { src: string; alt: string; style?: React.CSSProperties }> = {
   parking: {
@@ -60,6 +61,11 @@ const IMAGE_SOURCES: Record<AssetKey, { src: string; alt: string; style?: React.
     alt: 'Art Studio Icon',
     style: { filter: 'drop-shadow(0 0 6px rgba(236, 72, 153, 0.5))' },
   },
+  coworking: {
+    src: '/lovable-uploads/5f1e96b8-dd8e-4e90-8a12-97b8f50fec25.png',
+    alt: 'Coworking Icon',
+    style: { filter: 'drop-shadow(0 0 8px rgba(155, 135, 245, 0.5))' },
+  },
 };
 
 const LUCIDE_COMPONENTS: Partial<Record<AssetKey, React.ComponentType<any>>> = {
@@ -69,6 +75,7 @@ const LUCIDE_COMPONENTS: Partial<Record<AssetKey, React.ComponentType<any>>> = {
   wifi: Wifi,
   evcharger: BatteryCharging,
   'art-studio': Paintbrush,
+  coworking: Laptop,
   storage: Home,
   garden: Home,
   pool: Home,
@@ -90,6 +97,7 @@ export function normalizeAssetKey(input: string): AssetKey {
   if (['pool', 'swimming-pool', 'swimming_pool'].includes(k)) return 'pool';
   if (['ev-charger', 'ev_charger', 'ev-charging', 'ev_charging', 'ev-charging-station'].includes(k)) return 'evcharger';
   if (['art-studio', 'art-studio-space', 'art_studio', 'art-studio-room'].includes(k)) return 'art-studio';
+  if (['coworking', 'co-working', 'coworking-space', 'coworking_space', 'workspace', 'work-space', 'work_space', 'office', 'office-space', 'office_space'].includes(k)) return 'coworking';
   if (['parking', 'driveway'].includes(k)) return 'parking';
   if (['car', 'vehicle'].includes(k)) return 'car';
   if (['solar', 'rooftop', 'sun'].includes(k)) return 'solar';
@@ -97,7 +105,7 @@ export function normalizeAssetKey(input: string): AssetKey {
   if (['storage', 'garage', 'basement'].includes(k)) return 'storage';
 
   // Fallbacks to closest generic types
-  return (['parking','solar','garden','storage','wifi','pool','car','evcharger','art-studio'].includes(k)
+  return (['parking','solar','garden','storage','wifi','pool','car','evcharger','art-studio','coworking'].includes(k)
     ? (k as AssetKey)
     : 'storage');
 }
@@ -144,6 +152,7 @@ export function iconMapForLegacyUsage(): Record<string, React.ReactNode> {
     'bandwidth',
     'internet',
     'art-studio',
+    'coworking',
   ];
 
   const map: Record<string, React.ReactNode> = {};
