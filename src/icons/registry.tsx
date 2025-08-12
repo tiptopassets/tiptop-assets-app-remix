@@ -104,7 +104,7 @@ export function normalizeAssetKey(input: string): AssetKey {
   if (['pool', 'swimming-pool', 'swimming_pool'].includes(k)) return 'pool';
   if (['ev-charger', 'ev_charger', 'ev-charging', 'ev_charging', 'ev-charging-station'].includes(k)) return 'evcharger';
   if (['art-studio', 'art-studio-space', 'art_studio', 'art-studio-room'].includes(k)) return 'art-studio';
-  if (['coworking', 'co-working', 'coworking-space', 'coworking_space', 'workspace', 'work-space', 'work_space', 'office', 'office-space', 'office_space'].includes(k)) return 'coworking';
+  if (['coworking', 'co-working', 'coworking-space', 'coworking_space', 'co-working-space', 'co_working_space', 'workspace', 'work-space', 'work_space', 'office', 'office-space', 'office_space'].includes(k)) return 'coworking';
   if (['bike-repair-station', 'bike_repair_station', 'bike-repair', 'bike', 'bicycle', 'bicycle-repair', 'bicycle_repair', 'bike-station'].includes(k)) return 'bike-repair';
   if (['parking', 'driveway'].includes(k)) return 'parking';
   if (['car', 'vehicle'].includes(k)) return 'car';

@@ -77,7 +77,7 @@ export const additionalOpportunities: AdditionalOpportunity[] = [
   },
   {
     title: "Co-working Space",
-    icon: "storage",
+    icon: "coworking",
     monthlyRevenue: 280,
     description: "Rent out rooms or areas as dedicated workspace for remote workers.",
     provider: "Breather",
@@ -354,7 +354,7 @@ export const additionalOpportunities: AdditionalOpportunity[] = [
   },
   {
     title: "Bike Repair Station",
-    icon: "storage",
+    icon: "bike-repair",
     monthlyRevenue: 40,
     description: "Community bike repair station with tools and expertise.",
     provider: "Local Community",
