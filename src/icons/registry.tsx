@@ -1,5 +1,5 @@
 import React from 'react';
-import { Car, Sun, Wifi, BatteryCharging, Paintbrush, Home, Laptop } from 'lucide-react';
+import { Car, Sun, Wifi, BatteryCharging, Paintbrush, Home, Laptop, Bike } from 'lucide-react';
 
 // Centralized icon registry with normalization and dual variants (image | lucide)
 export type AssetKey =
@@ -12,7 +12,8 @@ export type AssetKey =
   | 'car'
   | 'evcharger'
   | 'art-studio'
-  | 'coworking';
+  | 'coworking'
+  | 'bike-repair';
 
 const IMAGE_SOURCES: Record<AssetKey, { src: string; alt: string; style?: React.CSSProperties }> = {
   parking: {
@@ -66,6 +67,11 @@ const IMAGE_SOURCES: Record<AssetKey, { src: string; alt: string; style?: React.
     alt: 'Coworking Icon',
     style: { filter: 'drop-shadow(0 0 8px rgba(155, 135, 245, 0.5))' },
   },
+  'bike-repair': {
+    src: '/lovable-uploads/47b6a2a9-34bd-4534-ba80-745b4af02511.png',
+    alt: 'Bike Repair Station Icon',
+    style: { filter: 'drop-shadow(0 0 8px rgba(168, 85, 247, 0.5))' },
+  },
 };
 
 const LUCIDE_COMPONENTS: Partial<Record<AssetKey, React.ComponentType<any>>> = {
@@ -76,6 +82,7 @@ const LUCIDE_COMPONENTS: Partial<Record<AssetKey, React.ComponentType<any>>> = {
   evcharger: BatteryCharging,
   'art-studio': Paintbrush,
   coworking: Laptop,
+  'bike-repair': Bike,
   storage: Home,
   garden: Home,
   pool: Home,
@@ -98,6 +105,7 @@ export function normalizeAssetKey(input: string): AssetKey {
   if (['ev-charger', 'ev_charger', 'ev-charging', 'ev_charging', 'ev-charging-station'].includes(k)) return 'evcharger';
   if (['art-studio', 'art-studio-space', 'art_studio', 'art-studio-room'].includes(k)) return 'art-studio';
   if (['coworking', 'co-working', 'coworking-space', 'coworking_space', 'workspace', 'work-space', 'work_space', 'office', 'office-space', 'office_space'].includes(k)) return 'coworking';
+  if (['bike-repair-station', 'bike_repair_station', 'bike-repair', 'bike', 'bicycle', 'bicycle-repair', 'bicycle_repair', 'bike-station'].includes(k)) return 'bike-repair';
   if (['parking', 'driveway'].includes(k)) return 'parking';
   if (['car', 'vehicle'].includes(k)) return 'car';
   if (['solar', 'rooftop', 'sun'].includes(k)) return 'solar';
@@ -105,7 +113,7 @@ export function normalizeAssetKey(input: string): AssetKey {
   if (['storage', 'garage', 'basement'].includes(k)) return 'storage';
 
   // Fallbacks to closest generic types
-  return (['parking','solar','garden','storage','wifi','pool','car','evcharger','art-studio','coworking'].includes(k)
+  return (['parking','solar','garden','storage','wifi','pool','car','evcharger','art-studio','coworking','bike-repair'].includes(k)
     ? (k as AssetKey)
     : 'storage');
 }
@@ -153,6 +161,10 @@ export function iconMapForLegacyUsage(): Record<string, React.ReactNode> {
     'internet',
     'art-studio',
     'coworking',
+    'bike-repair-station',
+    'bike-repair',
+    'bike',
+    'bicycle',
   ];
 
   const map: Record<string, React.ReactNode> = {};

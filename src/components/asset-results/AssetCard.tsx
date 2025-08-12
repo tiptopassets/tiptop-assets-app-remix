@@ -16,6 +16,8 @@ export const glowColorMap: Record<string, string> = {
   "house": "rgba(255, 155, 155, 0.5)",
   "art-studio": "rgba(236, 72, 153, 0.5)",
   "coworking": "rgba(99, 102, 241, 0.5)",
+  "bike-repair": "rgba(168, 85, 247, 0.5)",
+  "bike-repair-station": "rgba(168, 85, 247, 0.5)",
 };
 
 // Define background gradients for each asset type
@@ -31,6 +33,8 @@ const backgroundGradientMap: Record<string, string> = {
   "house": "from-red-400 via-rose-500 to-red-600",
   "art-studio": "from-pink-400 via-rose-500 to-pink-600",
   "coworking": "from-indigo-400 via-purple-500 to-indigo-600",
+  "bike-repair": "from-violet-400 via-purple-500 to-fuchsia-600",
+  "bike-repair-station": "from-violet-400 via-purple-500 to-fuchsia-600",
 };
 
 interface AssetCardProps {
