@@ -274,7 +274,7 @@ const InternetDashboard = () => {
                       }}
                     >
                       <a 
-                        href="https://app.getgrass.io/register/?referralCode=TIPTOP" 
+                        href="https://app.grass.io/register/?referralCode=nmGzz16893s4u-R" 
                         target="_blank" 
                         rel="noopener noreferrer"
                         className="flex items-center justify-center gap-2"
@@ -285,7 +285,7 @@ const InternetDashboard = () => {
                     </Button>
                     <Button variant="outline" size="sm" asChild>
                       <a 
-                        href="https://app.getgrass.io" 
+                        href="https://app.grass.io" 
                         target="_blank" 
                         rel="noopener noreferrer"
                       >
