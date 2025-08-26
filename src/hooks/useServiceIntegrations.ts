@@ -56,11 +56,48 @@ export const useServiceIntegrations = () => {
 
         console.log('✅ Fetched providers:', providersData?.length || 0);
 
-        // Mock partner clicks for now to avoid build errors
-        const mockClicks: PartnerClick[] = [];
+        // Fetch partner click events for admin dashboard
+        console.log('🔄 Fetching partner click events...');
+        const { data: clicksData, error: clicksError } = await supabase
+          .from('partner_integration_progress')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        if (clicksError) {
+          console.error('❌ Error fetching clicks:', clicksError);
+          // Don't throw here, just log and continue without click data
+        }
+
+        console.log('✅ Fetched click events:', clicksData?.length || 0);
+
+        // Group clicks by partner name
+        const clicksByPartner: Record<string, PartnerClick[]> = {};
+        (clicksData || []).forEach(click => {
+          const partnerName = click.partner_name;
+          if (!clicksByPartner[partnerName]) {
+            clicksByPartner[partnerName] = [];
+          }
+          clicksByPartner[partnerName].push({
+            id: click.id,
+            user_id: click.user_id,
+            partner_name: click.partner_name,
+            referral_link: click.referral_link || '',
+            clicked_at: click.created_at,
+            integration_status: click.integration_status,
+            user_email: (click.registration_data as any)?.user_email || undefined
+          });
+        });
         
-        // Process integrations
+        // Process integrations with click stats
         const processedIntegrations: ServiceIntegration[] = (providersData || []).map(provider => {
+          const partnerClicks = clicksByPartner[provider.name] || [];
+          const totalClicks = partnerClicks.length;
+          const completedClicks = partnerClicks.filter(click => 
+            click.integration_status === 'completed' || 
+            click.integration_status === 'active'
+          ).length;
+          const conversionRate = totalClicks > 0 ? Math.round((completedClicks / totalClicks) * 100) : 0;
+
           return {
             id: provider.id,
             name: provider.name,
@@ -73,14 +110,14 @@ export const useServiceIntegrations = () => {
             partner_name: provider.name,
             created_at: provider.created_at || new Date().toISOString(),
             asset_types: provider.asset_types || [],
-            total_clicks: 0,
-            conversion_rate: 0,
+            total_clicks: totalClicks,
+            conversion_rate: conversionRate,
             logo_url: provider.logo
           };
         });
 
         setIntegrations(processedIntegrations);
-        setPartnerClicks({});
+        setPartnerClicks(clicksByPartner);
         console.log('✅ Integration data processing complete');
         
       } catch (err) {
@@ -91,7 +128,39 @@ export const useServiceIntegrations = () => {
       }
     };
 
+    const setupRealtimeSubscription = () => {
+      console.log('🔄 Setting up realtime subscription for partner clicks...');
+      
+      const channel = supabase
+        .channel('partner-integration-changes')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'partner_integration_progress'
+          },
+          (payload) => {
+            console.log('📡 Realtime update received:', payload.eventType, payload.new);
+            
+            // Refetch integrations to update click counts and conversion rates
+            fetchIntegrations();
+          }
+        )
+        .subscribe((status) => {
+          console.log('📡 Realtime subscription status:', status);
+        });
+
+      return () => {
+        console.log('🔌 Cleaning up realtime subscription...');
+        supabase.removeChannel(channel);
+      };
+    };
+
     fetchIntegrations();
+    const cleanup = setupRealtimeSubscription();
+
+    return cleanup;
   }, []);
 
   const addIntegration = async (integration: Omit<ServiceIntegration, 'id' | 'created_at'>) => {

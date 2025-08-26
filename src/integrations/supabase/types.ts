@@ -7,7 +7,7 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instanciate createClient with right options
+  // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "12.2.12 (cd3cf9e)"
@@ -1489,15 +1489,15 @@ export type Database = {
       get_user_dashboard_data: {
         Args: { p_user_id: string }
         Returns: {
-          journey_id: string
-          property_address: string
-          analysis_results: Json
           analysis_id: string
+          analysis_results: Json
+          journey_id: string
+          journey_progress: Json
+          property_address: string
+          selected_option: string
+          selected_services: Json
           total_monthly_revenue: number
           total_opportunities: number
-          selected_services: Json
-          selected_option: string
-          journey_progress: Json
         }[]
       }
       link_journey_to_user: {
@@ -1509,11 +1509,11 @@ export type Database = {
         Returns: number
       }
       update_asset_selections_with_analysis: {
-        Args: { p_session_id: string; p_analysis_id: string }
+        Args: { p_analysis_id: string; p_session_id: string }
         Returns: number
       }
       update_journey_step: {
-        Args: { p_session_id: string; p_step: string; p_data?: Json }
+        Args: { p_data?: Json; p_session_id: string; p_step: string }
         Returns: string
       }
     }

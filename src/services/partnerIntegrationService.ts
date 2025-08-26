@@ -1,3 +1,5 @@
+import { trackAndOpenReferral } from './clickTrackingService';
+
 export interface PartnerPlatform {
   id: string;
   name: string;
@@ -347,8 +349,12 @@ export class PartnerIntegrationService {
     const platform = this.getPlatformById(platformId);
     if (!platform) return;
 
-    const referralUrl = platform.referralLink;
-    window.open(referralUrl, '_blank');
+    trackAndOpenReferral({
+      provider: platform.name,
+      url: platform.referralLink,
+      source: 'partner_integration_service',
+      extra: { platformId, userId }
+    });
   }
 
   static getAssetTypeDisplayName(assetType: string): string {

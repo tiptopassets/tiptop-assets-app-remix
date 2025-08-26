@@ -2,6 +2,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { trackAndOpenReferral } from '@/services/clickTrackingService';
 
 export interface ServiceCardProps {
   id: string;
@@ -41,7 +42,11 @@ const ServiceCard: React.FC<ServiceCardProps> = ({
         <Button 
           variant="outline" 
           className="mt-4 w-full"
-          onClick={() => window.open(link, '_blank')}
+          onClick={() => trackAndOpenReferral({
+            provider: title,
+            url: link,
+            source: 'service_card'
+          })}
         >
           {linkText || 'Learn More'}
         </Button>
@@ -51,7 +56,11 @@ const ServiceCard: React.FC<ServiceCardProps> = ({
         <Button 
           variant="ghost" 
           className="mt-2 text-xs"
-          onClick={() => window.open(link, '_blank')}
+          onClick={() => trackAndOpenReferral({
+            provider: title,
+            url: link,
+            source: 'service_card'
+          })}
         >
           {linkText || 'Learn More'}
         </Button>

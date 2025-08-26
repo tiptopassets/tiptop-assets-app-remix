@@ -21,6 +21,7 @@ import {
   DropdownMenuTrigger 
 } from '@/components/ui/dropdown-menu';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { trackAndOpenReferral } from '@/services/clickTrackingService';
 
 interface MobileServiceIntegrationsCardsProps {
   integrations: ServiceIntegration[];
@@ -151,7 +152,11 @@ const MobileServiceIntegrationsCards = ({
                   variant="outline" 
                   size="sm" 
                   className="w-full"
-                  onClick={() => window.open(integration.integration_url!, '_blank')}
+                  onClick={() => trackAndOpenReferral({
+                    provider: integration.name,
+                    url: integration.integration_url!,
+                    source: 'admin_services_mobile'
+                  })}
                 >
                   Visit Partner Portal <ExternalLink className="ml-2 h-4 w-4" />
                 </Button>
@@ -201,7 +206,11 @@ const MobileServiceIntegrationsCards = ({
               
               {selectedIntegration.integration_url && (
                 <div className="pt-2">
-                  <Button variant="outline" onClick={() => window.open(selectedIntegration.integration_url!, '_blank')}>
+                  <Button variant="outline" onClick={() => trackAndOpenReferral({
+                    provider: selectedIntegration.name,
+                    url: selectedIntegration.integration_url!,
+                    source: 'admin_services_mobile_dialog'
+                  })}>
                     Visit Partner Portal <ExternalLink className="ml-2 h-4 w-4" />
                   </Button>
                 </div>
