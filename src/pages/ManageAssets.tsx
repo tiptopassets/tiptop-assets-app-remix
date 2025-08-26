@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useUserAssetSelections } from '@/hooks/useUserAssetSelections';
-import { PartnerIntegrationService } from '@/services/partnerIntegrationService';
+import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Calendar } from '@/components/ui/calendar';
 import { Badge } from '@/components/ui/badge';
@@ -10,9 +10,48 @@ import { motion } from 'framer-motion';
 import DashboardLayout from '@/components/dashboard/DashboardLayout';
 import { getAssetIcon as registryGetAssetIcon } from '@/icons/registry';
 
+interface ServiceProvider {
+  id: string;
+  name: string;
+  description: string;
+  logo: string;
+  url: string;
+  referral_link_template: string;
+  asset_types: string[];
+  avg_monthly_earnings_low: number;
+  avg_monthly_earnings_high: number;
+}
+
 const ManageAssets: React.FC = () => {
   const { assetSelections, loading, error } = useUserAssetSelections();
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
+  const [serviceProviders, setServiceProviders] = useState<ServiceProvider[]>([]);
+  const [partnersLoading, setPartnersLoading] = useState(true);
+
+  // Fetch service providers from database
+  useEffect(() => {
+    const fetchServiceProviders = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('enhanced_service_providers')
+          .select('id, name, description, logo, url, referral_link_template, asset_types, avg_monthly_earnings_low, avg_monthly_earnings_high')
+          .eq('is_active', true)
+          .order('priority', { ascending: false });
+
+        if (error) {
+          console.error('Error fetching service providers:', error);
+        } else {
+          setServiceProviders(data || []);
+        }
+      } catch (err) {
+        console.error('Error fetching service providers:', err);
+      } finally {
+        setPartnersLoading(false);
+      }
+    };
+
+    fetchServiceProviders();
+  }, []);
 
   // Get unique asset selections
   const uniqueAssetSelections = assetSelections.reduce((acc, selection) => {
@@ -36,21 +75,25 @@ const ManageAssets: React.FC = () => {
 
   const getAssetIcon = (assetType: string) => registryGetAssetIcon(assetType, { className: 'w-5 h-5 object-contain' });
 
-  const handlePartnerClick = (partnerId: string) => {
-    PartnerIntegrationService.openReferralLink(partnerId);
+  const handlePartnerClick = (provider: ServiceProvider) => {
+    if (provider.referral_link_template) {
+      window.open(provider.referral_link_template, '_blank');
+    } else {
+      window.open(provider.url, '_blank');
+    }
   };
 
-  const getPartnerLogo = (partner: any) => {
+  const getPartnerLogo = (provider: ServiceProvider) => {
     return (
       <div className="w-10 h-10 rounded border border-gray-200 overflow-hidden bg-white flex items-center justify-center">
         <img 
-          src={partner.logoUrl} 
-          alt={partner.name}
+          src={provider.logo || `https://www.google.com/s2/favicons?domain=${new URL(provider.url).hostname}&sz=64`} 
+          alt={provider.name}
           className="w-6 h-6 object-contain"
           onError={(e) => {
-            // Fallback to favicon if logo fails to load
+            // Fallback to domain favicon if logo fails to load
             const img = e.target as HTMLImageElement;
-            const domain = new URL(partner.referralLink).hostname;
+            const domain = new URL(provider.url).hostname;
             img.src = `https://www.google.com/s2/favicons?domain=${domain}&sz=64`;
           }}
         />
@@ -58,22 +101,30 @@ const ManageAssets: React.FC = () => {
     );
   };
 
-  // Use the same proven method that the chatbot uses
+  // Find matching partners for asset type
   const getMatchingPartnersForAsset = (assetType: string) => {
-    console.log('🔍 Finding partners for asset type:', assetType);
+    const normalizedAssetType = assetType.toLowerCase().replace(/[_\s-]/g, '');
     
-    // Use the exact same method that works in the chatbot
-    const matchingPartners = PartnerIntegrationService.getPlatformsByAsset(assetType);
-    
-    console.log('🎯 Found', matchingPartners.length, 'matching partners for', assetType);
-    matchingPartners.forEach(partner => {
-      console.log('  - Partner:', partner.name, 'Asset types:', partner.assetTypes.join(', '));
+    const matchingProviders = serviceProviders.filter(provider => {
+      return provider.asset_types.some(providerAssetType => {
+        const normalizedProviderType = providerAssetType.toLowerCase().replace(/[_\s-]/g, '');
+        
+        // Check for exact match or partial match
+        return normalizedProviderType === normalizedAssetType ||
+               normalizedProviderType.includes(normalizedAssetType) ||
+               normalizedAssetType.includes(normalizedProviderType);
+      });
     });
-    
-    return matchingPartners;
+
+    console.log(`Found ${matchingProviders.length} providers for asset type: ${assetType}`);
+    matchingProviders.forEach(provider => {
+      console.log(`- ${provider.name}: ${provider.asset_types.join(', ')}`);
+    });
+
+    return matchingProviders;
   };
 
-  if (loading) {
+  if (loading || partnersLoading) {
     return (
       <DashboardLayout>
         <div className="animate-pulse">
@@ -127,7 +178,7 @@ const ManageAssets: React.FC = () => {
         {/* Asset Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
           {uniqueAssetSelections.map((selection, index) => {
-            // Use the same partner matching method as the chatbot
+            // Find matching partners from database
             const partners = getMatchingPartnersForAsset(selection.asset_type);
             
             return (
@@ -177,16 +228,16 @@ const ManageAssets: React.FC = () => {
                       <div className="pt-3 border-t">
                         <p className="text-gray-500 text-sm mb-3">Available Partners:</p>
                         <div className="flex flex-wrap gap-2">
-                          {partners.slice(0, 6).map((partner) => (
+                          {partners.slice(0, 6).map((provider) => (
                             <Button
-                              key={partner.id}
+                              key={provider.id}
                               variant="outline"
                               size="sm"
-                              onClick={() => handlePartnerClick(partner.id)}
+                              onClick={() => handlePartnerClick(provider)}
                               className="h-12 w-12 p-1 hover:bg-tiptop-purple/10 hover:border-tiptop-purple relative group"
-                              title={`Visit ${partner.name} - ${partner.briefDescription}`}
+                              title={`Visit ${provider.name} - ${provider.description}`}
                             >
-                              {getPartnerLogo(partner)}
+                              {getPartnerLogo(provider)}
                               <ExternalLink className="w-3 h-3 absolute -top-1 -right-1 opacity-0 group-hover:opacity-100 transition-opacity text-tiptop-purple" />
                             </Button>
                           ))}
