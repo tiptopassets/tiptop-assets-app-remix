@@ -121,6 +121,7 @@ export const useUserProperties = () => {
       
       // Select the most recent property by default
       if (properties.length > 0 && !selectedPropertyId) {
+        console.log('🏠 [USER-PROPERTIES] Auto-selecting most recent property:', properties[0].id);
         setSelectedPropertyId(properties[0].id);
       }
 

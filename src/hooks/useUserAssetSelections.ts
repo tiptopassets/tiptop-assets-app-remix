@@ -15,32 +15,41 @@ export const useUserAssetSelections = (analysisId?: string) => {
       setLoading(true);
       setError(null);
       
-      console.log('🔍 Loading asset selections for user:', user?.id || 'anonymous', 'analysisId:', analysisId);
+      console.log('🔍 [ASSET-SELECTIONS] Loading asset selections for user:', user?.id || 'anonymous', 'analysisId:', analysisId);
       const selections = await loadAssetSelections(user?.id);
       
-      // Filter by analysis ID if provided
+      // Filter by analysis ID if provided - this is critical for multi-property support
       const filteredSelections = analysisId 
-        ? selections.filter(selection => selection.analysis_id === analysisId)
+        ? selections.filter(selection => {
+            const matches = selection.analysis_id === analysisId;
+            console.log('🎯 [ASSET-SELECTIONS] Selection filter check:', {
+              selectionId: selection.id,
+              selectionAnalysisId: selection.analysis_id,
+              targetAnalysisId: analysisId,
+              matches,
+              assetType: selection.asset_type
+            });
+            return matches;
+          })
         : selections;
         
       setAssetSelections(filteredSelections);
       
-      console.log('✅ Loaded asset selections for dashboard:', {
-        count: filteredSelections.length,
+      console.log('✅ [ASSET-SELECTIONS] Loaded filtered asset selections:', {
+        totalSelections: selections.length,
+        filteredCount: filteredSelections.length,
         userId: user?.id,
-        analysisId,
+        targetAnalysisId: analysisId,
         isAuthenticated: !!user,
-        selections: filteredSelections.map(s => ({
+        filteredSelections: filteredSelections.map(s => ({
           id: s.id,
           asset_type: s.asset_type,
           monthly_revenue: s.monthly_revenue,
-          user_id: s.user_id,
-          analysis_id: s.analysis_id,
-          session_id: s.session_id
+          analysis_id: s.analysis_id
         }))
       });
     } catch (err) {
-      console.error('Error loading asset selections:', err);
+      console.error('❌ [ASSET-SELECTIONS] Error loading asset selections:', err);
       setError(err instanceof Error ? err.message : 'Failed to load asset selections');
     } finally {
       setLoading(false);
@@ -48,8 +57,10 @@ export const useUserAssetSelections = (analysisId?: string) => {
   };
 
   useEffect(() => {
-    loadSelections();
-  }, [user?.id, analysisId]); // Will load for both authenticated and anonymous users
+    if (user?.id || analysisId) {
+      loadSelections();
+    }
+  }, [user?.id, analysisId]); // Trigger reload when user or analysisId changes
 
   const isAssetConfigured = (assetType: string) => {
     return assetSelections.some(selection => 

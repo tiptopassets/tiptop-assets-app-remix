@@ -37,6 +37,14 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
   const analysisResults = latestAnalysis?.analysis_results;
   const { assetSelections, isAssetConfigured } = useUserAssetSelections(latestAnalysis?.id);
   
+  console.log('📊 [DASHBOARD-CONTENT] Rendering with data:', {
+    selectedPropertyId,
+    analysisId: latestAnalysis?.id,
+    assetSelectionsCount: assetSelections.length,
+    totalMonthlyRevenue,
+    totalOpportunities
+  });
+  
   // Calculate actual totals based on user selections with deduplication
   const hasUserSelections = assetSelections.length > 0;
   
