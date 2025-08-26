@@ -27,11 +27,11 @@ interface AIEarningsAnalysisProps {
 export const AIEarningsAnalysis = ({ analysis, isAnalyzing }: AIEarningsAnalysisProps) => {
   if (isAnalyzing) {
     return (
-      <Card className="bg-gradient-to-br from-purple-900/30 to-blue-900/30 border-purple-500/40 backdrop-blur-sm">
+      <Card className="bg-card border-border">
         <CardContent className="flex items-center justify-center p-6">
           <div className="text-center">
-            <Brain className="h-8 w-8 animate-pulse mx-auto mb-2 text-purple-300" />
-            <p className="text-white font-medium">AI is analyzing your earnings potential...</p>
+            <Brain className="h-8 w-8 animate-pulse mx-auto mb-2 text-primary" />
+            <p className="text-card-foreground font-medium">AI is analyzing your earnings potential...</p>
           </div>
         </CardContent>
       </Card>
@@ -40,9 +40,9 @@ export const AIEarningsAnalysis = ({ analysis, isAnalyzing }: AIEarningsAnalysis
 
   if (!analysis) {
     return (
-      <Card className="bg-gray-800/80 border-gray-600 backdrop-blur-sm">
+      <Card className="bg-card border-border">
         <CardContent className="flex items-center justify-center p-6">
-          <div className="text-center text-gray-300">
+          <div className="text-center text-muted-foreground">
             <Brain className="h-8 w-8 mx-auto mb-2 opacity-50" />
             <p className="font-medium">Run a speed test to get AI-powered earnings analysis</p>
           </div>
@@ -52,17 +52,17 @@ export const AIEarningsAnalysis = ({ analysis, isAnalyzing }: AIEarningsAnalysis
   }
 
   const getConfidenceColor = (score: number) => {
-    if (score >= 0.8) return 'text-green-300';
-    if (score >= 0.6) return 'text-yellow-300';
-    return 'text-orange-300';
+    if (score >= 0.8) return 'text-green-600 dark:text-green-400';
+    if (score >= 0.6) return 'text-yellow-600 dark:text-yellow-400';
+    return 'text-orange-600 dark:text-orange-400';
   };
 
   const getDemandColor = (level: string) => {
     switch (level) {
-      case 'high': return 'bg-green-500';
-      case 'medium': return 'bg-yellow-500';
-      case 'low': return 'bg-red-500';
-      default: return 'bg-gray-500';
+      case 'high': return 'bg-green-600 dark:bg-green-500';
+      case 'medium': return 'bg-yellow-600 dark:bg-yellow-500';
+      case 'low': return 'bg-red-600 dark:bg-red-500';
+      default: return 'bg-muted';
     }
   };
 
@@ -72,18 +72,18 @@ export const AIEarningsAnalysis = ({ analysis, isAnalyzing }: AIEarningsAnalysis
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
     >
-      <Card className="bg-gradient-to-br from-purple-900/30 to-blue-900/30 border-purple-500/40 backdrop-blur-sm">
+      <Card className="bg-card border-border">
         <CardHeader>
-          <CardTitle className="text-white flex items-center gap-2">
-            <Brain className="h-5 w-5 text-purple-300" />
+          <CardTitle className="text-card-foreground flex items-center gap-2">
+            <Brain className="h-5 w-5 text-primary" />
             AI Earnings Analysis
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger>
-                  <Info className="h-4 w-4 text-gray-300" />
+                  <Info className="h-4 w-4 text-muted-foreground" />
                 </TooltipTrigger>
-                <TooltipContent className="max-w-xs bg-gray-900 border-gray-700">
-                  <p className="text-gray-200">AI-powered analysis considering network quality, location, market demand, and optimization opportunities</p>
+                <TooltipContent className="max-w-xs">
+                  <p>AI-powered analysis considering network quality, location, market demand, and optimization opportunities</p>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
@@ -92,39 +92,39 @@ export const AIEarningsAnalysis = ({ analysis, isAnalyzing }: AIEarningsAnalysis
         <CardContent className="space-y-6">
           {/* Earnings Predictions */}
           <div>
-            <h4 className="text-white font-medium mb-3 flex items-center gap-2">
-              <DollarSign className="h-4 w-4 text-green-300" />
+            <h4 className="text-card-foreground font-medium mb-3 flex items-center gap-2">
+              <DollarSign className="h-4 w-4 text-green-600 dark:text-green-400" />
               Monthly Earnings Forecast
             </h4>
             <div className="grid grid-cols-3 gap-3">
-              <div className="text-center p-3 bg-red-500/30 rounded-lg border border-red-400/50 backdrop-blur-sm">
-                <p className="text-xs text-gray-200 font-medium">Conservative</p>
-                <p className="text-lg font-bold text-red-200">
+              <div className="text-center p-3 bg-red-50 dark:bg-red-950 rounded-lg border border-red-200 dark:border-red-800">
+                <p className="text-xs text-muted-foreground font-medium">Conservative</p>
+                <p className="text-lg font-bold text-red-600 dark:text-red-400">
                   ${analysis.monthlyEarnings.conservative}
                 </p>
               </div>
-              <div className="text-center p-3 bg-blue-500/30 rounded-lg border border-blue-400/50 backdrop-blur-sm">
-                <p className="text-xs text-gray-200 font-medium">Average</p>
-                <p className="text-lg font-bold text-blue-200">
+              <div className="text-center p-3 bg-blue-50 dark:bg-blue-950 rounded-lg border border-blue-200 dark:border-blue-800">
+                <p className="text-xs text-muted-foreground font-medium">Average</p>
+                <p className="text-lg font-bold text-blue-600 dark:text-blue-400">
                   ${analysis.monthlyEarnings.average}
                 </p>
               </div>
-              <div className="text-center p-3 bg-green-500/30 rounded-lg border border-green-400/50 backdrop-blur-sm">
-                <p className="text-xs text-gray-200 font-medium">Optimistic</p>
-                <p className="text-lg font-bold text-green-200">
+              <div className="text-center p-3 bg-green-50 dark:bg-green-950 rounded-lg border border-green-200 dark:border-green-800">
+                <p className="text-xs text-muted-foreground font-medium">Optimistic</p>
+                <p className="text-lg font-bold text-green-600 dark:text-green-400">
                   ${analysis.monthlyEarnings.optimistic}
                 </p>
               </div>
             </div>
           </div>
 
-          <Separator className="bg-gray-500" />
+          <Separator />
 
           {/* Confidence & Market Factors */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <h4 className="text-white font-medium mb-2 flex items-center gap-2">
-                <Target className="h-4 w-4 text-purple-300" />
+              <h4 className="text-card-foreground font-medium mb-2 flex items-center gap-2">
+                <Target className="h-4 w-4 text-primary" />
                 Confidence Score
               </h4>
               <div className="flex items-center gap-2">
@@ -136,44 +136,44 @@ export const AIEarningsAnalysis = ({ analysis, isAnalyzing }: AIEarningsAnalysis
             </div>
 
             <div>
-              <h4 className="text-white font-medium mb-2 flex items-center gap-2">
-                <MapPin className="h-4 w-4 text-orange-300" />
+              <h4 className="text-card-foreground font-medium mb-2 flex items-center gap-2">
+                <MapPin className="h-4 w-4 text-orange-600 dark:text-orange-400" />
                 Market Factors
               </h4>
               <div className="flex gap-2">
                 <Badge className={`${getDemandColor(analysis.marketFactors.demandLevel)} text-white border-none`}>
                   {analysis.marketFactors.demandLevel} demand
                 </Badge>
-                <Badge variant="outline" className="text-gray-200 border-gray-400 bg-gray-800/50">
+                <Badge variant="outline" className="text-card-foreground border-border bg-muted">
                   {analysis.marketFactors.locationPremium}x location
                 </Badge>
               </div>
             </div>
           </div>
 
-          <Separator className="bg-gray-500" />
+          <Separator />
 
           {/* AI Reasoning */}
           <div>
-            <h4 className="text-white font-medium mb-2 flex items-center gap-2">
-              <Brain className="h-4 w-4 text-purple-300" />
+            <h4 className="text-card-foreground font-medium mb-2 flex items-center gap-2">
+              <Brain className="h-4 w-4 text-primary" />
               AI Analysis
             </h4>
-            <p className="text-gray-200 text-sm leading-relaxed">
+            <p className="text-muted-foreground text-sm leading-relaxed">
               {analysis.reasoning}
             </p>
           </div>
 
           {/* Optimization Tips */}
           <div>
-            <h4 className="text-white font-medium mb-2 flex items-center gap-2">
-              <Lightbulb className="h-4 w-4 text-yellow-300" />
+            <h4 className="text-card-foreground font-medium mb-2 flex items-center gap-2">
+              <Lightbulb className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
               Optimization Tips
             </h4>
             <ul className="space-y-1">
               {analysis.optimizationTips.map((tip, index) => (
-                <li key={index} className="text-gray-200 text-sm flex items-start gap-2">
-                  <div className="w-1.5 h-1.5 bg-yellow-300 rounded-full mt-2 flex-shrink-0"></div>
+                <li key={index} className="text-muted-foreground text-sm flex items-start gap-2">
+                  <div className="w-1.5 h-1.5 bg-yellow-600 dark:bg-yellow-400 rounded-full mt-2 flex-shrink-0"></div>
                   {tip}
                 </li>
               ))}
@@ -182,18 +182,18 @@ export const AIEarningsAnalysis = ({ analysis, isAnalyzing }: AIEarningsAnalysis
 
           {/* Best Sharing Schedule */}
           <div>
-            <h4 className="text-white font-medium mb-2 flex items-center gap-2">
-              <Calendar className="h-4 w-4 text-blue-300" />
+            <h4 className="text-card-foreground font-medium mb-2 flex items-center gap-2">
+              <Calendar className="h-4 w-4 text-blue-600 dark:text-blue-400" />
               Optimal Sharing Schedule
             </h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-              <div className="p-2 bg-green-500/30 rounded border border-green-400/50 backdrop-blur-sm">
-                <p className="text-green-200 font-medium">Peak Hours</p>
-                <p className="text-gray-200">{analysis.bestSharingSchedule.peakHours.join(', ')}</p>
+              <div className="p-2 bg-green-50 dark:bg-green-950 rounded border border-green-200 dark:border-green-800">
+                <p className="text-green-600 dark:text-green-400 font-medium">Peak Hours</p>
+                <p className="text-muted-foreground">{analysis.bestSharingSchedule.peakHours.join(', ')}</p>
               </div>
-              <div className="p-2 bg-blue-500/30 rounded border border-blue-400/50 backdrop-blur-sm">
-                <p className="text-blue-200 font-medium">Recommended Uptime</p>
-                <p className="text-gray-200">{analysis.bestSharingSchedule.recommendedUptime} hours/day</p>
+              <div className="p-2 bg-blue-50 dark:bg-blue-950 rounded border border-blue-200 dark:border-blue-800">
+                <p className="text-blue-600 dark:text-blue-400 font-medium">Recommended Uptime</p>
+                <p className="text-muted-foreground">{analysis.bestSharingSchedule.recommendedUptime} hours/day</p>
               </div>
             </div>
           </div>
