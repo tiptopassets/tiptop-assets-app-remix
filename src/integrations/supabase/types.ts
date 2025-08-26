@@ -544,8 +544,10 @@ export type Database = {
           partner_name: string
           referral_link: string | null
           registration_data: Json | null
+          session_id: string | null
           updated_at: string | null
-          user_id: string
+          user_email: string | null
+          user_id: string | null
         }
         Insert: {
           created_at?: string | null
@@ -557,8 +559,10 @@ export type Database = {
           partner_name: string
           referral_link?: string | null
           registration_data?: Json | null
+          session_id?: string | null
           updated_at?: string | null
-          user_id: string
+          user_email?: string | null
+          user_id?: string | null
         }
         Update: {
           created_at?: string | null
@@ -570,8 +574,10 @@ export type Database = {
           partner_name?: string
           referral_link?: string | null
           registration_data?: Json | null
+          session_id?: string | null
           updated_at?: string | null
-          user_id?: string
+          user_email?: string | null
+          user_id?: string | null
         }
         Relationships: []
       }

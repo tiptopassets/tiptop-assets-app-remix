@@ -1,4 +1,3 @@
-
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.4';
@@ -15,7 +14,8 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 
 interface AffiliateRequest {
   action: 'register' | 'track_click' | 'sync_earnings' | 'get_referral_link';
-  userId: string;
+  userId?: string;
+  sessionId?: string;
   provider: string;
   data?: any;
 }
@@ -26,17 +26,17 @@ serve(async (req) => {
   }
 
   try {
-    const { action, userId, provider, data }: AffiliateRequest = await req.json();
+    const { action, userId, sessionId, provider, data }: AffiliateRequest = await req.json();
 
     switch (action) {
       case 'get_referral_link':
         return await generateReferralLink(userId, provider, data?.destinationUrl);
       
       case 'register':
-        return await registerWithPartner(userId, provider, data);
+        return await registerWithPartner(userId, sessionId, provider, data);
       
       case 'track_click':
-        return await trackAffiliateClick(userId, provider, data);
+        return await trackAffiliateClick(userId, sessionId, provider, data);
       
       case 'sync_earnings':
         return await syncPartnerEarnings(userId, provider);
@@ -57,7 +57,7 @@ serve(async (req) => {
   }
 });
 
-async function generateReferralLink(userId: string, provider: string, destinationUrl: string) {
+async function generateReferralLink(userId: string | undefined, provider: string, destinationUrl: string) {
   // Get provider configuration
   const { data: providerData } = await supabase
     .from('enhanced_service_providers')
@@ -112,36 +112,40 @@ async function generateReferralLink(userId: string, provider: string, destinatio
   });
 }
 
-async function registerWithPartner(userId: string, provider: string, registrationData: any) {
+async function registerWithPartner(userId: string | undefined, sessionId: string | undefined, provider: string, registrationData: any) {
   // Insert registration record into partner_integration_progress
   const { error: registrationError } = await supabase
     .from('partner_integration_progress')
     .insert({
-      user_id: userId,
+      user_id: userId || null,
+      session_id: sessionId || null,
       partner_name: provider,
       integration_status: 'completed',
       registration_data: registrationData,
       onboarding_id: `registration_${Date.now()}`,
-      next_steps: getNextSteps(provider)
+      next_steps: getNextSteps(provider),
+      user_email: registrationData?.user_email || null
     });
 
   if (registrationError) {
     console.error('Registration tracking error:', registrationError);
   }
 
-  // Initialize earnings tracking
-  const { error: earningsError } = await supabase
-    .from('partner_earnings_sync')
-    .insert({
-      user_id: userId,
-      provider_name: provider,
-      sync_method: 'api',
-      earnings_data: { initial_registration: registrationData },
-      sync_status: 'pending'
-    });
+  // Initialize earnings tracking if user is authenticated
+  if (userId) {
+    const { error: earningsError } = await supabase
+      .from('partner_earnings_sync')
+      .insert({
+        user_id: userId,
+        provider_name: provider,
+        sync_method: 'api',
+        earnings_data: { initial_registration: registrationData },
+        sync_status: 'pending'
+      });
 
-  if (earningsError) {
-    console.error('Earnings tracking error:', earningsError);
+    if (earningsError) {
+      console.error('Earnings tracking error:', earningsError);
+    }
   }
 
   return new Response(JSON.stringify({
@@ -153,25 +157,28 @@ async function registerWithPartner(userId: string, provider: string, registratio
   });
 }
 
-async function trackAffiliateClick(userId: string, provider: string, clickData: any) {
-  console.log(`🔄 Tracking click for user ${userId} on provider ${provider}`, clickData);
+async function trackAffiliateClick(userId: string | undefined, sessionId: string | undefined, provider: string, clickData: any) {
+  console.log(`🔄 Tracking click for user/session ${userId || sessionId} on provider ${provider}`, clickData);
 
   try {
     // Insert click record into partner_integration_progress table
     const { data, error } = await supabase
       .from('partner_integration_progress')
       .insert({
-        user_id: userId,
+        user_id: userId || null,
+        session_id: sessionId || null,
         partner_name: provider,
         integration_status: 'pending',
-        referral_link: clickData?.referralLink || '',
-        onboarding_id: `click_${Date.now()}_${userId.substring(0, 8)}`,
+        referral_link: clickData?.referralLink || clickData?.url || '',
+        onboarding_id: `click_${Date.now()}_${(userId || sessionId || 'anonymous').substring(0, 8)}`,
         registration_data: {
           click_timestamp: new Date().toISOString(),
           user_agent: clickData?.userAgent || '',
           referrer: clickData?.referrer || '',
+          source: clickData?.source || 'unknown',
           ...clickData
-        }
+        },
+        user_email: clickData?.user_email || null
       })
       .select()
       .single();
@@ -205,7 +212,7 @@ async function trackAffiliateClick(userId: string, provider: string, clickData: 
   }
 }
 
-async function syncPartnerEarnings(userId: string, provider: string) {
+async function syncPartnerEarnings(userId: string | undefined, provider: string) {
   // This would integrate with each partner's API
   // For now, we'll simulate the sync process
   

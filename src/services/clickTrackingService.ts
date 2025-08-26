@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -15,6 +16,15 @@ export interface ClickTrackingData {
  * and opening the links in a new tab
  */
 class ClickTrackingService {
+  private getSessionId(): string {
+    let sessionId = sessionStorage.getItem('tiptop_session_id');
+    if (!sessionId) {
+      sessionId = `session_${crypto.randomUUID()}`;
+      sessionStorage.setItem('tiptop_session_id', sessionId);
+    }
+    return sessionId;
+  }
+
   /**
    * Track a click event and open the referral link
    * This function always opens the link regardless of tracking success
@@ -28,14 +38,17 @@ class ClickTrackingService {
     window.open(url, '_blank', 'noopener,noreferrer');
     
     try {
-      // Track the click via affiliate partner integration edge function
+      // Get user and session info
       const { data: userResult } = await supabase.auth.getUser();
-      const userId = userResult?.user?.id || `anonymous_${crypto.randomUUID()}`;
+      const userId = userResult?.user?.id;
+      const sessionId = this.getSessionId();
 
+      // Track the click via affiliate partner integration edge function
       const { data: result, error } = await supabase.functions.invoke('affiliate-partner-integration', {
         body: {
           action: 'track_click',
           userId,
+          sessionId,
           provider,
           data: {
             url,
@@ -44,6 +57,7 @@ class ClickTrackingService {
             timestamp: new Date().toISOString(),
             userAgent: userAgent || navigator.userAgent,
             referrer: referrer || document.referrer,
+            user_email: userResult?.user?.email,
             extra: extra || {}
           }
         }
@@ -70,19 +84,23 @@ class ClickTrackingService {
     try {
       console.log('🔄 Tracking click event for provider:', provider);
       
+      // Get user and session info
       const { data: userResult } = await supabase.auth.getUser();
-      const userId = userResult?.user?.id || `anonymous_${crypto.randomUUID()}`;
+      const userId = userResult?.user?.id;
+      const sessionId = this.getSessionId();
       
       const { error } = await supabase.functions.invoke('affiliate-partner-integration', {
         body: {
           action: 'track_click',
           userId,
+          sessionId,
           provider,
           data: {
             source,
             timestamp: new Date().toISOString(),
             userAgent: navigator.userAgent,
             referrer: document.referrer,
+            user_email: userResult?.user?.email,
             extra: extra || {}
           }
         }
