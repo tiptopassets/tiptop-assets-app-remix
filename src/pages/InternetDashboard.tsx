@@ -231,43 +231,68 @@ const InternetDashboard = () => {
                 </CardContent>
               </Card>
 
-              {/* Coming Soon Card */}
-              <Card className="border-border bg-muted/30">
+              {/* Grass Card */}
+              <Card className="border-border hover:shadow-lg transition-shadow">
                 <CardContent className="p-6">
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 bg-gradient-to-r from-blue-400 to-purple-500 rounded-lg flex items-center justify-center">
-                        <Router className="h-6 w-6 text-white" />
+                      <div className="w-12 h-12 bg-gradient-to-r from-green-400 to-green-600 rounded-lg flex items-center justify-center">
+                        <Wifi className="h-6 w-6 text-white" />
                       </div>
                       <div>
-                        <h3 className="font-semibold text-card-foreground">More Partners</h3>
-                        <p className="text-sm text-muted-foreground">Additional platforms coming soon</p>
+                        <h3 className="font-semibold text-card-foreground">Grass</h3>
+                        <p className="text-sm text-muted-foreground">Browser extension & desktop app</p>
                       </div>
                     </div>
-                    <Badge variant="outline">
-                      Coming Soon
+                    <Badge variant="secondary" className="text-blue-600 bg-blue-50 dark:bg-blue-950">
+                      Easy Setup
                     </Badge>
                   </div>
                   
                   <div className="space-y-3 mb-4">
                     <div className="flex justify-between items-center">
-                      <span className="text-sm text-muted-foreground">Expected Earnings</span>
-                      <span className="font-medium text-card-foreground">$30 - $80</span>
+                      <span className="text-sm text-muted-foreground">Monthly Earnings</span>
+                      <span className="font-medium text-card-foreground">$15 - $60</span>
                     </div>
                     <div className="flex justify-between items-center">
-                      <span className="text-sm text-muted-foreground">New Platforms</span>
-                      <span className="font-medium text-card-foreground">Q1 2024</span>
+                      <span className="text-sm text-muted-foreground">Setup Time</span>
+                      <span className="font-medium text-card-foreground">2 minutes</span>
                     </div>
                     <div className="flex justify-between items-center">
-                      <span className="text-sm text-muted-foreground">Total Potential</span>
-                      <span className="font-medium text-primary">$50 - $130/mo</span>
+                      <span className="text-sm text-muted-foreground">Device Support</span>
+                      <span className="font-medium text-card-foreground">Browser + Desktop</span>
                     </div>
                   </div>
 
-                  <Button variant="outline" disabled className="w-full">
-                    <Clock className="h-4 w-4 mr-2" />
-                    Notify Me
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button 
+                      asChild 
+                      className="flex-1"
+                      onClick={() => {
+                        // Track click for analytics
+                        console.log('User clicked Grass referral link');
+                      }}
+                    >
+                      <a 
+                        href="https://app.getgrass.io/register/?referralCode=TIPTOP" 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="flex items-center justify-center gap-2"
+                      >
+                        <DollarSign className="h-4 w-4" />
+                        Start Earning
+                      </a>
+                    </Button>
+                    <Button variant="outline" size="sm" asChild>
+                      <a 
+                        href="https://app.getgrass.io" 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                      >
+                        Learn More
+                      </a>
+                    </Button>
+                  </div>
                 </CardContent>
               </Card>
             </div>
