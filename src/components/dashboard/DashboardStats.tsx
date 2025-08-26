@@ -2,18 +2,25 @@
 import React from 'react';
 import { motion } from "framer-motion";
 import { StatsCard } from './StatsCard';
-import { DollarSign, TrendingUp, Home } from 'lucide-react';
+import { PropertyStatsCard } from './PropertyStatsCard';
+import { DollarSign, TrendingUp } from 'lucide-react';
 
 interface DashboardStatsProps {
   totalMonthlyRevenue: number;
   totalOpportunities: number;
   analysesCount: number;
+  properties?: Array<{ id: string; address: string; }>;
+  selectedPropertyId?: string;
+  onPropertySelect?: (propertyId: string) => void;
 }
 
 export const DashboardStats = ({ 
   totalMonthlyRevenue, 
   totalOpportunities, 
-  analysesCount 
+  analysesCount,
+  properties = [],
+  selectedPropertyId,
+  onPropertySelect
 }: DashboardStatsProps) => {
   return (
     <motion.div 
@@ -35,12 +42,11 @@ export const DashboardStats = ({
         trend={totalOpportunities > 0 ? "up" : "neutral"}
         trendValue={totalOpportunities > 0 ? "Available now" : "Get started"}
       />
-      <StatsCard
-        title="Properties Analyzed"
-        value={analysesCount.toString()}
-        icon={<Home className="h-6 w-6" />}
-        trend={analysesCount > 0 ? "up" : "neutral"}
-        trendValue={analysesCount > 1 ? `${analysesCount} properties` : "First property"}
+      <PropertyStatsCard
+        analysesCount={analysesCount}
+        properties={properties}
+        selectedPropertyId={selectedPropertyId}
+        onPropertySelect={onPropertySelect}
       />
     </motion.div>
   );

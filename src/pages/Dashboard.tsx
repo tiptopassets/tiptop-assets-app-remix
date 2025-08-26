@@ -1,7 +1,7 @@
 
 import React, { useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { useDashboardJourneyData } from '@/hooks/useDashboardJourneyData';
+import { useUserProperties } from '@/hooks/useUserProperties';
 import DashboardLayout from '@/components/dashboard/DashboardLayout';
 import { DashboardEmptyState } from '@/components/dashboard/DashboardEmptyState';
 import DashboardLoadingState from '@/components/dashboard/DashboardLoadingState';
@@ -13,7 +13,16 @@ import JourneyTracker from '@/components/JourneyTracker';
 
 const Dashboard = () => {
   const { user, loading: authLoading } = useAuth();
-  const { journeyData, loading: dataLoading, error, refreshJourneyData } = useDashboardJourneyData();
+  const { 
+    properties, 
+    selectedProperty, 
+    selectedPropertyId, 
+    selectProperty, 
+    loading: dataLoading, 
+    error, 
+    refetch: refreshProperties,
+    propertiesCount
+  } = useUserProperties();
 
   console.log('📊 Dashboard render state:', {
     authLoading,
@@ -21,33 +30,31 @@ const Dashboard = () => {
     user: !!user,
     userId: user?.id,
     error,
-    hasJourneyData: !!journeyData,
-    journeyData: journeyData ? {
-      address: journeyData.propertyAddress,
-      revenue: journeyData.totalMonthlyRevenue,
-      opportunities: journeyData.totalOpportunities,
-      selectedOption: journeyData.selectedOption,
-      currentStep: journeyData.journeyProgress?.current_step,
-      coordinates: journeyData.analysisResults?.coordinates || journeyData.analysisResults?.propertyCoordinates
+    propertiesCount,
+    selectedPropertyId,
+    selectedProperty: selectedProperty ? {
+      address: selectedProperty.address,
+      revenue: selectedProperty.totalMonthlyRevenue,
+      opportunities: selectedProperty.totalOpportunities,
     } : null
   });
 
-  // Auto-refresh dashboard data when user first authenticates
+  // Auto-refresh properties data when user first authenticates
   useEffect(() => {
-    if (user && !dataLoading && !journeyData) {
-      console.log('🔄 User authenticated but no data found, attempting refresh...');
+    if (user && !dataLoading && properties.length === 0) {
+      console.log('🔄 User authenticated but no properties found, attempting refresh...');
       setTimeout(() => {
-        refreshJourneyData();
+        refreshProperties();
       }, 2000); // Give time for auth linking to complete
     }
-  }, [user, dataLoading, journeyData, refreshJourneyData]);
+  }, [user, dataLoading, properties.length, refreshProperties]);
 
   // Periodic refresh to catch any delayed data updates
   useEffect(() => {
-    if (user && !journeyData) {
+    if (user && properties.length === 0) {
       const intervalId = setInterval(() => {
         console.log('🔄 Periodic refresh attempt...');
-        refreshJourneyData();
+        refreshProperties();
       }, 10000); // Check every 10 seconds
 
       // Clear interval after 2 minutes
@@ -60,7 +67,7 @@ const Dashboard = () => {
         clearTimeout(timeoutId);
       };
     }
-  }, [user, journeyData, refreshJourneyData]);
+  }, [user, properties.length, refreshProperties]);
 
   return (
     <DashboardErrorBoundary>
@@ -83,38 +90,38 @@ const Dashboard = () => {
       {!authLoading && user && !dataLoading && error && (
         <DashboardErrorState 
           error={error}
-          onRefresh={refreshJourneyData}
-          onReload={refreshJourneyData}
+          onRefresh={refreshProperties}
+          onReload={refreshProperties}
         />
       )}
 
-      {/* Show empty state if no journey data is found */}
-      {!authLoading && user && !dataLoading && !error && !journeyData && (
+      {/* Show empty state if no properties found */}
+      {!authLoading && user && !dataLoading && !error && properties.length === 0 && (
         <DashboardLayout>
           <JourneyTracker />
           <DashboardEmptyState />
         </DashboardLayout>
       )}
 
-      {/* Show dashboard content if we have data */}
-      {!authLoading && user && !dataLoading && !error && journeyData && (() => {
-        // Extract coordinates from analysis results - try multiple possible locations
-        const coordinates = journeyData.analysisResults?.coordinates || 
-                          journeyData.analysisResults?.propertyCoordinates ||
-                          (journeyData.analysisResults?.rooftop?.coordinates) ||
+      {/* Show dashboard content if we have properties */}
+      {!authLoading && user && !dataLoading && !error && selectedProperty && (() => {
+        // Extract coordinates from analysis results
+        const coordinates = selectedProperty.coordinates || 
+                          selectedProperty.analysisResults?.coordinates ||
+                          selectedProperty.analysisResults?.propertyCoordinates ||
                           null;
 
         console.log('🗺️ Coordinates found for satellite image:', coordinates);
-        console.log('🏠 Using property address:', journeyData.propertyAddress);
+        console.log('🏠 Using property address:', selectedProperty.address);
 
-        // Convert journey data to the format expected by DashboardContent
-        const mockLatestAnalysis = {
-          id: journeyData.analysisId || journeyData.journeyId, // Use analysis_id if available, fallback to journey_id
-          analysis_results: journeyData.analysisResults,
-          total_monthly_revenue: journeyData.totalMonthlyRevenue,
-          total_opportunities: journeyData.totalOpportunities,
-          created_at: journeyData.journeyProgress?.journey_start || new Date().toISOString(),
-          satellite_image_url: journeyData.analysisResults?.rooftop?.satelliteImageUrl,
+        // Convert property data to the format expected by DashboardContent
+        const latestAnalysis = {
+          id: selectedProperty.id,
+          analysis_results: selectedProperty.analysisResults,
+          total_monthly_revenue: selectedProperty.totalMonthlyRevenue,
+          total_opportunities: selectedProperty.totalOpportunities,
+          created_at: selectedProperty.createdAt,
+          satellite_image_url: selectedProperty.satelliteImageUrl,
           coordinates: coordinates
         };
 
@@ -122,12 +129,15 @@ const Dashboard = () => {
           <DashboardLayout>
             <JourneyTracker />
             <DashboardContent
-              primaryAddress={journeyData.propertyAddress}
-              latestAnalysis={mockLatestAnalysis}
-              totalMonthlyRevenue={journeyData.totalMonthlyRevenue}
-              totalOpportunities={journeyData.totalOpportunities}
-              analysesCount={1} // We have journey data, so at least 1 analysis
-              onRefresh={refreshJourneyData}
+              primaryAddress={selectedProperty.address}
+              latestAnalysis={latestAnalysis}
+              totalMonthlyRevenue={selectedProperty.totalMonthlyRevenue}
+              totalOpportunities={selectedProperty.totalOpportunities}
+              analysesCount={propertiesCount}
+              properties={properties}
+              selectedPropertyId={selectedPropertyId}
+              onPropertySelect={selectProperty}
+              onRefresh={refreshProperties}
             />
           </DashboardLayout>
         );

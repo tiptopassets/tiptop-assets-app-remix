@@ -4,7 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { loadAssetSelections } from '@/services/sessionStorageService';
 import { UserAssetSelection } from '@/types/userData';
 
-export const useUserAssetSelections = () => {
+export const useUserAssetSelections = (analysisId?: string) => {
   const { user } = useAuth();
   const [assetSelections, setAssetSelections] = useState<UserAssetSelection[]>([]);
   const [loading, setLoading] = useState(false);
@@ -15,19 +15,27 @@ export const useUserAssetSelections = () => {
       setLoading(true);
       setError(null);
       
-      console.log('🔍 Loading asset selections for user:', user?.id || 'anonymous');
+      console.log('🔍 Loading asset selections for user:', user?.id || 'anonymous', 'analysisId:', analysisId);
       const selections = await loadAssetSelections(user?.id);
-      setAssetSelections(selections);
+      
+      // Filter by analysis ID if provided
+      const filteredSelections = analysisId 
+        ? selections.filter(selection => selection.analysis_id === analysisId)
+        : selections;
+        
+      setAssetSelections(filteredSelections);
       
       console.log('✅ Loaded asset selections for dashboard:', {
-        count: selections.length,
+        count: filteredSelections.length,
         userId: user?.id,
+        analysisId,
         isAuthenticated: !!user,
-        selections: selections.map(s => ({
+        selections: filteredSelections.map(s => ({
           id: s.id,
           asset_type: s.asset_type,
           monthly_revenue: s.monthly_revenue,
           user_id: s.user_id,
+          analysis_id: s.analysis_id,
           session_id: s.session_id
         }))
       });
@@ -41,7 +49,7 @@ export const useUserAssetSelections = () => {
 
   useEffect(() => {
     loadSelections();
-  }, [user?.id]); // Will load for both authenticated and anonymous users
+  }, [user?.id, analysisId]); // Will load for both authenticated and anonymous users
 
   const isAssetConfigured = (assetType: string) => {
     return assetSelections.some(selection => 

@@ -17,6 +17,9 @@ interface DashboardContentProps {
   totalMonthlyRevenue: number;
   totalOpportunities: number;
   analysesCount: number;
+  properties?: Array<{ id: string; address: string; }>;
+  selectedPropertyId?: string;
+  onPropertySelect?: (propertyId: string) => void;
   onRefresh: () => void;
 }
 
@@ -26,10 +29,13 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
   totalMonthlyRevenue,
   totalOpportunities,
   analysesCount,
+  properties = [],
+  selectedPropertyId,
+  onPropertySelect,
   onRefresh
 }) => {
   const analysisResults = latestAnalysis?.analysis_results;
-  const { assetSelections, isAssetConfigured } = useUserAssetSelections();
+  const { assetSelections, isAssetConfigured } = useUserAssetSelections(latestAnalysis?.id);
   
   // Calculate actual totals based on user selections with deduplication
   const hasUserSelections = assetSelections.length > 0;
@@ -82,6 +88,9 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
           totalMonthlyRevenue={actualTotalRevenue}
           totalOpportunities={actualTotalOpportunities}
           analysesCount={analysesCount}
+          properties={properties}
+          selectedPropertyId={selectedPropertyId}
+          onPropertySelect={onPropertySelect}
         />
       </motion.div>
 
