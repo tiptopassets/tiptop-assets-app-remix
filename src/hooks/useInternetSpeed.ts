@@ -152,11 +152,39 @@ export const useInternetSpeed = () => {
     };
   }, [aiEarningsAnalysis]);
 
+  const runSpeedTest = useCallback(async () => {
+    if (isTestRunning) return;
+
+    console.log('🚀 Starting automated speed test...');
+    setIsTestRunning(true);
+
+    try {
+      const result = await internetSpeedService.runFullSpeedTest(
+        (progress, status) => {
+          console.log(`Speed test progress: ${progress}% - ${status}`);
+        }
+      );
+
+      setLatestResult(result);
+      setTestHistory(internetSpeedService.getTestHistory());
+
+      // Automatically analyze earnings with AI after test completion
+      await analyzeEarningsWithAI(result, internetSpeedService.getTestHistory());
+
+      console.log('✅ Speed test completed successfully:', result);
+    } catch (error) {
+      console.error('Speed test failed:', error);
+    } finally {
+      setIsTestRunning(false);
+    }
+  }, [isTestRunning, analyzeEarningsWithAI]);
+
   return {
     latestResult,
     testHistory,
     isTestRunning,
     refreshData,
+    runSpeedTest,
     calculateAverageSpeed,
     getNetworkQuality,
     getBandwidthSharingPotential,

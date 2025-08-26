@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -16,6 +17,8 @@ const InternetDashboard = () => {
   const { 
     latestResult, 
     testHistory, 
+    isTestRunning,
+    runSpeedTest,
     calculateAverageSpeed, 
     getNetworkQuality,
     getBandwidthSharingPotential,
@@ -25,6 +28,17 @@ const InternetDashboard = () => {
     getMarketFactors,
     getBestSharingSchedule
   } = useInternetSpeed();
+
+  // Auto-run speed test when component mounts if no recent test exists
+  useEffect(() => {
+    const shouldAutoRun = !latestResult || 
+      (Date.now() - latestResult.timestamp.getTime()) > 5 * 60 * 1000; // 5 minutes
+
+    if (shouldAutoRun && !isTestRunning) {
+      console.log('🔄 Auto-running speed test on dashboard load...');
+      runSpeedTest();
+    }
+  }, []); // Empty dependency array to run only on mount
 
   // Use real data if available, otherwise fall back to mock data
   const averageSpeeds = calculateAverageSpeed();
