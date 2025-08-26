@@ -153,6 +153,149 @@ const InternetDashboard = () => {
           />
         </div>
 
+        {/* Start Now Section */}
+        <Card className="bg-gradient-to-r from-primary/5 to-purple-500/5 border-primary/20">
+          <CardHeader>
+            <CardTitle className="text-card-foreground flex items-center gap-2">
+              <Globe className="h-5 w-5 text-primary" />
+              Start Earning Today
+            </CardTitle>
+            <p className="text-muted-foreground">
+              Connect with trusted internet sharing partners and start monetizing your unused bandwidth immediately
+            </p>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Honeygain Card */}
+              <Card className="border-border hover:shadow-lg transition-shadow">
+                <CardContent className="p-6">
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 bg-gradient-to-r from-orange-400 to-red-500 rounded-lg flex items-center justify-center">
+                        <Wifi className="h-6 w-6 text-white" />
+                      </div>
+                      <div>
+                        <h3 className="font-semibold text-card-foreground">Honeygain</h3>
+                        <p className="text-sm text-muted-foreground">Leading bandwidth sharing platform</p>
+                      </div>
+                    </div>
+                    <Badge variant="secondary" className="text-green-600 bg-green-50 dark:bg-green-950">
+                      Most Popular
+                    </Badge>
+                  </div>
+                  
+                  <div className="space-y-3 mb-4">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-muted-foreground">Monthly Earnings</span>
+                      <span className="font-medium text-card-foreground">$20 - $50</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-muted-foreground">Setup Time</span>
+                      <span className="font-medium text-card-foreground">5 minutes</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-muted-foreground">Minimum Payout</span>
+                      <span className="font-medium text-card-foreground">$20</span>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-2">
+                    <Button 
+                      asChild 
+                      className="flex-1"
+                      onClick={() => {
+                        // Track click for analytics
+                        console.log('User clicked Honeygain referral link');
+                      }}
+                    >
+                      <a 
+                        href="https://r.honeygain.me/TIPTOP" 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="flex items-center justify-center gap-2"
+                      >
+                        <DollarSign className="h-4 w-4" />
+                        Start Earning
+                      </a>
+                    </Button>
+                    <Button variant="outline" size="sm" asChild>
+                      <a 
+                        href="https://honeygain.com" 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                      >
+                        Learn More
+                      </a>
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Coming Soon Card */}
+              <Card className="border-border bg-muted/30">
+                <CardContent className="p-6">
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 bg-gradient-to-r from-blue-400 to-purple-500 rounded-lg flex items-center justify-center">
+                        <Router className="h-6 w-6 text-white" />
+                      </div>
+                      <div>
+                        <h3 className="font-semibold text-card-foreground">More Partners</h3>
+                        <p className="text-sm text-muted-foreground">Additional platforms coming soon</p>
+                      </div>
+                    </div>
+                    <Badge variant="outline">
+                      Coming Soon
+                    </Badge>
+                  </div>
+                  
+                  <div className="space-y-3 mb-4">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-muted-foreground">Expected Earnings</span>
+                      <span className="font-medium text-card-foreground">$30 - $80</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-muted-foreground">New Platforms</span>
+                      <span className="font-medium text-card-foreground">Q1 2024</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-muted-foreground">Total Potential</span>
+                      <span className="font-medium text-primary">$50 - $130/mo</span>
+                    </div>
+                  </div>
+
+                  <Button variant="outline" disabled className="w-full">
+                    <Clock className="h-4 w-4 mr-2" />
+                    Notify Me
+                  </Button>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Quick Setup Guide */}
+            <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-950/30 rounded-lg border border-blue-200 dark:border-blue-800">
+              <h4 className="font-medium text-card-foreground mb-2 flex items-center gap-2">
+                <Activity className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                Quick Setup Guide
+              </h4>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                <div className="flex items-center gap-2">
+                  <div className="w-6 h-6 bg-blue-600 dark:bg-blue-400 text-white rounded-full flex items-center justify-center text-xs font-bold">1</div>
+                  <span className="text-muted-foreground">Click "Start Earning" above</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-6 h-6 bg-blue-600 dark:bg-blue-400 text-white rounded-full flex items-center justify-center text-xs font-bold">2</div>
+                  <span className="text-muted-foreground">Download & install the app</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-6 h-6 bg-blue-600 dark:bg-blue-400 text-white rounded-full flex items-center justify-center text-xs font-bold">3</div>
+                  <span className="text-muted-foreground">Start earning automatically</span>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Enhanced Key Metrics Cards with AI Data */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <Card className="bg-white border-gray-200">
