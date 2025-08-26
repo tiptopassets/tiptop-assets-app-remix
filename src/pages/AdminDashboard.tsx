@@ -9,6 +9,7 @@ import { LoginStatsTable } from '@/components/admin/LoginStatsTable';
 import { LoginChartsSection } from '@/components/admin/LoginChartsSection';
 import ServiceIntegrationsManagement from '@/components/admin/ServiceIntegrationsManagement';
 import PropertyManagement from '@/components/admin/PropertyManagement';
+import PartnersSection from '@/components/admin/PartnersSection';
 import { useToast } from '@/hooks/use-toast';
 import { motion } from 'framer-motion';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -286,10 +287,11 @@ const AdminDashboard = () => {
         </Alert>
 
         <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid grid-cols-5 w-[600px]">
+          <TabsList className="grid grid-cols-6 w-[720px]">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="users">User Analytics</TabsTrigger>
             <TabsTrigger value="services">Service Integrations</TabsTrigger>
+            <TabsTrigger value="partners">Partners</TabsTrigger>
             <TabsTrigger value="properties">Properties</TabsTrigger>
             <TabsTrigger value="earnings">Affiliate Earnings</TabsTrigger>
           </TabsList>
@@ -414,6 +416,10 @@ const AdminDashboard = () => {
           
           <TabsContent value="services">
             <ServiceIntegrationsManagement />
+          </TabsContent>
+          
+          <TabsContent value="partners">
+            <PartnersSection />
           </TabsContent>
           
           <TabsContent value="properties">
