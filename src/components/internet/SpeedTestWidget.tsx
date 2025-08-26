@@ -1,63 +1,20 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { motion } from 'framer-motion';
 import { Wifi, Download, Upload, Clock, Activity, Play, Square } from 'lucide-react';
-import { internetSpeedService } from '@/services/internetSpeedService';
-
-interface SpeedTestResult {
-  downloadSpeed: number;
-  uploadSpeed: number;
-  ping: number;
-  jitter: number;
-  timestamp: Date;
-  testDuration: number;
-}
+import { useInternetSpeed } from '@/hooks/useInternetSpeed';
 
 const SpeedTestWidget = () => {
-  const [isTestRunning, setIsTestRunning] = useState(false);
-  const [testProgress, setTestProgress] = useState(0);
-  const [testStatus, setTestStatus] = useState('');
-  const [latestResult, setLatestResult] = useState<SpeedTestResult | null>(
-    internetSpeedService.getLatestResult()
-  );
-
-  const startSpeedTest = async () => {
-    setIsTestRunning(true);
-    setTestProgress(0);
-    setTestStatus('Initializing test...');
-
-    try {
-      const result = await internetSpeedService.runFullSpeedTest(
-        (progress, status) => {
-          setTestProgress(progress);
-          setTestStatus(status);
-        }
-      );
-
-      setLatestResult(result);
-      setTestStatus('Test completed successfully!');
-    } catch (error) {
-      console.error('Speed test failed:', error);
-      setTestStatus('Test failed. Please try again.');
-    } finally {
-      setIsTestRunning(false);
-      setTimeout(() => {
-        setTestProgress(0);
-        setTestStatus('');
-      }, 3000);
-    }
-  };
-
-  const stopSpeedTest = () => {
-    // Note: In a real implementation, you'd want to add cancellation logic
-    setIsTestRunning(false);
-    setTestProgress(0);
-    setTestStatus('Test cancelled');
-  };
+  const { 
+    latestResult, 
+    isTestRunning, 
+    runSpeedTest,
+    getNetworkQuality 
+  } = useInternetSpeed();
 
   const getSpeedColor = (speed: number, type: 'download' | 'upload') => {
     const threshold = type === 'download' ? 25 : 10;
@@ -72,8 +29,9 @@ const SpeedTestWidget = () => {
     return 'text-red-500';
   };
 
-  const getQualityBadge = (result: SpeedTestResult) => {
-    const quality = internetSpeedService.calculateNetworkQuality(result);
+  const getQualityBadge = () => {
+    if (!latestResult) return null;
+    const quality = getNetworkQuality();
     if (quality >= 80) return <Badge className="bg-green-500">Excellent</Badge>;
     if (quality >= 60) return <Badge className="bg-yellow-500">Good</Badge>;
     if (quality >= 40) return <Badge className="bg-orange-500">Fair</Badge>;
@@ -92,22 +50,13 @@ const SpeedTestWidget = () => {
         {/* Test Controls */}
         <div className="flex gap-2">
           <Button
-            onClick={startSpeedTest}
+            onClick={runSpeedTest}
             disabled={isTestRunning}
             className="flex-1 bg-blue-600 hover:bg-blue-700"
           >
             <Play className="h-4 w-4 mr-2" />
             {isTestRunning ? 'Testing...' : 'Start Speed Test'}
           </Button>
-          {isTestRunning && (
-            <Button
-              onClick={stopSpeedTest}
-              variant="outline"
-              className="border-red-500 text-red-500 hover:bg-red-500/10"
-            >
-              <Square className="h-4 w-4" />
-            </Button>
-          )}
         </div>
 
         {/* Test Progress */}
@@ -118,10 +67,10 @@ const SpeedTestWidget = () => {
             className="space-y-2"
           >
             <div className="flex justify-between text-sm">
-              <span className="text-gray-300">{testStatus}</span>
-              <span className="text-gray-300">{testProgress}%</span>
+              <span className="text-gray-300">Running speed test...</span>
+              <span className="text-gray-300">In Progress</span>
             </div>
-            <Progress value={testProgress} className="h-2" />
+            <Progress value={33} className="h-2" />
           </motion.div>
         )}
 
@@ -134,7 +83,7 @@ const SpeedTestWidget = () => {
           >
             <div className="flex items-center justify-between">
               <span className="text-gray-300">Network Quality</span>
-              {getQualityBadge(latestResult)}
+              {getQualityBadge()}
             </div>
 
             <div className="grid grid-cols-2 gap-4">
