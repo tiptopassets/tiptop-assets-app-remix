@@ -29,12 +29,17 @@ class ClickTrackingService {
     
     try {
       // Track the click via affiliate partner integration edge function
+      const { data: userResult } = await supabase.auth.getUser();
+      const userId = userResult?.user?.id || `anonymous_${crypto.randomUUID()}`;
+
       const { data: result, error } = await supabase.functions.invoke('affiliate-partner-integration', {
         body: {
           action: 'track_click',
+          userId,
           provider,
-          clickData: {
+          data: {
             url,
+            referralLink: url,
             source,
             timestamp: new Date().toISOString(),
             userAgent: userAgent || navigator.userAgent,
@@ -65,11 +70,15 @@ class ClickTrackingService {
     try {
       console.log('🔄 Tracking click event for provider:', provider);
       
+      const { data: userResult } = await supabase.auth.getUser();
+      const userId = userResult?.user?.id || `anonymous_${crypto.randomUUID()}`;
+      
       const { error } = await supabase.functions.invoke('affiliate-partner-integration', {
         body: {
           action: 'track_click',
+          userId,
           provider,
-          clickData: {
+          data: {
             source,
             timestamp: new Date().toISOString(),
             userAgent: navigator.userAgent,

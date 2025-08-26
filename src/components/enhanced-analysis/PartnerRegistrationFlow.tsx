@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useAffiliateIntegration } from '@/hooks/useAffiliateIntegration';
 import { ExternalLink, CheckCircle, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { trackAndOpenReferral } from '@/services/clickTrackingService';
 
 interface Partner {
   name: string;
@@ -87,8 +88,12 @@ const PartnerRegistrationFlow: React.FC<PartnerRegistrationFlowProps> = ({
     const referralLink = await generateReferralLink(normalizedName, getPartnerUrl(partner.name));
     
     if (referralLink) {
-      // Open in new tab
-      window.open(referralLink, '_blank');
+      await trackAndOpenReferral({
+        provider: normalizedName,
+        url: referralLink,
+        source: 'partner_registration_flow',
+        extra: { assets: selectedAssets }
+      });
       
       // Mark as registered after a delay (simulating user completing registration)
       setTimeout(async () => {

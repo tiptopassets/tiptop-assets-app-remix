@@ -16,6 +16,7 @@ import {
 } from '@/services/partnerRecommendationService';
 import PartnerRecommendationCard from '@/components/onboarding/PartnerRecommendationCard';
 import OnboardingHeader from '@/components/onboarding/OnboardingHeader';
+import { trackAndOpenReferral } from '@/services/clickTrackingService';
 import AssetSelectionCards from '@/components/onboarding/AssetSelectionCards';
 
 const OnboardingChatbot = () => {
@@ -226,8 +227,11 @@ const OnboardingChatbot = () => {
       );
       
       if (integration) {
-        // Open referral link in new tab
-        window.open(referralLink, '_blank', 'noopener,noreferrer');
+        await trackAndOpenReferral({
+          provider: partnerName,
+          url: referralLink,
+          source: 'onboarding_chatbot'
+        });
         
         // Add assistant message about the integration
         await addMessage('assistant', 

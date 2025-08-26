@@ -6,6 +6,7 @@ import { Eye, ExternalLink, Users, TrendingUp, RefreshCw } from 'lucide-react';
 import { ServiceIntegration, PartnerClick } from '@/hooks/useServiceIntegrations';
 import { useAffiliateIntegration } from '@/hooks/useAffiliateIntegration';
 import { useAuth } from '@/contexts/AuthContext';
+import { trackAndOpenReferral } from '@/services/clickTrackingService';
 
 interface ServiceIntegrationsTableProps {
   integrations: ServiceIntegration[];
@@ -53,24 +54,15 @@ const ServiceIntegrationsTable = ({
     setTrackingClick(integration.id);
     
     try {
-      // Track the click if user is available
-      if (user) {
-        console.log('🎯 Tracking admin click for:', integration.name);
-        await trackClick(integration.name, {
-          referralLink: integration.integration_url,
-          source: 'admin_dashboard',
-          timestamp: new Date().toISOString(),
-          userAgent: navigator.userAgent,
-          referrer: window.location.href
-        });
-        console.log('✅ Admin click tracked successfully');
-      }
+      await trackAndOpenReferral({
+        provider: integration.name,
+        url: integration.integration_url,
+        source: 'admin_dashboard_table'
+      });
     } catch (error) {
       console.warn('Click tracking failed, but continuing with visit:', error);
     } finally {
       setTrackingClick(null);
-      // Always open the link regardless of tracking success
-      window.open(integration.integration_url, '_blank');
     }
   };
 

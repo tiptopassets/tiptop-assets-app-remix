@@ -12,6 +12,7 @@ import { useNavigate } from 'react-router-dom';
 import { AlertCircle, User, ExternalLink, DollarSign, Clock, CheckCircle, Star } from 'lucide-react';
 import PartnerRecommendationCard from './PartnerRecommendationCard';
 import MessageContent from './MessageContent';
+import { trackAndOpenReferral } from '@/services/clickTrackingService';
 
 interface ExtendedPropertyData extends PropertyAnalysisData {
   selectedAssets?: Array<{
@@ -105,9 +106,12 @@ const EnhancedChatInterface = ({
       onInteractionTriggered();
     }
     
-    // Track the click and open the referral link
     if (referralLink) {
-      window.open(referralLink, '_blank');
+      await trackAndOpenReferral({
+        provider: partnerName,
+        url: referralLink,
+        source: 'chat_interface'
+      });
     }
   }, [onInteractionTriggered]);
 
