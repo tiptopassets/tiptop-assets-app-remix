@@ -101,7 +101,7 @@ const ManageAssets: React.FC = () => {
     );
   };
 
-  // Find matching partners for asset type
+  // Find matching partners for asset type with deduplication
   const getMatchingPartnersForAsset = (assetType: string) => {
     const normalizedAssetType = assetType.toLowerCase().replace(/[_\s-]/g, '');
     
@@ -116,12 +116,20 @@ const ManageAssets: React.FC = () => {
       });
     });
 
-    console.log(`Found ${matchingProviders.length} providers for asset type: ${assetType}`);
-    matchingProviders.forEach(provider => {
+    // Deduplicate providers by ID to prevent duplicates
+    const uniqueProviders = matchingProviders.reduce((acc, provider) => {
+      if (!acc.some(existing => existing.id === provider.id)) {
+        acc.push(provider);
+      }
+      return acc;
+    }, [] as ServiceProvider[]);
+
+    console.log(`Found ${uniqueProviders.length} unique providers for asset type: ${assetType}`);
+    uniqueProviders.forEach(provider => {
       console.log(`- ${provider.name}: ${provider.asset_types.join(', ')}`);
     });
 
-    return matchingProviders;
+    return uniqueProviders;
   };
 
   if (loading || partnersLoading) {
