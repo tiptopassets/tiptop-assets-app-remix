@@ -197,6 +197,13 @@ const ModelViewer = () => {
       const selectedTitle = selectedAsset.title.toLowerCase();
       const assetTitle = asset.title.toLowerCase();
       
+      console.log('🔍 Checking asset match:', {
+        selectedTitle,
+        assetTitle,
+        selectedAsset: selectedAsset.title,
+        mainAsset: asset.title
+      });
+      
       // Direct title match
       if (selectedTitle === assetTitle) return true;
       
@@ -206,20 +213,18 @@ const ModelViewer = () => {
         return true;
       }
       
-      // Parking asset matching
-      if ((selectedTitle.includes('parking') || selectedTitle.includes('space')) && 
-          (assetTitle.includes('parking') || assetTitle.includes('space'))) {
+      // Parking asset matching - be more specific
+      if (selectedTitle.includes('parking') && assetTitle.includes('parking')) {
         return true;
       }
       
-      // Storage asset matching
+      // Storage asset matching - be more specific  
       if (selectedTitle.includes('storage') && assetTitle.includes('storage')) {
         return true;
       }
       
-      // Garden/composting asset matching
-      if ((selectedTitle.includes('garden') || selectedTitle.includes('compost')) && 
-          (assetTitle.includes('garden') || assetTitle.includes('compost'))) {
+      // Garden asset matching - be more specific
+      if (selectedTitle.includes('garden') && assetTitle.includes('garden')) {
         return true;
       }
       
@@ -237,7 +242,22 @@ const ModelViewer = () => {
       return false;
     });
     
+    console.log('🎯 Asset filter result:', {
+      assetTitle: asset.title,
+      isAlreadySelected,
+      willShow: !isAlreadySelected
+    });
+    
     return !isAlreadySelected;
+  });
+
+  console.log('📊 Asset filtering summary:', {
+    mainAssetsCount: mainAssets.length,
+    selectedAssetsCount: selectedAssetDataToShow.length,
+    unselectedAssetsCount: unselectedAssets.length,
+    mainAssets: mainAssets.map(a => a.title),
+    selectedAssets: selectedAssetDataToShow.map(a => a.title),
+    unselectedAssets: unselectedAssets.map(a => a.title)
   });
 
   const handleAssetToggle = async (asset: any) => {
