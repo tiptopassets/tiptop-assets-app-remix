@@ -12,6 +12,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 const DashboardSidebarHeader = () => {
   const { journeyData } = useDashboardJourneyData();
@@ -34,38 +35,54 @@ const DashboardSidebarHeader = () => {
 
       {/* Property Navigation & Switcher */}
       <div className="p-4 border-b border-gray-800 flex-shrink-0">
-        {/* Navigation Options */}
-        <div className="mb-4">
-          <div className="text-sm text-gray-400 mb-2">Quick Actions</div>
-          <div className="space-y-2">
-            <Button
-              asChild
-              variant="ghost"
-              className="w-full justify-start h-auto p-2 text-left text-white hover:bg-gray-800"
-            >
-              <Link to="/">
-                <Plus className="h-4 w-4 mr-2 text-gray-400" />
-                <span className="text-sm">Analyze New Property</span>
-              </Link>
-            </Button>
-            {properties.length > 0 && (
-              <Button
-                variant="ghost"
-                className="w-full justify-start h-auto p-2 text-left text-white hover:bg-gray-800"
-                onClick={() => {}} // Could open a property management modal
-              >
-                <Settings className="h-4 w-4 mr-2 text-gray-400" />
-                <span className="text-sm">Manage Properties</span>
-              </Button>
-            )}
-          </div>
-        </div>
-
         {/* Current Property Info */}
         {(currentAddress || loading) && (
           <div>
-            <div className="text-sm text-gray-400 mb-1">
-              {hasMultipleProperties ? 'Selected Property' : 'Current Property'}
+            <div className="flex items-center justify-between mb-1">
+              <div className="text-sm text-gray-400">
+                {hasMultipleProperties ? 'Selected Property' : 'Current Property'}
+              </div>
+              {/* Compact Action Icons */}
+              <div className="flex items-center gap-1">
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        asChild
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 w-6 p-0 text-gray-400 hover:text-white hover:bg-gray-800"
+                      >
+                        <Link to="/">
+                          <Plus className="h-3 w-3" />
+                        </Link>
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Analyze New Property</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+                {properties.length > 0 && (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 w-6 p-0 text-gray-400 hover:text-white hover:bg-gray-800"
+                          onClick={() => {}} // Could open property management
+                        >
+                          <Settings className="h-3 w-3" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Manage Properties</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                )}
+              </div>
             </div>
             
             {hasMultipleProperties ? (
@@ -111,8 +128,11 @@ const DashboardSidebarHeader = () => {
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : (
-              <div className="text-white font-medium text-sm truncate" title={currentAddress}>
-                {currentAddress}
+              <div className="flex items-center gap-2">
+                <MapPin className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                <div className="text-white font-medium text-sm truncate" title={currentAddress}>
+                  {currentAddress}
+                </div>
               </div>
             )}
             

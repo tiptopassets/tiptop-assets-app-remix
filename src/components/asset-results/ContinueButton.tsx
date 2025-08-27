@@ -12,7 +12,7 @@ interface ContinueButtonProps {
 
 const ContinueButton = ({ selectedCount, onContinue, selectedAssetsData }: ContinueButtonProps) => {
   const navigate = useNavigate();
-  const { analysisResults, address } = useGoogleMap();
+  const { analysisResults, address, currentAnalysisId } = useGoogleMap();
 
   const handleContinue = () => {
     if (selectedCount < 2) {
@@ -25,6 +25,7 @@ const ContinueButton = ({ selectedCount, onContinue, selectedAssetsData }: Conti
     const navigationData = {
       analysisResults,
       address,
+      analysisId: currentAnalysisId, // Include the analysis ID
       selectedAssetsData: selectedAssetsData || [],
       timestamp: Date.now()
     };

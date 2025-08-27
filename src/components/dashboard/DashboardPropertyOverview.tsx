@@ -66,7 +66,21 @@ const DashboardPropertyOverview: React.FC<DashboardPropertyOverviewProps> = ({
   const { imageUrl: satelliteImageUrl, loading: imageLoading } = useSatelliteImage(propertyAddress);
 
   const getSelectedAssets = () => {
-    if (!assetSelections.length) return null;
+    console.log('🎯 [PROPERTY-OVERVIEW] Getting selected assets:', {
+      analysisId: analysis.id,
+      assetSelectionsCount: assetSelections.length,
+      assetSelections: assetSelections.map(s => ({
+        id: s.id,
+        asset_type: s.asset_type,
+        analysis_id: s.analysis_id,
+        monthly_revenue: s.monthly_revenue
+      }))
+    });
+    
+    if (!assetSelections.length) {
+      console.log('🚫 [PROPERTY-OVERVIEW] No asset selections found for analysis:', analysis.id);
+      return null;
+    }
 
     // Deduplicate asset selections - keep only the most recent selection for each asset type
     const uniqueAssetSelections = assetSelections.reduce((acc, selection) => {

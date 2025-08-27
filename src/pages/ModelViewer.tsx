@@ -22,6 +22,7 @@ const ModelViewer = () => {
   const [selectedAssets, setSelectedAssets] = useState<string[]>([]);
   const [selectedAssetsData, setSelectedAssetsData] = useState<SelectedAsset[]>([]);
   const [analysisResults, setAnalysisResults] = useState<any>(null);
+  const [analysisId, setAnalysisId] = useState<string>('');
   const [address, setAddress] = useState<string>('');
   const [isLoading, setIsLoading] = useState(true);
 
@@ -47,6 +48,12 @@ const ModelViewer = () => {
     if (data && data.analysisResults && data.address) {
       setAnalysisResults(data.analysisResults);
       setAddress(data.address);
+      
+      // Store analysis ID if provided
+      if (data.analysisId) {
+        setAnalysisId(data.analysisId);
+        console.log('📋 Using analysis ID from navigation data:', data.analysisId);
+      }
       
       // Use passed selected assets data if available
       if (data.selectedAssetsData && data.selectedAssetsData.length > 0) {
@@ -287,12 +294,14 @@ const ModelViewer = () => {
           formData: {}
         }]);
         
-        // Save the selection
+        // Save the selection with correct parameters and analysis ID
         await saveSelection(
-          asset.id,
-          asset,
+          asset.title,  // assetType - use the asset title/name, not the ID
+          asset,        // assetData
           asset.monthlyRevenue,
-          asset.setupCost || 0
+          asset.setupCost || 0,
+          undefined,    // roiMonths - could be calculated or passed
+          analysisId    // analysisId - now properly passed
         );
       }
     } catch (error) {
