@@ -24,7 +24,15 @@ const DashboardPropertyOverview: React.FC<DashboardPropertyOverviewProps> = ({
   const [navigatingAsset, setNavigatingAsset] = useState<string | null>(null);
   const [navigatingGeneral, setNavigatingGeneral] = useState(false);
   // Filter asset selections by current analysis ID to avoid showing previous properties' assets
-  const { assetSelections, loading: selectionsLoading } = useUserAssetSelections(analysis.id);
+  const { assetSelections, loading: selectionsLoading, refetch } = useUserAssetSelections(analysis.id);
+  
+  // Refetch selections when analysis ID changes
+  React.useEffect(() => {
+    if (analysis.id) {
+      console.log('🔄 [DASHBOARD] Analysis ID changed, refetching selections:', analysis.id);
+      refetch();
+    }
+  }, [analysis.id, refetch]);
 
   const handleStartAssetSetup = async (assetType?: string) => {
     try {

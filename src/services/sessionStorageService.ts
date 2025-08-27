@@ -104,12 +104,16 @@ export const saveAssetSelectionAnonymous = async (
   userId?: string
 ): Promise<string | null> => {
   try {
-    const sessionId = !userId ? getSessionId() : null;
+    // Always create a session ID for linking purposes, even for authenticated users
+    const sessionId = getSessionId();
     
     // Try to get analysis ID from localStorage if not provided
     if (!analysisId) {
       analysisId = getStoredAnalysisId();
       console.log('🔍 Retrieved analysis ID from localStorage:', analysisId);
+    } else {
+      // Store the analysis ID for future use
+      storeAnalysisIdForSession(analysisId);
     }
     
     console.log('💾 Saving asset selection:', {

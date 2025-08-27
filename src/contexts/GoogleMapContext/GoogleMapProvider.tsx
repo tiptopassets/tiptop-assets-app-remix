@@ -232,16 +232,14 @@ const GoogleMapProvider = ({ children }: { children: React.ReactNode }) => {
           setCurrentAnalysisId(id);
           localStorage.setItem('currentAnalysisId', id);
           
-          // For anonymous users, also update any pending asset selections
-          if (!user) {
-            const sessionId = localStorage.getItem('anonymous_session_id');
-            if (sessionId) {
-              import('@/services/sessionStorageService').then(({ updateAssetSelectionsWithAnalysisId }) => {
-                updateAssetSelectionsWithAnalysisId(sessionId, id).catch(error => {
-                  console.warn('Could not update asset selections with analysis ID:', error);
-                });
+          // Update any pending asset selections with the analysis ID
+          const sessionId = localStorage.getItem('anonymous_session_id');
+          if (sessionId) {
+            import('@/services/sessionStorageService').then(({ updateAssetSelectionsWithAnalysisId }) => {
+              updateAssetSelectionsWithAnalysisId(sessionId, id).catch(error => {
+                console.warn('Could not update asset selections with analysis ID:', error);
               });
-            }
+            });
           }
         },
         setCurrentAddressId: (id: string) => {

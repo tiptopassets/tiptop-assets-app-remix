@@ -295,6 +295,14 @@ const ModelViewer = () => {
         }]);
         
         // Save the selection with correct parameters and analysis ID
+        console.log('💾 [MODEL-VIEWER] Saving asset selection:', {
+          assetTitle: asset.title,
+          analysisId: analysisId,
+          monthlyRevenue: asset.monthlyRevenue,
+          setupCost: asset.setupCost,
+          assetData: asset
+        });
+        
         await saveSelection(
           asset.title,  // assetType - use the asset title/name, not the ID
           asset,        // assetData
@@ -303,6 +311,8 @@ const ModelViewer = () => {
           undefined,    // roiMonths - could be calculated or passed
           analysisId    // analysisId - now properly passed
         );
+        
+        console.log('✅ [MODEL-VIEWER] Asset selection saved successfully for:', asset.title);
       }
     } catch (error) {
       console.error('Error toggling asset:', error);

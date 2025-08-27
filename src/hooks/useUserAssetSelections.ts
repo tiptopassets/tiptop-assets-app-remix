@@ -56,10 +56,43 @@ export const useUserAssetSelections = (analysisId?: string) => {
     }
   };
 
-  useEffect(() => {
-    if (user?.id || analysisId) {
-      loadSelections();
+  // Auto-repair orphaned selections when loading
+  const repairOrphanedSelections = async () => {
+    if (!user?.id) return;
+    
+    try {
+      console.log('🔧 [ASSET-SELECTIONS] Checking for orphaned selections to repair');
+      const sessionId = localStorage.getItem('anonymous_session_id');
+      const currentAnalysisId = localStorage.getItem('currentAnalysisId');
+      
+      if (sessionId && currentAnalysisId) {
+        // Update selections with analysis ID
+        const { updateAssetSelectionsWithAnalysisId } = await import('@/services/sessionStorageService');
+        await updateAssetSelectionsWithAnalysisId(sessionId, currentAnalysisId);
+        
+        // Link session to user
+        const { linkSessionToUser } = await import('@/services/sessionStorageService');
+        await linkSessionToUser(user.id);
+        
+        console.log('✅ [ASSET-SELECTIONS] Repaired orphaned selections');
+      }
+    } catch (error) {
+      console.warn('⚠️ [ASSET-SELECTIONS] Could not repair orphaned selections:', error);
     }
+  };
+
+  useEffect(() => {
+    const doLoad = async () => {
+      // First attempt to repair any orphaned selections
+      await repairOrphanedSelections();
+      
+      // Then load selections normally
+      if (user?.id || analysisId) {
+        loadSelections();
+      }
+    };
+    
+    doLoad();
   }, [user?.id, analysisId]); // Trigger reload when user or analysisId changes
 
   const isAssetConfigured = (assetType: string) => {
