@@ -309,38 +309,36 @@ const GoogleMapProvider = ({ children }: { children: React.ReactNode }) => {
     setCurrentAddressId,
   };
 
-  // Enhanced loading screen with timeout handling
-  if (!isGoogleMapsLoaded && !useLocalAnalysis && !loadingTimeout) {
-    return (
-      <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black flex items-center justify-center">
-        <div className="text-white text-center">
-          <div className="w-16 h-16 border-4 border-tiptop-purple border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-lg mb-2">Loading Google Maps...</p>
-          <p className="text-sm text-gray-400">This might take a moment...</p>
-          
-          {googleMapsLoadError && (
-            <div className="mt-4 p-4 bg-red-500/20 rounded-lg border border-red-500/30 max-w-md mx-auto">
-              <p className="text-red-300 text-sm mb-2">Error: {googleMapsLoadError}</p>
-              <button 
-                onClick={() => {
-                  console.log('🔄 User manually switched to demo mode');
-                  setUseLocalAnalysis(true);
-                  setIsGoogleMapsLoaded(true);
-                }}
-                className="px-4 py-2 bg-tiptop-purple hover:bg-tiptop-purple/90 rounded-md text-sm transition-colors"
-              >
-                Switch to Demo Mode
-              </button>
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  }
-
   return (
     <GoogleMapContext.Provider value={value}>
-      {children}
+      {/* Enhanced loading screen with timeout handling */}
+      {!isGoogleMapsLoaded && !useLocalAnalysis && !loadingTimeout ? (
+        <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black flex items-center justify-center">
+          <div className="text-white text-center">
+            <div className="w-16 h-16 border-4 border-tiptop-purple border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-lg mb-2">Loading Google Maps...</p>
+            <p className="text-sm text-gray-400">This might take a moment...</p>
+            
+            {googleMapsLoadError && (
+              <div className="mt-4 p-4 bg-red-500/20 rounded-lg border border-red-500/30 max-w-md mx-auto">
+                <p className="text-red-300 text-sm mb-2">Error: {googleMapsLoadError}</p>
+                <button 
+                  onClick={() => {
+                    console.log('🔄 User manually switched to demo mode');
+                    setUseLocalAnalysis(true);
+                    setIsGoogleMapsLoaded(true);
+                  }}
+                  className="px-4 py-2 bg-tiptop-purple hover:bg-tiptop-purple/90 rounded-md text-sm transition-colors"
+                >
+                  Switch to Demo Mode
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      ) : (
+        children
+      )}
     </GoogleMapContext.Provider>
   );
 };
