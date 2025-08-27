@@ -7,10 +7,12 @@ import { useUserAssetSelections } from '@/hooks/useUserAssetSelections';
 interface DashboardChartsProps {
   analysisResults: AnalysisResults;
   totalMonthlyRevenue: number;
+  analysisId?: string;
 }
 
-export const DashboardCharts = ({ analysisResults, totalMonthlyRevenue }: DashboardChartsProps) => {
-  const { assetSelections } = useUserAssetSelections();
+export const DashboardCharts = ({ analysisResults, totalMonthlyRevenue, analysisId }: DashboardChartsProps) => {
+  // Filter asset selections by analysis ID to scope charts to current property
+  const { assetSelections } = useUserAssetSelections(analysisId);
   
   // Properly deduplicate assets by keeping only the most recent selection for each asset type
   const deduplicatedAssets = assetSelections.reduce((acc, selection) => {

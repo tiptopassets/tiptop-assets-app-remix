@@ -23,7 +23,8 @@ const DashboardPropertyOverview: React.FC<DashboardPropertyOverviewProps> = ({
   const navigate = useNavigate();
   const [navigatingAsset, setNavigatingAsset] = useState<string | null>(null);
   const [navigatingGeneral, setNavigatingGeneral] = useState(false);
-  const { assetSelections, loading: selectionsLoading } = useUserAssetSelections();
+  // Filter asset selections by current analysis ID to avoid showing previous properties' assets
+  const { assetSelections, loading: selectionsLoading } = useUserAssetSelections(analysis.id);
 
   const handleStartAssetSetup = async (assetType?: string) => {
     try {

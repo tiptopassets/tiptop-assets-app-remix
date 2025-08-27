@@ -158,6 +158,7 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
         <DashboardCharts 
           analysisResults={analysisResults}
           totalMonthlyRevenue={actualTotalRevenue}
+          analysisId={latestAnalysis?.id}
         />
       )}
     </div>
