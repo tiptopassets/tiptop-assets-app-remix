@@ -89,6 +89,9 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
         <DashboardHeader 
           primaryAddress={primaryAddress}
           onRefresh={onRefresh}
+          properties={properties}
+          selectedPropertyId={selectedPropertyId}
+          onPropertySelect={onPropertySelect}
         />
 
         {/* Stats Cards */}

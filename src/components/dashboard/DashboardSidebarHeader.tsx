@@ -1,10 +1,25 @@
 
 import { Link } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { useDashboardJourneyData } from '@/hooks/useDashboardJourneyData';
+import { useUserProperties } from '@/hooks/useUserProperties';
+import { ChevronDown, MapPin } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 const DashboardSidebarHeader = () => {
   const { journeyData } = useDashboardJourneyData();
+  const { properties, selectedProperty, selectProperty, loading } = useUserProperties();
+  
+  // Use multi-property system if available, fallback to single journey data
+  const hasMultipleProperties = properties.length > 1;
+  const currentAddress = selectedProperty?.address || journeyData?.propertyAddress;
+  const currentRevenue = selectedProperty?.totalMonthlyRevenue || journeyData?.totalMonthlyRevenue;
 
   return (
     <>
@@ -16,18 +31,66 @@ const DashboardSidebarHeader = () => {
         <p className="text-gray-400 text-sm mt-1">Property Dashboard</p>
       </div>
 
-      {/* Property Info */}
-      {journeyData && (
+      {/* Property Info with Switcher */}
+      {(currentAddress || loading) && (
         <div className="p-4 border-b border-gray-800 flex-shrink-0">
-          <div className="text-sm text-gray-400 mb-1">Current Property</div>
-          <div className="text-white font-medium text-sm truncate" title={journeyData.propertyAddress}>
-            {journeyData.propertyAddress}
+          <div className="text-sm text-gray-400 mb-1">
+            {hasMultipleProperties ? 'Selected Property' : 'Current Property'}
           </div>
-          <div className="flex items-center gap-2 mt-2">
-            <Badge variant="outline" className="text-xs text-green-400 border-green-400/50">
-              ${journeyData.totalMonthlyRevenue}/mo potential
-            </Badge>
-          </div>
+          
+          {hasMultipleProperties ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button 
+                  variant="ghost" 
+                  className="w-full justify-between h-auto p-2 text-left text-white hover:bg-gray-800"
+                >
+                  <div className="flex items-center gap-2 min-w-0 flex-1">
+                    <MapPin className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                    <span className="text-sm font-medium truncate" title={currentAddress}>
+                      {currentAddress}
+                    </span>
+                  </div>
+                  <ChevronDown className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-72">
+                {properties.map((property) => (
+                  <DropdownMenuItem
+                    key={property.id}
+                    onClick={() => selectProperty(property.id)}
+                    className={selectedProperty?.id === property.id ? 'bg-muted' : ''}
+                  >
+                    <div className="flex flex-col gap-1 w-full">
+                      <div className="text-sm font-medium truncate" title={property.address}>
+                        {property.address}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        ${property.totalMonthlyRevenue}/mo • {property.totalOpportunities} opportunities
+                      </div>
+                    </div>
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <div className="text-white font-medium text-sm truncate" title={currentAddress}>
+              {currentAddress}
+            </div>
+          )}
+          
+          {currentRevenue && (
+            <div className="flex items-center gap-2 mt-2">
+              <Badge variant="outline" className="text-xs text-green-400 border-green-400/50">
+                ${currentRevenue}/mo potential
+              </Badge>
+              {hasMultipleProperties && (
+                <Badge variant="outline" className="text-xs text-blue-400 border-blue-400/50">
+                  {properties.length} properties
+                </Badge>
+              )}
+            </div>
+          )}
         </div>
       )}
     </>

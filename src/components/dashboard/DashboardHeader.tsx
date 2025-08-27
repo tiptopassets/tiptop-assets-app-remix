@@ -7,18 +7,30 @@ import { Link } from 'react-router-dom';
 interface DashboardHeaderProps {
   primaryAddress?: string;
   onRefresh: () => void;
+  properties?: Array<{ id: string; address: string; }>;
+  selectedPropertyId?: string;
+  onPropertySelect?: (propertyId: string) => void;
 }
 
 const DashboardHeader: React.FC<DashboardHeaderProps> = ({ 
   primaryAddress, 
-  onRefresh 
+  onRefresh,
+  properties = [],
+  selectedPropertyId,
+  onPropertySelect
 }) => {
+  const hasMultipleProperties = properties.length > 1;
   return (
     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
       <div>
         <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Property Dashboard</h1>
         <p className="text-gray-600 text-sm sm:text-base">
           {primaryAddress || 'Your monetization overview'}
+          {hasMultipleProperties && (
+            <span className="ml-2 text-xs text-blue-600 font-medium">
+              • {properties.length} properties analyzed
+            </span>
+          )}
         </p>
       </div>
       <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">

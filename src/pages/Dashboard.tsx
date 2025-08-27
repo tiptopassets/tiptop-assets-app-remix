@@ -209,6 +209,9 @@ const Dashboard = () => {
               totalMonthlyRevenue={journeyData.totalMonthlyRevenue}
               totalOpportunities={journeyData.totalOpportunities}
               analysesCount={1} // Fallback system has 1 analysis
+              properties={[]} // No multi-property data in fallback
+              selectedPropertyId={undefined}
+              onPropertySelect={undefined}
               onRefresh={refreshJourneyData}
             />
           </DashboardLayout>
