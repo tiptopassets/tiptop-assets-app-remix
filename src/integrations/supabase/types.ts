@@ -1514,6 +1514,10 @@ export type Database = {
         Args: { p_session_id: string; p_user_id: string }
         Returns: number
       }
+      link_user_analyses_from_journey: {
+        Args: { p_user_id: string }
+        Returns: number
+      }
       update_asset_selections_with_analysis: {
         Args: { p_analysis_id: string; p_session_id: string }
         Returns: number
