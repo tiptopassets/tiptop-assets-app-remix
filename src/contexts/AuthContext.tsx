@@ -278,13 +278,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                   // Trigger analysis recovery with enhanced data consistency
                   handleAnalysisRecovery(currentSession.user.id);
                   
-                  // Only redirect to dashboard if user is on auth page or homepage
-                  // This prevents redirecting away from chatbot when tab comes back into focus
+                  // Only redirect to dashboard if user is on auth page (not homepage)
+                  // Allow signed-in users to stay on homepage to analyze new properties
                   const currentPath = window.location.pathname;
-                  const shouldRedirectToDashboard = currentPath === '/' || currentPath === '/auth' || currentPath.startsWith('/auth');
+                  const shouldRedirectToDashboard = currentPath === '/auth' || currentPath.startsWith('/auth');
                   
                   if (shouldRedirectToDashboard) {
-                    console.log('🔄 [AUTH] Redirecting to dashboard from:', currentPath);
+                    console.log('🔄 [AUTH] Redirecting to dashboard from auth page:', currentPath);
                     navigate('/dashboard');
                   } else {
                     console.log('🔄 [AUTH] Staying on current page:', currentPath);

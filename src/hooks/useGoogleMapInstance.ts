@@ -62,7 +62,10 @@ export const useGoogleMapInstance = (zoomLevel: number | undefined, setZoomLevel
       return null;
     };
 
-    loadMap();
+    // Only initialize map once on mount
+    if (!mapInstance) {
+      loadMap();
+    }
 
     return () => {
       mounted = false;
@@ -72,7 +75,7 @@ export const useGoogleMapInstance = (zoomLevel: number | undefined, setZoomLevel
         setMapInstance(null);
       }
     };
-  }, [zoomLevel, setZoomLevel, toast]);
+  }, []); // Remove dependencies to prevent re-initialization
 
   return { mapRef, mapInstance, mapLoadError };
 };
