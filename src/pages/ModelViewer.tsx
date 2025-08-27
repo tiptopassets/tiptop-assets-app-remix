@@ -76,7 +76,7 @@ const ModelViewer = () => {
       // Convert database selections to SelectedAsset format
       const convertedData = assetSelections.map(selection => ({
         title: selection.asset_type,
-        icon: 'default',
+        icon: selection.asset_type,
         monthlyRevenue: selection.monthly_revenue,
         provider: undefined,
         setupCost: selection.setup_cost,
@@ -169,7 +169,12 @@ const ModelViewer = () => {
   ].map(asset => ({
     ...asset,
     title: asset.name,
-    icon: 'default',
+    icon: asset.id === 'rooftop_solar' ? 'solar' : 
+          asset.id === 'garden_space' ? 'garden' :
+          asset.id === 'parking_space' ? 'parking' :
+          asset.id === 'storage_space' ? 'storage' :
+          asset.id === 'short_term_rental' ? 'coworking' :
+          asset.id === 'pool_rental' ? 'pool' : 'storage',
     monthlyRevenue: asset.revenue,
     provider: undefined,
     formData: {}
@@ -254,7 +259,7 @@ const ModelViewer = () => {
         setSelectedAssets(prev => [...prev, asset.id]);
         setSelectedAssetsData(prev => [...prev, {
           title: asset.title,
-          icon: 'default',
+          icon: asset.icon,
           monthlyRevenue: asset.monthlyRevenue,
           provider: undefined,
           setupCost: asset.setupCost || 0,
@@ -334,9 +339,9 @@ const ModelViewer = () => {
                     >
                       <div className="flex items-center justify-between">
                         <div className="flex items-center">
-                          <div className="mr-3 md:mr-4 w-8 h-8 md:w-12 md:h-12 flex items-center justify-center">
-                            {getAssetIcon(asset.title)}
-                          </div>
+                           <div className="mr-3 md:mr-4 w-8 h-8 md:w-12 md:h-12 flex items-center justify-center">
+                             {getAssetIcon(asset.icon)}
+                           </div>
                           <div className="flex items-center">
                             <Check className="h-4 w-4 md:h-5 md:w-5 text-green-400 mr-2 md:mr-3" />
                             <div>
@@ -372,9 +377,9 @@ const ModelViewer = () => {
                       >
                         <div className="flex items-center justify-between">
                           <div className="flex items-center">
-                            <div className="mr-3 md:mr-4 w-8 h-8 md:w-12 md:h-12 flex items-center justify-center">
-                              {getAssetIcon(asset.title)}
-                            </div>
+                             <div className="mr-3 md:mr-4 w-8 h-8 md:w-12 md:h-12 flex items-center justify-center">
+                               {getAssetIcon(asset.icon)}
+                             </div>
                             <div className="flex items-center">
                               <Plus className="h-4 w-4 md:h-5 md:w-5 text-gray-400 mr-2 md:mr-3" />
                               <div>
