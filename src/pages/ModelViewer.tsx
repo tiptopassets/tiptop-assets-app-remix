@@ -186,15 +186,54 @@ const ModelViewer = () => {
       );
 
   // Filter out selected assets from available assets to avoid duplicates
-  const unselectedAssets = mainAssets.filter(asset => 
-    !selectedAssets.some(selectedId => 
-      selectedId.toLowerCase().includes(asset.id.toLowerCase()) ||
-      asset.id.toLowerCase().includes(selectedId.toLowerCase())
-    ) && !selectedAssetDataToShow.some(selectedAsset => 
-      selectedAsset.title.toLowerCase().includes(asset.title.toLowerCase()) ||
-      asset.title.toLowerCase().includes(selectedAsset.title.toLowerCase())
-    )
-  );
+  const unselectedAssets = mainAssets.filter(asset => {
+    // Check if this asset type is already selected using improved matching
+    const isAlreadySelected = selectedAssetDataToShow.some(selectedAsset => {
+      const selectedTitle = selectedAsset.title.toLowerCase();
+      const assetTitle = asset.title.toLowerCase();
+      
+      // Direct title match
+      if (selectedTitle === assetTitle) return true;
+      
+      // Solar asset matching - match various solar-related titles
+      if ((selectedTitle.includes('solar') || selectedTitle.includes('rooftop')) && 
+          (assetTitle.includes('solar') || assetTitle.includes('rooftop'))) {
+        return true;
+      }
+      
+      // Parking asset matching
+      if ((selectedTitle.includes('parking') || selectedTitle.includes('space')) && 
+          (assetTitle.includes('parking') || assetTitle.includes('space'))) {
+        return true;
+      }
+      
+      // Storage asset matching
+      if (selectedTitle.includes('storage') && assetTitle.includes('storage')) {
+        return true;
+      }
+      
+      // Garden/composting asset matching
+      if ((selectedTitle.includes('garden') || selectedTitle.includes('compost')) && 
+          (assetTitle.includes('garden') || assetTitle.includes('compost'))) {
+        return true;
+      }
+      
+      // Pool asset matching
+      if (selectedTitle.includes('pool') && assetTitle.includes('pool')) {
+        return true;
+      }
+      
+      // Short-term rental matching
+      if ((selectedTitle.includes('rental') || selectedTitle.includes('airbnb')) && 
+          (assetTitle.includes('rental') || assetTitle.includes('short'))) {
+        return true;
+      }
+      
+      return false;
+    });
+    
+    return !isAlreadySelected;
+  });
 
   const handleAssetToggle = async (asset: any) => {
     try {
