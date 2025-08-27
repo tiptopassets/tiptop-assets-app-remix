@@ -267,6 +267,21 @@ export const trackAuthCompleted = async (userId: string) => {
       console.error('❌ Error linking asset selections to user:', linkAssetError);
     }
 
+    // Link any unlinked analyses to this user using the new function
+    try {
+      const { data: linkedAnalysesCount, error: linkAnalysesError } = await supabase.rpc('link_user_analyses_from_journey', {
+        p_user_id: userId
+      });
+
+      if (linkAnalysesError) {
+        console.error('❌ Error linking analyses to user:', linkAnalysesError);
+      } else {
+        console.log('✅ Linked', linkedAnalysesCount, 'analyses to user from journey data:', userId);
+      }
+    } catch (linkAnalysesError) {
+      console.error('❌ Error linking analyses to user:', linkAnalysesError);
+    }
+
     // Enhanced recovery: link any recent unlinked data that matches this user's session patterns
     const { error: recoveryError } = await supabase
       .from('user_journey_complete')

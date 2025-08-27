@@ -108,6 +108,22 @@ export const autoRecoverUserData = async (userId: string): Promise<void> => {
     
     // Run repair operations
     await repairJourneySummaryData(userId);
+
+    // Link any unlinked analyses from journey data
+    try {
+      const { supabase } = await import('@/integrations/supabase/client');
+      const { data: linkedCount, error: linkError } = await supabase.rpc('link_user_analyses_from_journey', {
+        p_user_id: userId
+      });
+
+      if (linkError) {
+        console.warn('⚠️ [AUTO-RECOVERY] Could not link analyses from journey:', linkError);
+      } else if (linkedCount > 0) {
+        console.log('✅ [AUTO-RECOVERY] Linked', linkedCount, 'analyses from journey data');
+      }
+    } catch (linkError) {
+      console.warn('⚠️ [AUTO-RECOVERY] Error linking analyses from journey:', linkError);
+    }
     
     // Update context with recovered analysis ID
     const recentAnalysisId = await getRecentAnalysisId(userId);
