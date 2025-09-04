@@ -2,7 +2,6 @@ import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { autoRecoverUserData } from '@/services/dataRecoveryService';
-import { repairUserAnalysisData } from '@/services/dataRepairService';
 
 export interface UserProperty {
   id: string;
@@ -40,7 +39,7 @@ export const useUserProperties = () => {
       await autoRecoverUserData(user.id);
 
       // Fetch all property analyses for the user
-      let { data: analysisData, error: analysisError } = await supabase
+      const { data: analysisData, error: analysisError } = await supabase
         .from('user_property_analyses')
         .select(`
           id,
@@ -60,48 +59,11 @@ export const useUserProperties = () => {
       }
 
       if (!analysisData || analysisData.length === 0) {
-        console.log('📭 [USER-PROPERTIES] No properties found, attempting data repair...');
-        
-        // Attempt comprehensive data repair
-        const repairResult = await repairUserAnalysisData(user.id);
-        
-        if (repairResult.success && repairResult.details?.analysisId) {
-          console.log('✅ [USER-PROPERTIES] Data repair successful, retrying fetch...');
-          
-          // Retry fetching after repair
-          const { data: repairedAnalysisData, error: repairedAnalysisError } = await supabase
-            .from('user_property_analyses')
-            .select(`
-              id,
-              analysis_results,
-              total_monthly_revenue,
-              total_opportunities,
-              coordinates,
-              satellite_image_url,
-              created_at,
-              address_id
-            `)
-            .eq('user_id', user.id)
-            .order('created_at', { ascending: false });
-
-          if (!repairedAnalysisError && repairedAnalysisData?.length > 0) {
-            // Use the repaired data
-            analysisData = repairedAnalysisData;
-            console.log('🔄 [USER-PROPERTIES] Successfully loaded repaired data:', analysisData.length, 'properties');
-          } else {
-            console.log('📭 [USER-PROPERTIES] No data found even after repair');
-            setProperties([]);
-            setSelectedPropertyId(null);
-            setLoading(false);
-            return;
-          }
-        } else {
-          console.log('📭 [USER-PROPERTIES] No data to repair or repair failed');
-          setProperties([]);
-          setSelectedPropertyId(null);
-          setLoading(false);
-          return;
-        }
+        console.log('📭 [USER-PROPERTIES] No properties found');
+        setProperties([]);
+        setSelectedPropertyId(null);
+        setLoading(false);
+        return;
       }
 
       // Fetch address data for each analysis

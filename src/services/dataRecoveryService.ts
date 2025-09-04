@@ -101,41 +101,17 @@ export const repairJourneySummaryData = async (userId: string): Promise<void> =>
   }
 };
 
-// Auto-recover user data on authentication with safety checks
+// Auto-recover user data on authentication
 export const autoRecoverUserData = async (userId: string): Promise<void> => {
   try {
     console.log('🔄 [AUTO-RECOVERY] Starting auto-recovery for user:', userId);
     
-    if (!userId) {
-      console.warn('⚠️ [AUTO-RECOVERY] No user ID provided, skipping recovery');
-      return;
-    }
-
-    // Check if user has multiple analyses first (don't repair if they already have good data)
-    const { data: existingAnalyses } = await supabase
-      .from('user_property_analyses')
-      .select('id, created_at')
-      .eq('user_id', userId)
-      .order('created_at', { ascending: false });
-
-    if (existingAnalyses && existingAnalyses.length > 0) {
-      console.log('✅ [AUTO-RECOVERY] User already has', existingAnalyses.length, 'analyses, skipping repair');
-      
-      // Just update context with the latest analysis
-      const recentAnalysisId = existingAnalyses[0].id;
-      localStorage.setItem('currentAnalysisId', recentAnalysisId);
-      console.log('✅ [AUTO-RECOVERY] Updated context with latest analysis:', recentAnalysisId);
-      return;
-    }
-
-    // Only run repair if user has no analyses but has journey data
-    console.log('🔧 [AUTO-RECOVERY] No analyses found, checking for repair opportunities...');
-    
-    // Run repair operations safely
+    // Run repair operations
     await repairJourneySummaryData(userId);
 
     // Link any unlinked analyses from journey data
     try {
+      const { supabase } = await import('@/integrations/supabase/client');
       const { data: linkedCount, error: linkError } = await supabase.rpc('link_user_analyses_from_journey', {
         p_user_id: userId
       });
@@ -154,13 +130,10 @@ export const autoRecoverUserData = async (userId: string): Promise<void> => {
     if (recentAnalysisId) {
       localStorage.setItem('currentAnalysisId', recentAnalysisId);
       console.log('✅ [AUTO-RECOVERY] Restored analysis ID to context:', recentAnalysisId);
-    } else {
-      console.log('ℹ️ [AUTO-RECOVERY] No analysis ID found after recovery - user may need to run new analysis');
     }
 
   } catch (error) {
     console.error('❌ [AUTO-RECOVERY] Error in auto-recovery:', error);
-    // Don't throw - recovery should be non-blocking
   }
 };
 

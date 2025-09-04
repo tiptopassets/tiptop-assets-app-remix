@@ -1206,11 +1206,10 @@ export type Database = {
           id: string
           property_type: string | null
           satellite_image_url: string | null
-          session_id: string | null
           total_monthly_revenue: number | null
           total_opportunities: number | null
           updated_at: string | null
-          user_id: string | null
+          user_id: string
           using_real_solar_data: boolean | null
         }
         Insert: {
@@ -1222,11 +1221,10 @@ export type Database = {
           id?: string
           property_type?: string | null
           satellite_image_url?: string | null
-          session_id?: string | null
           total_monthly_revenue?: number | null
           total_opportunities?: number | null
           updated_at?: string | null
-          user_id?: string | null
+          user_id: string
           using_real_solar_data?: boolean | null
         }
         Update: {
@@ -1238,11 +1236,10 @@ export type Database = {
           id?: string
           property_type?: string | null
           satellite_image_url?: string | null
-          session_id?: string | null
           total_monthly_revenue?: number | null
           total_opportunities?: number | null
           updated_at?: string | null
-          user_id?: string | null
+          user_id?: string
           using_real_solar_data?: boolean | null
         }
         Relationships: [
@@ -1509,10 +1506,6 @@ export type Database = {
           total_opportunities: number
         }[]
       }
-      link_anonymous_analysis_to_user: {
-        Args: { p_session_id: string; p_user_id: string }
-        Returns: number
-      }
       link_journey_to_user: {
         Args: { p_session_id: string; p_user_id: string }
         Returns: undefined
@@ -1524,19 +1517,6 @@ export type Database = {
       link_user_analyses_from_journey: {
         Args: { p_user_id: string }
         Returns: number
-      }
-      save_property_analysis: {
-        Args: {
-          p_analysis_results?: Json
-          p_coordinates?: Json
-          p_property_address?: string
-          p_satellite_image_url?: string
-          p_session_id?: string
-          p_total_monthly_revenue?: number
-          p_total_opportunities?: number
-          p_user_id?: string
-        }
-        Returns: string
       }
       update_asset_selections_with_analysis: {
         Args: { p_analysis_id: string; p_session_id: string }

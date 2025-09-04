@@ -18,7 +18,7 @@ Deno.serve(async (req) => {
   }
   
   try {
-    const { address, coordinates, satelliteImage, forceLocalAnalysis, sessionId, userId }: AnalysisRequest = await req.json();
+    const { address, coordinates, satelliteImage, forceLocalAnalysis }: AnalysisRequest = await req.json();
     
     if (!address) {
       return new Response(
@@ -197,32 +197,6 @@ Deno.serve(async (req) => {
       }
       
       console.log(`☀️ Enhanced solar data integrated: ${solarData.monthlyRevenue} → ${validatedSolarRevenue}, ${solarData.roofSegments?.length || 0} roof segments, ${solarData.maxSunshineHoursPerYear} sun hours/year`);
-    }
-    
-    // Save the analysis to database using the new save_property_analysis function
-    console.log('💾 Saving analysis to database...');
-    try {
-      const totalRevenue = analysis.totalMonthlyRevenue || 0;
-      const totalOpportunities = analysis.totalOpportunities || analysis.topOpportunities?.length || 0;
-      
-      const { data: savedAnalysisId, error: saveError } = await supabase.rpc('save_property_analysis', {
-        p_user_id: userId || null,
-        p_session_id: sessionId || null,
-        p_property_address: propertyDetails.formattedAddress || address,
-        p_coordinates: propertyCoordinates,
-        p_analysis_results: analysis,
-        p_total_monthly_revenue: totalRevenue,
-        p_total_opportunities: totalOpportunities,
-        p_satellite_image_url: satelliteImageUrl
-      });
-      
-      if (saveError) {
-        console.error('❌ Error saving analysis:', saveError);
-      } else {
-        console.log('✅ Analysis saved with ID:', savedAnalysisId);
-      }
-    } catch (saveError) {
-      console.error('❌ Error in save operation:', saveError);
     }
     
     // Ensure address is properly included in response
