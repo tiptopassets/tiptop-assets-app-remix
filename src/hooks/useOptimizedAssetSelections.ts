@@ -44,7 +44,7 @@ const fetchAssetSelectionsOptimized = async (userId?: string): Promise<Optimized
 // Background repair function - runs after initial data load
 const runBackgroundRepair = async (userId?: string) => {
   try {
-    console.log('🔧 [BACKGROUND-REPAIR] Starting background data repair');
+    console.log('🔧 [BACKGROUND-REPAIR] Starting comprehensive background data repair');
     const sessionId = localStorage.getItem('anonymous_session_id');
     const currentAnalysisId = localStorage.getItem('currentAnalysisId');
     
@@ -52,23 +52,37 @@ const runBackgroundRepair = async (userId?: string) => {
       // Import repair functions dynamically to avoid blocking initial load
       const { linkSessionToUser, repairOrphanedUserSelections } = await import('@/services/sessionStorageService');
       const { getRecentAnalysisId } = await import('@/services/dataRecoveryService');
+      const { repairUserAnalysisData, validateAssetSelectionData } = await import('@/services/dataRepairService');
       
-      // Strategy 1: Link session-based selections to user
+      // Strategy 1: Comprehensive data repair (handles missing analyses and orphaned assets)
+      const repairResult = await repairUserAnalysisData(userId);
+      if (repairResult.success) {
+        console.log('✅ [BACKGROUND-REPAIR] Comprehensive data repair successful');
+      }
+      
+      // Strategy 2: Link session-based selections to user
       if (sessionId) {
         await linkSessionToUser(userId);
       }
       
-      // Strategy 2: Update selections with analysis ID
+      // Strategy 3: Update selections with analysis ID
       if (currentAnalysisId) {
         await repairOrphanedUserSelections(userId, currentAnalysisId);
       }
       
-      // Strategy 3: Auto-recover analysis ID if needed
+      // Strategy 4: Auto-recover analysis ID if needed
       if (!currentAnalysisId) {
         const recoveredAnalysisId = await getRecentAnalysisId(userId);
         if (recoveredAnalysisId) {
           localStorage.setItem('currentAnalysisId', recoveredAnalysisId);
+          console.log('🔄 [BACKGROUND-REPAIR] Recovered analysis ID:', recoveredAnalysisId);
         }
+      }
+      
+      // Strategy 5: Validate and fix asset selection data integrity
+      const validationResult = await validateAssetSelectionData(userId);
+      if (validationResult.fixed > 0) {
+        console.log(`🔧 [BACKGROUND-REPAIR] Fixed ${validationResult.fixed} asset selections`);
       }
     } else {
       // For anonymous users, just update with analysis ID if available
@@ -78,7 +92,7 @@ const runBackgroundRepair = async (userId?: string) => {
       }
     }
     
-    console.log('✅ [BACKGROUND-REPAIR] Background repair completed');
+    console.log('✅ [BACKGROUND-REPAIR] Comprehensive background repair completed');
   } catch (error) {
     console.warn('⚠️ [BACKGROUND-REPAIR] Background repair failed:', error);
   }
