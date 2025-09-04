@@ -23,7 +23,8 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 
 const Index = () => {
-  const { isAnalyzing, analysisComplete, address, analysisResults } = useGoogleMap();
+  const mapContext = useGoogleMap();
+  const { isAnalyzing, analysisComplete, address, analysisResults, useLocalAnalysis } = mapContext;
   const { status } = useModelGeneration();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [showingFormSection, setShowingFormSection] = useState(false);
