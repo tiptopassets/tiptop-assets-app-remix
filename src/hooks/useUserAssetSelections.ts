@@ -33,15 +33,26 @@ export const useUserAssetSelections = (analysisId?: string) => {
           })
         : selections;
         
-      setAssetSelections(filteredSelections);
+      const finalSelections = analysisId && filteredSelections.length === 0 
+        ? selections 
+        : filteredSelections;
+        
+      setAssetSelections(finalSelections);
       
       console.log('✅ [ASSET-SELECTIONS] Loaded filtered asset selections:', {
         totalSelections: selections.length,
         filteredCount: filteredSelections.length,
+        usedFallbackAllAnalyses: analysisId ? filteredSelections.length === 0 : false,
         userId: user?.id,
         targetAnalysisId: analysisId,
         isAuthenticated: !!user,
         filteredSelections: filteredSelections.map(s => ({
+          id: s.id,
+          asset_type: s.asset_type,
+          monthly_revenue: s.monthly_revenue,
+          analysis_id: s.analysis_id
+        })),
+        finalSelections: finalSelections.map(s => ({
           id: s.id,
           asset_type: s.asset_type,
           monthly_revenue: s.monthly_revenue,

@@ -1,8 +1,9 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { MapPin, RefreshCw, MessageSquare } from 'lucide-react';
+import { MapPin, RefreshCw, MessageSquare, ChevronDown } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
 interface DashboardHeaderProps {
   primaryAddress?: string;
@@ -34,6 +35,30 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
         </p>
       </div>
       <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+        {hasMultipleProperties && onPropertySelect && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" className="w-full sm:w-auto justify-between">
+                <MapPin className="h-4 w-4 sm:mr-2" />
+                <span className="truncate max-w-[180px] sm:max-w-[220px]">
+                  {primaryAddress || 'Select property'}
+                </span>
+                <ChevronDown className="h-4 w-4 ml-1" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-80">
+              {properties.map((p) => (
+                <DropdownMenuItem
+                  key={p.id}
+                  onClick={() => onPropertySelect(p.id)}
+                  className={p.id === selectedPropertyId ? 'bg-muted' : ''}
+                >
+                  <span className="truncate" title={p.address}>{p.address}</span>
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
         <Button onClick={onRefresh} variant="outline" size="sm" className="w-full sm:w-auto">
           <RefreshCw className="h-4 w-4 sm:mr-2" />
           <span className="sm:inline">Refresh</span>
