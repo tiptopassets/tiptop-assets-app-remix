@@ -64,9 +64,13 @@ serve(async (req) => {
       });
     }
 
-    // Step 3: Reconstruct property address from recent data or edge function logs
-    const propertyAddress = "2238 Geary Blvd, San Francisco, CA 94115, USA";
-    const coordinates = { lat: 37.78461, lng: -122.44195 }; // San Francisco coordinates
+    // Step 3: Get property address from journey data (don't use hardcoded values)
+    const propertyAddress = journeyData.property_address;
+    const coordinates = journeyData.property_coordinates || null;
+    
+    if (!propertyAddress) {
+      throw new Error('No property address found in journey data - cannot repair without valid address');
+    }
 
     // Step 4: Create missing user address
     const { data: addressData, error: addressError } = await supabase
@@ -75,8 +79,8 @@ serve(async (req) => {
         user_id: userId,
         address: propertyAddress,
         formatted_address: propertyAddress,
-        latitude: coordinates.lat,
-        longitude: coordinates.lng,
+        latitude: coordinates?.lat || null,
+        longitude: coordinates?.lng || null,
         is_primary: !existingAnalyses?.length // Make primary if no existing analyses
       }, {
         onConflict: 'user_id,address',
@@ -102,48 +106,22 @@ serve(async (req) => {
     const totalMonthlyRevenue = orphanedAssets.reduce((sum, asset) => sum + (asset.monthly_revenue || 0), 0);
     const totalOpportunities = orphanedAssets.length;
 
-    // Reconstruct analysis results from recent analysis logs (apartment with internet + storage)
-    const analysisResults = {
-      propertyType: "apartment",
+    // Use existing analysis results from journey data or create minimal structure
+    const analysisResults = journeyData.analysis_results || {
+      propertyType: "unknown",
       propertyAddress: propertyAddress,
       coordinates: coordinates,
-      buildingTypeRestrictions: {
-        hasRooftopAccess: false,
-        hasGardenAccess: false,
-        hasParkingControl: false,
-        restrictionExplanation: "Residents have no individual access to rooftops, gardens, or parking for monetization."
-      },
-      internet: {
-        monthlyRevenue: 35,
-        requirements: "Bandwidth sharing within unit.",
-        confidenceScore: 0.9
-      },
-      storage: {
-        available: true,
-        type: "unit_storage",
-        monthlyRevenue: 10,
-        confidenceScore: 0.8,
-        restrictionReason: "Limited to personal unit storage."
-      },
-      topOpportunities: [
-        {
-          title: "Internet Bandwidth Sharing",
-          monthlyRevenue: 35,
-          setupCost: 0,
-          paybackMonths: 0,
-          confidenceScore: 0.9
-        },
-        {
-          title: "Personal Storage Rental", 
-          monthlyRevenue: 10,
-          setupCost: 0,
-          paybackMonths: 0,
-          confidenceScore: 0.8
-        }
-      ],
+      topOpportunities: orphanedAssets.map(asset => ({
+        title: asset.asset_type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()),
+        monthlyRevenue: asset.monthly_revenue || 0,
+        setupCost: asset.setup_cost || 0,
+        paybackMonths: asset.roi_months || 0,
+        confidenceScore: 0.7
+      })),
       totalMonthlyRevenue: totalMonthlyRevenue,
-      totalSetupInvestment: 0,
-      overallConfidenceScore: 0.85
+      totalSetupInvestment: orphanedAssets.reduce((sum, asset) => sum + (asset.setup_cost || 0), 0),
+      overallConfidenceScore: 0.7,
+      repaired: true
     };
 
     // Step 6: Create missing property analysis
