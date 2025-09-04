@@ -2,7 +2,6 @@
 import React, { useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useUserProperties } from '@/hooks/useUserProperties';
-import { useDashboardJourneyData } from '@/hooks/useDashboardJourneyData';
 import DashboardLayout from '@/components/dashboard/DashboardLayout';
 import { DashboardEmptyState } from '@/components/dashboard/DashboardEmptyState';
 import DashboardLoadingState from '@/components/dashboard/DashboardLoadingState';
@@ -15,7 +14,7 @@ import JourneyTracker from '@/components/JourneyTracker';
 const Dashboard = () => {
   const { user, loading: authLoading } = useAuth();
   
-  // Try new multi-property system first
+  // Use the unified multi-property system
   const { 
     properties, 
     selectedProperty, 
@@ -26,83 +25,37 @@ const Dashboard = () => {
     refetch: refreshProperties,
     propertiesCount
   } = useUserProperties();
-  
-  // Fallback to old single-property system if no properties found
-  const { 
-    journeyData, 
-    loading: journeyLoading, 
-    error: journeyError, 
-    refreshJourneyData 
-  } = useDashboardJourneyData();
 
-  // Determine which system to use
+  const loading = propertiesLoading;
+  const error = propertiesError;
+  const refreshData = refreshProperties;
   const hasProperties = properties.length > 0;
-  const hasJourneyData = !!journeyData && !hasProperties;
-  
-  const loading = propertiesLoading || (journeyLoading && !hasProperties);
-  const error = propertiesError || (!hasProperties ? journeyError : null);
-  const refreshData = hasProperties ? refreshProperties : refreshJourneyData;
 
-  console.log('📊 Dashboard system selection:', {
-    hasProperties,
-    hasJourneyData,
-    propertiesCount,
-    propertiesLoading,
-    journeyLoading,
-    selectedSystem: hasProperties ? 'multi-property' : 'single-property-fallback'
-  });
-
-  console.log('📊 Dashboard render state:', {
+  console.log('📊 Dashboard unified system state:', {
     authLoading,
     loading,
     user: !!user,
     userId: user?.id,
     error,
-    hasProperties,
-    hasJourneyData,
     propertiesCount,
+    hasProperties,
     selectedPropertyId,
     selectedProperty: selectedProperty ? {
       address: selectedProperty.address,
       revenue: selectedProperty.totalMonthlyRevenue,
       opportunities: selectedProperty.totalOpportunities,
-    } : null,
-    journeyData: journeyData ? {
-      address: journeyData.propertyAddress,
-      revenue: journeyData.totalMonthlyRevenue,
-      opportunities: journeyData.totalOpportunities,
     } : null
   });
 
-  // Auto-refresh data when user first authenticates
+  // Auto-refresh data when user first authenticates if no properties found
   useEffect(() => {
-    if (user && !loading && !hasProperties && !hasJourneyData) {
+    if (user && !loading && propertiesCount === 0) {
       console.log('🔄 User authenticated but no data found, attempting refresh...');
       setTimeout(() => {
         refreshData();
-      }, 2000); // Give time for auth linking to complete
+      }, 2000); // Give time for any background processes to complete
     }
-  }, [user, loading, hasProperties, hasJourneyData, refreshData]);
-
-  // Periodic refresh to catch any delayed data updates  
-  useEffect(() => {
-    if (user && !hasProperties && !hasJourneyData) {
-      const intervalId = setInterval(() => {
-        console.log('🔄 Periodic refresh attempt...');
-        refreshData();
-      }, 10000); // Check every 10 seconds
-
-      // Clear interval after 2 minutes
-      const timeoutId = setTimeout(() => {
-        clearInterval(intervalId);
-      }, 120000);
-
-      return () => {
-        clearInterval(intervalId);
-        clearTimeout(timeoutId);
-      };
-    }
-  }, [user, hasProperties, hasJourneyData, refreshData]);
+  }, [user, loading, propertiesCount, refreshData]);
 
   return (
     <DashboardErrorBoundary>
@@ -131,14 +84,14 @@ const Dashboard = () => {
       )}
 
       {/* Show empty state if no data found */}
-      {!authLoading && user && !loading && !error && !hasProperties && !hasJourneyData && (
+      {!authLoading && user && !loading && !error && !hasProperties && (
         <DashboardLayout>
           <JourneyTracker />
           <DashboardEmptyState />
         </DashboardLayout>
       )}
 
-      {/* Show multi-property dashboard content */}
+      {/* Show dashboard content when properties are available */}
       {!authLoading && user && !loading && !error && hasProperties && selectedProperty && (() => {
         // Extract coordinates from analysis results
         const coordinates = selectedProperty.coordinates || 
@@ -173,46 +126,6 @@ const Dashboard = () => {
               selectedPropertyId={selectedPropertyId}
               onPropertySelect={selectProperty}
               onRefresh={refreshProperties}
-            />
-          </DashboardLayout>
-        );
-      })()}
-
-      {/* Show single-property fallback dashboard content */}
-      {!authLoading && user && !loading && !error && hasJourneyData && !hasProperties && (() => {
-        // Extract coordinates from analysis results - try multiple possible locations
-        const coordinates = journeyData.analysisResults?.coordinates || 
-                          journeyData.analysisResults?.propertyCoordinates ||
-                          (journeyData.analysisResults?.rooftop?.coordinates) ||
-                          null;
-
-        console.log('🗺️ Using fallback system with coordinates:', coordinates);
-        console.log('🏠 Using fallback property address:', journeyData.propertyAddress);
-
-        // Convert journey data to the format expected by DashboardContent
-        const latestAnalysis = {
-          id: journeyData.analysisId || journeyData.journeyId,
-          analysis_results: journeyData.analysisResults,
-          total_monthly_revenue: journeyData.totalMonthlyRevenue,
-          total_opportunities: journeyData.totalOpportunities,
-          created_at: journeyData.journeyProgress?.journey_start || new Date().toISOString(),
-          satellite_image_url: journeyData.analysisResults?.rooftop?.satelliteImageUrl,
-          coordinates: coordinates
-        };
-
-        return (
-          <DashboardLayout>
-            <JourneyTracker />
-            <DashboardContent
-              primaryAddress={journeyData.propertyAddress}
-              latestAnalysis={latestAnalysis}
-              totalMonthlyRevenue={journeyData.totalMonthlyRevenue}
-              totalOpportunities={journeyData.totalOpportunities}
-              analysesCount={1} // Fallback system has 1 analysis
-              properties={[]} // No multi-property data in fallback
-              selectedPropertyId={undefined}
-              onPropertySelect={undefined}
-              onRefresh={refreshJourneyData}
             />
           </DashboardLayout>
         );

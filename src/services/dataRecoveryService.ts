@@ -101,15 +101,12 @@ export const repairJourneySummaryData = async (userId: string): Promise<void> =>
   }
 };
 
-// Auto-recover user data on authentication
+// Auto-recover user data on authentication (SAFE VERSION - no mass linking of unlinked data)
 export const autoRecoverUserData = async (userId: string): Promise<void> => {
   try {
-    console.log('🔄 [AUTO-RECOVERY] Starting auto-recovery for user:', userId);
+    console.log('🔄 [AUTO-RECOVERY] Starting safe auto-recovery for user:', userId);
     
-    // Run repair operations
-    await repairJourneySummaryData(userId);
-
-    // Link any unlinked analyses from journey data
+    // Only link analyses that are explicitly linked via journey data with proper user_id
     try {
       const { supabase } = await import('@/integrations/supabase/client');
       const { data: linkedCount, error: linkError } = await supabase.rpc('link_user_analyses_from_journey', {

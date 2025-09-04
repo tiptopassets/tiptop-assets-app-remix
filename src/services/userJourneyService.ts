@@ -234,19 +234,14 @@ export const trackOptionSelected = async (selectedOption: 'manual' | 'concierge'
   }
 };
 
-// Enhanced auth completion tracking with comprehensive recovery
+// Safe auth completion tracking - only links by session or explicit analysis_id
 export const trackAuthCompleted = async (userId: string) => {
   const sessionId = getSessionId();
   
   try {
-    console.log('🔐 Starting enhanced auth completion tracking for user:', userId);
+    console.log('🔐 Starting safe auth completion tracking for user:', userId);
     
-    // Run comprehensive auto-recovery first
-    const { autoRecoverUserData, repairJourneySummaryData } = await import('./dataRecoveryService');
-    await autoRecoverUserData(userId);
-    await repairJourneySummaryData(userId);
-    
-    // Then, link the journey to the authenticated user with proper user association
+    // Link the current session journey to the authenticated user
     const { error: linkError } = await supabase.rpc('link_journey_to_user', {
       p_session_id: sessionId,
       p_user_id: userId
@@ -258,7 +253,7 @@ export const trackAuthCompleted = async (userId: string) => {
       console.log('✅ Journey linked to authenticated user:', userId);
     }
 
-    // Also link session asset selections to the authenticated user
+    // Link session asset selections to the authenticated user
     try {
       const { linkSessionToUser } = await import('./sessionStorageService');
       const linkedAssetCount = await linkSessionToUser(userId);
@@ -267,7 +262,7 @@ export const trackAuthCompleted = async (userId: string) => {
       console.error('❌ Error linking asset selections to user:', linkAssetError);
     }
 
-    // Link any unlinked analyses to this user using the new function
+    // Link any analyses that are explicitly referenced in user's journey data
     try {
       const { data: linkedAnalysesCount, error: linkAnalysesError } = await supabase.rpc('link_user_analyses_from_journey', {
         p_user_id: userId
@@ -280,25 +275,6 @@ export const trackAuthCompleted = async (userId: string) => {
       }
     } catch (linkAnalysesError) {
       console.error('❌ Error linking analyses to user:', linkAnalysesError);
-    }
-
-    // Enhanced recovery: link any recent unlinked data that matches this user's session patterns
-    const { error: recoveryError } = await supabase
-      .from('user_journey_complete')
-      .update({ 
-        user_id: userId,
-        updated_at: new Date().toISOString()
-      })
-      .is('user_id', null)
-      .not('property_address', 'is', null)
-      .not('property_address', 'eq', '')
-      .not('analysis_results', 'is', null)
-      .gte('updated_at', new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString()); // Last 2 hours
-
-    if (recoveryError) {
-      console.warn('⚠️ Could not recover unlinked journey data:', recoveryError);
-    } else {
-      console.log('🔄 Successfully recovered unlinked journey data');
     }
 
     // Check for and recover backup data from localStorage

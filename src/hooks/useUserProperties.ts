@@ -33,28 +33,15 @@ export const useUserProperties = () => {
       setLoading(true);
       setError(null);
       
-      console.log('🏠 [USER-PROPERTIES] Fetching all properties for user:', user.id);
+      console.log('🏠 [USER-PROPERTIES] Fetching all analyses for user:', user.id);
       
-      // Run auto-recovery first
-      await autoRecoverUserData(user.id);
-
-      // Fetch all property analyses for the user
-      const { data: analysisData, error: analysisError } = await supabase
-        .from('user_property_analyses')
-        .select(`
-          id,
-          analysis_results,
-          total_monthly_revenue,
-          total_opportunities,
-          coordinates,
-          satellite_image_url,
-          created_at,
-          address_id
-        `)
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
+      // Use the new unified RPC function to get all user analyses
+      const { data: analysisData, error: analysisError } = await supabase.rpc('get_user_all_analyses', {
+        p_user_id: user.id
+      });
 
       if (analysisError) {
+        console.error('❌ [USER-PROPERTIES] RPC error:', analysisError);
         throw analysisError;
       }
 
@@ -66,54 +53,31 @@ export const useUserProperties = () => {
         return;
       }
 
-      // Fetch address data for each analysis
-      const propertyPromises = analysisData.map(async (analysis) => {
-        let address = 'Unknown Address';
-        let formattedAddress = undefined;
-
-        if (analysis.address_id) {
-          const { data: addressData } = await supabase
-            .from('user_addresses')
-            .select('address, formatted_address')
-            .eq('id', analysis.address_id)
-            .maybeSingle();
-          
-          if (addressData) {
-            address = addressData.formatted_address || addressData.address || 'Unknown Address';
-            formattedAddress = addressData.formatted_address;
-          }
-        }
-
-        // Extract address from analysis results if not found in addresses table
-        if (address === 'Unknown Address' && analysis.analysis_results && 
-            typeof analysis.analysis_results === 'object' && 
-            !Array.isArray(analysis.analysis_results) &&
-            (analysis.analysis_results as any).propertyAddress) {
-          address = (analysis.analysis_results as any).propertyAddress;
-        }
-
+      // Convert the unified data to UserProperty format
+      const properties: UserProperty[] = analysisData.map((analysis) => {
+        const address = analysis.property_address || 'Unknown Address';
+        
         return {
           id: analysis.id,
           address,
-          formattedAddress,
+          formattedAddress: analysis.property_address,
           coordinates: analysis.coordinates,
           totalMonthlyRevenue: analysis.total_monthly_revenue || 0,
           totalOpportunities: analysis.total_opportunities || 0,
           analysisResults: analysis.analysis_results,
           createdAt: analysis.created_at,
           satelliteImageUrl: analysis.satellite_image_url
-        } as UserProperty;
+        };
       });
-
-      const properties = await Promise.all(propertyPromises);
       
-      console.log('✅ [USER-PROPERTIES] Loaded properties:', {
+      console.log('✅ [USER-PROPERTIES] Loaded properties from unified source:', {
         count: properties.length,
         properties: properties.map(p => ({
           id: p.id,
           address: p.address,
           revenue: p.totalMonthlyRevenue,
-          opportunities: p.totalOpportunities
+          opportunities: p.totalOpportunities,
+          source: analysisData.find(a => a.id === p.id)?.source_table
         }))
       });
 

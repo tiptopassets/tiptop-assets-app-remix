@@ -1488,12 +1488,51 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      user_all_analyses: {
+        Row: {
+          address_id: string | null
+          analysis_results: Json | null
+          coordinates: Json | null
+          created_at: string | null
+          id: string | null
+          property_address: string | null
+          property_type: string | null
+          satellite_image_url: string | null
+          source_table: string | null
+          total_monthly_revenue: number | null
+          total_opportunities: number | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       get_current_user_role: {
         Args: Record<PropertyKey, never>
         Returns: string
+      }
+      get_user_all_analyses: {
+        Args: { p_user_id: string }
+        Returns: {
+          address_id: string
+          analysis_results: Json
+          coordinates: Json
+          created_at: string
+          id: string
+          property_address: string
+          property_type: string
+          satellite_image_url: string
+          source_table: string
+          total_monthly_revenue: number
+          total_opportunities: number
+          updated_at: string
+          user_id: string
+        }[]
+      }
+      get_user_analyses_count: {
+        Args: { p_user_id: string }
+        Returns: number
       }
       get_user_dashboard_data: {
         Args: { p_user_id: string }
