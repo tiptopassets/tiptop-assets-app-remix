@@ -192,3 +192,32 @@ export const loadAssetSelections = async (userId?: string): Promise<any[]> => {
     return [];
   }
 };
+
+// Repair orphaned user selections by linking them to an analysis ID
+export const repairOrphanedUserSelections = async (
+  userId: string,
+  analysisId: string
+): Promise<number> => {
+  try {
+    console.log('🔧 Repairing orphaned user selections:', { userId, analysisId });
+
+    const { data, error } = await supabase
+      .from('user_asset_selections')
+      .update({ analysis_id: analysisId })
+      .eq('user_id', userId)
+      .is('analysis_id', null)
+      .select();
+
+    if (error) {
+      console.error('Error repairing orphaned user selections:', error);
+      throw error;
+    }
+
+    const repairedCount = data?.length || 0;
+    console.log('✅ Repaired', repairedCount, 'orphaned user selections');
+    return repairedCount;
+  } catch (error) {
+    console.error('Failed to repair orphaned user selections:', error);
+    throw error;
+  }
+};
