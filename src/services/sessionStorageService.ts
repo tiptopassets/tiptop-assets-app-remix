@@ -93,6 +93,32 @@ export const updateAssetSelectionsWithAnalysisId = async (
   }
 };
 
+// Update asset selections for a user with analysis ID (for authenticated users)
+export const updateUserAssetSelectionsWithAnalysisId = async (userId: string, analysisId: string): Promise<number> => {
+  console.log('🔧 [SESSION-STORAGE] Updating user asset selections with analysis ID:', { userId, analysisId });
+  
+  try {
+    const { data, error } = await supabase
+      .from('user_asset_selections')
+      .update({ analysis_id: analysisId })
+      .eq('user_id', userId)
+      .is('analysis_id', null)
+      .select('id');
+    
+    if (error) {
+      console.error('❌ [SESSION-STORAGE] Error updating user asset selections:', error);
+      throw error;
+    }
+    
+    const count = data?.length || 0;
+    console.log('✅ [SESSION-STORAGE] Updated', count, 'user asset selections with analysis ID');
+    return count;
+  } catch (error) {
+    console.error('❌ [SESSION-STORAGE] Error in updateUserAssetSelectionsWithAnalysisId:', error);
+    throw error;
+  }
+};
+
 // Save asset selection for anonymous or authenticated users
 export const saveAssetSelectionAnonymous = async (
   assetType: string,

@@ -108,12 +108,18 @@ const OnboardingChatbot = () => {
     const assetName = assetId.replace('_', ' ');
     const estimatedRevenue = getEstimatedRevenue(assetId);
     
+    // Get current analysis ID from localStorage
+    const currentAnalysisId = localStorage.getItem('currentAnalysisId');
+    console.log('🎯 [ONBOARDING] Using analysisId:', currentAnalysisId);
+    
     try {
       await saveSelection(
         assetName,
         { source: 'onboarding_chatbot', asset_id: assetId },
         estimatedRevenue,
-        0 // setup cost - can be updated later
+        0, // setup cost - can be updated later
+        undefined, // roiMonths
+        currentAnalysisId || undefined // analysisId
       );
     } catch (error) {
       console.error('Failed to save asset selection:', error);
