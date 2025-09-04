@@ -137,18 +137,12 @@ const AddAsset = () => {
     // Get estimated revenue based on asset type
     const estimatedRevenue = getEstimatedRevenue(assetType);
     
-    // Get current analysis ID from localStorage
-    const currentAnalysisId = localStorage.getItem('currentAnalysisId');
-    console.log('🎯 [ADD-ASSET] Using analysisId:', currentAnalysisId);
-    
     try {
       await saveSelection(
         assetType,
         { source: 'add_asset_page', selected_at: new Date().toISOString() },
         estimatedRevenue,
-        0, // setup cost - can be updated later
-        undefined, // roiMonths
-        currentAnalysisId || undefined // analysisId
+        0 // setup cost - can be updated later
       );
       
       toast({

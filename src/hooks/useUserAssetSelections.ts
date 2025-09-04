@@ -74,13 +74,7 @@ export const useUserAssetSelections = (analysisId?: string) => {
         const { linkSessionToUser } = await import('@/services/sessionStorageService');
         await linkSessionToUser(user.id);
         
-        console.log('✅ [ASSET-SELECTIONS] Repaired orphaned selections via session');
-      } else if (currentAnalysisId) {
-        // For authenticated users, update their null analysis_id selections
-        const { updateUserAssetSelectionsWithAnalysisId } = await import('@/services/sessionStorageService');
-        await updateUserAssetSelectionsWithAnalysisId(user.id, currentAnalysisId);
-        
-        console.log('✅ [ASSET-SELECTIONS] Repaired orphaned selections for authenticated user');
+        console.log('✅ [ASSET-SELECTIONS] Repaired orphaned selections');
       }
     } catch (error) {
       console.warn('⚠️ [ASSET-SELECTIONS] Could not repair orphaned selections:', error);
