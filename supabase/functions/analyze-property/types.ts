@@ -12,6 +12,8 @@ export interface AnalysisRequest {
   coordinates?: google.maps.LatLngLiteral;
   satelliteImage?: string;
   forceLocalAnalysis?: boolean;
+  sessionId?: string;
+  userId?: string;
 }
 
 export interface ImageAnalysis {

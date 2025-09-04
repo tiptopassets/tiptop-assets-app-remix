@@ -6,6 +6,7 @@ import { generateLocalMockAnalysis } from './mockAnalysisGenerator';
 import { processPropertyAnalysis } from './dataFlowManager';
 import { ensureCoordinates } from './coordinateService';
 import { toast } from '@/hooks/use-toast';
+import { getSessionId } from '@/services/sessionStorageService';
 
 interface AnalysisParams {
   propertyAddress: string;
@@ -128,7 +129,9 @@ export const generatePropertyAnalysis = async ({
         address: propertyAddress,
         coordinates: coordinateResult.coordinates,
         satelliteImage: satelliteImage,
-        forceLocalAnalysis: false
+        forceLocalAnalysis: false,
+        sessionId: getSessionId(),
+        userId: userId
       }
     });
     

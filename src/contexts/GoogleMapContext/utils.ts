@@ -1,6 +1,7 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { saveUnauthenticatedAnalysis } from '@/services/unauthenticatedAnalysisService';
+import { getSessionId } from '@/services/sessionStorageService';
 
 export const syncAnalysisToDatabase = async (
   userId: string | undefined,
@@ -41,7 +42,9 @@ export const generateAnalysis = async (
       body: {
         address: address.trim(),
         coordinates: coords,
-        satelliteImage: satelliteImageBase64
+        satelliteImage: satelliteImageBase64,
+        sessionId: getSessionId(),
+        userId: userId
       }
     });
 
