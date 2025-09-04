@@ -3,13 +3,15 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { MapPin, TrendingUp, Zap, MessageSquare, Image as ImageIcon, Loader2, Plus } from 'lucide-react';
+import { MapPin, TrendingUp, Zap, MessageSquare, Image as ImageIcon, Loader2, Plus, RefreshCw } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { UserPropertyAnalysis } from '@/types/userData';
 import { navigateToChatbot } from '@/utils/navigationHelpers';
 import { useNavigate } from 'react-router-dom';
 import { useSatelliteImage } from '@/hooks/useSatelliteImage';
 import { useUserAssetSelections } from '@/hooks/useUserAssetSelections';
+import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/hooks/use-toast';
 
 interface DashboardPropertyOverviewProps {
   analysis: UserPropertyAnalysis;
@@ -21,8 +23,11 @@ const DashboardPropertyOverview: React.FC<DashboardPropertyOverviewProps> = ({
   address
 }) => {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const { toast } = useToast();
   const [navigatingAsset, setNavigatingAsset] = useState<string | null>(null);
   const [navigatingGeneral, setNavigatingGeneral] = useState(false);
+  const [repairing, setRepairing] = useState(false);
   // Filter asset selections by current analysis ID to avoid showing previous properties' assets
   const { assetSelections, loading: selectionsLoading, refetch } = useUserAssetSelections(analysis.id);
   
@@ -58,6 +63,55 @@ const DashboardPropertyOverview: React.FC<DashboardPropertyOverviewProps> = ({
       // Clear loading states on error
       setNavigatingAsset(null);
       setNavigatingGeneral(false);
+    }
+  };
+
+  const handleRepairOrphanedSelections = async () => {
+    if (!user?.id) return;
+
+    setRepairing(true);
+    try {
+      console.log('🔧 [DASHBOARD] Repairing orphaned selections for analysis:', analysis.id);
+      
+      // Import the repair functions
+      const { updateAssetSelectionsWithAnalysisId, linkSessionToUser } = await import('@/services/sessionStorageService');
+      
+      // Get session ID if exists
+      const sessionId = localStorage.getItem('anonymous_session_id');
+      
+      if (sessionId) {
+        // Update selections with current analysis ID
+        await updateAssetSelectionsWithAnalysisId(sessionId, analysis.id);
+        
+        // Link session to user
+        await linkSessionToUser(user.id);
+        
+        console.log('✅ [DASHBOARD] Successfully repaired orphaned selections');
+        
+        toast({
+          title: "Selections Repaired",
+          description: "Your asset selections have been linked to this property analysis.",
+        });
+        
+        // Refetch to show updated selections
+        refetch();
+      } else {
+        console.log('ℹ️ [DASHBOARD] No session ID found for repair');
+        toast({
+          title: "No Orphaned Selections",
+          description: "No unlinked selections found to repair.",
+          variant: "default"
+        });
+      }
+    } catch (error) {
+      console.error('❌ [DASHBOARD] Error repairing selections:', error);
+      toast({
+        title: "Repair Failed",
+        description: "Unable to repair orphaned selections. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setRepairing(false);
     }
   };
 
@@ -213,14 +267,29 @@ const DashboardPropertyOverview: React.FC<DashboardPropertyOverviewProps> = ({
                   You have {analysis.total_opportunities} potential opportunities worth ${analysis.total_monthly_revenue}/month. 
                   Complete your property analysis to select and configure your assets.
                 </p>
-                <Button
-                  size="sm"
-                  onClick={() => window.location.href = '/'}
-                  className="bg-tiptop-purple hover:bg-purple-600"
-                >
-                  <TrendingUp className="h-4 w-4 mr-1" />
-                  Select Assets
-                </Button>
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    onClick={() => window.location.href = '/'}
+                    className="bg-tiptop-purple hover:bg-purple-600 flex-1"
+                  >
+                    <TrendingUp className="h-4 w-4 mr-1" />
+                    Select Assets
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={handleRepairOrphanedSelections}
+                    disabled={repairing}
+                    className="border-tiptop-purple text-tiptop-purple hover:bg-tiptop-purple hover:text-white"
+                  >
+                    {repairing ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <RefreshCw className="h-4 w-4" />
+                    )}
+                  </Button>
+                </div>
               </div>
             )}
           </div>

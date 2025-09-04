@@ -192,13 +192,16 @@ const AssetResultList: React.FC<AssetResultListProps> = ({
           });
           
           // Save to database (works for both authenticated and anonymous users)
-          // Try to get analysis ID from multiple sources
-          let analysisIdToUse = currentAnalysisId;
-          if (!analysisIdToUse) {
-            analysisIdToUse = localStorage.getItem('currentAnalysisId');
+          // Only use the currentAnalysisId from context - no localStorage fallback to prevent stale data
+          console.log('💾 Attempting to save asset with analysis ID:', currentAnalysisId);
+          
+          if (!currentAnalysisId) {
+            console.warn('⚠️ No currentAnalysisId available - asset will be saved without analysis link');
+          } else {
+            // Store the analysis ID since it's valid from context
+            localStorage.setItem('currentAnalysisId', currentAnalysisId);
           }
           
-          console.log('💾 Attempting to save asset with analysis ID:', analysisIdToUse);
           saveSelection(
             assetData.title,
             { 
@@ -210,7 +213,7 @@ const AssetResultList: React.FC<AssetResultListProps> = ({
             assetData.monthlyRevenue,
             assetData.setupCost || 0,
             assetData.roi,
-            analysisIdToUse // Pass the analysis ID (can be null for anonymous users)
+            currentAnalysisId // Only use context value - no localStorage fallback
           ).then((result) => {
             if (result) {
               console.log('✅ Asset saved to database:', result);

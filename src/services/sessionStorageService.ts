@@ -107,19 +107,13 @@ export const saveAssetSelectionAnonymous = async (
     // Always create a session ID for linking purposes, even for authenticated users
     const sessionId = getSessionId();
     
-    // Try to get analysis ID from localStorage if not provided
-    if (!analysisId) {
-      analysisId = getStoredAnalysisId();
-      console.log('🔍 Retrieved analysis ID from localStorage:', analysisId);
-    } else {
-      // Store the analysis ID for future use
-      storeAnalysisIdForSession(analysisId);
-    }
+    // Only use explicitly provided analysisId - no localStorage fallback to prevent stale data
+    const finalAnalysisId = analysisId;
     
-    console.log('💾 Saving asset selection:', {
+    console.log('💾 [ASSET-SELECTION] Saving asset selection:', {
       assetType,
       monthlyRevenue,
-      analysisId,
+      finalAnalysisId,
       userId,
       sessionId,
       isAnonymous: !userId
@@ -128,7 +122,7 @@ export const saveAssetSelectionAnonymous = async (
     const insertData = {
       user_id: userId || null,
       session_id: sessionId,
-      analysis_id: analysisId || null, // Now nullable
+      analysis_id: finalAnalysisId || null, // Use finalAnalysisId (explicitly provided only)
       asset_type: assetType,
       asset_data: assetData || {},
       monthly_revenue: monthlyRevenue || 0,
@@ -157,7 +151,7 @@ export const saveAssetSelectionAnonymous = async (
     console.log('✅ Asset selection saved with ID:', data.id);
     
     // If we don't have an analysis ID yet, try to update later when it becomes available
-    if (!analysisId && sessionId) {
+    if (!finalAnalysisId && sessionId) {
       console.log('📝 Asset selection saved without analysis ID, will update when available');
     }
     
