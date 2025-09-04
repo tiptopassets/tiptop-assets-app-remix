@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useUserAssetSelections } from '@/hooks/useUserAssetSelections';
+import { useOptimizedAssetSelections } from '@/hooks/useOptimizedAssetSelections';
 import { usePartners } from '@/hooks/usePartners';
 import { getPartnerLogo, type PartnerInfo } from '@/services/partnersRegistry';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -12,7 +12,7 @@ import DashboardLayout from '@/components/dashboard/DashboardLayout';
 import { getAssetIcon as registryGetAssetIcon } from '@/icons/registry';
 
 const ManageAssets: React.FC = () => {
-  const { assetSelections, loading: selectionsLoading, error: selectionsError } = useUserAssetSelections();
+  const { assetSelections, loading: selectionsLoading, error: selectionsError } = useOptimizedAssetSelections();
   const { getPartnersByAssetType, loading: partnersLoading, error: partnersError } = usePartners();
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
 
