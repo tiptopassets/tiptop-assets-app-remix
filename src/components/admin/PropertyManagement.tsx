@@ -58,77 +58,40 @@ const PropertyManagement = () => {
   const fetchProperties = async () => {
     try {
       setLoading(true);
-      console.log('Fetching property analyses...');
+      console.log('Fetching property analyses from unified view...');
 
-      // Fetch property analyses from user_property_analyses table
+      // Use the unified view for consistent data
       const { data: analysesData, error: analysesError } = await supabase
-        .from('user_property_analyses')
+        .from('user_all_analyses')
         .select(`
           id,
           user_id,
+          property_address,
           total_monthly_revenue,
           total_opportunities,
           analysis_results,
           property_type,
           created_at,
-          updated_at
+          updated_at,
+          coordinates,
+          source_table
         `)
         .order('created_at', { ascending: false })
         .limit(200);
 
       if (analysesError) {
-        console.error('Error fetching analyses:', analysesError);
+        console.error('Error fetching from unified view:', analysesError);
         throw analysesError;
       }
 
-      console.log('Fetched analyses from user_property_analyses:', analysesData?.length || 0);
+      console.log('Fetched analyses from unified view:', analysesData?.length || 0);
 
-      // Also fetch recent journey data that contains analysis results but may not be in user_property_analyses
-      const { data: journeyData, error: journeyError } = await supabase
-        .from('user_journey_complete')
-        .select(`
-          id,
-          user_id,
-          property_address,
-          analysis_results,
-          total_monthly_revenue,
-          total_opportunities,
-          created_at,
-          updated_at,
-          analysis_id
-        `)
-        .not('analysis_results', 'is', null)
-        .order('created_at', { ascending: false })
-        .limit(200);
-
-      if (journeyError) {
-        console.error('Error fetching journey data:', journeyError);
-        throw journeyError;
-      }
-
-      console.log('Fetched journey data with analyses:', journeyData?.length || 0);
-
-      // Process analyses from user_property_analyses table
-      const processedFromAnalyses: PropertyAnalysis[] = (analysesData || []).map(analysis => {
-        // Extract property address from analysis results with improved type checking
-        let propertyAddress = 'Unknown Address';
-        if (analysis.analysis_results) {
-          try {
-            const results = analysis.analysis_results as Record<string, any>;
-            propertyAddress = 
-              results.propertyAddress || 
-              results.address || 
-              results.property_address ||
-              'Unknown Address';
-          } catch (e) {
-            console.warn('Error parsing analysis results for:', analysis.id);
-          }
-        }
-
+      // Process analyses from unified view
+      const processedProperties: PropertyAnalysis[] = (analysesData || []).map(analysis => {
         return {
           id: analysis.id,
           user_id: analysis.user_id,
-          property_address: propertyAddress,
+          property_address: analysis.property_address || 'Unknown Address',
           property_type: analysis.property_type || 'Unknown',
           total_monthly_revenue: analysis.total_monthly_revenue || 0,
           total_opportunities: analysis.total_opportunities || 0,
@@ -136,82 +99,23 @@ const PropertyManagement = () => {
           created_at: analysis.created_at,
           updated_at: analysis.updated_at,
           is_active: true,
-          coordinates: null
+          coordinates: analysis.coordinates
         };
       });
 
-      // Process analyses from user_journey_complete table that aren't already in user_property_analyses
-      const existingAnalysisIds = new Set((analysesData || []).map(a => a.id));
-      const processedFromJourney: PropertyAnalysis[] = (journeyData || [])
-        .filter(journey => {
-          // Skip if this analysis_id already exists in user_property_analyses
-          return !journey.analysis_id || !existingAnalysisIds.has(journey.analysis_id);
-        })
-        .map(journey => {
-          // Extract property address and other data from journey analysis results
-          let propertyAddress = journey.property_address || 'Unknown Address';
-          let propertyType = 'Unknown';
-          let totalMonthlyRevenue = journey.total_monthly_revenue || 0;
-          let totalOpportunities = journey.total_opportunities || 0;
-
-          if (journey.analysis_results) {
-            try {
-              const results = journey.analysis_results as Record<string, any>;
-              propertyAddress = 
-                results.propertyAddress || 
-                results.address || 
-                results.property_address ||
-                journey.property_address ||
-                'Unknown Address';
-              
-              propertyType = results.propertyType || 'Unknown';
-              totalMonthlyRevenue = results.totalMonthlyRevenue || journey.total_monthly_revenue || 0;
-              
-              // Count opportunities from analysis results
-              if (results.topOpportunities && Array.isArray(results.topOpportunities)) {
-                totalOpportunities = results.topOpportunities.length;
-              }
-            } catch (e) {
-              console.warn('Error parsing journey analysis results for:', journey.id);
-            }
-          }
-
-          return {
-            id: journey.id,
-            user_id: journey.user_id || 'unknown',
-            property_address: propertyAddress,
-            property_type: propertyType,
-            total_monthly_revenue: totalMonthlyRevenue,
-            total_opportunities: totalOpportunities,
-            analysis_results: journey.analysis_results,
-            created_at: journey.created_at,
-            updated_at: journey.updated_at,
-            is_active: true,
-            coordinates: null
-          };
-        });
-
-      // Combine both sources of property data
-      const allProperties = [...processedFromAnalyses, ...processedFromJourney];
+      console.log('Processed properties from unified view:', processedProperties.length);
       
-      // Sort by creation date (most recent first)
-      allProperties.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-
-      console.log('Processed properties from analyses table:', processedFromAnalyses.length);
-      console.log('Processed properties from journey table:', processedFromJourney.length);
-      console.log('Total combined properties:', allProperties.length);
-      
-      setProperties(allProperties);
+      setProperties(processedProperties);
 
       // Calculate statistics
-      const totalAnalyses = allProperties.length;
+      const totalAnalyses = processedProperties.length;
       const averageRevenue = totalAnalyses > 0 
-        ? allProperties.reduce((sum, p) => sum + (p.total_monthly_revenue || 0), 0) / totalAnalyses
+        ? processedProperties.reduce((sum, p) => sum + (p.total_monthly_revenue || 0), 0) / totalAnalyses
         : 0;
 
       // Count property types
       const propertyTypeCounts: Record<string, number> = {};
-      allProperties.forEach(p => {
+      processedProperties.forEach(p => {
         const type = p.property_type || 'Unknown';
         propertyTypeCounts[type] = (propertyTypeCounts[type] || 0) + 1;
       });
@@ -223,7 +127,7 @@ const PropertyManagement = () => {
       const sevenDaysAgo = new Date();
       sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
       
-      const recentAnalyses = allProperties.filter(p => {
+      const recentAnalyses = processedProperties.filter(p => {
         const createdAt = new Date(p.created_at);
         return createdAt >= sevenDaysAgo;
       }).length;
@@ -235,7 +139,7 @@ const PropertyManagement = () => {
         recentAnalyses
       });
 
-      console.log('Stats calculated:', {
+      console.log('Stats calculated from unified view:', {
         totalAnalyses,
         averageRevenue,
         topPropertyType,
@@ -253,9 +157,9 @@ const PropertyManagement = () => {
   useEffect(() => {
     fetchProperties();
 
-    // Set up real-time subscription for property updates
+    // Set up real-time subscription for property updates on both tables
     const subscription = supabase
-      .channel('property_analyses_changes')
+      .channel('unified_property_changes')
       .on(
         'postgres_changes',
         {
@@ -264,7 +168,19 @@ const PropertyManagement = () => {
           table: 'user_property_analyses'
         },
         () => {
-          console.log('Property analyses updated, refreshing...');
+          console.log('Property analyses table updated, refreshing...');
+          fetchProperties();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'user_journey_complete'
+        },
+        () => {
+          console.log('Journey complete table updated, refreshing...');
           fetchProperties();
         }
       )

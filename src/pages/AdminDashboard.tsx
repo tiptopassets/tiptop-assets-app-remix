@@ -60,85 +60,69 @@ const AdminDashboard = () => {
       if (!isAdmin) return;
 
       try {
-        // Batch all queries for efficiency
-        const [
-          usersResult,
-          analysesResult,
-          journeyResult,
-          addressesResult,
-          earningsResult,
-          todayActiveResult,
-          thisMonthUsersResult,
-          lastMonthUsersResult
-        ] = await Promise.all([
-          // Get total users and login counts
-          supabase
-            .from('user_login_stats')
-            .select('user_id, login_count, first_login_at, last_login_at'),
-          
-            // Get all property analyses from user_property_analyses table
-            supabase
-              .from('user_property_analyses')
-              .select(`
-                id, 
-                user_id,
-                total_monthly_revenue, 
-                created_at,
-                address_id,
-                analysis_results
-              `)
-              .order('created_at', { ascending: false }),
-            
-            // Also get analyses from user_journey_complete table  
-            supabase
-              .from('user_journey_complete')
-              .select(`
-                id,
-                user_id,
-                property_address,
-                analysis_results,
-                total_monthly_revenue,
-                created_at,
-                analysis_id
-              `)
-              .not('analysis_results', 'is', null)
-              .order('created_at', { ascending: false }),
-            
-          // Get all user addresses separately
-          supabase
-            .from('user_addresses')
-            .select('*')
-            .order('created_at', { ascending: false }),
-          
-          // Get affiliate earnings
-          supabase
-            .from('affiliate_earnings')
-            .select('earnings_amount, created_at'),
-          
-          // Get today's active users
-          supabase
-            .from('user_login_stats')
-            .select('user_id')
-            .gte('last_login_at', new Date().toISOString().split('T')[0]),
-          
-          // Get this month's new users
-          supabase
-            .from('user_login_stats')
-            .select('user_id, first_login_at')
-            .gte('first_login_at', new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString()),
-          
-          // Get last month's new users
-          supabase
-            .from('user_login_stats')
-            .select('user_id, first_login_at')
-            .gte('first_login_at', new Date(new Date().getFullYear(), new Date().getMonth() - 1, 1).toISOString())
-            .lt('first_login_at', new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString())
-        ]);
+      // Use the new unified view for consistent data across admin and user dashboards
+      const [
+        usersResult,
+        analysesResult,
+        addressesResult,
+        earningsResult,
+        todayActiveResult,
+        thisMonthUsersResult,
+        lastMonthUsersResult
+      ] = await Promise.all([
+        // Get total users and login counts
+        supabase
+          .from('user_login_stats')
+          .select('user_id, login_count, first_login_at, last_login_at'),
+        
+        // Use the unified view for all analyses data
+        supabase
+          .from('user_all_analyses')
+          .select(`
+            id, 
+            user_id,
+            total_monthly_revenue, 
+            created_at,
+            property_address,
+            analysis_results,
+            source_table
+          `)
+          .order('created_at', { ascending: false }),
+        
+        // Get all user addresses separately
+        supabase
+          .from('user_addresses')
+          .select('*')
+          .order('created_at', { ascending: false }),
+        
+        // Get affiliate earnings
+        supabase
+          .from('affiliate_earnings')
+          .select('earnings_amount, created_at'),
+        
+        // Get today's active users
+        supabase
+          .from('user_login_stats')
+          .select('user_id')
+          .gte('last_login_at', new Date().toISOString().split('T')[0]),
+        
+        // Get this month's new users
+        supabase
+          .from('user_login_stats')
+          .select('user_id, first_login_at')
+          .gte('first_login_at', new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString()),
+        
+        // Get last month's new users
+        supabase
+          .from('user_login_stats')
+          .select('user_id, first_login_at')
+          .gte('first_login_at', new Date(new Date().getFullYear(), new Date().getMonth() - 1, 1).toISOString())
+          .lt('first_login_at', new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString())
+      ]);
 
         // Handle any errors
         if (usersResult.error) throw usersResult.error;
         if (analysesResult.error) throw analysesResult.error;
-        if (journeyResult.error) throw journeyResult.error;
         if (addressesResult.error) throw addressesResult.error;
         if (earningsResult.error) throw earningsResult.error;
         if (todayActiveResult.error) throw todayActiveResult.error;
@@ -147,63 +131,34 @@ const AdminDashboard = () => {
 
         const users = usersResult.data || [];
         const analyses = analysesResult.data || [];
-        const journeyData = journeyResult.data || [];
         const addresses = addressesResult.data || [];
         const earnings = earningsResult.data || [];
         const todayActive = todayActiveResult.data || [];
         const thisMonthUsers = thisMonthUsersResult.data || [];
         const lastMonthUsers = lastMonthUsersResult.data || [];
 
-        // Combine analyses from both sources, avoiding duplicates
-        const existingAnalysisIds = new Set(analyses.map((a: any) => a.id));
-        const journeyAnalyses = journeyData.filter((j: any) => 
-          !j.analysis_id || !existingAnalysisIds.has(j.analysis_id)
-        );
-        
-        const allAnalyses = [...analyses, ...journeyAnalyses];
-
-        // Calculate totals
+        // Calculate totals from unified analyses data
         const totalUsers = users.length;
         const totalLogins = users.reduce((sum, user) => sum + (user.login_count || 0), 0);
-        const totalAnalyses = allAnalyses.length;
-        const totalRevenue = allAnalyses.reduce((sum, analysis) => sum + (analysis.total_monthly_revenue || 0), 0);
+        const totalAnalyses = analyses.length;
+        const totalRevenue = analyses.reduce((sum, analysis) => sum + (analysis.total_monthly_revenue || 0), 0);
         const totalAffiliateEarnings = earnings.reduce((sum, earning) => sum + (Number(earning.earnings_amount) || 0), 0);
         const activeUsersToday = todayActive.length;
         
-        // Calculate unique properties by collecting all addresses from multiple sources
+        // Calculate unique properties directly from unified analyses
         const allPropertyAddresses = new Set();
         
-        // Add addresses from user_addresses table
+        // Add addresses from unified analyses (which already combines both sources)
+        analyses.forEach(analysis => {
+          if (analysis.property_address) {
+            allPropertyAddresses.add(analysis.property_address);
+          }
+        });
+        
+        // Also add addresses from user_addresses table for completeness
         addresses.forEach(addr => {
           if (addr.formatted_address || addr.address) {
             allPropertyAddresses.add(addr.formatted_address || addr.address);
-          }
-        });
-        
-        // Add addresses from property analyses
-        analyses.forEach(analysis => {
-          if (analysis.analysis_results && typeof analysis.analysis_results === 'object') {
-            const results = analysis.analysis_results as any;
-            if (results.propertyAddress && typeof results.propertyAddress === 'string') {
-              allPropertyAddresses.add(results.propertyAddress);
-            } else if (results.address && typeof results.address === 'string') {
-              allPropertyAddresses.add(results.address);
-            }
-          }
-        });
-        
-        // Add addresses from journey data
-        journeyData.forEach((journey: any) => {
-          if (journey.property_address) {
-            allPropertyAddresses.add(journey.property_address);
-          }
-          if (journey.analysis_results && typeof journey.analysis_results === 'object') {
-            const results = journey.analysis_results as any;
-            if (results.propertyAddress && typeof results.propertyAddress === 'string') {
-              allPropertyAddresses.add(results.propertyAddress);
-            } else if (results.address && typeof results.address === 'string') {
-              allPropertyAddresses.add(results.address);
-            }
           }
         });
         
