@@ -12,7 +12,7 @@ export const GoogleMapContext = createContext<GoogleMapContextType | undefined>(
   undefined
 );
 
-const GoogleMapProvider = ({ children }: { children: React.ReactNode }) => {
+export const GoogleMapProvider = ({ children }: { children: React.ReactNode }) => {
   // Use try-catch to handle cases where AuthProvider might not be ready
   let authContext;
   try {
@@ -343,4 +343,4 @@ const GoogleMapProvider = ({ children }: { children: React.ReactNode }) => {
   );
 };
 
-export default GoogleMapProvider;
+// Remove default export since we're using named export above
