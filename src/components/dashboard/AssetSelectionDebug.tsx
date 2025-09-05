@@ -9,7 +9,8 @@ import { useToast } from '@/hooks/use-toast';
 
 const AssetSelectionDebug = () => {
   const { user } = useAuth();
-  const { assetSelections, loading, refetch } = useUserAssetSelections();
+  const currentAnalysisId = localStorage.getItem('currentAnalysisId');
+  const { assetSelections, loading, refetch } = useUserAssetSelections(currentAnalysisId || undefined);
   const { toast } = useToast();
 
   // Only show in development

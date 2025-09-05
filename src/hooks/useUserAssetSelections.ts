@@ -35,6 +35,14 @@ export const useUserAssetSelections = (analysisId?: string) => {
         
       // Use filtered selections only - no fallback to avoid accumulation across properties
       const finalSelections = filteredSelections;
+      
+      console.log('🧠 [ASSET-SELECTIONS] Final selection logic:', {
+        analysisIdProvided: !!analysisId,
+        totalSelectionsFromDB: selections.length,
+        filteredCount: filteredSelections.length,
+        finalCount: finalSelections.length,
+        shouldShowAny: !analysisId || filteredSelections.length > 0
+      });
         
       setAssetSelections(finalSelections);
       
