@@ -16,11 +16,32 @@ export const useUserAssetSelections = (analysisId?: string) => {
       setError(null);
       
       console.log('🔍 [ASSET-SELECTIONS] Loading asset selections for user:', user?.id || 'anonymous', 'analysisId:', analysisId);
-      const selections = await loadAssetSelections(user?.id);
-      
+      // Load selections for the authenticated user or current anonymous session
+      const userSelections = await loadAssetSelections(user?.id);
+      // Additionally, if authenticated, also include any lingering session selections for this browser session
+      let sessionSelections: UserAssetSelection[] = [];
+      const sessionId = localStorage.getItem('anonymous_session_id');
+      if (user?.id && sessionId) {
+        sessionSelections = await loadAssetSelections(undefined);
+      }
+
+      const combinedSelections: UserAssetSelection[] = [
+        ...userSelections,
+        ...sessionSelections
+      ].filter(Boolean) as UserAssetSelection[];
+
+      // Deduplicate by record id to avoid duplicates when session rows were already linked
+      const uniqueSelectionsMap = new Map<string, UserAssetSelection>();
+      combinedSelections.forEach(s => {
+        if (s && s.id && !uniqueSelectionsMap.has(s.id)) {
+          uniqueSelectionsMap.set(s.id, s);
+        }
+      });
+      const uniqueSelections = Array.from(uniqueSelectionsMap.values());
+
       // Filter by analysis ID if provided - this is critical for multi-property support
       const filteredSelections = analysisId 
-        ? selections.filter(selection => {
+        ? uniqueSelections.filter(selection => {
             const matches = selection.analysis_id === analysisId;
             console.log('🎯 [ASSET-SELECTIONS] Selection filter check:', {
               selectionId: selection.id,
@@ -31,25 +52,28 @@ export const useUserAssetSelections = (analysisId?: string) => {
             });
             return matches;
           })
-        : selections;
+        : uniqueSelections;
         
       // Use filtered selections only - no fallback to avoid accumulation across properties
       const finalSelections = filteredSelections;
       
       console.log('🧠 [ASSET-SELECTIONS] Final selection logic:', {
         analysisIdProvided: !!analysisId,
-        totalSelectionsFromDB: selections.length,
+        sessionIdPresent: !!sessionId,
+        totalUserSelections: userSelections.length,
+        totalSessionSelections: sessionSelections.length,
+        combinedTotal: uniqueSelections.length,
         filteredCount: filteredSelections.length,
-        finalCount: finalSelections.length,
-        shouldShowAny: !analysisId || filteredSelections.length > 0
+        finalCount: finalSelections.length
       });
         
       setAssetSelections(finalSelections);
       
       console.log('✅ [ASSET-SELECTIONS] Loaded filtered asset selections:', {
-        totalSelections: selections.length,
+        totalUserSelections: userSelections.length,
+        totalSessionSelections: sessionSelections.length,
+        combinedUnique: uniqueSelections.length,
         filteredCount: filteredSelections.length,
-        usedFallbackAllAnalyses: analysisId ? filteredSelections.length === 0 : false,
         userId: user?.id,
         targetAnalysisId: analysisId,
         isAuthenticated: !!user,
