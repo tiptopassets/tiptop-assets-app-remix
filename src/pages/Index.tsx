@@ -37,11 +37,8 @@ const Index = () => {
     setIsCollapsed(analysisComplete);
   }, [analysisComplete]);
 
-  console.log('🏠 [INDEX] Render state:', { loading, user: !!user, userEmail: user?.email });
-
   // Show loading screen while auth is initializing
   if (loading) {
-    console.log('⏳ [INDEX] Showing loading screen - auth initializing');
     return (
       <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black flex items-center justify-center">
         <div className="text-white text-center">
@@ -51,8 +48,6 @@ const Index = () => {
       </div>
     );
   }
-  
-  console.log('✅ [INDEX] Auth loaded, rendering main page');
 
   // Check if we should show the banner (hide during capturing, show during generating and error)
   const showBanner = status !== 'idle' && (status === 'generating' || status === 'error');

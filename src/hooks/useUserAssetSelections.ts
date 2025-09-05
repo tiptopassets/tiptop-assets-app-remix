@@ -33,9 +33,8 @@ export const useUserAssetSelections = (analysisId?: string) => {
           })
         : selections;
         
-      const finalSelections = analysisId && filteredSelections.length === 0 
-        ? selections 
-        : filteredSelections;
+      // Use filtered selections only - no fallback to avoid accumulation across properties
+      const finalSelections = filteredSelections;
         
       setAssetSelections(finalSelections);
       
