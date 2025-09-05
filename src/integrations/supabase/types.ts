@@ -1564,6 +1564,14 @@ export type Database = {
         Args: { p_user_id: string }
         Returns: number
       }
+      repair_recent_orphaned_selections: {
+        Args: {
+          p_analysis_id: string
+          p_time_threshold?: unknown
+          p_user_id: string
+        }
+        Returns: number
+      }
       save_property_analysis: {
         Args: {
           p_analysis_results?: Json
