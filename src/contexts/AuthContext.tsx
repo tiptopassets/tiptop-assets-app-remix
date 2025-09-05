@@ -250,7 +250,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     const initializeAuth = async () => {
       try {
-        console.log('🔐 [AUTH] Initializing auth state');
+        console.log('🔐 [AUTH] Initializing auth state - setting up listener');
         
         // Set up auth state listener first
         authSubscription = supabase.auth.onAuthStateChange(
@@ -323,7 +323,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
         
         if (mounted) {
-          console.log('🔐 [AUTH] Initial session check:', currentSession?.user?.email || 'No session');
+          console.log('🔐 [AUTH] Initial session check completed:', {
+            hasSession: !!currentSession,
+            userEmail: currentSession?.user?.email || 'No user',
+            settingLoading: false
+          });
           setSession(currentSession);
           setUser(currentSession?.user ?? null);
           
