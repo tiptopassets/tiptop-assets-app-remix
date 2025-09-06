@@ -2,16 +2,58 @@
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { Separator } from "@/components/ui/separator";
 import { motion } from "framer-motion";
-import { User } from "lucide-react";
+import { User, Settings, Shield, CreditCard, Bell, Mail, Lock, Trash2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
+import { useState } from "react";
 
 const AccountPage = () => {
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
+  const { toast } = useToast();
+  const [isEditing, setIsEditing] = useState(false);
+  const [notifications, setNotifications] = useState({
+    email: true,
+    push: false,
+    marketing: true
+  });
   
-  const fullName = user?.user_metadata?.full_name || 'User';
+  const fullName = user?.user_metadata?.full_name || user?.user_metadata?.name || 'User';
   const email = user?.email || 'Not provided';
   const avatar = user?.user_metadata?.avatar_url;
+  const provider = user?.app_metadata?.provider || 'email';
+
+  const handleSaveProfile = () => {
+    toast({
+      title: "Profile Updated",
+      description: "Your profile information has been saved successfully.",
+    });
+    setIsEditing(false);
+  };
+
+  const handleNotificationChange = (type: keyof typeof notifications) => {
+    setNotifications(prev => ({
+      ...prev,
+      [type]: !prev[type]
+    }));
+    toast({
+      title: "Settings Updated",
+      description: "Notification preferences have been saved.",
+    });
+  };
+
+  const handleDeleteAccount = () => {
+    // This would typically show a confirmation dialog
+    toast({
+      title: "Account Deletion",
+      description: "Please contact support to delete your account.",
+      variant: "destructive",
+    });
+  };
 
   return (
     <DashboardLayout>
@@ -21,82 +63,230 @@ const AccountPage = () => {
         transition={{ duration: 0.5 }}
         className="space-y-6"
       >
-        <div className="flex items-center">
-          <User className="mr-2 text-tiptop-purple" size={32} />
-          <h1 className="text-3xl font-bold">My Account</h1>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center">
+            <Settings className="mr-3 text-tiptop-purple" size={32} />
+            <div>
+              <h1 className="text-3xl font-bold">Account Settings</h1>
+              <p className="text-gray-600 mt-1">
+                Manage your personal information and preferences
+              </p>
+            </div>
+          </div>
+          <Button 
+            variant="outline" 
+            onClick={() => signOut()}
+            className="flex items-center gap-2"
+          >
+            <Lock className="h-4 w-4" />
+            Sign Out
+          </Button>
         </div>
         
-        <p className="text-gray-600">
-          Manage your personal information and account settings.
-        </p>
-        
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="md:col-span-1">
-            <Card className="overflow-hidden border-0 shadow-md relative">
-              {/* Glassmorphism effect */}
-              <div className="absolute inset-0 bg-gradient-to-tr from-white/80 to-white/40 backdrop-blur-sm z-0"></div>
-              
-              <CardHeader className="relative z-10 bg-gradient-to-r from-purple-500/10 to-blue-500/10">
-                <CardTitle>Profile</CardTitle>
-              </CardHeader>
-              <CardContent className="relative z-10 pt-6 flex flex-col items-center">
-                <div className="mb-4 w-24 h-24 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center border-2 border-tiptop-purple">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Profile Information */}
+          <Card className="overflow-hidden">
+            <CardHeader className="bg-gradient-to-r from-tiptop-purple/10 to-blue-500/10">
+              <CardTitle className="flex items-center gap-2">
+                <User className="h-5 w-5" />
+                Profile Information
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-6">
+              <div className="flex items-center space-x-4 mb-6">
+                <div className="w-20 h-20 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center border-2 border-tiptop-purple/20">
                   {avatar ? (
                     <img src={avatar} alt="Profile" className="w-full h-full object-cover" />
                   ) : (
-                    <User size={48} className="text-gray-400" />
+                    <User size={40} className="text-gray-400" />
                   )}
                 </div>
-                <h2 className="text-xl font-semibold">{fullName}</h2>
-                <p className="text-gray-500">{email}</p>
-                
-                <div className="mt-6 w-full">
-                  <Button className="w-full mb-2">Edit Profile</Button>
+                <div className="flex-1">
+                  <h3 className="text-xl font-semibold">{fullName}</h3>
+                  <p className="text-gray-500">{email}</p>
+                  <p className="text-sm text-tiptop-purple capitalize">
+                    {provider === 'google' ? 'Google Account' : 'Email Account'}
+                  </p>
                 </div>
-              </CardContent>
-            </Card>
-          </div>
+              </div>
 
-          <div className="md:col-span-2">
-            <Card className="h-full overflow-hidden border-0 shadow-md relative">
-              {/* Glassmorphism effect */}
-              <div className="absolute inset-0 bg-gradient-to-tr from-white/80 to-white/40 backdrop-blur-sm z-0"></div>
-              
-              <CardHeader className="relative z-10 bg-gradient-to-r from-purple-500/10 to-blue-500/10">
-                <CardTitle>Account Settings</CardTitle>
-              </CardHeader>
-              <CardContent className="relative z-10 pt-6 space-y-6">
+              <div className="space-y-4">
                 <div>
-                  <h3 className="font-medium mb-2">Email Notifications</h3>
-                  <div className="flex items-center justify-between p-3 bg-white rounded-lg shadow-sm">
-                    <span>Receive payment notifications</span>
-                    <label className="relative inline-flex items-center cursor-pointer">
-                      <input type="checkbox" className="sr-only peer" defaultChecked />
-                      <div className="w-11 h-6 bg-gray-200 rounded-full peer peer-focus:ring-4 peer-focus:ring-tiptop-purple/30 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-tiptop-purple"></div>
-                    </label>
+                  <Label htmlFor="name">Full Name</Label>
+                  <Input 
+                    id="name" 
+                    value={fullName} 
+                    disabled={!isEditing}
+                    className="mt-1"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="email">Email Address</Label>
+                  <Input 
+                    id="email" 
+                    value={email} 
+                    disabled
+                    className="mt-1 bg-gray-50"
+                  />
+                </div>
+                
+                <div className="flex gap-2 pt-4">
+                  {!isEditing ? (
+                    <Button 
+                      onClick={() => setIsEditing(true)}
+                      className="flex-1"
+                    >
+                      Edit Profile
+                    </Button>
+                  ) : (
+                    <>
+                      <Button 
+                        onClick={handleSaveProfile}
+                        className="flex-1"
+                      >
+                        Save Changes
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        onClick={() => setIsEditing(false)}
+                      >
+                        Cancel
+                      </Button>
+                    </>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Notification Preferences */}
+          <Card className="overflow-hidden">
+            <CardHeader className="bg-gradient-to-r from-tiptop-purple/10 to-blue-500/10">
+              <CardTitle className="flex items-center gap-2">
+                <Bell className="h-5 w-5" />
+                Notifications
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-6">
+              <div className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label>Email Notifications</Label>
+                    <p className="text-sm text-gray-500">
+                      Receive updates about your earnings and activities
+                    </p>
                   </div>
+                  <Switch
+                    checked={notifications.email}
+                    onCheckedChange={() => handleNotificationChange('email')}
+                  />
                 </div>
-                
-                <div>
-                  <h3 className="font-medium mb-2">Payment Information</h3>
-                  <Button variant="outline" className="w-full">
-                    Add Payment Method
-                  </Button>
+
+                <Separator />
+
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label>Push Notifications</Label>
+                    <p className="text-sm text-gray-500">
+                      Get real-time alerts on your device
+                    </p>
+                  </div>
+                  <Switch
+                    checked={notifications.push}
+                    onCheckedChange={() => handleNotificationChange('push')}
+                  />
                 </div>
-                
-                <div>
-                  <h3 className="font-medium mb-2">Security</h3>
-                  <Button variant="outline" className="w-full mb-2">
-                    Change Password
-                  </Button>
-                  <Button variant="outline" className="w-full">
-                    Two-Factor Authentication
-                  </Button>
+
+                <Separator />
+
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label>Marketing Emails</Label>
+                    <p className="text-sm text-gray-500">
+                      Receive tips and product updates
+                    </p>
+                  </div>
+                  <Switch
+                    checked={notifications.marketing}
+                    onCheckedChange={() => handleNotificationChange('marketing')}
+                  />
                 </div>
-              </CardContent>
-            </Card>
-          </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Security Settings */}
+          <Card>
+            <CardHeader className="bg-gradient-to-r from-tiptop-purple/10 to-blue-500/10">
+              <CardTitle className="flex items-center gap-2">
+                <Shield className="h-5 w-5" />
+                Security & Privacy
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-6">
+              <div className="space-y-4">
+                <Button variant="outline" className="w-full justify-start">
+                  <Lock className="mr-2 h-4 w-4" />
+                  Change Password
+                </Button>
+                <Button variant="outline" className="w-full justify-start">
+                  <Shield className="mr-2 h-4 w-4" />
+                  Two-Factor Authentication
+                </Button>
+                <Button variant="outline" className="w-full justify-start">
+                  <Mail className="mr-2 h-4 w-4" />
+                  Download My Data
+                </Button>
+                
+                <Separator className="my-4" />
+                
+                <Button 
+                  variant="destructive" 
+                  className="w-full justify-start"
+                  onClick={handleDeleteAccount}
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Delete Account
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Payment Information */}
+          <Card>
+            <CardHeader className="bg-gradient-to-r from-tiptop-purple/10 to-blue-500/10">
+              <CardTitle className="flex items-center gap-2">
+                <CreditCard className="h-5 w-5" />
+                Payment & Billing
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-6">
+              <div className="space-y-4">
+                <div className="p-4 border rounded-lg bg-gray-50">
+                  <p className="text-sm text-gray-600 mb-2">Payment Method</p>
+                  <p className="font-medium">No payment method added</p>
+                  <p className="text-sm text-gray-500">Add a payment method to receive earnings</p>
+                </div>
+                
+                <Button className="w-full">
+                  <CreditCard className="mr-2 h-4 w-4" />
+                  Add Payment Method
+                </Button>
+                
+                <Button variant="outline" className="w-full">
+                  View Billing History
+                </Button>
+                
+                <Button variant="outline" className="w-full">
+                  Tax Documents
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
       </motion.div>
     </DashboardLayout>
   );
