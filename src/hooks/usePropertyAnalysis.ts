@@ -22,16 +22,15 @@ export const usePropertyAnalysis = (): PropertyAnalysisHook => {
     setError(null);
     
     try {
-      // Get enhanced property type information
+      // Get property type information
       const propertyType = await getPropertyTypeFromPlaces(coordinates);
       
-      // Call enhanced property analysis
+      // Call unified property analysis
       const { data, error: analysisError } = await supabase.functions.invoke('analyze-property', {
         body: {
           address,
           coordinates,
-          propertyType,
-          enhancedAnalysis: true
+          propertyType
         }
       });
 
@@ -66,7 +65,7 @@ export const usePropertyAnalysis = (): PropertyAnalysisHook => {
   };
 };
 
-// Enhanced analysis logic based on property type
+// Property-specific analysis logic based on property type
 function enhanceAnalysisWithPropertyLogic(analysis: AnalysisResults, propertyType: string): AnalysisResults {
   const enhanced = { ...analysis };
 

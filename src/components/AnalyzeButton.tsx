@@ -3,7 +3,6 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { useGoogleMap } from '@/contexts/GoogleMapContext';
-import { useEnhancedAnalysis } from '@/hooks/useEnhancedAnalysis';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAddressSearch } from '@/hooks/use-address-search';
 import { useModelGeneration } from '@/contexts/ModelGeneration';
@@ -21,7 +20,6 @@ const AnalyzeButton = () => {
     setAnalysisResults,
     setAnalysisComplete 
   } = useGoogleMap();
-  const { analyzeProperty, isLoading: isEnhancedLoading } = useEnhancedAnalysis();
   const { hasSelectedAddress, isRetrying } = useAddressSearch();
   const { capturePropertyImages } = useModelGeneration();
   const userData = useUserData();
@@ -31,7 +29,7 @@ const AnalyzeButton = () => {
   const [progress, setProgress] = useState(0);
   const [currentStep, setCurrentStep] = useState('');
 
-  const handleUnifiedAnalysis = async () => {
+  const handleAnalysis = async () => {
     if (!address) {
       toast({
         title: "Address Required",
@@ -55,7 +53,7 @@ const AnalyzeButton = () => {
     setProgress(0);
     setCurrentStep('Starting analysis...');
     
-    // Simulate progress updates with descriptive steps
+    // Progress updates with descriptive steps
     const progressInterval = setInterval(() => {
       setProgress(prev => {
         if (prev >= 90) {
@@ -97,54 +95,27 @@ const AnalyzeButton = () => {
         capturePropertyImages(address, addressCoordinates);
       }
       
-      // Step 3: Run the basic analysis
+      // Step 3: Run the comprehensive analysis
       setProgress(40);
       setCurrentStep('Processing property data...');
       await generatePropertyAnalysis(address);
-      setProgress(60);
+      setProgress(100);
+      setCurrentStep('Analysis complete!');
       
-      // Step 4: If user is authenticated, also run enhanced analysis
-      if (user) {
-        setCurrentStep('Running enhanced analysis...');
-        const enhancedResult = await analyzeProperty(address);
-        setProgress(90);
-        
-        if (enhancedResult?.success) {
-          // Merge the enhanced results with the basic analysis
-          setAnalysisResults(enhancedResult.results);
-          setAnalysisComplete(true);
-          setProgress(100);
-          setCurrentStep('Analysis complete!');
-          
-          toast({
-            title: "Enhanced Analysis Complete",
-            description: `Property analysis completed and saved to your dashboard with ${Math.round(enhancedResult.dataQuality.accuracyScore * 100)}% accuracy`,
-            action: (
-              <Button asChild variant="outline" size="sm">
-                <a href="/dashboard">
-                  <Database className="w-4 h-4 mr-2" />
-                  View Dashboard
-                </a>
-              </Button>
-            )
-          });
-        }
-      } else {
-        setProgress(100);
-        setCurrentStep('Analysis complete!');
-        toast({
-          title: "Basic Analysis Complete",
-          description: "Property analysis completed. Sign in for enhanced AI analysis and dashboard saving.",
-          action: (
-            <Button asChild variant="outline" size="sm">
-              <a href="/dashboard">
-                <Database className="w-4 h-4 mr-2" />
-                View Results
-              </a>
-            </Button>
-          )
-        });
-      }
+      toast({
+        title: "Analysis Complete",
+        description: user ? 
+          "Property analysis completed and saved to your dashboard." : 
+          "Property analysis completed. Sign in to save results to your dashboard.",
+        action: (
+          <Button asChild variant="outline" size="sm">
+            <a href="/dashboard">
+              <Database className="w-4 h-4 mr-2" />
+              {user ? 'View Dashboard' : 'View Results'}
+            </a>
+          </Button>
+        )
+      });
     } catch (error) {
       console.error('Analysis error:', error);
       toast({
@@ -160,7 +131,7 @@ const AnalyzeButton = () => {
     }
   };
 
-  const isLoading = isAnalyzing || isEnhancedLoading;
+  const isLoading = isAnalyzing;
   const hasAddress = !!address;
   const hasError = !!analysisError;
 
@@ -178,7 +149,7 @@ const AnalyzeButton = () => {
   return (
     <div className="w-full max-w-md mx-auto">
       <Button
-        onClick={handleUnifiedAnalysis}
+        onClick={handleAnalysis}
         disabled={isLoading || analysisStarted || !hasAddress || !hasSelectedAddress || isRetrying}
         className={`w-full ${hasAddress 
           ? hasSelectedAddress
@@ -193,7 +164,7 @@ const AnalyzeButton = () => {
         {isLoading ? (
           <div className="flex items-center gap-2">
             <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-            {user ? 'Enhanced AI Analysis...' : 'Analyzing Property...'}
+            Analyzing Property...
           </div>
         ) : hasError ? (
           <div className="flex items-center gap-2">
@@ -208,7 +179,7 @@ const AnalyzeButton = () => {
         ) : (
           <div className="flex items-center gap-2">
             <Zap className="w-5 h-5" />
-            {user ? 'Enhanced AI Analysis' : 'Analyze Property'}
+            Analyze Property
           </div>
         )}
       </Button>
@@ -245,10 +216,10 @@ const AnalyzeButton = () => {
               <>⚠️ Please select your address from the dropdown suggestions<br/>
               <span className="text-xs text-amber-400">Please click on your address again</span></>
             )
-          ) : user ? (
-            <>🚀 Multi-source analysis with Google Solar + GPT-4o<br/>
-            <span className="text-xs">✅ Results will be saved to your dashboard</span></>
-          ) : null
+          ) : (
+            <>🚀 AI-powered analysis with Google Solar + GPT-4o<br/>
+            <span className="text-xs">{user ? '✅ Results will be saved to your dashboard' : '💡 Sign in to save results to dashboard'}</span></>
+          )
           }
         </p>
       )}
