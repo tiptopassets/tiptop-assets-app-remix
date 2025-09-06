@@ -132,7 +132,7 @@ const EnhancedAdditionalAssetsCarousel = ({
     
     return (
       <div 
-        className={`${isMobile ? 'w-[128px] h-[200px]' : 'h-[120px]'} rounded-xl relative cursor-pointer transition-all duration-300 overflow-hidden group`}
+        className={`${isMobile ? 'w-[128px] h-[200px]' : 'h-[140px]'} rounded-xl relative cursor-pointer transition-all duration-300 overflow-hidden group`}
         onClick={() => onAssetToggle(opportunity.title)}
         style={{
           boxShadow: isSelected ? `0 4px 20px ${glowColor.replace('0.5', '0.3')}` : `0 2px 10px rgba(0,0,0,0.3)`
