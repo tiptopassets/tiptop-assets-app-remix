@@ -33,6 +33,21 @@ export const additionalOpportunities: AdditionalOpportunity[] = [
     ]
   },
   {
+    title: "Sports Court Rental",
+    icon: "sports-court",
+    monthlyRevenue: 380,
+    description: "Rent out your tennis court, basketball court, or pickleball court by the hour.",
+    provider: "Swimply",
+    setupCost: 0,
+    roi: 1,
+    formFields: [
+      { type: "select", name: "courtType", label: "Court Type", value: "Tennis", options: ["Tennis", "Basketball", "Pickleball", "Multi-Sport"] },
+      { type: "number", name: "capacity", label: "Max Players", value: 4 },
+      { type: "select", name: "equipment", label: "Equipment Provided", value: "None", options: ["None", "Basic", "Complete"] },
+      { type: "select", name: "availability", label: "Rental Hours", value: "Weekends", options: ["Weekends", "Evenings", "Full Day"] }
+    ]
+  },
+  {
     title: "Event Space Rental",
     icon: "garden",
     monthlyRevenue: 350,
@@ -433,7 +448,7 @@ export const getOpportunitiesByRevenueTier = () => {
 
 export const getOpportunitiesByCategory = () => {
   const spaceRentals = additionalOpportunities.filter(opp => 
-    ['Airbnb Rental', 'Event Space Rental', 'Event Space Rental (Large)', 'Co-working Space', 'Photography Studio', 'Content Creator Studio', 'Fitness Studio', 'Art Studio Space', 'Home Gym Rental', 'Game Room Rental', 'Music Practice Room', 'Meeting Room Rental'].includes(opp.title)
+    ['Airbnb Rental', 'Event Space Rental', 'Event Space Rental (Large)', 'Co-working Space', 'Photography Studio', 'Content Creator Studio', 'Fitness Studio', 'Art Studio Space', 'Home Gym Rental', 'Game Room Rental', 'Music Practice Room', 'Meeting Room Rental', 'Sports Court Rental'].includes(opp.title)
   );
   
   const petServices = additionalOpportunities.filter(opp => 
