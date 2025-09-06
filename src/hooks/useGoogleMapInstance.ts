@@ -31,6 +31,11 @@ export const useGoogleMapInstance = (zoomLevel: number | undefined, setZoomLevel
           mapTypeId: 'satellite',
           disableDefaultUI: true,
           zoomControl: false, // Explicitly disable zoom controls
+          mapTypeControl: false, // Disable map type controls
+          streetViewControl: false, // Disable street view control
+          fullscreenControl: false, // Disable fullscreen control
+          keyboardShortcuts: false, // Hide keyboard shortcuts
+          gestureHandling: 'greedy', // Better mobile experience
           styles: mapStyles,
           tilt: 45 // Add a 45-degree tilt for better building visualization
         });
