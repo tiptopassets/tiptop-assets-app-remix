@@ -162,29 +162,35 @@ const EnhancedAdditionalAssetsCarousel = ({
         </div>
         
         {/* Content Overlay */}
-        <div className="absolute inset-0 p-3 flex flex-col justify-between z-10">
-          {/* Top: Small icon and title */}
-          <div className="flex items-center gap-2">
+        <div className="absolute inset-0 p-3 flex flex-col z-10">
+          {/* Top: Small icon and revenue tier */}
+          <div className="flex items-center justify-between mb-2">
             {getAssetIcon(opportunity.icon, { className: `${isMobile ? 'w-6 h-6' : 'w-8 h-8'} object-contain` })}
             {getRevenueTierIcon(opportunity.monthlyRevenue)}
           </div>
           
-          {/* Bottom: Title and Revenue */}
-          <div className="space-y-1">
-            <h3 className={`${isMobile ? 'text-sm' : 'text-base'} font-bold text-white drop-shadow-lg line-clamp-1`}>
+          {/* Title - moved higher and allows multiple lines */}
+          <div className="flex-1 flex flex-col justify-start">
+            <h3 className={`${isMobile ? 'text-sm leading-tight' : 'text-base'} font-bold text-white drop-shadow-lg mb-auto max-w-full`}>
               {opportunity.title}
             </h3>
-            <div className="flex items-center justify-between">
+          </div>
+          
+          {/* Bottom: Revenue and Provider Badge */}
+          <div className="mt-auto space-y-1">
+            <div className="flex items-end justify-between">
               <p className={`${isMobile ? 'text-base' : 'text-lg'} font-bold ${getRevenueTierColor(opportunity.monthlyRevenue)} drop-shadow-lg`}>
                 ${opportunity.monthlyRevenue}/mo
               </p>
-              {/* Provider Badge */}
-              {opportunity.provider && (
+            </div>
+            {/* Provider Badge - separate row to prevent cutting off */}
+            {opportunity.provider && (
+              <div className="flex justify-end">
                 <div className="bg-white/20 backdrop-blur text-white text-xs rounded-full px-2 py-1 font-medium">
                   {opportunity.provider}
                 </div>
-              )}
-            </div>
+              </div>
+            )}
           </div>
         </div>
         
