@@ -10,6 +10,7 @@ interface StatsCardProps {
   trend?: "up" | "down" | "neutral";
   trendValue?: string;
   variant?: "default" | "purple" | "blue" | "orange" | "green";
+  onClick?: () => void;
 }
 
 export const StatsCard = ({ 
@@ -19,7 +20,8 @@ export const StatsCard = ({
   icon, 
   trend,
   trendValue,
-  variant = "default"
+  variant = "default",
+  onClick
 }: StatsCardProps) => {
   const getVariantClasses = () => {
     switch (variant) {
@@ -53,10 +55,14 @@ export const StatsCard = ({
   };
 
   return (
-    <Card className={cn(
-      "overflow-hidden border shadow-lg hover:shadow-xl transition-all duration-300 relative",
-      getVariantClasses()
-    )}>
+    <Card 
+      className={cn(
+        "overflow-hidden border shadow-lg hover:shadow-xl transition-all duration-300 relative",
+        onClick && "cursor-pointer hover:scale-[1.02]",
+        getVariantClasses()
+      )}
+      onClick={onClick}
+    >
       {/* Glassmorphism effect */}
       <div className="absolute inset-0 bg-white/40 backdrop-blur-[1px]"></div>
       <div className="absolute top-0 right-0 h-16 w-16 bg-gradient-to-bl from-white/60 to-transparent rounded-bl-full"></div>

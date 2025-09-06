@@ -102,6 +102,7 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
           properties={properties}
           selectedPropertyId={selectedPropertyId}
           onPropertySelect={onPropertySelect}
+          analysisId={latestAnalysis?.id}
         />
       </motion.div>
 
