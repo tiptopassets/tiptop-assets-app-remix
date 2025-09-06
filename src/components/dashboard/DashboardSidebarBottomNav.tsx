@@ -41,7 +41,7 @@ const DashboardSidebarBottomNav = () => {
           <Tooltip>
             <TooltipTrigger asChild>
               <Link
-                to="/account"
+                to="/dashboard/account"
                 className="p-2 rounded-lg text-gray-300 hover:bg-gray-800 hover:text-white transition-colors"
               >
                 <User size={16} />
