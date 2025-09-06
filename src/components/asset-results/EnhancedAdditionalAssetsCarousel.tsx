@@ -212,7 +212,7 @@ const EnhancedAdditionalAssetsCarousel = ({
       </h2>
       
       {/* Filter and Sort Controls - Desktop */}
-      <div className="hidden sm:flex flex-row flex-wrap gap-4 mb-6 glass-effect p-4 rounded-lg">
+      <div className="hidden sm:flex flex-row flex-wrap gap-4 mb-6 p-4 rounded-lg bg-white/5 border border-white/10">
         <div className="flex items-center gap-2">
           <span className="text-white text-sm font-medium">Sort by:</span>
           <Select value={sortBy} onValueChange={setSortBy}>
@@ -282,7 +282,7 @@ const EnhancedAdditionalAssetsCarousel = ({
       </div>
       
       <Carousel 
-        className="w-full glass-effect p-3 sm:p-4 rounded-lg"
+        className="w-full"
         opts={{
           align: "start",
           loop: true
@@ -314,7 +314,7 @@ const EnhancedAdditionalAssetsCarousel = ({
       </Carousel>
       
       {/* Mobile Sort Controls - Below Cards */}
-      <div className="sm:hidden mt-4 glass-effect p-3 rounded-lg">
+      <div className="sm:hidden mt-4 p-3 rounded-lg bg-white/5 border border-white/10">
         <div className="flex items-center gap-2">
           <span className="text-white text-sm font-medium">Sort by:</span>
           <Select value={sortBy} onValueChange={setSortBy}>
@@ -332,7 +332,7 @@ const EnhancedAdditionalAssetsCarousel = ({
       </div>
       
       {/* Summary Stats */}
-      <div className="mt-3 sm:mt-4 glass-effect p-3 sm:p-4 rounded-lg space-y-4">
+      <div className="mt-3 sm:mt-4 p-3 sm:p-4 rounded-lg space-y-4 bg-white/5 border border-white/10">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 text-center">
           <div>
             <p className="text-white/60 text-xs">Selected Assets</p>
