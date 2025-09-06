@@ -41,7 +41,7 @@ const AssetOpportunitiesGrid = ({
                 
                 return (
                   <CarouselItem key={opportunity.title} className="pl-2 basis-auto">
-                    <div className="w-[160px]">
+                    <div className="w-[320px]">
                       <AssetCard
                         title={opportunity.title}
                         icon={opportunity.icon}
@@ -51,7 +51,7 @@ const AssetOpportunitiesGrid = ({
                         isSelected={isSelected}
                         onClick={() => onAssetToggle(opportunity.title)}
                         glowColor={glowColor}
-                        cardClassName="min-h-[260px] h-[260px]"
+                        cardClassName="min-h-[520px] h-[520px]"
                       />
                     </div>
                   </CarouselItem>
