@@ -125,9 +125,9 @@ const DashboardSidebarNavigation = () => {
   return (
     <TooltipProvider>
       <div className="flex-1 overflow-y-auto min-h-0">
-        <nav className="p-4 space-y-2">
+        <nav className="p-3 space-y-1">
           {/* Main Navigation Section - Always Visible */}
-          <div className="mb-6">
+          <div className="mb-4">
             {mainNavigationItems.map((item) => {
               const isActive = location.pathname === item.href;
               return (
@@ -152,7 +152,7 @@ const DashboardSidebarNavigation = () => {
 
           {/* Collapsible Assets Section */}
           <Collapsible open={isAssetsOpen} onOpenChange={handleAssetsToggle}>
-            <div className="mb-6">
+            <div className="mb-4">
               <CollapsibleTrigger asChild>
                 <Button
                   variant="ghost"
@@ -198,8 +198,8 @@ const DashboardSidebarNavigation = () => {
           </Collapsible>
 
           {/* Tools Section */}
-          <div className="mb-6">
-            <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Tools</h3>
+          <div className="mb-4">
+            <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Tools</h3>
             {toolsItems.map((item) => {
               const isActive = location.pathname === item.href;
               return (

@@ -26,7 +26,7 @@ const DashboardSidebarHeader = () => {
   return (
     <>
       {/* Header */}
-      <div className="p-6 border-b border-gray-800 flex-shrink-0">
+      <div className="p-4 border-b border-gray-800 flex-shrink-0">
         <Link to="/" className="text-2xl font-bold text-tiptop-purple hover:scale-105 transition-transform">
           tiptop
         </Link>
@@ -34,7 +34,7 @@ const DashboardSidebarHeader = () => {
       </div>
 
       {/* Property Navigation & Switcher */}
-      <div className="p-4 border-b border-gray-800 flex-shrink-0">
+      <div className="p-3 border-b border-gray-800 flex-shrink-0">
         {/* Current Property Info */}
         {(currentAddress || loading) && (
           <div>
