@@ -186,12 +186,12 @@ const DashboardPropertyOverview: React.FC<DashboardPropertyOverviewProps> = ({
                             <Loader2 className="h-4 w-4 animate-spin mr-1" />
                             Loading...
                           </>
-                        ) : (
-                          <>
-                            <Zap className="h-4 w-4 mr-1" />
-                            Manage
-                          </>
-                        )}
+                         ) : (
+                           <>
+                             <Zap className="h-4 w-4 mr-1" />
+                             Start Integration
+                           </>
+                         )}
                       </Button>
                     </div>
                   ))}
