@@ -53,7 +53,7 @@ const Index = () => {
   const showBanner = status !== 'idle' && (status === 'generating' || status === 'error');
 
   return (
-    <div className="min-h-screen relative overflow-hidden flex flex-col bg-gradient-to-b from-gray-900 to-black">
+    <div className="min-h-screen relative overflow-hidden flex flex-col" style={{ background: 'linear-gradient(to bottom right, #1e293b, #111827, #000000)' }}>
       {/* Journey Tracker */}
       <JourneyTracker />
 
