@@ -183,14 +183,14 @@ const EnhancedAdditionalAssetsCarousel = ({
                 ${opportunity.monthlyRevenue}/mo
               </p>
             </div>
-            {/* Provider Badge - separate row to prevent cutting off */}
-            {opportunity.provider && (
-              <div className="flex justify-end">
-                <div className="bg-white/20 backdrop-blur text-white text-xs rounded-full px-2 py-1 font-medium">
+            {/* Provider Badge - single line, consistent spacing */}
+            <div className={`flex justify-end ${opportunity.provider ? 'h-6' : 'h-6'}`}>
+              {opportunity.provider && (
+                <div className="bg-white/20 backdrop-blur text-white text-xs rounded-full px-2 py-1 font-medium whitespace-nowrap overflow-hidden text-ellipsis max-w-20">
                   {opportunity.provider}
                 </div>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         </div>
         
