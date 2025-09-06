@@ -105,6 +105,12 @@ export const generateLocalMockAnalysis = async (
       type: hasPool ? "In-ground" : "none",
       revenue: poolRevenue
     },
+    sportsCourts: {
+      present: propertyType === "Commercial" || address.toLowerCase().includes("court") || address.toLowerCase().includes("tennis") || address.toLowerCase().includes("sport"),
+      types: propertyType === "Commercial" || address.toLowerCase().includes("court") ? ["tennis", "pickleball"] : [],
+      count: propertyType === "Commercial" || address.toLowerCase().includes("court") ? 2 : 0,
+      revenue: propertyType === "Commercial" || address.toLowerCase().includes("court") ? Math.round(200 * 1.5) : 0
+    },
     storage: {
       volume: Math.round(roofSize * 0.3),
       revenue: storageRevenue

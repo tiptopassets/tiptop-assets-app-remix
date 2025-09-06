@@ -80,6 +80,13 @@ export interface AnalysisResults {
     revenue: number;
     providers?: ProviderInfo[];
   };
+  sportsCourts: {
+    present: boolean;
+    types: string[]; // e.g., ['tennis', 'pickleball', 'basketball']
+    count: number;
+    revenue: number;
+    providers?: ProviderInfo[];
+  };
   storage: {
     volume: number;
     revenue: number;

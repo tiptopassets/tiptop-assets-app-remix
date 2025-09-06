@@ -5,7 +5,7 @@ import { ServiceProviderInfo } from '../types';
 export const getAssetTypesForService = (serviceName: string): string[] => {
   switch (serviceName.toLowerCase()) {
     case 'swimply':
-      return ['pool'];
+      return ['pool', 'sports_courts', 'tennis', 'pickleball', 'basketball'];
     case 'honeygain':
       return ['bandwidth', 'internet'];
     case 'neighbor':

@@ -109,6 +109,12 @@ export const generatePropertyAnalysis = async (
       type: analysisData.pool?.type || 'none',
       revenue: analysisData.pool?.monthlyRevenue || 0
     },
+    sportsCourts: {
+      present: analysisData.sportsCourts?.present || false,
+      types: analysisData.sportsCourts?.types || [],
+      count: analysisData.sportsCourts?.count || 0,
+      revenue: analysisData.sportsCourts?.monthlyRevenue || 0
+    },
     storage: {
       volume: analysisData.storage?.volume || 0,
       revenue: analysisData.storage?.monthlyRevenue || 0
@@ -238,12 +244,17 @@ PROPERTY DETAILS:
 - Coordinates: ${JSON.stringify(propertyInfo.coordinates)}
 
 ACCESS RIGHTS ANALYSIS:
-- Rooftop Access: ${buildingTypeInfo.hasRooftopAccess}
+  - Rooftop Access: ${buildingTypeInfo.hasRooftopAccess}
 - Garden Access: ${buildingTypeInfo.hasGardenAccess} 
 - Parking Control: ${buildingTypeInfo.hasParkingControl}
 - Building Restrictions: ${buildingTypeInfo.restrictions || 'None'}
 
 IMAGE ANALYSIS: ${imageAnalysis.summary || 'No image analysis available'}
+
+SPORTS COURTS ANALYSIS:
+- Look for tennis courts, pickleball courts, basketball courts, volleyball courts
+- Consider court condition, accessibility, and rental potential
+- Sports courts can be rented hourly through platforms like Swimply
 
 CRITICAL CONSTRAINTS FOR ${buildingTypeInfo.type.toUpperCase()}:
 ${buildingTypeInfo.type === 'apartment' ? `
@@ -292,6 +303,17 @@ Return a JSON analysis with realistic revenue based on actual property access ri
   "pool": {
     "present": boolean,
     "monthlyRevenue": number,
+    "seasonalVariation": number,
+    "setupCost": number,
+    "confidenceScore": 0-1,
+    "restrictionReason": "reason if restricted"
+  },
+  "sportsCourts": {
+    "present": boolean,
+    "types": ["tennis", "pickleball", "basketball"],
+    "count": number,
+    "monthlyRevenue": number,
+    "hourlyRate": number,
     "seasonalVariation": number,
     "setupCost": number,
     "confidenceScore": 0-1,
@@ -442,6 +464,18 @@ function generateBuildingTypeAwareOpportunities(
         description: `Rent your ${results.pool.type} pool by the hour through platforms like Swimply.`,
         setupCost: 300,
         roi: Math.ceil(300 / Math.max(results.pool.revenue, 1))
+      });
+    }
+
+    if (results.sportsCourts.revenue > 0) {
+      const courtTypes = results.sportsCourts.types.join(', ');
+      opportunities.push({
+        title: 'Sports Courts Rental',
+        icon: 'activity',
+        monthlyRevenue: results.sportsCourts.revenue,
+        description: `Rent your ${courtTypes} court${results.sportsCourts.count > 1 ? 's' : ''} by the hour through platforms like Swimply.`,
+        setupCost: 200,
+        roi: Math.ceil(200 / Math.max(results.sportsCourts.revenue, 1))
       });
     }
 

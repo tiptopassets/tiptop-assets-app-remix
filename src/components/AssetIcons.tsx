@@ -14,6 +14,7 @@ import StorageIcon from './asset-icons/StorageIcon';
 import SwimmingPoolIcon from './asset-icons/SwimmingPoolIcon';
 import CarIcon from './asset-icons/CarIcon';
 import EVChargerIcon from './asset-icons/EVChargerIcon';
+import SportsCourtIcon from './asset-icons/SportsCourtIcon';
 
 const AssetIcons = () => {
   const { isAnalyzing, analysisComplete, address } = useGoogleMap();
@@ -26,6 +27,7 @@ const AssetIcons = () => {
     { name: "Parking", Component: ParkingIcon },
     { name: "Storage", Component: StorageIcon },
     { name: "Swimming Pool", Component: SwimmingPoolIcon },
+    { name: "Sports Courts", Component: SportsCourtIcon },
     { name: "Car", Component: CarIcon },
     { name: "EV Charger", Component: EVChargerIcon }
   ];

@@ -59,6 +59,13 @@ export interface PropertyAnalysis {
     revenue: number;
     providers?: any[];
   };
+  sportsCourts: {
+    present: boolean;
+    types: string[];
+    count: number;
+    revenue: number;
+    providers?: any[];
+  };
   storage: {
     volume: number;
     revenue: number;

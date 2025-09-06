@@ -1,5 +1,5 @@
 import React from 'react';
-import { Car, Sun, Wifi, BatteryCharging, Paintbrush, Home, Laptop, Bike } from 'lucide-react';
+import { Car, Sun, Wifi, BatteryCharging, Paintbrush, Home, Laptop, Bike, Activity } from 'lucide-react';
 
 // Centralized icon registry with normalization and dual variants (image | lucide)
 export type AssetKey =
@@ -9,6 +9,7 @@ export type AssetKey =
   | 'storage'
   | 'wifi'
   | 'pool'
+  | 'sports-courts'
   | 'car'
   | 'evcharger'
   | 'art-studio'
@@ -46,6 +47,11 @@ const IMAGE_SOURCES: Record<AssetKey, { src: string; alt: string; style?: React.
     alt: 'Swimming Pool Icon',
     style: { filter: 'drop-shadow(0 0 5px rgba(14, 165, 233, 0.6))' },
   },
+  'sports-courts': {
+    src: '/lovable-uploads/5f56c954-41e9-45ff-804e-740a9af81588.png',
+    alt: 'Sports Courts Icon',
+    style: { filter: 'drop-shadow(0 0 5px rgba(34, 197, 94, 0.6))' },
+  },
   car: {
     src: '/lovable-uploads/5169ceb8-ccbc-4b72-8758-a91052320c2c.png',
     alt: 'Car Icon',
@@ -79,6 +85,7 @@ const LUCIDE_COMPONENTS: Partial<Record<AssetKey, React.ComponentType<any>>> = {
   car: Car,
   solar: Sun,
   wifi: Wifi,
+  'sports-courts': Activity,
   evcharger: BatteryCharging,
   'art-studio': Paintbrush,
   coworking: Laptop,
@@ -102,6 +109,7 @@ export function normalizeAssetKey(input: string): AssetKey {
   // Common synonyms normalization
   if (['internet', 'bandwidth', 'wifi'].includes(k)) return 'wifi';
   if (['pool', 'swimming-pool', 'swimming_pool'].includes(k)) return 'pool';
+  if (['sports-courts', 'sports_courts', 'tennis', 'pickleball', 'basketball', 'activity', 'courts', 'sport'].includes(k)) return 'sports-courts';
   if (['ev-charger', 'ev_charger', 'ev-charging', 'ev_charging', 'ev-charging-station'].includes(k)) return 'evcharger';
   if (['art-studio', 'art-studio-space', 'art_studio', 'art-studio-room'].includes(k)) return 'art-studio';
   if (['coworking', 'co-working', 'coworking-space', 'coworking_space', 'co-working-space', 'co_working_space', 'workspace', 'work-space', 'work_space', 'office', 'office-space', 'office_space'].includes(k)) return 'coworking';
@@ -113,7 +121,7 @@ export function normalizeAssetKey(input: string): AssetKey {
   if (['storage', 'garage', 'basement'].includes(k)) return 'storage';
 
   // Fallbacks to closest generic types
-  return (['parking','solar','garden','storage','wifi','pool','car','evcharger','art-studio','coworking','bike-repair'].includes(k)
+  return (['parking','solar','garden','storage','wifi','pool','sports-courts','car','evcharger','art-studio','coworking','bike-repair'].includes(k)
     ? (k as AssetKey)
     : 'storage');
 }
@@ -150,6 +158,7 @@ export function iconMapForLegacyUsage(): Record<string, React.ReactNode> {
     'storage',
     'wifi',
     'pool',
+    'sports-courts',
     'car',
     'evcharger',
     // Common synonyms currently found in data/components
@@ -159,6 +168,12 @@ export function iconMapForLegacyUsage(): Record<string, React.ReactNode> {
     'swimming_pool',
     'bandwidth',
     'internet',
+    'activity',
+    'tennis',
+    'pickleball',
+    'basketball',
+    'courts',
+    'sport',
     'art-studio',
     'coworking',
     'bike-repair-station',

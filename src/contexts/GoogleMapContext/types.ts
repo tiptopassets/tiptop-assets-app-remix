@@ -35,6 +35,13 @@ export interface AnalysisResults {
     revenue: number;
     providers?: ProviderInfo[];
   };
+  sportsCourts: {
+    present: boolean;
+    types: string[];
+    count: number;
+    revenue: number;
+    providers?: ProviderInfo[];
+  };
   storage: {
     volume: number;
     revenue: number;
