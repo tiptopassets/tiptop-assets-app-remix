@@ -252,15 +252,15 @@ const EnhancedAdditionalAssetsCarousel = ({
           <CarouselContent className="-ml-2 md:-ml-4">
             {[
               { key: "all", label: "All Opportunities" },
-              { key: "high-revenue", label: "High Revenue ($200+)" },
-              { key: "medium-revenue", label: "Medium Revenue ($75–$199)" },
-              { key: "low-revenue", label: "Lower Revenue ($25–$74)" },
               { key: "space-rentals", label: "Space Rentals" },
               { key: "home-services", label: "Home Services" },
               { key: "pet-services", label: "Pet & Care Services" },
               { key: "logistics", label: "Logistics & Storage" },
               { key: "community", label: "Community Services" },
-              { key: "tech", label: "Tech Infrastructure" }
+              { key: "tech", label: "Tech Infrastructure" },
+              { key: "high-revenue", label: "High Revenue ($200+)" },
+              { key: "medium-revenue", label: "Medium Revenue ($75–$199)" },
+              { key: "low-revenue", label: "Lower Revenue ($25–$74)" }
             ].map((category) => (
               <CarouselItem key={category.key} className="pl-2 md:pl-4 basis-auto">
                 <Button
