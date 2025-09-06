@@ -138,11 +138,27 @@ const Index = () => {
 
           {/* Analysis results positioned extremely far down */}
           {analysisComplete && analysisResults && (
-            <div className={`w-full ${showingFormSection ? 'mt-0' : 'mt-64 sm:mt-72 md:mt-80 lg:mt-96'}`}>
-              <AssetResultList 
-                analysisResults={analysisResults} 
-                onFormSectionToggle={setShowingFormSection}
+            <div 
+              className={`w-full ${showingFormSection ? 'mt-0' : 'mt-64 sm:mt-72 md:mt-80 lg:mt-96'}`}
+              style={{
+                background: 'linear-gradient(to bottom right, #1e293b, #111827, #000000)',
+                position: 'relative'
+              }}
+            >
+              {/* Background effects matching summary page */}
+              <div 
+                style={{
+                  position: 'absolute',
+                  inset: 0,
+                  background: 'linear-gradient(to bottom right, rgba(147, 51, 234, 0.05), transparent, rgba(168, 85, 247, 0.05))'
+                }}
               />
+              <div className="relative z-10 px-4 py-8">
+                <AssetResultList 
+                  analysisResults={analysisResults} 
+                  onFormSectionToggle={setShowingFormSection}
+                />
+              </div>
             </div>
           )}
         </main>
