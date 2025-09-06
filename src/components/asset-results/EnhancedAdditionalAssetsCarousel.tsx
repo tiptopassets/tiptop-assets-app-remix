@@ -204,12 +204,12 @@ const EnhancedAdditionalAssetsCarousel = ({
         Additional Asset Opportunities
       </h2>
       
-      {/* Filter and Sort Controls */}
-      <div className="flex flex-col sm:flex-row flex-wrap gap-3 sm:gap-4 mb-4 sm:mb-6 glass-effect p-3 sm:p-4 rounded-lg">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
+      {/* Filter and Sort Controls - Desktop */}
+      <div className="hidden sm:flex flex-row flex-wrap gap-4 mb-6 glass-effect p-4 rounded-lg">
+        <div className="flex items-center gap-2">
           <span className="text-white text-sm font-medium">Sort by:</span>
           <Select value={sortBy} onValueChange={setSortBy}>
-            <SelectTrigger className="w-full sm:w-40 bg-white/10 border-white/20 text-white text-sm">
+            <SelectTrigger className="w-40 bg-white/10 border-white/20 text-white text-sm">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -221,7 +221,14 @@ const EnhancedAdditionalAssetsCarousel = ({
           </Select>
         </div>
         
-        <div className="sm:ml-auto text-white text-xs sm:text-sm">
+        <div className="ml-auto text-white text-sm">
+          Showing {filteredOpportunities.length} of {opportunities.length} opportunities
+        </div>
+      </div>
+
+      {/* Mobile Stats Only */}
+      <div className="sm:hidden mb-4 text-center">
+        <div className="text-white text-sm">
           Showing {filteredOpportunities.length} of {opportunities.length} opportunities
         </div>
       </div>
@@ -298,6 +305,24 @@ const EnhancedAdditionalAssetsCarousel = ({
         <CarouselPrevious className="left-1 bg-white/20 hover:bg-white/30 text-white" />
         <CarouselNext className="right-1 bg-white/20 hover:bg-white/30 text-white" />
       </Carousel>
+      
+      {/* Mobile Sort Controls - Below Cards */}
+      <div className="sm:hidden mt-4 glass-effect p-3 rounded-lg">
+        <div className="flex items-center gap-2">
+          <span className="text-white text-sm font-medium">Sort by:</span>
+          <Select value={sortBy} onValueChange={setSortBy}>
+            <SelectTrigger className="w-full bg-white/10 border-white/20 text-white text-sm">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="name">Name</SelectItem>
+              <SelectItem value="revenue">Revenue</SelectItem>
+              <SelectItem value="roi">ROI</SelectItem>
+              <SelectItem value="setup-cost">Setup Cost</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
       
       {/* Summary Stats */}
       <div className="mt-3 sm:mt-4 glass-effect p-3 sm:p-4 rounded-lg">
