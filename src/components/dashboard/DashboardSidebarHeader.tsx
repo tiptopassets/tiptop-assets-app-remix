@@ -137,12 +137,12 @@ const DashboardSidebarHeader = () => {
             )}
             
             {currentRevenue && (
-              <div className="flex items-center gap-2 mt-2">
-                <Badge variant="outline" className="text-xs text-green-400 border-green-400/50">
+              <div className="flex items-center gap-1.5 mt-1.5">
+                <Badge variant="outline" className="text-xs text-green-400 border-green-400/50 px-1.5 py-0.5 h-5">
                   ${currentRevenue}/mo potential
                 </Badge>
                 {hasMultipleProperties && (
-                  <Badge variant="outline" className="text-xs text-blue-400 border-blue-400/50">
+                  <Badge variant="outline" className="text-xs text-blue-400 border-blue-400/50 px-1.5 py-0.5 h-5">
                     {properties.length} properties
                   </Badge>
                 )}
