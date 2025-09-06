@@ -17,7 +17,7 @@ const AssetOpportunitiesGrid = ({
   onAssetToggle 
 }: AssetOpportunitiesGridProps) => {
   return (
-    <div className="w-full max-w-7xl mx-auto px-4 sm:px-6">
+    <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 asset-opportunities-grid">
       <motion.h2 
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}

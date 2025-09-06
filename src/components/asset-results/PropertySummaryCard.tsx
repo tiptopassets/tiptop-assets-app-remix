@@ -21,6 +21,16 @@ const PropertySummaryCard: React.FC<PropertySummaryCardProps> = ({
 }) => {
   const { address } = useGoogleMap();
   
+  const scrollToOpportunities = () => {
+    const opportunitiesSection = document.querySelector('.asset-opportunities-grid');
+    if (opportunitiesSection) {
+      opportunitiesSection.scrollIntoView({ 
+        behavior: 'smooth',
+        block: 'start'
+      });
+    }
+  };
+  
   // Determine property type display
   const getPropertyTypeDisplay = () => {
     const propertyType = analysisResults?.propertyType || 'unknown';
@@ -86,7 +96,7 @@ const PropertySummaryCard: React.FC<PropertySummaryCardProps> = ({
           <div className="flex items-center gap-2 mb-3">
             {propertyDisplay.icon}
             <span className="text-white font-medium">{propertyDisplay.label}</span>
-            <span className="text-gray-400 text-sm">• {propertyDisplay.description}</span>
+            <span className="text-white text-sm">• {propertyDisplay.description}</span>
           </div>
 
           {/* Property Type Specific Info */}
@@ -114,25 +124,34 @@ const PropertySummaryCard: React.FC<PropertySummaryCardProps> = ({
 
       {/* Stats Grid */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-black/20 rounded-xl p-4 text-center">
+        <button 
+          onClick={scrollToOpportunities}
+          className="bg-black/20 rounded-xl p-4 text-center hover:bg-black/30 transition-colors cursor-pointer"
+        >
           <DollarSign className="w-6 h-6 text-green-400 mx-auto mb-2" />
           <p className="text-green-400 text-2xl font-bold">
             ${analysisRevenue.toLocaleString()}
           </p>
           <p className="text-white text-sm">Monthly Potential</p>
-        </div>
+        </button>
 
-        <div className="bg-black/20 rounded-xl p-4 text-center">
+        <button 
+          onClick={scrollToOpportunities}
+          className="bg-black/20 rounded-xl p-4 text-center hover:bg-black/30 transition-colors cursor-pointer"
+        >
           <TrendingUp className="w-6 h-6 text-blue-400 mx-auto mb-2" />
           <p className="text-blue-400 text-2xl font-bold">{opportunitiesCount}</p>
           <p className="text-white text-sm">Opportunities</p>
-        </div>
+        </button>
 
-        <div className="bg-black/20 rounded-xl p-4 text-center">
+        <button 
+          onClick={scrollToOpportunities}
+          className="bg-black/20 rounded-xl p-4 text-center hover:bg-black/30 transition-colors cursor-pointer"
+        >
           <Building2 className="w-6 h-6 text-purple-400 mx-auto mb-2" />
           <p className="text-purple-400 text-2xl font-bold">{selectedAssetsCount}</p>
           <p className="text-white text-sm">Selected Assets</p>
-        </div>
+        </button>
 
         <div className="bg-black/20 rounded-xl p-4 text-center">
           <DollarSign className="w-6 h-6 text-orange-400 mx-auto mb-2" />
