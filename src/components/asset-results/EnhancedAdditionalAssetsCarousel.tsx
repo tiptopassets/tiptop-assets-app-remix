@@ -14,6 +14,7 @@ import { AdditionalOpportunity } from "@/types/analysis";
 import { glowColorMap } from "./AssetCard";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { getAssetIcon } from '@/icons/registry';
+import ContinueButton from './ContinueButton';
 
 interface EnhancedAdditionalAssetsCarouselProps {
   opportunities: AdditionalOpportunity[];
@@ -325,7 +326,7 @@ const EnhancedAdditionalAssetsCarousel = ({
       </div>
       
       {/* Summary Stats */}
-      <div className="mt-3 sm:mt-4 glass-effect p-3 sm:p-4 rounded-lg">
+      <div className="mt-3 sm:mt-4 glass-effect p-3 sm:p-4 rounded-lg space-y-4">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 text-center">
           <div>
             <p className="text-white/60 text-xs">Selected Assets</p>
@@ -351,6 +352,24 @@ const EnhancedAdditionalAssetsCarousel = ({
             <p className="text-white/60 text-xs">Available Options</p>
             <p className="text-white font-bold text-sm sm:text-base md:text-lg">{filteredOpportunities.length}</p>
           </div>
+        </div>
+        
+        {/* Continue Button */}
+        <div className="pt-2">
+          <ContinueButton
+            selectedCount={selectedAssets.length}
+            onContinue={() => {}} // ContinueButton handles navigation internally
+            selectedAssetsData={filteredOpportunities
+              .filter(opp => selectedAssets.includes(opp.title))
+              .map(opp => ({
+                title: opp.title,
+                icon: opp.icon,
+                monthlyRevenue: opp.monthlyRevenue,
+                setupCost: opp.setupCost || 0,
+                provider: opp.provider,
+                roi: opp.roi
+              }))}
+          />
         </div>
       </div>
     </motion.div>
