@@ -131,7 +131,7 @@ const EnhancedAdditionalAssetsCarousel = ({
     
     return (
       <div 
-        className={`${isMobile ? 'h-[100px]' : 'h-[120px]'} rounded-xl relative cursor-pointer transition-all duration-300 overflow-hidden group`}
+        className={`${isMobile ? 'w-[128px] h-[200px]' : 'h-[120px]'} rounded-xl relative cursor-pointer transition-all duration-300 overflow-hidden group`}
         onClick={() => onAssetToggle(opportunity.title)}
         style={{
           boxShadow: isSelected ? `0 4px 20px ${glowColor.replace('0.5', '0.3')}` : `0 2px 10px rgba(0,0,0,0.3)`
@@ -274,17 +274,27 @@ const EnhancedAdditionalAssetsCarousel = ({
           loop: true
         }}
       >
-        <CarouselContent className="py-2">
-          {cardGroups.map((group, groupIndex) => (
-            <CarouselItem key={groupIndex} className={`${isMobile ? 'basis-3/4' : 'basis-1/2 md:basis-1/3 lg:basis-1/2'}`}>
-              <div className={`grid ${isMobile ? 'grid-rows-2' : 'grid-rows-2 md:grid-rows-2'} gap-2`}>
-                {group.map((opportunity, index) => (
-                  <CompactCard key={opportunity.title} opportunity={opportunity} index={index} />
-                ))}
-              </div>
-            </CarouselItem>
-          ))}
-        </CarouselContent>
+        {isMobile ? (
+          <CarouselContent className="py-2 -ml-2">
+            {filteredOpportunities.map((opportunity, index) => (
+              <CarouselItem key={opportunity.title} className="pl-2 basis-auto">
+                <CompactCard opportunity={opportunity} index={index} />
+              </CarouselItem>
+            ))}
+          </CarouselContent>
+        ) : (
+          <CarouselContent className="py-2">
+            {cardGroups.map((group, groupIndex) => (
+              <CarouselItem key={groupIndex} className={`basis-1/2 md:basis-1/3 lg:basis-1/2`}>
+                <div className={`grid grid-rows-2 gap-2`}>
+                  {group.map((opportunity, index) => (
+                    <CompactCard key={opportunity.title} opportunity={opportunity} index={index} />
+                  ))}
+                </div>
+              </CarouselItem>
+            ))}
+          </CarouselContent>
+        )}
         <CarouselPrevious className="left-1 bg-white/20 hover:bg-white/30 text-white" />
         <CarouselNext className="right-1 bg-white/20 hover:bg-white/30 text-white" />
       </Carousel>

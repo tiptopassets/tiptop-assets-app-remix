@@ -49,6 +49,7 @@ interface AssetCardProps {
   isSelected: boolean;
   onClick: () => void;
   glowColor: string;
+  cardClassName?: string;
 }
 
 const AssetCard: React.FC<AssetCardProps> = ({
@@ -62,7 +63,8 @@ const AssetCard: React.FC<AssetCardProps> = ({
   iconComponent,
   isSelected,
   onClick,
-  glowColor
+  glowColor,
+  cardClassName
 }) => {
   const iconType = icon as keyof typeof backgroundGradientMap;
   const gradientClasses = backgroundGradientMap[iconType] || "from-gray-500 via-gray-600 to-gray-700";
@@ -77,7 +79,7 @@ const AssetCard: React.FC<AssetCardProps> = ({
       onClick={onClick}
     >
       <Card
-        className={`h-full min-h-[280px] sm:min-h-[320px] md:min-h-[300px] lg:min-h-[320px] transition-all duration-300 overflow-hidden border-0 bg-gradient-to-br ${gradientClasses} rounded-2xl shadow-lg hover:shadow-xl relative`}
+        className={`h-full min-h-[280px] sm:min-h-[320px] md:min-h-[300px] lg:min-h-[320px] transition-all duration-300 overflow-hidden border-0 bg-gradient-to-br ${gradientClasses} rounded-2xl shadow-lg hover:shadow-xl relative ${cardClassName ? cardClassName : ''}`}
       >
         {/* Glow effect when selected */}
         {isSelected && (
