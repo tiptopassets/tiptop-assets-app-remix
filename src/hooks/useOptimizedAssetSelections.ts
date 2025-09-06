@@ -97,15 +97,8 @@ export const useOptimizedAssetSelections = (analysisId?: string) => {
     enabled: !!(user?.id || localStorage.getItem('anonymous_session_id')),
   });
 
-  // Filter by analysis ID after data is loaded
-  const filteredSelections = analysisId 
-    ? assetSelections.filter(selection => selection.analysis_id === analysisId)
-    : assetSelections;
-
-  // Use fallback to all selections if no matches found for specific analysis
-  const finalSelections = analysisId && filteredSelections.length === 0 
-    ? assetSelections 
-    : filteredSelections;
+  // Show all selections - filtering disabled for better UX
+  const finalSelections = assetSelections;
 
   // Background repair - runs after initial data load
   useEffect(() => {

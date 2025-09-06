@@ -39,23 +39,11 @@ export const useUserAssetSelections = (analysisId?: string) => {
       });
       const uniqueSelections = Array.from(uniqueSelectionsMap.values());
 
-      // Filter by analysis ID if provided - this is critical for multi-property support
-      const filteredSelections = analysisId 
-        ? uniqueSelections.filter(selection => {
-            const matches = selection.analysis_id === analysisId;
-            console.log('🎯 [ASSET-SELECTIONS] Selection filter check:', {
-              selectionId: selection.id,
-              selectionAnalysisId: selection.analysis_id,
-              targetAnalysisId: analysisId,
-              matches,
-              assetType: selection.asset_type
-            });
-            return matches;
-          })
-        : uniqueSelections;
+      // Show all selections - filtering removed for better UX
+      console.log('🎯 [ASSET-SELECTIONS] Showing all asset selections (filtering disabled)');
         
-      // Use filtered selections only - no fallback to avoid accumulation across properties
-      const finalSelections = filteredSelections;
+      // Use all unique selections - no filtering for now
+      const finalSelections = uniqueSelections;
       
       console.log('🧠 [ASSET-SELECTIONS] Final selection logic:', {
         analysisIdProvided: !!analysisId,
@@ -63,26 +51,18 @@ export const useUserAssetSelections = (analysisId?: string) => {
         totalUserSelections: userSelections.length,
         totalSessionSelections: sessionSelections.length,
         combinedTotal: uniqueSelections.length,
-        filteredCount: filteredSelections.length,
         finalCount: finalSelections.length
       });
         
       setAssetSelections(finalSelections);
       
-      console.log('✅ [ASSET-SELECTIONS] Loaded filtered asset selections:', {
+      console.log('✅ [ASSET-SELECTIONS] Loaded all asset selections:', {
         totalUserSelections: userSelections.length,
         totalSessionSelections: sessionSelections.length,
         combinedUnique: uniqueSelections.length,
-        filteredCount: filteredSelections.length,
         userId: user?.id,
         targetAnalysisId: analysisId,
         isAuthenticated: !!user,
-        filteredSelections: filteredSelections.map(s => ({
-          id: s.id,
-          asset_type: s.asset_type,
-          monthly_revenue: s.monthly_revenue,
-          analysis_id: s.analysis_id
-        })),
         finalSelections: finalSelections.map(s => ({
           id: s.id,
           asset_type: s.asset_type,
