@@ -87,13 +87,13 @@ const PropertySummaryCard: React.FC<PropertySummaryCardProps> = ({
       <div className="flex items-start justify-between mb-6">
         <div className="flex-1">
           <div className="mb-2">
-            <h2 className="text-xl font-bold text-white mb-1">
+            <h2 className="text-xl font-bold text-tiptop-purple mb-1">
               Property Analysis
             </h2>
             {address && (
               <div className="flex items-center gap-2">
                 <MapPin className="w-4 h-4 text-tiptop-purple" />
-                <p className="text-sm text-gray-400">{address}</p>
+                <p className="text-sm text-white">{address}</p>
               </div>
             )}
           </div>
