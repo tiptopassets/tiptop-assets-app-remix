@@ -3,6 +3,7 @@ import React from 'react';
 import { motion } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
 import { Check, Plus } from "lucide-react";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export const glowColorMap: Record<string, string> = {
   "solar-panel": "rgba(155, 240, 155, 0.5)",
@@ -72,6 +73,7 @@ const AssetCard: React.FC<AssetCardProps> = ({
 }) => {
   const iconType = icon as keyof typeof backgroundGradientMap;
   const gradientClasses = backgroundGradientMap[iconType] || "from-gray-500 via-gray-600 to-gray-700";
+  const isMobile = useIsMobile();
 
   return (
     <motion.div
@@ -94,60 +96,130 @@ const AssetCard: React.FC<AssetCardProps> = ({
         )}
         
         <CardContent className="p-4 sm:p-5 md:p-6 relative z-10 h-full flex flex-col">
-          {/* Header with icon and select button */}
-          <div className="flex items-start justify-between mb-3 sm:mb-4">
-            <div className="p-2 sm:p-3 rounded-xl bg-white/20 backdrop-blur-sm">
-              <div className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8">
-                {iconComponent}
+          {isMobile ? (
+            // Mobile layout: Title -> Description -> Icon -> Revenue
+            <>
+              {/* Select button at top right */}
+              <div className="flex justify-end mb-3">
+                <div className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium transition-all ${
+                  isSelected 
+                    ? 'bg-white/30 text-white border border-white/40' 
+                    : 'bg-white/20 text-white/80 hover:bg-white/30 hover:text-white border border-white/20'
+                }`}>
+                  {isSelected ? (
+                    <>
+                      <Check className="h-3 w-3" />
+                      <span>✓</span>
+                    </>
+                  ) : (
+                    <>
+                      <Plus className="h-3 w-3" />
+                      <span>Select</span>
+                    </>
+                  )}
+                </div>
               </div>
-            </div>
-            
-            {/* Select/Selected button - responsive */}
-            <div className={`flex items-center gap-1 sm:gap-2 px-2 sm:px-3 md:px-4 py-1 sm:py-2 rounded-full text-xs sm:text-sm font-medium transition-all ${
-              isSelected 
-                ? 'bg-white/30 text-white border border-white/40' 
-                : 'bg-white/20 text-white/80 hover:bg-white/30 hover:text-white border border-white/20'
-            }`}>
-              {isSelected ? (
-                <>
-                  <Check className="h-3 w-3 sm:h-4 sm:w-4" />
-                  <span className="hidden sm:inline">Selected</span>
-                  <span className="sm:hidden">✓</span>
-                </>
-              ) : (
-                <>
-                  <Plus className="h-3 w-3 sm:h-4 sm:w-4" />
-                  <span className="hidden sm:inline">Click to select</span>
-                  <span className="sm:hidden">Select</span>
-                </>
+
+              {/* Title */}
+              <div className="mb-2">
+                <h3 className="text-lg font-bold text-white line-clamp-2">{title}</h3>
+              </div>
+
+              {/* Description */}
+              <div className="mb-4">
+                <p className="text-white/90 text-sm leading-relaxed line-clamp-2">{description}</p>
+              </div>
+
+              {/* Big centered icon */}
+              <div className="flex justify-center items-center flex-grow mb-4">
+                <div className="p-4 rounded-2xl bg-white/20 backdrop-blur-sm">
+                  <div className="w-16 h-16">
+                    {iconComponent}
+                  </div>
+                </div>
+              </div>
+
+              {/* Revenue */}
+              <div className="text-center mb-3">
+                <p className="text-2xl font-bold text-white">${monthlyRevenue}/month</p>
+              </div>
+
+              {/* Provider info if available */}
+              {provider && (
+                <div className="flex justify-center mb-2">
+                  <div className="inline-block bg-white/20 text-white text-xs rounded-full px-3 py-1 font-medium">
+                    {provider}
+                  </div>
+                </div>
               )}
-            </div>
-          </div>
-          
-          {/* Title and Revenue - responsive text sizing */}
-          <div className="mb-3">
-            <h3 className="text-lg sm:text-xl font-bold text-white mb-1 line-clamp-2">{title}</h3>
-            <p className="text-xl sm:text-2xl font-bold text-white">${monthlyRevenue}/month</p>
-          </div>
-          
-          {/* Description - responsive with line clamping */}
-          <p className="text-white/90 text-sm leading-relaxed flex-grow line-clamp-3 sm:line-clamp-4">{description}</p>
-          
-          {/* Provider info if available */}
-          {provider && (
-            <div className="mt-3">
-              <div className="inline-block bg-white/20 text-white text-xs rounded-full px-2 sm:px-3 py-1 font-medium">
-                {provider}
+
+              {/* Setup cost and ROI info if available */}
+              {setupCost > 0 && (
+                <div className="flex flex-col gap-1 text-xs text-white/80 text-center">
+                  <span>Setup: <span className="text-white font-medium">${setupCost}</span></span>
+                  {roi && <span>ROI: <span className="text-white font-medium">{roi} mo</span></span>}
+                </div>
+              )}
+            </>
+          ) : (
+            // Desktop layout: Keep original layout
+            <>
+              {/* Header with icon and select button */}
+              <div className="flex items-start justify-between mb-3 sm:mb-4">
+                <div className="p-2 sm:p-3 rounded-xl bg-white/20 backdrop-blur-sm">
+                  <div className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8">
+                    {iconComponent}
+                  </div>
+                </div>
+                
+                {/* Select/Selected button - responsive */}
+                <div className={`flex items-center gap-1 sm:gap-2 px-2 sm:px-3 md:px-4 py-1 sm:py-2 rounded-full text-xs sm:text-sm font-medium transition-all ${
+                  isSelected 
+                    ? 'bg-white/30 text-white border border-white/40' 
+                    : 'bg-white/20 text-white/80 hover:bg-white/30 hover:text-white border border-white/20'
+                }`}>
+                  {isSelected ? (
+                    <>
+                      <Check className="h-3 w-3 sm:h-4 sm:w-4" />
+                      <span className="hidden sm:inline">Selected</span>
+                      <span className="sm:hidden">✓</span>
+                    </>
+                  ) : (
+                    <>
+                      <Plus className="h-3 w-3 sm:h-4 sm:w-4" />
+                      <span className="hidden sm:inline">Click to select</span>
+                      <span className="sm:hidden">Select</span>
+                    </>
+                  )}
+                </div>
               </div>
-            </div>
-          )}
-          
-          {/* Setup cost and ROI info if available - responsive layout */}
-          {setupCost > 0 && (
-            <div className="mt-3 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1 sm:gap-0 text-xs text-white/80">
-              <span>Setup: <span className="text-white font-medium">${setupCost}</span></span>
-              {roi && <span>ROI: <span className="text-white font-medium">{roi} mo</span></span>}
-            </div>
+              
+              {/* Title and Revenue - responsive text sizing */}
+              <div className="mb-3">
+                <h3 className="text-lg sm:text-xl font-bold text-white mb-1 line-clamp-2">{title}</h3>
+                <p className="text-xl sm:text-2xl font-bold text-white">${monthlyRevenue}/month</p>
+              </div>
+              
+              {/* Description - responsive with line clamping */}
+              <p className="text-white/90 text-sm leading-relaxed flex-grow line-clamp-3 sm:line-clamp-4">{description}</p>
+              
+              {/* Provider info if available */}
+              {provider && (
+                <div className="mt-3">
+                  <div className="inline-block bg-white/20 text-white text-xs rounded-full px-2 sm:px-3 py-1 font-medium">
+                    {provider}
+                  </div>
+                </div>
+              )}
+              
+              {/* Setup cost and ROI info if available - responsive layout */}
+              {setupCost > 0 && (
+                <div className="mt-3 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1 sm:gap-0 text-xs text-white/80">
+                  <span>Setup: <span className="text-white font-medium">${setupCost}</span></span>
+                  {roi && <span>ROI: <span className="text-white font-medium">{roi} mo</span></span>}
+                </div>
+              )}
+            </>
           )}
         </CardContent>
         
