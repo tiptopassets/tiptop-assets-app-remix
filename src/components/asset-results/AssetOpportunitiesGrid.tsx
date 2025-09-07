@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import AssetCard from './AssetCard';
 import iconMap from './IconMap';
 import { glowColorMap } from './AssetCard';
+import { getAssetIcon } from '@/icons/registry';
 import { AssetOpportunity } from '@/contexts/GoogleMapContext';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
@@ -38,6 +39,7 @@ const AssetOpportunitiesGrid = ({
                 const iconType = opportunity.icon as keyof typeof iconMap;
                 const glowColor = glowColorMap[iconType] || "rgba(155, 135, 245, 0.5)";
                 const isSelected = selectedAssets.includes(opportunity.title);
+                const mobileIcon = getAssetIcon(opportunity.icon, { className: 'w-32 h-32 object-contain' });
                 
                 return (
                   <CarouselItem key={opportunity.title} className="pl-2 basis-auto">
@@ -47,7 +49,7 @@ const AssetOpportunitiesGrid = ({
                         icon={opportunity.icon}
                         monthlyRevenue={opportunity.monthlyRevenue}
                         description={opportunity.description}
-                        iconComponent={iconMap[iconType]}
+                        iconComponent={mobileIcon}
                         isSelected={isSelected}
                         onClick={() => onAssetToggle(opportunity.title)}
                         glowColor={glowColor}
@@ -68,6 +70,7 @@ const AssetOpportunitiesGrid = ({
             const iconType = opportunity.icon as keyof typeof iconMap;
             const glowColor = glowColorMap[iconType] || "rgba(155, 135, 245, 0.5)";
             const isSelected = selectedAssets.includes(opportunity.title);
+            const desktopIcon = getAssetIcon(opportunity.icon, { className: 'w-8 h-8 object-contain' });
             
             return (
               <motion.div
@@ -82,7 +85,7 @@ const AssetOpportunitiesGrid = ({
                   icon={opportunity.icon}
                   monthlyRevenue={opportunity.monthlyRevenue}
                   description={opportunity.description}
-                  iconComponent={iconMap[iconType]}
+                  iconComponent={desktopIcon}
                   isSelected={isSelected}
                   onClick={() => onAssetToggle(opportunity.title)}
                   glowColor={glowColor}

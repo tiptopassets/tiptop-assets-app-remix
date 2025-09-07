@@ -132,9 +132,7 @@ const AssetCard: React.FC<AssetCardProps> = ({
 
               {/* Big centered icon */}
               <div className="flex justify-center items-center flex-grow mb-4">
-                <div className="w-32 h-32">
-                  {iconComponent}
-                </div>
+                {iconComponent}
               </div>
 
               {/* Revenue */}
