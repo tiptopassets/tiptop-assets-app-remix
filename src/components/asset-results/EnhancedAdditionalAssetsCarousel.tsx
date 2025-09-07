@@ -134,7 +134,7 @@ const EnhancedAdditionalAssetsCarousel = ({
       // Mobile layout matching AssetCard
       return (
         <div 
-          className="w-[320px] h-[520px] rounded-xl relative cursor-pointer transition-all duration-300 overflow-hidden group bg-gradient-to-br from-gray-800 via-gray-700 to-gray-900"
+          className="w-[280px] h-[460px] rounded-xl relative cursor-pointer transition-all duration-300 overflow-hidden group bg-gradient-to-br from-gray-800 via-gray-700 to-gray-900"
           onClick={() => onAssetToggle(opportunity.title)}
           style={{
             boxShadow: isSelected ? `0 4px 20px ${glowColor.replace('0.5', '0.3')}` : `0 2px 10px rgba(0,0,0,0.3)`
