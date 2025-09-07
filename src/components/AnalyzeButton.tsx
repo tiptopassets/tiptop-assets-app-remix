@@ -217,8 +217,7 @@ const AnalyzeButton = () => {
               <span className="text-xs text-amber-400">Please click on your address again</span></>
             )
           ) : (
-            <>🚀 AI-powered analysis with Google Solar + GPT-4o<br/>
-            <span className="text-xs">{user ? '✅ Results will be saved to your dashboard' : '💡 Sign in to save results to dashboard'}</span></>
+            <></>
           )
           }
         </p>
