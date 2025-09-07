@@ -130,9 +130,94 @@ const EnhancedAdditionalAssetsCarousel = ({
     const glowColor = glowColorMap[iconType] || "rgba(155, 135, 245, 0.5)";
     const isSelected = selectedAssets.includes(opportunity.title);
     
+    if (isMobile) {
+      // Mobile layout matching AssetCard
+      return (
+        <div 
+          className="w-[320px] h-[520px] rounded-xl relative cursor-pointer transition-all duration-300 overflow-hidden group bg-gradient-to-br from-gray-800 via-gray-700 to-gray-900"
+          onClick={() => onAssetToggle(opportunity.title)}
+          style={{
+            boxShadow: isSelected ? `0 4px 20px ${glowColor.replace('0.5', '0.3')}` : `0 2px 10px rgba(0,0,0,0.3)`
+          }}
+        >
+          {/* Glow effect when selected */}
+          {isSelected && (
+            <div
+              className="absolute inset-0 blur-xl opacity-30 z-0"
+              style={{ background: glowColor }}
+            />
+          )}
+          
+          <div className="relative z-10 h-full p-4 flex flex-col">
+            {/* Select button at top right */}
+            <div className="flex justify-end mb-3">
+              <div className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium transition-all ${
+                isSelected 
+                  ? 'bg-white/30 text-white border border-white/40' 
+                  : 'bg-white/20 text-white/80 hover:bg-white/30 hover:text-white border border-white/20'
+              }`}>
+                {isSelected ? (
+                  <>
+                    <Check className="h-3 w-3" />
+                    <span>✓</span>
+                  </>
+                ) : (
+                  <>
+                    <Plus className="h-3 w-3" />
+                    <span>Select</span>
+                  </>
+                )}
+              </div>
+            </div>
+
+            {/* Title */}
+            <div className="mb-2">
+              <h3 className="text-lg font-bold text-white line-clamp-2">{opportunity.title}</h3>
+            </div>
+
+            {/* Description */}
+            <div className="mb-4">
+              <p className="text-white/90 text-sm leading-relaxed line-clamp-2">{opportunity.description || "Monetize your property with this opportunity"}</p>
+            </div>
+
+            {/* Big centered icon */}
+            <div className="flex justify-center items-center flex-grow mb-4">
+              {getAssetIcon(opportunity.icon, { className: 'w-32 h-32 object-contain' })}
+            </div>
+
+            {/* Revenue */}
+            <div className="text-center mb-3">
+              <p className="text-2xl font-bold text-white">${opportunity.monthlyRevenue}/month</p>
+            </div>
+
+            {/* Provider info if available */}
+            {opportunity.provider && (
+              <div className="flex justify-center mb-2">
+                <div className="inline-block bg-white/20 text-white text-xs rounded-full px-3 py-1 font-medium">
+                  {opportunity.provider}
+                </div>
+              </div>
+            )}
+
+            {/* Setup cost and ROI info if available */}
+            {opportunity.setupCost && opportunity.setupCost > 0 && (
+              <div className="flex flex-col gap-1 text-xs text-white/80 text-center">
+                <span>Setup: <span className="text-white font-medium">${opportunity.setupCost}</span></span>
+                {opportunity.roi && <span>ROI: <span className="text-white font-medium">{opportunity.roi} mo</span></span>}
+              </div>
+            )}
+          </div>
+          
+          {/* Gradient overlay for depth */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent pointer-events-none" />
+        </div>
+      );
+    }
+    
+    // Desktop layout (unchanged)
     return (
       <div 
-        className={`${isMobile ? 'w-[256px] h-[400px]' : 'h-[140px]'} rounded-xl relative cursor-pointer transition-all duration-300 overflow-hidden group`}
+        className="h-[140px] rounded-xl relative cursor-pointer transition-all duration-300 overflow-hidden group"
         onClick={() => onAssetToggle(opportunity.title)}
         style={{
           boxShadow: isSelected ? `0 4px 20px ${glowColor.replace('0.5', '0.3')}` : `0 2px 10px rgba(0,0,0,0.3)`
@@ -165,13 +250,13 @@ const EnhancedAdditionalAssetsCarousel = ({
         <div className="absolute inset-0 p-3 flex flex-col z-10">
           {/* Top: Small icon and revenue tier */}
           <div className="flex items-center justify-between mb-2">
-            {getAssetIcon(opportunity.icon, { className: `${isMobile ? 'w-6 h-6' : 'w-8 h-8'} object-contain` })}
+            {getAssetIcon(opportunity.icon, { className: 'w-8 h-8 object-contain' })}
             {getRevenueTierIcon(opportunity.monthlyRevenue)}
           </div>
           
           {/* Title - moved higher and allows multiple lines */}
           <div className="flex-1 flex flex-col justify-start">
-            <h3 className={`${isMobile ? 'text-sm leading-tight' : 'text-base'} font-bold text-white drop-shadow-lg mb-auto max-w-full`}>
+            <h3 className="text-base font-bold text-white drop-shadow-lg mb-auto max-w-full">
               {opportunity.title}
             </h3>
           </div>
@@ -179,7 +264,7 @@ const EnhancedAdditionalAssetsCarousel = ({
           {/* Bottom: Revenue and Provider Badge */}
           <div className="mt-auto space-y-1">
             <div className="flex items-end justify-between">
-              <p className={`${isMobile ? 'text-base' : 'text-lg'} font-bold ${getRevenueTierColor(opportunity.monthlyRevenue)} drop-shadow-lg`}>
+              <p className={`text-lg font-bold ${getRevenueTierColor(opportunity.monthlyRevenue)} drop-shadow-lg`}>
                 ${opportunity.monthlyRevenue}/mo
               </p>
             </div>
