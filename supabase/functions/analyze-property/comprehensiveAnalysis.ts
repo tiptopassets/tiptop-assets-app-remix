@@ -1,3 +1,35 @@
+// Retry helper for OpenAI calls
+const retryOpenAICall = async (apiCall: () => Promise<Response>, maxRetries = 2): Promise<Response> => {
+  let lastError: Error | null = null;
+  
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      if (attempt > 0) {
+        const delay = Math.pow(2, attempt) * 1000; // Exponential backoff
+        console.log(`🔄 Comprehensive analysis retry attempt ${attempt} after ${delay}ms delay...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+      
+      const response = await apiCall();
+      if (response.ok) {
+        return response;
+      } else {
+        const errorData = await response.json();
+        throw new Error('OpenAI API error: ' + (errorData.error?.message || `Status ${response.status}`));
+      }
+    } catch (error) {
+      lastError = error as Error;
+      console.error(`❌ Comprehensive analysis attempt ${attempt + 1} failed:`, error);
+      
+      if (attempt === maxRetries) {
+        break;
+      }
+    }
+  }
+  
+  throw lastError || new Error('All retry attempts failed');
+};
+
 export const performComprehensivePropertyAnalysis = async (
   propertyInfo: any,
   imageAnalysis: any,
@@ -93,44 +125,51 @@ Return JSON format:
   "recommendations": ["recommendation1", "recommendation2"]
 }`;
 
-  const response = await fetch('https://api.openai.com/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${openaiApiKey}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: 'gpt-4o-mini',
-      messages: [
-        {
-          role: 'system',
-          content: 'You are a property classification expert. Analyze all available data to provide comprehensive property classification in JSON format. ALWAYS respond with valid JSON only, no additional text.'
-        },
-        { 
-          role: 'user', 
-          content: prompt 
-        }
-      ],
-      max_tokens: 600,
-      response_format: { type: "json_object" }
-    }),
-  });
-
-  const data = await response.json();
-  const rawResponse = data.choices[0]?.message?.content;
-  
-  if (!rawResponse || rawResponse.trim().length === 0) {
-    console.log('⚠️ Empty comprehensive analysis response, using fallback');
-    return generateFallbackClassification(propertyInfo);
-  }
-  
   try {
-    const result = JSON.parse(rawResponse);
-    console.log('✅ Comprehensive property analysis completed with confidence:', result.confidence);
-    return result;
+    const response = await retryOpenAICall(() => 
+      fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${openaiApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'gpt-4o-mini',
+          messages: [
+            {
+              role: 'system',
+              content: 'You are a property classification expert. Analyze all available data to provide comprehensive property classification in JSON format. ALWAYS respond with valid JSON only, no additional text.'
+            },
+            { 
+              role: 'user', 
+              content: prompt 
+            }
+          ],
+          max_tokens: 600,
+          response_format: { type: "json_object" }
+        }),
+      })
+    );
+
+    const data = await response.json();
+    const rawResponse = data.choices[0]?.message?.content;
+    
+    if (!rawResponse || rawResponse.trim().length === 0) {
+      console.log('⚠️ Empty comprehensive analysis response, using fallback');
+      return generateFallbackClassification(propertyInfo);
+    }
+    
+    try {
+      const result = JSON.parse(rawResponse);
+      console.log('✅ Comprehensive property analysis completed with confidence:', result.confidence);
+      return result;
+    } catch (error) {
+      console.error('Error parsing comprehensive analysis JSON:', error);
+      console.log('⚠️ JSON parsing failed, using fallback classification');
+      return generateFallbackClassification(propertyInfo);
+    }
   } catch (error) {
-    console.error('Error parsing comprehensive analysis JSON:', error);
-    console.log('⚠️ JSON parsing failed, using fallback classification');
+    console.error('❌ All comprehensive analysis attempts failed:', error);
     return generateFallbackClassification(propertyInfo);
   }
 };

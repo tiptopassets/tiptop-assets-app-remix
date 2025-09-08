@@ -1,4 +1,38 @@
+import { LatLng } from './types.ts';
+
 const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
+
+// Retry helper for OpenAI calls
+const retryOpenAICall = async (apiCall: () => Promise<Response>, maxRetries = 2): Promise<Response> => {
+  let lastError: Error | null = null;
+  
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      if (attempt > 0) {
+        const delay = Math.pow(2, attempt) * 1000; // Exponential backoff
+        console.log(`🔄 Retry attempt ${attempt} after ${delay}ms delay...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+      
+      const response = await apiCall();
+      if (response.ok) {
+        return response;
+      } else {
+        const errorData = await response.json();
+        throw new Error('OpenAI API error: ' + (errorData.error?.message || `Status ${response.status}`));
+      }
+    } catch (error) {
+      lastError = error as Error;
+      console.error(`❌ OpenAI call attempt ${attempt + 1} failed:`, error);
+      
+      if (attempt === maxRetries) {
+        break;
+      }
+    }
+  }
+  
+  throw lastError || new Error('All retry attempts failed');
+};
 
 export const analyzeStreetViewImage = async (streetViewBase64: string, address: string) => {
   if (!OPENAI_API_KEY) {
@@ -9,18 +43,19 @@ export const analyzeStreetViewImage = async (streetViewBase64: string, address: 
   try {
     console.log('🚗 Starting comprehensive Street View analysis with OpenAI...');
     
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${OPENAI_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        messages: [
-          {
-            role: 'system',
-            content: `You are an expert property analysis specialist. Analyze the property image and provide detailed classification in JSON format.
+    const response = await retryOpenAICall(() => 
+      fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${OPENAI_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'gpt-4o-mini',
+          messages: [
+            {
+              role: 'system',
+              content: `You are an expert property analysis specialist. Analyze the property image and provide detailed classification in JSON format.
 
 PROPERTY TYPE DETECTION:
 1. RESIDENTIAL: Single family homes, apartments, condos, townhouses
@@ -34,13 +69,13 @@ For multi-unit buildings, carefully distinguish:
 - SINGLE FAMILY HOMES: Detached houses with individual entrances
 
 RESPONSE FORMAT: Return valid JSON only with your analysis.`
-          },
-          {
-            role: 'user',
-            content: [
-              {
-                type: 'text',
-                text: `Analyze this Street View image of property at ${address}. 
+            },
+            {
+              role: 'user',
+              content: [
+                {
+                  type: 'text',
+                  text: `Analyze this Street View image of property at ${address}. 
 
 REQUIRED COMPREHENSIVE ANALYSIS:
 1. Property Type Classification: Determine if residential (single/multi-family), commercial (retail/office/hospitality), industrial, vacant land, or special use
@@ -59,28 +94,29 @@ ANALYSIS REQUIREMENTS - Return as JSON:
 5. Revenue Opportunities: Based on property type and access rights
 
 Provide detailed observations in JSON format about the property characteristics.
-              },
-              {
-                type: 'image_url',
-                image_url: {
-                  url: streetViewBase64
+                },
+                {
+                  type: 'image_url',
+                  image_url: {
+                    url: streetViewBase64
+                  }
                 }
-              }
-            ]
-          }
-        ],
-        max_tokens: 800,
-        response_format: { type: "json_object" }
-      }),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      console.error('OpenAI API error:', errorData);
-      throw new Error('OpenAI API error: ' + (errorData.error?.message || 'Unknown error'));
-    }
+              ]
+            }
+          ],
+          max_tokens: 800,
+          response_format: { type: "json_object" }
+        }),
+      })
+    );
 
     const data = await response.json();
+    
+    if (!data.choices?.[0]?.message?.content || data.choices[0].message.content.trim().length === 0) {
+      console.error('❌ Empty OpenAI response for street view analysis');
+      throw new Error('Empty response from OpenAI');
+    }
+    
     console.log('✅ Comprehensive Street View analysis completed');
     
     return {
@@ -96,7 +132,7 @@ Provide detailed observations in JSON format about the property characteristics.
 
 export const gatherEnhancedPropertyData = async (
   address: string, 
-  coordinates: google.maps.LatLngLiteral, 
+  coordinates: LatLng, 
   apiKey: string
 ) => {
   const enhancedData: any = {
@@ -217,7 +253,7 @@ const extractZoningHints = (addressComponents: any[], types: string[]) => {
   return hints;
 };
 
-const analyzeMarketFactors = (nearbyPlaces: any[], coordinates: google.maps.LatLngLiteral) => {
+const analyzeMarketFactors = (nearbyPlaces: any[], coordinates: LatLng) => {
   const factors = {
     accessibility: 0,
     commercialActivity: 0,

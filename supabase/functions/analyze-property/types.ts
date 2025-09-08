@@ -1,7 +1,10 @@
 
+// Local coordinate type for edge functions
+export type LatLng = { lat: number; lng: number };
+
 export interface PropertyInfo {
   address: string;
-  coordinates?: google.maps.LatLngLiteral;
+  coordinates?: LatLng;
   details?: any;
   solarData?: any;
   propertyType?: string;
@@ -12,7 +15,7 @@ export interface PropertyInfo {
 
 export interface AnalysisRequest {
   address: string;
-  coordinates?: google.maps.LatLngLiteral;
+  coordinates?: LatLng;
   satelliteImage?: string;
   forceLocalAnalysis?: boolean;
 }
@@ -29,6 +32,7 @@ export interface ImageAnalysis {
 
 export interface PropertyAnalysis {
   propertyType: string;
+  subType?: string;
   amenities: string[];
   rooftop: {
     area: number;

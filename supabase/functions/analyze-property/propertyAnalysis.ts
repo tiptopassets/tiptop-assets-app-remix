@@ -1,5 +1,37 @@
 import { PropertyInfo, ImageAnalysis, AnalysisResults } from './types.ts';
 
+// Retry helper for OpenAI calls
+const retryOpenAICall = async (apiCall: () => Promise<Response>, maxRetries = 2): Promise<Response> => {
+  let lastError: Error | null = null;
+  
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      if (attempt > 0) {
+        const delay = Math.pow(2, attempt) * 1000; // Exponential backoff
+        console.log(`🔄 Property analysis retry attempt ${attempt} after ${delay}ms delay...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+      
+      const response = await apiCall();
+      if (response.ok) {
+        return response;
+      } else {
+        const errorData = await response.json();
+        throw new Error('OpenAI API error: ' + (errorData.error?.message || `Status ${response.status}`));
+      }
+    } catch (error) {
+      lastError = error as Error;
+      console.error(`❌ Property analysis attempt ${attempt + 1} failed:`, error);
+      
+      if (attempt === maxRetries) {
+        break;
+      }
+    }
+  }
+  
+  throw lastError || new Error('All retry attempts failed');
+};
+
 export const generatePropertyAnalysis = async (
   propertyInfo: PropertyInfo,
   imageAnalysis: ImageAnalysis = {}
@@ -8,157 +40,160 @@ export const generatePropertyAnalysis = async (
   
   const openaiApiKey = Deno.env.get('OPENAI_API_KEY');
   if (!openaiApiKey) {
+    console.error('❌ OpenAI API key is not configured - returning error');
     throw new Error('OpenAI API key is not configured');
   }
 
-  // Enhanced property classification using all available data sources
-  const comprehensiveClassification = await performComprehensivePropertyAnalysis(propertyInfo, imageAnalysis, openaiApiKey);
-  console.log('🏢 Comprehensive property classification:', comprehensiveClassification);
-
-  // Generate analysis with comprehensive property-aware logic
-  const analysisPrompt = createComprehensiveAnalysisPrompt(propertyInfo, imageAnalysis, comprehensiveClassification);
-  
-  const response = await fetch('https://api.openai.com/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${openaiApiKey}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: 'gpt-4o-mini',
-      messages: [
-        {
-          role: 'system',
-          content: `You are a property monetization expert. Analyze properties and provide realistic revenue opportunities based on building type and access rights in JSON format.
-          
-          CRITICAL: ALWAYS respond with valid JSON format. Do not include any text before or after the JSON.
-          
-          BUILDING TYPE RULES:
-          - APARTMENTS/CONDOS: Residents have NO access to roofs, shared parking, pools, or gardens for individual monetization
-          - SINGLE FAMILY HOMES: Full access to all property features
-          - COMMERCIAL: Business-focused opportunities only
-          - VACANT LAND: Development and leasing opportunities
-          
-          For APARTMENTS specifically:
-          - Rooftop revenue: $0 (no individual access)
-          - Parking revenue: $0 (building/HOA controlled)
-          - Pool revenue: $0 (shared amenity, cannot rent individually)
-          - Garden revenue: $0 (no individual garden access)
-          - Storage revenue: $5-15/month (limited to personal unit storage)
-          - Internet revenue: $25-50/month (bandwidth sharing within unit)
-          
-          RESPONSE FORMAT: Return ONLY valid JSON with no additional text or markdown formatting.`
-        },
-        {
-          role: 'user',
-          content: analysisPrompt
-        }
-      ],
-      max_tokens: 800,
-      response_format: { type: "json_object" }
-    }),
-  });
-
-  if (!response.ok) {
-    console.error(`OpenAI API error: ${response.status}`);
-    // Return fallback analysis instead of throwing
-    return generateFallbackAnalysis(propertyInfo, imageAnalysis, comprehensiveClassification);
-  }
-
-  const data = await response.json();
-  const rawResponse = data.choices[0]?.message?.content;
-  console.log('Raw GPT response length:', rawResponse?.length || 0);
-
-  if (!rawResponse || rawResponse.trim().length === 0) {
-    console.error('Empty OpenAI response, using fallback');
-    return generateFallbackAnalysis(propertyInfo, imageAnalysis, comprehensiveClassification);
-  }
-
-  let analysisData;
   try {
-    // Since we're using response_format: json_object, the response should be pure JSON
-    analysisData = JSON.parse(rawResponse);
-  } catch (error) {
-    console.error('JSON parsing error:', error);
-    console.log('Attempting fallback JSON extraction...');
+    // Enhanced property classification using all available data sources
+    const comprehensiveClassification = await performComprehensivePropertyAnalysis(propertyInfo, imageAnalysis, openaiApiKey);
+    console.log('🏢 Comprehensive property classification:', comprehensiveClassification);
+
+    // Generate analysis with comprehensive property-aware logic
+    const analysisPrompt = createComprehensiveAnalysisPrompt(propertyInfo, imageAnalysis, comprehensiveClassification);
     
-    // Fallback: try to extract JSON from response
-    const jsonMatch = rawResponse.match(/\{[\s\S]*\}/);
-    if (jsonMatch) {
-      try {
-        analysisData = JSON.parse(jsonMatch[0]);
-      } catch (fallbackError) {
-        console.error('Fallback JSON parsing also failed:', fallbackError);
-        return generateFallbackAnalysis(propertyInfo, imageAnalysis, comprehensiveClassification);
-      }
-    } else {
-      console.error('No JSON found in response, using fallback');
+    const response = await retryOpenAICall(() => 
+      fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${openaiApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'gpt-4o-mini',
+          messages: [
+            {
+              role: 'system',
+              content: `You are a property monetization expert. Analyze properties and provide realistic revenue opportunities based on building type and access rights in JSON format.
+              
+              CRITICAL: ALWAYS respond with valid JSON format. Do not include any text before or after the JSON.
+              
+              BUILDING TYPE RULES:
+              - APARTMENTS/CONDOS: Residents have NO access to roofs, shared parking, pools, or gardens for individual monetization
+              - SINGLE FAMILY HOMES: Full access to all property features
+              - COMMERCIAL: Business-focused opportunities only
+              - VACANT LAND: Development and leasing opportunities
+              
+              For APARTMENTS specifically:
+              - Rooftop revenue: $0 (no individual access)
+              - Parking revenue: $0 (building/HOA controlled)
+              - Pool revenue: $0 (shared amenity, cannot rent individually)
+              - Garden revenue: $0 (no individual garden access)
+              - Storage revenue: $5-15/month (limited to personal unit storage)
+              - Internet revenue: $25-50/month (bandwidth sharing within unit)
+              
+              RESPONSE FORMAT: Return ONLY valid JSON with no additional text or markdown formatting.`
+            },
+            {
+              role: 'user',
+              content: analysisPrompt
+            }
+          ],
+          max_tokens: 800,
+          response_format: { type: "json_object" }
+        }),
+      })
+    );
+
+    const data = await response.json();
+    const rawResponse = data.choices[0]?.message?.content;
+    console.log('Raw GPT response length:', rawResponse?.length || 0);
+
+    if (!rawResponse || rawResponse.trim().length === 0) {
+      console.error('❌ Empty OpenAI response, using fallback');
       return generateFallbackAnalysis(propertyInfo, imageAnalysis, comprehensiveClassification);
     }
+
+    let analysisData;
+    try {
+      // Since we're using response_format: json_object, the response should be pure JSON
+      analysisData = JSON.parse(rawResponse);
+    } catch (error) {
+      console.error('JSON parsing error:', error);
+      console.log('Attempting fallback JSON extraction...');
+      
+      // Fallback: try to extract JSON from response
+      const jsonMatch = rawResponse.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        try {
+          analysisData = JSON.parse(jsonMatch[0]);
+        } catch (fallbackError) {
+          console.error('Fallback JSON parsing also failed:', fallbackError);
+          return generateFallbackAnalysis(propertyInfo, imageAnalysis, comprehensiveClassification);
+        }
+      } else {
+        console.error('No JSON found in response, using fallback');
+        return generateFallbackAnalysis(propertyInfo, imageAnalysis, comprehensiveClassification);
+      }
+    }
+
+    // Convert to our AnalysisResults format with comprehensive property handling
+    const results: AnalysisResults = {
+      propertyType: analysisData.propertyType || comprehensiveClassification.primaryType,
+      subType: analysisData.subType || comprehensiveClassification.subType,
+      amenities: extractAmenities(analysisData),
+      rooftop: {
+        area: analysisData.rooftop?.area || 0,
+        type: analysisData.rooftop?.type || 'standard',
+        solarCapacity: analysisData.rooftop?.solarCapacity || 0,
+        solarPotential: analysisData.rooftop?.solarPotential || false,
+        revenue: analysisData.rooftop?.monthlyRevenue || 0,
+        setupCost: analysisData.rooftop?.setupCost || 0,
+        usingRealSolarData: analysisData.rooftop?.usingRealSolarData || false
+      },
+      garden: {
+        area: analysisData.garden?.area || 0,
+        opportunity: analysisData.garden?.opportunity || 'None',
+        revenue: analysisData.garden?.monthlyRevenue || 0
+      },
+      parking: {
+        spaces: analysisData.parking?.spaces || 0,
+        rate: analysisData.parking?.monthlyRevenuePerSpace || 0,
+        revenue: analysisData.parking?.totalMonthlyRevenue || 0,
+        evChargerPotential: analysisData.parking?.evChargerPotential || false
+      },
+      pool: {
+        present: analysisData.pool?.present || false,
+        area: analysisData.pool?.area || 0,
+        type: analysisData.pool?.type || 'none',
+        revenue: analysisData.pool?.monthlyRevenue || 0
+      },
+      sportsCourts: {
+        present: analysisData.sportsCourts?.present || false,
+        types: analysisData.sportsCourts?.types || [],
+        count: analysisData.sportsCourts?.count || 0,
+        revenue: analysisData.sportsCourts?.monthlyRevenue || 0
+      },
+      storage: {
+        volume: analysisData.storage?.volume || 0,
+        revenue: analysisData.storage?.monthlyRevenue || 0
+      },
+      bandwidth: {
+        available: analysisData.internet?.bandwidth || 100,
+        revenue: analysisData.internet?.monthlyRevenue || 0
+      },
+      shortTermRental: {
+        nightlyRate: 0,
+        monthlyProjection: 0
+      },
+      permits: analysisData.permits || [],
+      restrictions: comprehensiveClassification.restrictions,
+      topOpportunities: [],
+      imageAnalysisSummary: imageAnalysis.summary || '',
+      // Extract totalMonthlyRevenue from GPT response
+      totalMonthlyRevenue: analysisData.totalMonthlyRevenue || 0
+    };
+
+    // Generate top opportunities based on comprehensive property analysis and actual revenue potential
+    results.topOpportunities = generateComprehensiveOpportunities(results, comprehensiveClassification, analysisData);
+
+    console.log('✅ Enhanced property analysis completed successfully');
+    return results;
+  } catch (error) {
+    console.error('❌ All property analysis attempts failed:', error);
+    // Return error instead of generic fallback to align with requirement: don't silently degrade
+    throw new Error(`Property analysis failed after all retries: ${error.message}`);
   }
-
-  // Convert to our AnalysisResults format with comprehensive property handling
-  const results: AnalysisResults = {
-    propertyType: analysisData.propertyType || comprehensiveClassification.primaryType,
-    subType: analysisData.subType || comprehensiveClassification.subType,
-    amenities: extractAmenities(analysisData),
-    rooftop: {
-      area: analysisData.rooftop?.area || 0,
-      type: analysisData.rooftop?.type || 'standard',
-      solarCapacity: analysisData.rooftop?.solarCapacity || 0,
-      solarPotential: analysisData.rooftop?.solarPotential || false,
-      revenue: analysisData.rooftop?.monthlyRevenue || 0,
-      setupCost: analysisData.rooftop?.setupCost || 0,
-      usingRealSolarData: analysisData.rooftop?.usingRealSolarData || false
-    },
-    garden: {
-      area: analysisData.garden?.area || 0,
-      opportunity: analysisData.garden?.opportunity || 'None',
-      revenue: analysisData.garden?.monthlyRevenue || 0
-    },
-    parking: {
-      spaces: analysisData.parking?.spaces || 0,
-      rate: analysisData.parking?.monthlyRevenuePerSpace || 0,
-      revenue: analysisData.parking?.totalMonthlyRevenue || 0,
-      evChargerPotential: analysisData.parking?.evChargerPotential || false
-    },
-    pool: {
-      present: analysisData.pool?.present || false,
-      area: analysisData.pool?.area || 0,
-      type: analysisData.pool?.type || 'none',
-      revenue: analysisData.pool?.monthlyRevenue || 0
-    },
-    sportsCourts: {
-      present: analysisData.sportsCourts?.present || false,
-      types: analysisData.sportsCourts?.types || [],
-      count: analysisData.sportsCourts?.count || 0,
-      revenue: analysisData.sportsCourts?.monthlyRevenue || 0
-    },
-    storage: {
-      volume: analysisData.storage?.volume || 0,
-      revenue: analysisData.storage?.monthlyRevenue || 0
-    },
-    bandwidth: {
-      available: analysisData.internet?.bandwidth || 100,
-      revenue: analysisData.internet?.monthlyRevenue || 0
-    },
-    shortTermRental: {
-      nightlyRate: 0,
-      monthlyProjection: 0
-    },
-    permits: analysisData.permits || [],
-    restrictions: comprehensiveClassification.restrictions,
-    topOpportunities: [],
-    imageAnalysisSummary: imageAnalysis.summary || '',
-    // Extract totalMonthlyRevenue from GPT response
-    totalMonthlyRevenue: analysisData.totalMonthlyRevenue || 0
-  };
-
-  // Generate top opportunities based on comprehensive property analysis and actual revenue potential
-  results.topOpportunities = generateComprehensiveOpportunities(results, comprehensiveClassification, analysisData);
-
-  console.log('Enhanced property analysis completed successfully');
-  return results;
 };
 
 import { performComprehensivePropertyAnalysis, createComprehensiveAnalysisPrompt, generateComprehensiveOpportunities } from './comprehensiveAnalysis.ts';

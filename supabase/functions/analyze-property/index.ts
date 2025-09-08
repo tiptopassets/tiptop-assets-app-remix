@@ -5,7 +5,7 @@ import { analyzeImage } from './imageAnalysis.ts';
 import { generatePropertyAnalysis } from './propertyAnalysis.ts';
 import { extractStructuredData } from './dataExtraction.ts';
 import { validateAndCorrectRevenue } from './marketDataValidator.ts';
-import { AnalysisRequest, PropertyInfo, ImageAnalysis } from './types.ts';
+import { AnalysisRequest, PropertyInfo, ImageAnalysis, LatLng } from './types.ts';
 import { classifyPropertyFromAddress } from './propertyClassification.ts';
 import { analyzeStreetViewImage, gatherEnhancedPropertyData } from './enhancedDataGathering.ts';
 import { normalizePropertyType } from './propertyTypeNormalizer.ts';
@@ -151,9 +151,11 @@ Deno.serve(async (req) => {
     let enhancedPropertyData: any = {};
     const debugTimings: any = { start: Date.now() };
     
-    // Run heavy operations in parallel with timeouts
-    const STEP_TIMEOUT = 8000; // 8 seconds per step
-    const OVERALL_TIMEOUT = 12000; // 12 seconds total
+    import { LatLng } from './types.ts';
+    
+    // Run heavy operations in parallel with extended timeouts for correctness
+    const STEP_TIMEOUT = 15000; // 15 seconds per step for correctness
+    const OVERALL_TIMEOUT = 30000; // 30 seconds total for correctness
     
     const overallTimeoutPromise = new Promise((_, reject) => {
       setTimeout(() => reject(new Error('Overall analysis timeout')), OVERALL_TIMEOUT);
@@ -301,8 +303,35 @@ Deno.serve(async (req) => {
     
     console.log('🔬 Generating property analysis with enhanced solar data');
     debugTimings.analysisStart = Date.now();
-    let analysis = await generatePropertyAnalysis(propertyInfo, imageAnalysis);
-    debugTimings.analysis = Date.now() - debugTimings.analysisStart;
+    
+    let analysis;
+    try {
+      analysis = await generatePropertyAnalysis(propertyInfo, imageAnalysis);
+      debugTimings.analysis = Date.now() - debugTimings.analysisStart;
+    } catch (error) {
+      console.error('❌ Property analysis failed completely:', error);
+      
+      // Return error response instead of generic analysis to align with requirement
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: `Property analysis failed: ${error.message}`,
+          debugTimings: {
+            ...debugTimings,
+            total: Date.now() - debugTimings.start
+          },
+          propertyInfo: {
+            address: propertyDetails.formattedAddress || address,
+            coordinates: propertyCoordinates,
+            classification: improvedClassification
+          }
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 500
+        }
+      );
+    }
     
     // Apply market validation for non-vacant land properties
     if (propertyCoordinates && analysis.propertyType !== 'vacant_land') {
@@ -357,20 +386,30 @@ Deno.serve(async (req) => {
       console.log(`☀️ Enhanced solar data integrated: ${solarData.monthlyRevenue} → ${validatedSolarRevenue}, ${solarData.roofSegments?.length || 0} roof segments, ${solarData.maxSunshineHoursPerYear} sun hours/year`);
     }
     
-    // Create comprehensive analysis with improved classification
-    const finalClassification = improvedClassification.primaryType === 'apartment' ? 
-      improvedClassification.primaryType : 
+    // Create comprehensive analysis with improved classification - keep apartment classification "sticky"
+    const finalClassification = (improvedClassification.primaryType === 'apartment' || 
+                                improvedClassification.primaryType === 'residential' && 
+                                improvedClassification.subType?.includes('apartment')) ? 
+      'apartment' : 
       normalizePropertyType(analysis.propertyType || improvedClassification.primaryType);
       
     const normalizedAnalysis = {
       ...analysis,
       propertyType: finalClassification,
       subType: analysis.subType || improvedClassification.subType,
-      propertyAddress: propertyDetails.formattedAddress || address
+      propertyAddress: propertyDetails.formattedAddress || address,
+      // Add debug flags for easier QA
+      debugFlags: {
+        aiClassificationUsed: !!streetViewAnalysis?.analysis,
+        apartmentDetected: finalClassification === 'apartment',
+        usedEstimatedSolar: solarData && !solarData.usingRealSolarData,
+        comprehensiveClassification: improvedClassification
+      }
     };
 
     debugTimings.total = Date.now() - debugTimings.start;
     console.log('⏱️ Analysis timing breakdown:', debugTimings);
+    console.log('✅ Enhanced property analysis completed successfully');
 
     // Ensure address is properly included in response
     const responseData = {
@@ -388,11 +427,15 @@ Deno.serve(async (req) => {
       enhancedClassification: true,
       enhancedSolarData: !!solarData?.roofSegments?.length,
       debugTimings: debugTimings,
-      apartmentDetected: finalClassification === 'apartment',
-      classificationUsed: improvedClassification.primaryType
+      // Enhanced debugging info for QA
+      debugInfo: {
+        apartmentDetected: finalClassification === 'apartment',
+        aiClassificationUsed: !!streetViewAnalysis?.analysis,
+        usedEstimatedSolar: solarData && !solarData.usingRealSolarData,
+        classificationUsed: improvedClassification.primaryType,
+        comprehensiveClassification: improvedClassification
+      }
     };
-    
-    console.log('✅ Enhanced property analysis with detailed solar data completed successfully');
     
     return new Response(
       JSON.stringify(responseData),
@@ -402,11 +445,15 @@ Deno.serve(async (req) => {
       }
     );
   } catch (error) {
-    console.error('❌ Error in analyze-property function:', error);
+    console.error('❌ Critical error in analyze-property function:', error);
+    
     return new Response(
       JSON.stringify({ 
         success: false, 
-        error: error.message || 'An error occurred during property analysis'
+        error: error.message || 'Property analysis failed completely',
+        details: 'The analysis could not be completed due to a system error. Please try again or contact support if the issue persists.',
+        timestamp: new Date().toISOString(),
+        retryRecommended: true
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
