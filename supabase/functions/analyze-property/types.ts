@@ -4,7 +4,10 @@ export interface PropertyInfo {
   coordinates?: google.maps.LatLngLiteral;
   details?: any;
   solarData?: any;
-  propertyType?: string; // Added property type field
+  propertyType?: string;
+  classification?: any;
+  enhancedData?: any;
+  streetViewAnalysis?: any;
 }
 
 export interface AnalysisRequest {

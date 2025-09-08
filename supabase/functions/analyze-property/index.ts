@@ -7,6 +7,7 @@ import { extractStructuredData } from './dataExtraction.ts';
 import { validateAndCorrectRevenue } from './marketDataValidator.ts';
 import { AnalysisRequest, PropertyInfo, ImageAnalysis } from './types.ts';
 import { classifyPropertyFromAddress } from './propertyClassification.ts';
+import { analyzeStreetViewImage, gatherEnhancedPropertyData } from './enhancedDataGathering.ts';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') || '';
 const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY') || '';
@@ -93,10 +94,43 @@ Deno.serve(async (req) => {
       }
     }
     
-    console.log('📊 Starting property analysis with enhanced classification');
+    console.log('📊 Starting comprehensive property analysis with enhanced classification');
     
     let solarData = null;
     let imageAnalysis: ImageAnalysis = {};
+    let streetViewAnalysis: any = {};
+    let enhancedPropertyData: any = {};
+    
+    // Get Street View image and analyze it
+    if (propertyCoordinates && GOOGLE_MAPS_API_KEY) {
+      try {
+        console.log('📸 Fetching Street View image for enhanced analysis...');
+        const streetViewUrl = `https://maps.googleapis.com/maps/api/streetview?size=800x800&location=${propertyCoordinates.lat},${propertyCoordinates.lng}&key=${GOOGLE_MAPS_API_KEY}`;
+        
+        const streetViewResponse = await fetch(streetViewUrl);
+        if (streetViewResponse.ok) {
+          const streetViewBuffer = await streetViewResponse.arrayBuffer();
+          const streetViewBase64 = `data:image/jpeg;base64,${btoa(String.fromCharCode(...new Uint8Array(streetViewBuffer)))}`;
+          
+          // Analyze Street View image with OpenAI
+          streetViewAnalysis = await analyzeStreetViewImage(streetViewBase64, address);
+          console.log('✅ Street View analysis completed');
+        }
+      } catch (error) {
+        console.error('❌ Street View analysis failed:', error);
+      }
+    }
+    
+    // Enhanced property data collection from Google APIs
+    if (propertyCoordinates && GOOGLE_MAPS_API_KEY) {
+      try {
+        console.log('🏢 Gathering comprehensive property data...');
+        enhancedPropertyData = await gatherEnhancedPropertyData(address, propertyCoordinates, GOOGLE_MAPS_API_KEY);
+        console.log('✅ Enhanced property data gathered:', enhancedPropertyData);
+      } catch (error) {
+        console.error('❌ Enhanced property data gathering failed:', error);
+      }
+    }
     
     if (!forceLocalAnalysis) {
       try {
@@ -111,7 +145,7 @@ Deno.serve(async (req) => {
         if (error) {
           console.error('❌ Error calling Solar API:', error);
           if (satelliteImage && satelliteImage.startsWith('data:image')) {
-            console.log('📸 Falling back to image analysis...');
+            console.log('📸 Falling back to satellite image analysis...');
             imageAnalysis = await analyzeImage(satelliteImage, address);
           }
         } else if (solarResponse.success && solarResponse.solarData) {
@@ -128,7 +162,7 @@ Deno.serve(async (req) => {
         console.error('❌ Error fetching solar data:', error);
         
         if (satelliteImage && satelliteImage.startsWith('data:image')) {
-          console.log('📸 Falling back to image analysis for non-solar data...');
+          console.log('📸 Falling back to satellite image analysis for non-solar data...');
           imageAnalysis = await analyzeImage(satelliteImage, address);
         }
       }
@@ -140,7 +174,9 @@ Deno.serve(async (req) => {
       details: propertyDetails,
       solarData: solarData,
       propertyType: propertyDetails.type ? propertyDetails.type.join(', ') : initialClassification.primaryType,
-      classification: initialClassification
+      classification: initialClassification,
+      enhancedData: enhancedPropertyData,
+      streetViewAnalysis: streetViewAnalysis
     };
     
     console.log('🔬 Generating property analysis with enhanced solar data');

@@ -17,7 +17,7 @@ export const analyzeImage = async (imageBase64: string, address: string) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o',
+        model: 'gpt-5-2025-08-07',
         messages: [
           {
             role: 'system',
@@ -98,8 +98,7 @@ Provide specific measurements where applicable and high confidence scores for bu
             ]
           }
         ],
-        max_tokens: 1500,
-        temperature: 0.2
+        max_completion_tokens: 1500
       }),
     });
 

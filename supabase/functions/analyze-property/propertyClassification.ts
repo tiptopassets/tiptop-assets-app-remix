@@ -12,13 +12,14 @@ export interface PropertyClassificationResult {
   };
 }
 
-// Enhanced address analysis patterns with more comprehensive detection
+// Enhanced address analysis patterns with comprehensive property type detection
 const PROPERTY_TYPE_PATTERNS = {
   vacant_land: {
     keywords: [
       'vacant lot', 'empty lot', 'undeveloped land', 'raw land', 'development site',
       'buildable lot', 'acres for sale', 'land parcel', 'development opportunity',
-      'investment land', 'commercial land', 'zoned land', 'cleared lot'
+      'investment land', 'commercial land', 'zoned land', 'cleared lot', 'agricultural land',
+      'farm land', 'ranch', 'acreage', 'development ready', 'subdivision lot'
     ],
     addressPatterns: [
       /\b(lot|parcel)\s*\d+/i,
@@ -74,7 +75,9 @@ const PROPERTY_TYPE_PATTERNS = {
   commercial: {
     keywords: [
       'office', 'retail', 'store', 'shop', 'mall', 'plaza', 'center',
-      'warehouse', 'industrial', 'factory', 'business', 'commercial'
+      'warehouse', 'industrial', 'factory', 'business', 'commercial',
+      'restaurant', 'hotel', 'motel', 'clinic', 'medical', 'professional',
+      'showroom', 'dealership', 'gas station', 'bank', 'institution'
     ],
     addressPatterns: [
       /\b(suite|ste|unit|#)\s*\d+/i,

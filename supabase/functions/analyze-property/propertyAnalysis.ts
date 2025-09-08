@@ -11,12 +11,12 @@ export const generatePropertyAnalysis = async (
     throw new Error('OpenAI API key is not configured');
   }
 
-  // Detect building type and access rights
-  const buildingTypeInfo = await detectBuildingTypeAndRestrictions(propertyInfo, imageAnalysis, openaiApiKey);
-  console.log('🏢 Detected building type:', buildingTypeInfo);
+  // Enhanced property classification using all available data sources
+  const comprehensiveClassification = await performComprehensivePropertyAnalysis(propertyInfo, imageAnalysis, openaiApiKey);
+  console.log('🏢 Comprehensive property classification:', comprehensiveClassification);
 
-  // Generate analysis with building-type-aware logic
-  const analysisPrompt = createEnhancedAnalysisPrompt(propertyInfo, imageAnalysis, buildingTypeInfo);
+  // Generate analysis with comprehensive property-aware logic
+  const analysisPrompt = createComprehensiveAnalysisPrompt(propertyInfo, imageAnalysis, comprehensiveClassification);
   
   const response = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
@@ -25,7 +25,7 @@ export const generatePropertyAnalysis = async (
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      model: 'gpt-4o',
+      model: 'gpt-5-2025-08-07',
       messages: [
         {
           role: 'system',
@@ -52,8 +52,7 @@ export const generatePropertyAnalysis = async (
           content: analysisPrompt
         }
       ],
-      temperature: 0.3,
-      max_tokens: 2000
+      max_completion_tokens: 2500
     }),
   });
 
@@ -79,9 +78,9 @@ export const generatePropertyAnalysis = async (
     throw new Error('Invalid JSON in OpenAI response');
   }
 
-  // Convert to our AnalysisResults format with enhanced apartment handling
+  // Convert to our AnalysisResults format with comprehensive property handling
   const results: AnalysisResults = {
-    propertyType: analysisData.propertyType || buildingTypeInfo.type,
+    propertyType: analysisData.propertyType || comprehensiveClassification.primaryType,
     amenities: extractAmenities(analysisData),
     rooftop: {
       area: analysisData.rooftop?.area || 0,
@@ -128,19 +127,21 @@ export const generatePropertyAnalysis = async (
       monthlyProjection: 0
     },
     permits: analysisData.permits || [],
-    restrictions: buildingTypeInfo.restrictions,
+    restrictions: comprehensiveClassification.restrictions,
     topOpportunities: [],
     imageAnalysisSummary: imageAnalysis.summary || '',
     // Extract totalMonthlyRevenue from GPT response
     totalMonthlyRevenue: analysisData.totalMonthlyRevenue || 0
   };
 
-  // Generate top opportunities based on building type and actual revenue potential - IMPROVED LOGIC
-  results.topOpportunities = generateBuildingTypeAwareOpportunities(results, buildingTypeInfo, analysisData);
+  // Generate top opportunities based on comprehensive property analysis and actual revenue potential
+  results.topOpportunities = generateComprehensiveOpportunities(results, comprehensiveClassification, analysisData);
 
   console.log('Enhanced property analysis completed successfully');
   return results;
 };
+
+import { performComprehensivePropertyAnalysis, createComprehensiveAnalysisPrompt, generateComprehensiveOpportunities } from './comprehensiveAnalysis.ts';
 
 async function detectBuildingTypeAndRestrictions(
   propertyInfo: PropertyInfo,
@@ -187,10 +188,9 @@ Return JSON with:
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      model: 'gpt-4o',
+      model: 'gpt-5-2025-08-07',
       messages: [{ role: 'user', content: prompt }],
-      temperature: 0.1,
-      max_tokens: 300
+      max_completion_tokens: 300
     }),
   });
 
