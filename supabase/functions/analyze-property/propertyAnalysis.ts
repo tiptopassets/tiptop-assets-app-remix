@@ -25,11 +25,11 @@ export const generatePropertyAnalysis = async (
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      model: 'gpt-5-2025-08-07',
+      model: 'gpt-5-mini-2025-08-07',
       messages: [
         {
           role: 'system',
-          content: `You are a property monetization expert. Analyze properties and provide realistic revenue opportunities based on building type and access rights.
+          content: `You are a property monetization expert. Analyze properties and provide realistic revenue opportunities based on building type and access rights in JSON format.
           
           CRITICAL: ALWAYS respond with valid JSON format. Do not include any text before or after the JSON.
           
@@ -54,7 +54,7 @@ export const generatePropertyAnalysis = async (
           content: analysisPrompt
         }
       ],
-      max_completion_tokens: 2500,
+      max_completion_tokens: 1200,
       response_format: { type: "json_object" }
     }),
   });
@@ -100,6 +100,7 @@ export const generatePropertyAnalysis = async (
   // Convert to our AnalysisResults format with comprehensive property handling
   const results: AnalysisResults = {
     propertyType: analysisData.propertyType || comprehensiveClassification.primaryType,
+    subType: analysisData.subType || comprehensiveClassification.subType,
     amenities: extractAmenities(analysisData),
     rooftop: {
       area: analysisData.rooftop?.area || 0,

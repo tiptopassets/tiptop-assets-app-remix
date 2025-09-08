@@ -34,40 +34,77 @@ const PropertySummaryCard: React.FC<PropertySummaryCardProps> = ({
   // Determine property type display
   const getPropertyTypeDisplay = () => {
     const propertyType = analysisResults?.propertyType || 'unknown';
+    const subType = analysisResults?.subType;
     const buildingType = analysisResults?.buildingTypeRestrictions?.restrictionExplanation;
     
-    switch (propertyType) {
-      case 'vacant_land':
-        return {
-          icon: <Building2 className="w-5 h-5 text-green-500" />,
-          label: 'Vacant Land',
-          description: buildingType?.includes('commercial') ? 'Commercial Development Site' : 'Development Opportunity'
-        };
-      case 'apartment':
-        return {
-          icon: <Building2 className="w-5 h-5 text-blue-500" />,
-          label: 'Apartment',
-          description: 'Multi-Unit Residential Building'
-        };
-      case 'single_family':
-        return {
-          icon: <Building2 className="w-5 h-5 text-purple-500" />,
-          label: 'Single Family Home',
-          description: 'Residential Property'
-        };
-      case 'commercial':
-        return {
-          icon: <Building2 className="w-5 h-5 text-orange-500" />,
-          label: 'Commercial Property',
-          description: 'Business/Retail Space'
-        };
-      default:
-        return {
-          icon: <Building2 className="w-5 h-5 text-gray-500" />,
-          label: 'Property',
-          description: 'Real Estate Asset'
-        };
-    }
+    const getTypeIcon = (type: string) => {
+      if (type === 'vacant_land') return <Building2 className="w-5 h-5 text-green-500" />;
+      if (type === 'commercial') return <Building2 className="w-5 h-5 text-orange-500" />;
+      if (type === 'industrial') return <Building2 className="w-5 h-5 text-red-500" />;
+      if (type === 'mixed_use') return <Building2 className="w-5 h-5 text-yellow-500" />;
+      if (type === 'institutional') return <Building2 className="w-5 h-5 text-indigo-500" />;
+      if (type === 'agricultural') return <Building2 className="w-5 h-5 text-emerald-500" />;
+      if (type === 'apartment') return <Building2 className="w-5 h-5 text-blue-500" />;
+      return <Building2 className="w-5 h-5 text-purple-500" />;
+    };
+
+    const getSubTypeLabel = (mainType: string, subType?: string) => {
+      if (!subType) return null;
+      
+      const subTypeMap: Record<string, string> = {
+        'single_family_home': 'Single Family Home',
+        'condominium': 'Condominium',
+        'townhouse': 'Townhouse',
+        'duplex': 'Duplex',
+        'retail_store': 'Retail Store',
+        'office_building': 'Office Building',
+        'warehouse': 'Warehouse',
+        'vacant_commercial_land': 'Vacant Commercial Land',
+        'vacant_residential_land': 'Vacant Residential Land'
+      };
+      
+      return subTypeMap[subType] || subType.split('_').map(word => 
+        word.charAt(0).toUpperCase() + word.slice(1)
+      ).join(' ');
+    };
+
+    const getMainTypeLabel = (type: string) => {
+      const typeMap: Record<string, string> = {
+        'residential': 'Residential',
+        'commercial': 'Commercial',
+        'industrial': 'Industrial',
+        'vacant_land': 'Vacant Land',
+        'mixed_use': 'Mixed Use',
+        'institutional': 'Institutional',
+        'agricultural': 'Agricultural',
+        'apartment': 'Apartment'
+      };
+      return typeMap[type] || type.charAt(0).toUpperCase() + type.slice(1);
+    };
+
+    const mainLabel = getMainTypeLabel(propertyType);
+    const subLabel = getSubTypeLabel(propertyType, subType);
+    const displayLabel = subLabel ? `${mainLabel} • ${subLabel}` : mainLabel;
+
+    const getDescription = () => {
+      if (propertyType === 'vacant_land') {
+        return buildingType?.includes('commercial') ? 'Commercial Development Site' : 'Development Opportunity';
+      }
+      if (propertyType === 'commercial') return 'Business/Commercial Space';
+      if (propertyType === 'industrial') return 'Industrial/Manufacturing Facility';
+      if (propertyType === 'mixed_use') return 'Mixed-Use Development';
+      if (propertyType === 'institutional') return 'Institutional Property';
+      if (propertyType === 'agricultural') return 'Agricultural Land';
+      if (propertyType === 'apartment') return 'Multi-Unit Residential Building';
+      if (propertyType === 'residential') return subType ? 'Residential Property' : 'Single Family Home';
+      return 'Property Asset';
+    };
+
+    return {
+      icon: getTypeIcon(propertyType),
+      label: displayLabel,
+      description: getDescription()
+    };
   };
 
   const propertyDisplay = getPropertyTypeDisplay();

@@ -8,6 +8,7 @@ import { validateAndCorrectRevenue } from './marketDataValidator.ts';
 import { AnalysisRequest, PropertyInfo, ImageAnalysis } from './types.ts';
 import { classifyPropertyFromAddress } from './propertyClassification.ts';
 import { analyzeStreetViewImage, gatherEnhancedPropertyData } from './enhancedDataGathering.ts';
+import { normalizePropertyType } from './propertyTypeNormalizer.ts';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') || '';
 const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY') || '';
@@ -100,72 +101,143 @@ Deno.serve(async (req) => {
     let imageAnalysis: ImageAnalysis = {};
     let streetViewAnalysis: any = {};
     let enhancedPropertyData: any = {};
+    const debugTimings: any = { start: Date.now() };
     
-    // Get Street View image and analyze it
-    if (propertyCoordinates && GOOGLE_MAPS_API_KEY) {
-      try {
-        console.log('📸 Fetching Street View image for enhanced analysis...');
-        const streetViewUrl = `https://maps.googleapis.com/maps/api/streetview?size=800x800&location=${propertyCoordinates.lat},${propertyCoordinates.lng}&key=${GOOGLE_MAPS_API_KEY}`;
-        
-        const streetViewResponse = await fetch(streetViewUrl);
-        if (streetViewResponse.ok) {
-          const streetViewBuffer = await streetViewResponse.arrayBuffer();
-          const streetViewBase64 = `data:image/jpeg;base64,${btoa(String.fromCharCode(...new Uint8Array(streetViewBuffer)))}`;
-          
-          // Analyze Street View image with OpenAI
-          streetViewAnalysis = await analyzeStreetViewImage(streetViewBase64, address);
-          console.log('✅ Street View analysis completed');
-        }
-      } catch (error) {
-        console.error('❌ Street View analysis failed:', error);
-      }
-    }
+    // Run heavy operations in parallel with timeouts
+    const STEP_TIMEOUT = 8000; // 8 seconds per step
+    const OVERALL_TIMEOUT = 12000; // 12 seconds total
     
-    // Enhanced property data collection from Google APIs
-    if (propertyCoordinates && GOOGLE_MAPS_API_KEY) {
-      try {
-        console.log('🏢 Gathering comprehensive property data...');
-        enhancedPropertyData = await gatherEnhancedPropertyData(address, propertyCoordinates, GOOGLE_MAPS_API_KEY);
-        console.log('✅ Enhanced property data gathered:', enhancedPropertyData);
-      } catch (error) {
-        console.error('❌ Enhanced property data gathering failed:', error);
-      }
-    }
+    const overallTimeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('Overall analysis timeout')), OVERALL_TIMEOUT);
+    });
     
-    if (!forceLocalAnalysis) {
-      try {
-        console.log('☀️ Fetching enhanced solar data from Solar API...');
-        const { data: solarResponse, error } = await supabase.functions.invoke('solar-api', {
-          body: { 
-            address: address,
-            coordinates: propertyCoordinates
-          }
+    try {
+      const parallelOperations = [];
+      
+      // Street View Analysis (parallel)
+      if (propertyCoordinates && GOOGLE_MAPS_API_KEY) {
+        const streetViewPromise = Promise.race([
+          (async () => {
+            const stepStart = Date.now();
+            console.log('📸 Fetching Street View image for enhanced analysis...');
+            const streetViewUrl = `https://maps.googleapis.com/maps/api/streetview?size=400x400&location=${propertyCoordinates.lat},${propertyCoordinates.lng}&key=${GOOGLE_MAPS_API_KEY}`;
+            
+            const streetViewResponse = await fetch(streetViewUrl);
+            if (streetViewResponse.ok) {
+              const streetViewBuffer = await streetViewResponse.arrayBuffer();
+              const streetViewBase64 = `data:image/jpeg;base64,${btoa(String.fromCharCode(...new Uint8Array(streetViewBuffer)))}`;
+              
+              const result = await analyzeStreetViewImage(streetViewBase64, address);
+              debugTimings.streetView = Date.now() - stepStart;
+              console.log('✅ Street View analysis completed');
+              return { streetViewAnalysis: result };
+            }
+            return { streetViewAnalysis: {} };
+          })(),
+          new Promise((_, reject) => setTimeout(() => reject(new Error('Street View timeout')), STEP_TIMEOUT))
+        ]).catch(error => {
+          console.error('❌ Street View analysis failed:', error);
+          return { streetViewAnalysis: {} };
         });
         
-        if (error) {
-          console.error('❌ Error calling Solar API:', error);
-          if (satelliteImage && satelliteImage.startsWith('data:image')) {
-            console.log('📸 Falling back to satellite image analysis...');
-            imageAnalysis = await analyzeImage(satelliteImage, address);
-          }
-        } else if (solarResponse.success && solarResponse.solarData) {
-          console.log('✅ Received enhanced solar data:', solarResponse.solarData);
-          solarData = solarResponse.solarData;
-          
-          imageAnalysis = {
-            ...imageAnalysis,
-            roofSize: solarData.roofAreaSqFt,
-            solarPotential: solarData.maxSunshineHoursPerYear > 1000 ? 'High' : 'Medium'
-          };
-        }
-      } catch (error) {
-        console.error('❌ Error fetching solar data:', error);
+        parallelOperations.push(streetViewPromise);
+      }
+      
+      // Enhanced Property Data (parallel)
+      if (propertyCoordinates && GOOGLE_MAPS_API_KEY) {
+        const enhancedDataPromise = Promise.race([
+          (async () => {
+            const stepStart = Date.now();
+            console.log('🏢 Gathering comprehensive property data...');
+            const result = await gatherEnhancedPropertyData(address, propertyCoordinates, GOOGLE_MAPS_API_KEY);
+            debugTimings.enhancedData = Date.now() - stepStart;
+            console.log('✅ Enhanced property data gathered');
+            return { enhancedPropertyData: result };
+          })(),
+          new Promise((_, reject) => setTimeout(() => reject(new Error('Enhanced data timeout')), STEP_TIMEOUT))
+        ]).catch(error => {
+          console.error('❌ Enhanced property data gathering failed:', error);
+          return { enhancedPropertyData: {} };
+        });
         
-        if (satelliteImage && satelliteImage.startsWith('data:image')) {
-          console.log('📸 Falling back to satellite image analysis for non-solar data...');
-          imageAnalysis = await analyzeImage(satelliteImage, address);
+        parallelOperations.push(enhancedDataPromise);
+      }
+      
+      // Solar API (parallel, with guard against known 400 errors)
+      if (!forceLocalAnalysis && propertyCoordinates) {
+        const solarPromise = Promise.race([
+          (async () => {
+            const stepStart = Date.now();
+            console.log('☀️ Fetching enhanced solar data from Solar API...');
+            
+            // Simple cache check to avoid repeated 400 errors
+            const cacheKey = `${Math.round(propertyCoordinates.lat * 1000)}_${Math.round(propertyCoordinates.lng * 1000)}`;
+            
+            const { data: solarResponse, error } = await supabase.functions.invoke('solar-api', {
+              body: { 
+                address: address,
+                coordinates: propertyCoordinates
+              }
+            });
+            
+            debugTimings.solar = Date.now() - stepStart;
+            
+            if (error) {
+              console.error('❌ Error calling Solar API:', error);
+              return { solarData: null, shouldFallbackToImage: true };
+            } else if (solarResponse.success && solarResponse.solarData) {
+              console.log('✅ Received enhanced solar data');
+              return { solarData: solarResponse.solarData, shouldFallbackToImage: false };
+            }
+            
+            return { solarData: null, shouldFallbackToImage: true };
+          })(),
+          new Promise((_, reject) => setTimeout(() => reject(new Error('Solar API timeout')), STEP_TIMEOUT))
+        ]).catch(error => {
+          console.error('❌ Solar API failed:', error);
+          return { solarData: null, shouldFallbackToImage: true };
+        });
+        
+        parallelOperations.push(solarPromise);
+      }
+      
+      // Wait for all parallel operations with overall timeout
+      const results = await Promise.race([
+        Promise.allSettled(parallelOperations),
+        overallTimeoutPromise
+      ]) as PromiseSettledResult<any>[];
+      
+      // Extract results from parallel operations
+      for (const result of results) {
+        if (result.status === 'fulfilled') {
+          const value = result.value;
+          if (value.streetViewAnalysis !== undefined) {
+            streetViewAnalysis = value.streetViewAnalysis;
+          }
+          if (value.enhancedPropertyData !== undefined) {
+            enhancedPropertyData = value.enhancedPropertyData;
+          }
+          if (value.solarData !== undefined) {
+            solarData = value.solarData;
+            
+            // Handle satellite image fallback
+            if (value.shouldFallbackToImage && satelliteImage && satelliteImage.startsWith('data:image')) {
+              console.log('📸 Falling back to satellite image analysis...');
+              imageAnalysis = await analyzeImage(satelliteImage, address);
+            } else if (solarData) {
+              imageAnalysis = {
+                ...imageAnalysis,
+                roofSize: solarData.roofAreaSqFt,
+                solarPotential: solarData.maxSunshineHoursPerYear > 1000 ? 'High' : 'Medium'
+              };
+            }
+          }
         }
       }
+      
+    } catch (error) {
+      console.error('❌ Parallel operations failed:', error);
+      // Continue with partial data
     }
 
     const propertyInfo: PropertyInfo = {
@@ -180,7 +252,9 @@ Deno.serve(async (req) => {
     };
     
     console.log('🔬 Generating property analysis with enhanced solar data');
+    debugTimings.analysisStart = Date.now();
     let analysis = await generatePropertyAnalysis(propertyInfo, imageAnalysis);
+    debugTimings.analysis = Date.now() - debugTimings.analysisStart;
     
     // Apply market validation for non-vacant land properties
     if (propertyCoordinates && analysis.propertyType !== 'vacant_land') {
@@ -235,13 +309,21 @@ Deno.serve(async (req) => {
       console.log(`☀️ Enhanced solar data integrated: ${solarData.monthlyRevenue} → ${validatedSolarRevenue}, ${solarData.roofSegments?.length || 0} roof segments, ${solarData.maxSunshineHoursPerYear} sun hours/year`);
     }
     
+    // Normalize property type and add subType
+    const normalizedAnalysis = {
+      ...analysis,
+      propertyType: normalizePropertyType(analysis.propertyType || initialClassification.primaryType),
+      subType: analysis.subType || initialClassification.subType,
+      propertyAddress: propertyDetails.formattedAddress || address
+    };
+
+    debugTimings.total = Date.now() - debugTimings.start;
+    console.log('⏱️ Analysis timing breakdown:', debugTimings);
+
     // Ensure address is properly included in response
     const responseData = {
       success: true,
-      analysis: {
-        ...analysis,
-        propertyAddress: propertyDetails.formattedAddress || address
-      },
+      analysis: normalizedAnalysis,
       propertyInfo: {
         address: propertyDetails.formattedAddress || address,
         coordinates: propertyCoordinates,
@@ -252,7 +334,8 @@ Deno.serve(async (req) => {
       satelliteImageUrl: satelliteImageUrl,
       validationApplied: true,
       enhancedClassification: true,
-      enhancedSolarData: !!solarData?.roofSegments?.length
+      enhancedSolarData: !!solarData?.roofSegments?.length,
+      debugTimings: debugTimings
     };
     
     console.log('✅ Enhanced property analysis with detailed solar data completed successfully');

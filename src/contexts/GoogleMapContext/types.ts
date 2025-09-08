@@ -1,6 +1,7 @@
 
 export interface AnalysisResults {
   propertyType: string;
+  subType?: string;
   amenities: string[];
   rooftop: {
     area: number;
