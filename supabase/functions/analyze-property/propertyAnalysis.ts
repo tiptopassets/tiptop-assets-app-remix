@@ -31,7 +31,9 @@ export const generatePropertyAnalysis = async (
           role: 'system',
           content: `You are a property monetization expert. Analyze properties and provide realistic revenue opportunities based on building type and access rights.
           
-          CRITICAL BUILDING TYPE RULES:
+          CRITICAL: ALWAYS respond with valid JSON format. Do not include any text before or after the JSON.
+          
+          BUILDING TYPE RULES:
           - APARTMENTS/CONDOS: Residents have NO access to roofs, shared parking, pools, or gardens for individual monetization
           - SINGLE FAMILY HOMES: Full access to all property features
           - COMMERCIAL: Business-focused opportunities only
@@ -45,37 +47,54 @@ export const generatePropertyAnalysis = async (
           - Storage revenue: $5-15/month (limited to personal unit storage)
           - Internet revenue: $25-50/month (bandwidth sharing within unit)
           
-          Always return valid JSON with realistic opportunities based on actual property access rights.`
+          RESPONSE FORMAT: Return ONLY valid JSON with no additional text or markdown formatting.`
         },
         {
           role: 'user',
           content: analysisPrompt
         }
       ],
-      max_completion_tokens: 2500
+      max_completion_tokens: 2500,
+      response_format: { type: "json_object" }
     }),
   });
 
   if (!response.ok) {
-    throw new Error(`OpenAI API error: ${response.status}`);
+    console.error(`OpenAI API error: ${response.status}`);
+    // Return fallback analysis instead of throwing
+    return generateFallbackAnalysis(propertyInfo, imageAnalysis, comprehensiveClassification);
   }
 
   const data = await response.json();
-  const rawResponse = data.choices[0].message.content;
-  console.log('Raw GPT response:', rawResponse);
+  const rawResponse = data.choices[0]?.message?.content;
+  console.log('Raw GPT response length:', rawResponse?.length || 0);
 
-  // Parse the JSON response
-  const jsonMatch = rawResponse.match(/```json\n([\s\S]*?)\n```/) || rawResponse.match(/\{[\s\S]*\}/);
-  if (!jsonMatch) {
-    throw new Error('Could not parse JSON from OpenAI response');
+  if (!rawResponse || rawResponse.trim().length === 0) {
+    console.error('Empty OpenAI response, using fallback');
+    return generateFallbackAnalysis(propertyInfo, imageAnalysis, comprehensiveClassification);
   }
 
   let analysisData;
   try {
-    analysisData = JSON.parse(jsonMatch[1] || jsonMatch[0]);
+    // Since we're using response_format: json_object, the response should be pure JSON
+    analysisData = JSON.parse(rawResponse);
   } catch (error) {
     console.error('JSON parsing error:', error);
-    throw new Error('Invalid JSON in OpenAI response');
+    console.log('Attempting fallback JSON extraction...');
+    
+    // Fallback: try to extract JSON from response
+    const jsonMatch = rawResponse.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      try {
+        analysisData = JSON.parse(jsonMatch[0]);
+      } catch (fallbackError) {
+        console.error('Fallback JSON parsing also failed:', fallbackError);
+        return generateFallbackAnalysis(propertyInfo, imageAnalysis, comprehensiveClassification);
+      }
+    } else {
+      console.error('No JSON found in response, using fallback');
+      return generateFallbackAnalysis(propertyInfo, imageAnalysis, comprehensiveClassification);
+    }
   }
 
   // Convert to our AnalysisResults format with comprehensive property handling
@@ -189,8 +208,15 @@ Return JSON with:
     },
     body: JSON.stringify({
       model: 'gpt-5-2025-08-07',
-      messages: [{ role: 'user', content: prompt }],
-      max_completion_tokens: 300
+      messages: [
+        {
+          role: 'system',
+          content: 'You are a building classification expert. Analyze the property and return only valid JSON with building type and access rights.'
+        },
+        { role: 'user', content: prompt }
+      ],
+      max_completion_tokens: 300,
+      response_format: { type: "json_object" }
     }),
   });
 

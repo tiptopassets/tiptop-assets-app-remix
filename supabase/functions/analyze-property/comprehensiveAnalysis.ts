@@ -101,11 +101,18 @@ Return JSON format:
     },
     body: JSON.stringify({
       model: 'gpt-5-2025-08-07',
-      messages: [{ 
-        role: 'user', 
-        content: prompt 
-      }],
-      max_completion_tokens: 2000
+      messages: [
+        {
+          role: 'system',
+          content: 'You are a property classification expert. Analyze all available data to provide comprehensive property classification. ALWAYS respond with valid JSON only, no additional text.'
+        },
+        { 
+          role: 'user', 
+          content: prompt 
+        }
+      ],
+      max_completion_tokens: 2000,
+      response_format: { type: "json_object" }
     }),
   });
 

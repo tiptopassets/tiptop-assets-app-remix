@@ -117,7 +117,8 @@ Provide specific observations about the property's unique characteristics and re
             ]
           }
         ],
-        max_completion_tokens: 2000
+        max_completion_tokens: 2000,
+        response_format: { type: "json_object" }
       }),
     });
 
