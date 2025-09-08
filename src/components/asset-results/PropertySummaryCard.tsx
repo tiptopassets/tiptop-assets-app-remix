@@ -33,89 +33,39 @@ const PropertySummaryCard: React.FC<PropertySummaryCardProps> = ({
   
   // Determine property type display
   const getPropertyTypeDisplay = () => {
-    if (!analysisResults?.propertyType) {
-      return {
-        icon: <Building2 className="w-5 h-5 text-purple-500" />,
-        label: 'Real Estate Asset',
-        description: 'Property with income potential'
-      };
-    }
-
-    const type = analysisResults.propertyType.toLowerCase();
-    const subType = analysisResults.subType?.toLowerCase();
+    const propertyType = analysisResults?.propertyType || 'unknown';
+    const buildingType = analysisResults?.buildingTypeRestrictions?.restrictionExplanation;
     
-    const getTypeIcon = (type: string) => {
-      if (type === 'vacant_land') return <Building2 className="w-5 h-5 text-green-500" />;
-      if (type === 'commercial') return <Building2 className="w-5 h-5 text-orange-500" />;
-      if (type === 'industrial') return <Building2 className="w-5 h-5 text-red-500" />;
-      if (type === 'mixed_use') return <Building2 className="w-5 h-5 text-yellow-500" />;
-      if (type === 'institutional') return <Building2 className="w-5 h-5 text-indigo-500" />;
-      if (type === 'agricultural') return <Building2 className="w-5 h-5 text-emerald-500" />;
-      if (type === 'apartment') return <Building2 className="w-5 h-5 text-blue-500" />;
-      return <Building2 className="w-5 h-5 text-purple-500" />;
-    };
-    
-    switch (type) {
-      case 'residential':
-        const residentialLabel = subType ? 
-          `Residential • ${subType.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}` : 
-          'Residential Property';
+    switch (propertyType) {
+      case 'vacant_land':
         return {
-          icon: getTypeIcon(type),
-          label: residentialLabel,
-          description: 'Single-family home with individual property control and various income opportunities'
+          icon: <Building2 className="w-5 h-5 text-green-500" />,
+          label: 'Vacant Land',
+          description: buildingType?.includes('commercial') ? 'Commercial Development Site' : 'Development Opportunity'
         };
       case 'apartment':
-        const apartmentLabel = subType === 'condominium' ? 
-          'Apartment • Condominium' : 
-          'Apartment • Multi-Unit Building';
         return {
-          icon: getTypeIcon(type),
-          label: apartmentLabel,
-          description: 'Multi-unit residential building with limited individual monetization options'
+          icon: <Building2 className="w-5 h-5 text-blue-500" />,
+          label: 'Apartment',
+          description: 'Multi-Unit Residential Building'
+        };
+      case 'single_family':
+        return {
+          icon: <Building2 className="w-5 h-5 text-purple-500" />,
+          label: 'Single Family Home',
+          description: 'Residential Property'
         };
       case 'commercial':
         return {
-          icon: getTypeIcon(type),
-          label: 'Commercial Property', 
-          description: 'Business property with strong revenue potential'
-        };
-      case 'vacant_land':
-      case 'vacant land':
-        return {
-          icon: getTypeIcon('vacant_land'),
-          label: 'Vacant Land',
-          description: 'Undeveloped land with development opportunities'
-        };
-      case 'industrial':
-        return {
-          icon: getTypeIcon(type),
-          label: 'Industrial Property',
-          description: 'Industrial facility with specialized income potential'
-        };
-      case 'mixed_use':
-        return {
-          icon: getTypeIcon(type),
-          label: 'Mixed-Use Property',
-          description: 'Multi-purpose property with diverse opportunities'
-        };
-      case 'institutional':
-        return {
-          icon: getTypeIcon(type),
-          label: 'Institutional Property',
-          description: 'Institutional facility with limited commercial opportunities'
-        };
-      case 'agricultural':
-        return {
-          icon: getTypeIcon(type),
-          label: 'Agricultural Property',
-          description: 'Farmland with agricultural and alternative income opportunities'
+          icon: <Building2 className="w-5 h-5 text-orange-500" />,
+          label: 'Commercial Property',
+          description: 'Business/Retail Space'
         };
       default:
         return {
-          icon: getTypeIcon(type),
-          label: analysisResults.propertyType,
-          description: 'Property with monetization potential'
+          icon: <Building2 className="w-5 h-5 text-gray-500" />,
+          label: 'Property',
+          description: 'Real Estate Asset'
         };
     }
   };

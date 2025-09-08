@@ -1,37 +1,5 @@
 import { PropertyInfo, ImageAnalysis, AnalysisResults } from './types.ts';
 
-// Retry helper for OpenAI calls
-const retryOpenAICall = async (apiCall: () => Promise<Response>, maxRetries = 2): Promise<Response> => {
-  let lastError: Error | null = null;
-  
-  for (let attempt = 0; attempt <= maxRetries; attempt++) {
-    try {
-      if (attempt > 0) {
-        const delay = Math.pow(2, attempt) * 1000; // Exponential backoff
-        console.log(`🔄 Property analysis retry attempt ${attempt} after ${delay}ms delay...`);
-        await new Promise(resolve => setTimeout(resolve, delay));
-      }
-      
-      const response = await apiCall();
-      if (response.ok) {
-        return response;
-      } else {
-        const errorData = await response.json();
-        throw new Error('OpenAI API error: ' + (errorData.error?.message || `Status ${response.status}`));
-      }
-    } catch (error) {
-      lastError = error as Error;
-      console.error(`❌ Property analysis attempt ${attempt + 1} failed:`, error);
-      
-      if (attempt === maxRetries) {
-        break;
-      }
-    }
-  }
-  
-  throw lastError || new Error('All retry attempts failed');
-};
-
 export const generatePropertyAnalysis = async (
   propertyInfo: PropertyInfo,
   imageAnalysis: ImageAnalysis = {}
@@ -40,163 +8,139 @@ export const generatePropertyAnalysis = async (
   
   const openaiApiKey = Deno.env.get('OPENAI_API_KEY');
   if (!openaiApiKey) {
-    console.error('❌ OpenAI API key is not configured - returning error');
     throw new Error('OpenAI API key is not configured');
   }
 
-  try {
-    // Enhanced property classification using all available data sources
-    const comprehensiveClassification = await performComprehensivePropertyAnalysis(propertyInfo, imageAnalysis, openaiApiKey);
-    console.log('🏢 Comprehensive property classification:', comprehensiveClassification);
+  // Detect building type and access rights
+  const buildingTypeInfo = await detectBuildingTypeAndRestrictions(propertyInfo, imageAnalysis, openaiApiKey);
+  console.log('🏢 Detected building type:', buildingTypeInfo);
 
-    // Generate analysis with comprehensive property-aware logic
-    const analysisPrompt = createComprehensiveAnalysisPrompt(propertyInfo, imageAnalysis, comprehensiveClassification);
-    
-    const response = await retryOpenAICall(() => 
-      fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${openaiApiKey}`,
-          'Content-Type': 'application/json',
+  // Generate analysis with building-type-aware logic
+  const analysisPrompt = createEnhancedAnalysisPrompt(propertyInfo, imageAnalysis, buildingTypeInfo);
+  
+  const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${openaiApiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: 'gpt-4o',
+      messages: [
+        {
+          role: 'system',
+          content: `You are a property monetization expert. Analyze properties and provide realistic revenue opportunities based on building type and access rights.
+          
+          CRITICAL BUILDING TYPE RULES:
+          - APARTMENTS/CONDOS: Residents have NO access to roofs, shared parking, pools, or gardens for individual monetization
+          - SINGLE FAMILY HOMES: Full access to all property features
+          - COMMERCIAL: Business-focused opportunities only
+          - VACANT LAND: Development and leasing opportunities
+          
+          For APARTMENTS specifically:
+          - Rooftop revenue: $0 (no individual access)
+          - Parking revenue: $0 (building/HOA controlled)
+          - Pool revenue: $0 (shared amenity, cannot rent individually)
+          - Garden revenue: $0 (no individual garden access)
+          - Storage revenue: $5-15/month (limited to personal unit storage)
+          - Internet revenue: $25-50/month (bandwidth sharing within unit)
+          
+          Always return valid JSON with realistic opportunities based on actual property access rights.`
         },
-        body: JSON.stringify({
-          model: 'gpt-4o-mini',
-          messages: [
-            {
-              role: 'system',
-              content: `You are a property monetization expert. Analyze properties and provide realistic revenue opportunities based on building type and access rights in JSON format.
-              
-              CRITICAL: ALWAYS respond with valid JSON format. Do not include any text before or after the JSON.
-              
-              BUILDING TYPE RULES:
-              - APARTMENTS/CONDOS: Residents have NO access to roofs, shared parking, pools, or gardens for individual monetization
-              - SINGLE FAMILY HOMES: Full access to all property features
-              - COMMERCIAL: Business-focused opportunities only
-              - VACANT LAND: Development and leasing opportunities
-              
-              For APARTMENTS specifically:
-              - Rooftop revenue: $0 (no individual access)
-              - Parking revenue: $0 (building/HOA controlled)
-              - Pool revenue: $0 (shared amenity, cannot rent individually)
-              - Garden revenue: $0 (no individual garden access)
-              - Storage revenue: $5-15/month (limited to personal unit storage)
-              - Internet revenue: $25-50/month (bandwidth sharing within unit)
-              
-              RESPONSE FORMAT: Return ONLY valid JSON with no additional text or markdown formatting.`
-            },
-            {
-              role: 'user',
-              content: analysisPrompt
-            }
-          ],
-          max_tokens: 800,
-          response_format: { type: "json_object" }
-        }),
-      })
-    );
-
-    const data = await response.json();
-    const rawResponse = data.choices[0]?.message?.content;
-    console.log('Raw GPT response length:', rawResponse?.length || 0);
-
-    if (!rawResponse || rawResponse.trim().length === 0) {
-      console.error('❌ Empty OpenAI response, using fallback');
-      return generateFallbackAnalysis(propertyInfo, imageAnalysis, comprehensiveClassification);
-    }
-
-    let analysisData;
-    try {
-      // Since we're using response_format: json_object, the response should be pure JSON
-      analysisData = JSON.parse(rawResponse);
-    } catch (error) {
-      console.error('JSON parsing error:', error);
-      console.log('Attempting fallback JSON extraction...');
-      
-      // Fallback: try to extract JSON from response
-      const jsonMatch = rawResponse.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        try {
-          analysisData = JSON.parse(jsonMatch[0]);
-        } catch (fallbackError) {
-          console.error('Fallback JSON parsing also failed:', fallbackError);
-          return generateFallbackAnalysis(propertyInfo, imageAnalysis, comprehensiveClassification);
+        {
+          role: 'user',
+          content: analysisPrompt
         }
-      } else {
-        console.error('No JSON found in response, using fallback');
-        return generateFallbackAnalysis(propertyInfo, imageAnalysis, comprehensiveClassification);
-      }
-    }
+      ],
+      temperature: 0.3,
+      max_tokens: 2000
+    }),
+  });
 
-    // Convert to our AnalysisResults format with comprehensive property handling
-    const results: AnalysisResults = {
-      propertyType: analysisData.propertyType || comprehensiveClassification.primaryType,
-      subType: analysisData.subType || comprehensiveClassification.subType,
-      amenities: extractAmenities(analysisData),
-      rooftop: {
-        area: analysisData.rooftop?.area || 0,
-        type: analysisData.rooftop?.type || 'standard',
-        solarCapacity: analysisData.rooftop?.solarCapacity || 0,
-        solarPotential: analysisData.rooftop?.solarPotential || false,
-        revenue: analysisData.rooftop?.monthlyRevenue || 0,
-        setupCost: analysisData.rooftop?.setupCost || 0,
-        usingRealSolarData: analysisData.rooftop?.usingRealSolarData || false
-      },
-      garden: {
-        area: analysisData.garden?.area || 0,
-        opportunity: analysisData.garden?.opportunity || 'None',
-        revenue: analysisData.garden?.monthlyRevenue || 0
-      },
-      parking: {
-        spaces: analysisData.parking?.spaces || 0,
-        rate: analysisData.parking?.monthlyRevenuePerSpace || 0,
-        revenue: analysisData.parking?.totalMonthlyRevenue || 0,
-        evChargerPotential: analysisData.parking?.evChargerPotential || false
-      },
-      pool: {
-        present: analysisData.pool?.present || false,
-        area: analysisData.pool?.area || 0,
-        type: analysisData.pool?.type || 'none',
-        revenue: analysisData.pool?.monthlyRevenue || 0
-      },
-      sportsCourts: {
-        present: analysisData.sportsCourts?.present || false,
-        types: analysisData.sportsCourts?.types || [],
-        count: analysisData.sportsCourts?.count || 0,
-        revenue: analysisData.sportsCourts?.monthlyRevenue || 0
-      },
-      storage: {
-        volume: analysisData.storage?.volume || 0,
-        revenue: analysisData.storage?.monthlyRevenue || 0
-      },
-      bandwidth: {
-        available: analysisData.internet?.bandwidth || 100,
-        revenue: analysisData.internet?.monthlyRevenue || 0
-      },
-      shortTermRental: {
-        nightlyRate: 0,
-        monthlyProjection: 0
-      },
-      permits: analysisData.permits || [],
-      restrictions: comprehensiveClassification.restrictions,
-      topOpportunities: [],
-      imageAnalysisSummary: imageAnalysis.summary || '',
-      // Extract totalMonthlyRevenue from GPT response
-      totalMonthlyRevenue: analysisData.totalMonthlyRevenue || 0
-    };
-
-    // Generate top opportunities based on comprehensive property analysis and actual revenue potential
-    results.topOpportunities = generateComprehensiveOpportunities(results, comprehensiveClassification, analysisData);
-
-    console.log('✅ Enhanced property analysis completed successfully');
-    return results;
-  } catch (error) {
-    console.error('❌ All property analysis attempts failed:', error);
-    // Return error instead of generic fallback to align with requirement: don't silently degrade
-    throw new Error(`Property analysis failed after all retries: ${error.message}`);
+  if (!response.ok) {
+    throw new Error(`OpenAI API error: ${response.status}`);
   }
-};
 
-import { performComprehensivePropertyAnalysis, createComprehensiveAnalysisPrompt, generateComprehensiveOpportunities } from './comprehensiveAnalysis.ts';
+  const data = await response.json();
+  const rawResponse = data.choices[0].message.content;
+  console.log('Raw GPT response:', rawResponse);
+
+  // Parse the JSON response
+  const jsonMatch = rawResponse.match(/```json\n([\s\S]*?)\n```/) || rawResponse.match(/\{[\s\S]*\}/);
+  if (!jsonMatch) {
+    throw new Error('Could not parse JSON from OpenAI response');
+  }
+
+  let analysisData;
+  try {
+    analysisData = JSON.parse(jsonMatch[1] || jsonMatch[0]);
+  } catch (error) {
+    console.error('JSON parsing error:', error);
+    throw new Error('Invalid JSON in OpenAI response');
+  }
+
+  // Convert to our AnalysisResults format with enhanced apartment handling
+  const results: AnalysisResults = {
+    propertyType: analysisData.propertyType || buildingTypeInfo.type,
+    amenities: extractAmenities(analysisData),
+    rooftop: {
+      area: analysisData.rooftop?.area || 0,
+      type: analysisData.rooftop?.type || 'standard',
+      solarCapacity: analysisData.rooftop?.solarCapacity || 0,
+      solarPotential: analysisData.rooftop?.solarPotential || false,
+      revenue: analysisData.rooftop?.monthlyRevenue || 0,
+      setupCost: analysisData.rooftop?.setupCost || 0,
+      usingRealSolarData: analysisData.rooftop?.usingRealSolarData || false
+    },
+    garden: {
+      area: analysisData.garden?.area || 0,
+      opportunity: analysisData.garden?.opportunity || 'None',
+      revenue: analysisData.garden?.monthlyRevenue || 0
+    },
+    parking: {
+      spaces: analysisData.parking?.spaces || 0,
+      rate: analysisData.parking?.monthlyRevenuePerSpace || 0,
+      revenue: analysisData.parking?.totalMonthlyRevenue || 0,
+      evChargerPotential: analysisData.parking?.evChargerPotential || false
+    },
+    pool: {
+      present: analysisData.pool?.present || false,
+      area: analysisData.pool?.area || 0,
+      type: analysisData.pool?.type || 'none',
+      revenue: analysisData.pool?.monthlyRevenue || 0
+    },
+    sportsCourts: {
+      present: analysisData.sportsCourts?.present || false,
+      types: analysisData.sportsCourts?.types || [],
+      count: analysisData.sportsCourts?.count || 0,
+      revenue: analysisData.sportsCourts?.monthlyRevenue || 0
+    },
+    storage: {
+      volume: analysisData.storage?.volume || 0,
+      revenue: analysisData.storage?.monthlyRevenue || 0
+    },
+    bandwidth: {
+      available: analysisData.internet?.bandwidth || 100,
+      revenue: analysisData.internet?.monthlyRevenue || 0
+    },
+    shortTermRental: {
+      nightlyRate: 0,
+      monthlyProjection: 0
+    },
+    permits: analysisData.permits || [],
+    restrictions: buildingTypeInfo.restrictions,
+    topOpportunities: [],
+    imageAnalysisSummary: imageAnalysis.summary || '',
+    // Extract totalMonthlyRevenue from GPT response
+    totalMonthlyRevenue: analysisData.totalMonthlyRevenue || 0
+  };
+
+  // Generate top opportunities based on building type and actual revenue potential - IMPROVED LOGIC
+  results.topOpportunities = generateBuildingTypeAwareOpportunities(results, buildingTypeInfo, analysisData);
+
+  console.log('Enhanced property analysis completed successfully');
+  return results;
+};
 
 async function detectBuildingTypeAndRestrictions(
   propertyInfo: PropertyInfo,
@@ -243,16 +187,10 @@ Return JSON with:
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      model: 'gpt-4o-mini',
-      messages: [
-        {
-          role: 'system',
-          content: 'You are a building classification expert. Analyze the property and return only valid JSON with building type and access rights.'
-        },
-        { role: 'user', content: prompt }
-      ],
-      max_tokens: 300,
-      response_format: { type: "json_object" }
+      model: 'gpt-4o',
+      messages: [{ role: 'user', content: prompt }],
+      temperature: 0.1,
+      max_tokens: 300
     }),
   });
 
@@ -592,161 +530,4 @@ function extractAmenities(analysisData: any): string[] {
   if (analysisData.internet?.monthlyRevenue > 0) amenities.push('High-Speed Internet');
   
   return amenities;
-}
-
-function generateFallbackAnalysis(
-  propertyInfo: PropertyInfo,
-  imageAnalysis: ImageAnalysis,
-  comprehensiveClassification: any
-): AnalysisResults {
-  console.log('🔄 Generating fallback analysis due to OpenAI issues');
-  
-  const isApartment = comprehensiveClassification.primaryType === 'residential' && 
-                     !comprehensiveClassification.accessRights?.hasIndividualControl;
-  
-  // Generate basic fallback data based on property type
-  const fallbackData = {
-    propertyType: comprehensiveClassification.primaryType || 'residential',
-    rooftop: {
-      area: imageAnalysis.roofSize || 1000,
-      solarCapacity: isApartment ? 0 : (imageAnalysis.roofSize || 1000) * 0.15,
-      solarPotential: !isApartment,
-      monthlyRevenue: isApartment ? 0 : Math.round((imageAnalysis.roofSize || 1000) * 0.1),
-      setupCost: isApartment ? 0 : 15000
-    },
-    parking: {
-      spaces: imageAnalysis.parkingSpaces || (isApartment ? 0 : 2),
-      monthlyRevenuePerSpace: isApartment ? 0 : 100,
-      totalMonthlyRevenue: isApartment ? 0 : (imageAnalysis.parkingSpaces || 2) * 100,
-      evChargerPotential: !isApartment
-    },
-    pool: {
-      present: imageAnalysis.hasPool || false,
-      monthlyRevenue: isApartment ? 0 : (imageAnalysis.hasPool ? 150 : 0)
-    },
-    storage: {
-      available: true,
-      monthlyRevenue: isApartment ? 15 : 50
-    },
-    internet: {
-      monthlyRevenue: 35
-    },
-    garden: {
-      area: imageAnalysis.gardenArea || (isApartment ? 0 : 500),
-      monthlyRevenue: isApartment ? 0 : 30
-    }
-  };
-
-  const totalRevenue = (fallbackData.rooftop.monthlyRevenue || 0) +
-                      (fallbackData.parking.totalMonthlyRevenue || 0) +
-                      (fallbackData.pool.monthlyRevenue || 0) +
-                      (fallbackData.storage.monthlyRevenue || 0) +
-                      (fallbackData.internet.monthlyRevenue || 0) +
-                      (fallbackData.garden.monthlyRevenue || 0);
-
-  const results: AnalysisResults = {
-    propertyType: fallbackData.propertyType,
-    amenities: extractAmenities(fallbackData),
-    rooftop: {
-      area: fallbackData.rooftop.area,
-      type: 'standard',
-      solarCapacity: fallbackData.rooftop.solarCapacity,
-      solarPotential: fallbackData.rooftop.solarPotential,
-      revenue: fallbackData.rooftop.monthlyRevenue,
-      setupCost: fallbackData.rooftop.setupCost,
-      usingRealSolarData: false
-    },
-    garden: {
-      area: fallbackData.garden.area,
-      opportunity: fallbackData.garden.monthlyRevenue > 0 ? 'Small' : 'None',
-      revenue: fallbackData.garden.monthlyRevenue
-    },
-    parking: {
-      spaces: fallbackData.parking.spaces,
-      rate: fallbackData.parking.monthlyRevenuePerSpace,
-      revenue: fallbackData.parking.totalMonthlyRevenue,
-      evChargerPotential: fallbackData.parking.evChargerPotential
-    },
-    pool: {
-      present: fallbackData.pool.present,
-      area: fallbackData.pool.present ? 300 : 0,
-      type: fallbackData.pool.present ? 'standard' : 'none',
-      revenue: fallbackData.pool.monthlyRevenue
-    },
-    sportsCourts: {
-      present: false,
-      types: [],
-      count: 0,
-      revenue: 0
-    },
-    storage: {
-      volume: 100,
-      revenue: fallbackData.storage.monthlyRevenue
-    },
-    bandwidth: {
-      available: 100,
-      revenue: fallbackData.internet.monthlyRevenue
-    },
-    shortTermRental: {
-      nightlyRate: 0,
-      monthlyProjection: 0
-    },
-    permits: [],
-    restrictions: comprehensiveClassification.restrictions,
-    topOpportunities: generateFallbackOpportunities(fallbackData, isApartment),
-    imageAnalysisSummary: imageAnalysis.summary || 'Fallback analysis due to API issues',
-    totalMonthlyRevenue: totalRevenue
-  };
-
-  return results;
-}
-
-function generateFallbackOpportunities(fallbackData: any, isApartment: boolean) {
-  const opportunities = [];
-
-  if (!isApartment && fallbackData.rooftop.monthlyRevenue > 0) {
-    opportunities.push({
-      title: 'Rooftop Solar Installation',
-      icon: 'sun',
-      monthlyRevenue: fallbackData.rooftop.monthlyRevenue,
-      description: 'Install solar panels for clean energy and savings',
-      setupCost: fallbackData.rooftop.setupCost,
-      roi: Math.ceil(fallbackData.rooftop.setupCost / fallbackData.rooftop.monthlyRevenue)
-    });
-  }
-
-  if (!isApartment && fallbackData.parking.totalMonthlyRevenue > 0) {
-    opportunities.push({
-      title: 'Parking Space Rental',
-      icon: 'car',
-      monthlyRevenue: fallbackData.parking.totalMonthlyRevenue,
-      description: 'Rent parking spaces to neighbors and commuters',
-      setupCost: 200,
-      roi: 2
-    });
-  }
-
-  if (fallbackData.internet.monthlyRevenue > 0) {
-    opportunities.push({
-      title: 'Internet Bandwidth Sharing',
-      icon: 'wifi',
-      monthlyRevenue: fallbackData.internet.monthlyRevenue,
-      description: isApartment ? 'Share unused internet bandwidth (apartment-friendly)' : 'Share unused internet bandwidth for passive income',
-      setupCost: 0,
-      roi: 0
-    });
-  }
-
-  if (fallbackData.storage.monthlyRevenue > 0) {
-    opportunities.push({
-      title: isApartment ? 'Unit Storage Rental' : 'Storage Space Rental',
-      icon: 'storage',
-      monthlyRevenue: fallbackData.storage.monthlyRevenue,
-      description: isApartment ? 'Rent personal storage space within your unit' : 'Rent storage space in garage or outbuildings',
-      setupCost: 0,
-      roi: 0
-    });
-  }
-
-  return opportunities.slice(0, 5); // Return top 5
 }

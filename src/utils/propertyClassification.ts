@@ -1,6 +1,6 @@
 
 export interface PropertyClassificationResult {
-  primaryType: 'residential' | 'commercial' | 'vacant_land' | 'industrial' | 'mixed_use' | 'apartment' | 'institutional' | 'agricultural';
+  primaryType: 'residential' | 'commercial' | 'vacant_land' | 'industrial' | 'mixed_use';
   subType: string;
   confidence: number;
   restrictions: string[];
@@ -212,9 +212,9 @@ export const classifyPropertyFromAddress = (address: string, propertyType?: stri
     primaryType = topEntry![0] as PropertyClassificationResult['primaryType'];
   }
   
-  // Handle apartment vs residential classification - apartments get their own primaryType
+  // Handle apartment vs residential classification - apartments are classified as residential
   if (scores.apartment > scores.residential && scores.apartment > 0) {
-    primaryType = 'apartment'; // Apartments are now their own primary type
+    primaryType = 'residential'; // Apartments are a subtype of residential
   }
   
   // Calculate confidence based on score distribution and context
@@ -385,26 +385,19 @@ const buildClassificationResult = (
         }
       };
 
-    case 'apartment':
-      return {
-        ...baseResult,
-        subType: context.includes('condo') ? 'condominium' : 'apartment_unit',
-        availableOpportunities: ['internet_sharing', 'storage_rental'],
-        restrictions: ['Limited individual property control', 'HOA restrictions may apply', 'Shared building amenities', 'No rooftop access', 'No parking control'],
-        marketContext: {
-          commercialViability: 'low',
-          developmentPotential: 'low'
-        }
-      };
-
     case 'residential':
       const subType = determineResidentialSubType(context, scores);
+      const isApartment = subType === 'apartment';
       
       return {
         ...baseResult,
         subType,
-        availableOpportunities: ['rooftop_solar', 'parking_rental', 'pool_rental', 'storage_rental', 'internet_sharing'],
-        restrictions: [],
+        availableOpportunities: isApartment 
+          ? ['internet_sharing', 'storage_rental'] 
+          : ['rooftop_solar', 'parking_rental', 'pool_rental', 'storage_rental', 'internet_sharing'],
+        restrictions: isApartment ? 
+          ['Limited individual property control', 'HOA restrictions may apply', 'Shared building amenities'] : 
+          [],
         marketContext: {
           commercialViability: 'low',
           developmentPotential: 'low'
