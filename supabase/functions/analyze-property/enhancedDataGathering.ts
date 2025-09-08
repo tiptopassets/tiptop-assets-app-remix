@@ -109,9 +109,8 @@ export const gatherEnhancedPropertyData = async (
   try {
     // Get nearby places for context analysis
     console.log('🗺️ Gathering nearby places data...');
-    const nearbyResponse = await fetch(
-      `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${coordinates.lat},${coordinates.lng}&radius=500&key=${apiKey}`
-    );
+    const nearbyUrl = 'https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=' + coordinates.lat + ',' + coordinates.lng + '&radius=500&key=' + apiKey;
+    const nearbyResponse = await fetch(nearbyUrl);
     
     if (nearbyResponse.ok) {
       const nearbyData = await nearbyResponse.json();
@@ -123,9 +122,8 @@ export const gatherEnhancedPropertyData = async (
 
     // Get detailed place information if we have a place_id
     console.log('📍 Getting detailed place information...');
-    const geocodeResponse = await fetch(
-      `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${apiKey}`
-    );
+    const geocodeUrl = 'https://maps.googleapis.com/maps/api/geocode/json?address=' + encodeURIComponent(address) + '&key=' + apiKey;
+    const geocodeResponse = await fetch(geocodeUrl);
     
     if (geocodeResponse.ok) {
       const geocodeData = await geocodeResponse.json();
