@@ -77,7 +77,7 @@ Provide detailed observations in JSON format about the property characteristics.
     if (!response.ok) {
       const errorData = await response.json();
       console.error('OpenAI API error:', errorData);
-      throw new Error(`OpenAI API error: ${errorData.error?.message || 'Unknown error'}`);
+      throw new Error('OpenAI API error: ' + (errorData.error?.message || 'Unknown error'));
     }
 
     const data = await response.json();
