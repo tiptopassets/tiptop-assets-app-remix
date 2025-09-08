@@ -33,9 +33,16 @@ const PropertySummaryCard: React.FC<PropertySummaryCardProps> = ({
   
   // Determine property type display
   const getPropertyTypeDisplay = () => {
-    const propertyType = analysisResults?.propertyType || 'unknown';
-    const subType = analysisResults?.subType;
-    const buildingType = analysisResults?.buildingTypeRestrictions?.restrictionExplanation;
+    if (!analysisResults?.propertyType) {
+      return {
+        icon: <Building2 className="w-5 h-5 text-purple-500" />,
+        label: 'Real Estate Asset',
+        description: 'Property with income potential'
+      };
+    }
+
+    const type = analysisResults.propertyType.toLowerCase();
+    const subType = analysisResults.subType?.toLowerCase();
     
     const getTypeIcon = (type: string) => {
       if (type === 'vacant_land') return <Building2 className="w-5 h-5 text-green-500" />;
@@ -47,64 +54,70 @@ const PropertySummaryCard: React.FC<PropertySummaryCardProps> = ({
       if (type === 'apartment') return <Building2 className="w-5 h-5 text-blue-500" />;
       return <Building2 className="w-5 h-5 text-purple-500" />;
     };
-
-    const getSubTypeLabel = (mainType: string, subType?: string) => {
-      if (!subType) return null;
-      
-      const subTypeMap: Record<string, string> = {
-        'single_family_home': 'Single Family Home',
-        'condominium': 'Condominium',
-        'townhouse': 'Townhouse',
-        'duplex': 'Duplex',
-        'retail_store': 'Retail Store',
-        'office_building': 'Office Building',
-        'warehouse': 'Warehouse',
-        'vacant_commercial_land': 'Vacant Commercial Land',
-        'vacant_residential_land': 'Vacant Residential Land'
-      };
-      
-      return subTypeMap[subType] || subType.split('_').map(word => 
-        word.charAt(0).toUpperCase() + word.slice(1)
-      ).join(' ');
-    };
-
-    const getMainTypeLabel = (type: string) => {
-      const typeMap: Record<string, string> = {
-        'residential': 'Residential',
-        'commercial': 'Commercial',
-        'industrial': 'Industrial',
-        'vacant_land': 'Vacant Land',
-        'mixed_use': 'Mixed Use',
-        'institutional': 'Institutional',
-        'agricultural': 'Agricultural',
-        'apartment': 'Apartment'
-      };
-      return typeMap[type] || type.charAt(0).toUpperCase() + type.slice(1);
-    };
-
-    const mainLabel = getMainTypeLabel(propertyType);
-    const subLabel = getSubTypeLabel(propertyType, subType);
-    const displayLabel = subLabel ? `${mainLabel} • ${subLabel}` : mainLabel;
-
-    const getDescription = () => {
-      if (propertyType === 'vacant_land') {
-        return buildingType?.includes('commercial') ? 'Commercial Development Site' : 'Development Opportunity';
-      }
-      if (propertyType === 'commercial') return 'Business/Commercial Space';
-      if (propertyType === 'industrial') return 'Industrial/Manufacturing Facility';
-      if (propertyType === 'mixed_use') return 'Mixed-Use Development';
-      if (propertyType === 'institutional') return 'Institutional Property';
-      if (propertyType === 'agricultural') return 'Agricultural Land';
-      if (propertyType === 'apartment') return 'Multi-Unit Residential Building';
-      if (propertyType === 'residential') return subType ? 'Residential Property' : 'Single Family Home';
-      return 'Property Asset';
-    };
-
-    return {
-      icon: getTypeIcon(propertyType),
-      label: displayLabel,
-      description: getDescription()
-    };
+    
+    switch (type) {
+      case 'residential':
+        const residentialLabel = subType ? 
+          `Residential • ${subType.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}` : 
+          'Residential Property';
+        return {
+          icon: getTypeIcon(type),
+          label: residentialLabel,
+          description: 'Single-family home with individual property control and various income opportunities'
+        };
+      case 'apartment':
+        const apartmentLabel = subType === 'condominium' ? 
+          'Apartment • Condominium' : 
+          'Apartment • Multi-Unit Building';
+        return {
+          icon: getTypeIcon(type),
+          label: apartmentLabel,
+          description: 'Multi-unit residential building with limited individual monetization options'
+        };
+      case 'commercial':
+        return {
+          icon: getTypeIcon(type),
+          label: 'Commercial Property', 
+          description: 'Business property with strong revenue potential'
+        };
+      case 'vacant_land':
+      case 'vacant land':
+        return {
+          icon: getTypeIcon('vacant_land'),
+          label: 'Vacant Land',
+          description: 'Undeveloped land with development opportunities'
+        };
+      case 'industrial':
+        return {
+          icon: getTypeIcon(type),
+          label: 'Industrial Property',
+          description: 'Industrial facility with specialized income potential'
+        };
+      case 'mixed_use':
+        return {
+          icon: getTypeIcon(type),
+          label: 'Mixed-Use Property',
+          description: 'Multi-purpose property with diverse opportunities'
+        };
+      case 'institutional':
+        return {
+          icon: getTypeIcon(type),
+          label: 'Institutional Property',
+          description: 'Institutional facility with limited commercial opportunities'
+        };
+      case 'agricultural':
+        return {
+          icon: getTypeIcon(type),
+          label: 'Agricultural Property',
+          description: 'Farmland with agricultural and alternative income opportunities'
+        };
+      default:
+        return {
+          icon: getTypeIcon(type),
+          label: analysisResults.propertyType,
+          description: 'Property with monetization potential'
+        };
+    }
   };
 
   const propertyDisplay = getPropertyTypeDisplay();

@@ -16,69 +16,24 @@ export const analyzeStreetViewImage = async (streetViewBase64: string, address: 
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-5-2025-08-07',
+        model: 'gpt-4o-mini',
         messages: [
           {
             role: 'system',
-            content: `You are an expert property analysis specialist with comprehensive knowledge of all property types including residential, commercial, industrial, and vacant land. Your analysis must provide detailed property classification and comprehensive assessment.
+            content: `You are an expert property analysis specialist. Analyze the property image and provide detailed classification in JSON format.
 
-COMPREHENSIVE PROPERTY TYPE DETECTION:
-1. RESIDENTIAL PROPERTIES:
-   - Single Family Homes: Detached houses with individual lots
-   - Multi-Family: Apartments, condos, townhouses, duplexes
-   - Mixed Residential: Buildings with residential and commercial use
-   
-2. COMMERCIAL PROPERTIES:
-   - Retail: Stores, shops, malls, restaurants
-   - Office: Business buildings, professional services
-   - Hospitality: Hotels, motels, short-term rentals
-   - Mixed Commercial: Multiple commercial uses
-   
-3. INDUSTRIAL PROPERTIES:
-   - Manufacturing: Factories, production facilities
-   - Warehouses: Storage and distribution centers
-   - Utilities: Power plants, substations, treatment facilities
-   
-4. VACANT LAND:
-   - Undeveloped: Raw land, empty lots
-   - Agricultural: Farms, ranches, crop land
-   - Development Sites: Cleared land ready for construction
-   
-5. SPECIAL USE PROPERTIES:
-   - Institutional: Schools, hospitals, government buildings
-   - Transportation: Airports, train stations, parking facilities
-   - Recreation: Parks, sports facilities, entertainment venues
+PROPERTY TYPE DETECTION:
+1. RESIDENTIAL: Single family homes, apartments, condos, townhouses
+2. COMMERCIAL: Retail stores, offices, restaurants, hotels  
+3. INDUSTRIAL: Warehouses, factories, manufacturing
+4. VACANT LAND: Empty lots, undeveloped land, agricultural
+5. INSTITUTIONAL: Schools, hospitals, government buildings
 
-COMPREHENSIVE ANALYSIS FRAMEWORK:
-1. PROPERTY TYPE IDENTIFICATION (Critical Priority)
-   - Identify primary use and secondary uses if mixed-use
-   - Assess building age, condition, and architectural style
-   - Determine zoning implications and permitted uses
-   
-2. BUILDING AND LAND ASSESSMENT
-   - Count buildings, stories, and estimate square footage
-   - Assess land area and development density
-   - Identify parking availability and configuration
-   - Note landscaping, outdoor amenities, and site features
-   
-3. COMMERCIAL VIABILITY ANALYSIS
-   - Assess location for foot traffic and visibility
-   - Evaluate proximity to major roads, public transportation
-   - Note nearby businesses and commercial activity level
-   - Identify signage opportunities and advertising potential
-   
-4. MONETIZATION OPPORTUNITIES ASSESSMENT
-   - Evaluate all potential revenue streams based on property type
-   - Consider both traditional and innovative income sources
-   - Assess regulatory and zoning constraints
-   - Factor in market demand and competition
+For multi-unit buildings, carefully distinguish:
+- APARTMENT BUILDINGS: Multiple units, shared entrances, balconies
+- SINGLE FAMILY HOMES: Detached houses with individual entrances
 
-RESPONSE REQUIREMENTS:
-- Provide detailed property type classification with confidence levels
-- Identify ALL potential monetization opportunities
-- Include building characteristics, land features, and location advantages
-- Assess commercial potential and market factors
-- Note any unique features or special use potential`
+RESPONSE FORMAT: Return valid JSON only with your analysis.`
           },
           {
             role: 'user',
@@ -96,17 +51,14 @@ REQUIRED COMPREHENSIVE ANALYSIS:
 6. Zoning and Regulatory: Assess likely zoning and any visible regulatory constraints
 7. Market Context: Note surrounding area characteristics and competitive landscape
 
-CRITICAL: Provide comprehensive classification that goes beyond just "residential" or "commercial" - identify specific subtypes and mixed-use potential. Consider all innovative monetization opportunities including but not limited to:
-- Traditional rentals and leases
-- Parking and storage solutions
-- Solar and renewable energy
-- Advertising and signage
-- Event hosting and entertainment
-- Agricultural and gardening uses
-- Telecommunications and utilities
-- Short-term and specialty rentals
+ANALYSIS REQUIREMENTS - Return as JSON:
+1. Property Type Classification: residential, commercial, industrial, vacant_land, institutional
+2. Building Details: Count units/buildings, estimate size, assess condition
+3. Multi-Unit Detection: Look for apartment buildings, condo complexes
+4. Access Assessment: Individual vs shared property control
+5. Revenue Opportunities: Based on property type and access rights
 
-Provide specific observations about the property's unique characteristics and revenue potential.`
+Provide detailed observations in JSON format about the property characteristics.
               },
               {
                 type: 'image_url',
@@ -117,7 +69,7 @@ Provide specific observations about the property's unique characteristics and re
             ]
           }
         ],
-        max_completion_tokens: 2000,
+        max_tokens: 800,
         response_format: { type: "json_object" }
       }),
     });

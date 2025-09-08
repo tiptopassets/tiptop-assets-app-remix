@@ -48,6 +48,39 @@ Deno.serve(async (req) => {
     const initialClassification = classifyPropertyFromAddress(address);
     console.log('🔍 Initial classification:', initialClassification);
     
+    // Improved apartment detection based on address, building levels, and place name
+    let improvedClassification = initialClassification;
+    
+    // Check for apartment indicators in place details after geocoding
+    const detectApartmentBuilding = (details: any, address: string) => {
+      const addressLower = address.toLowerCase();
+      const placeName = details.name?.toLowerCase() || '';
+      const types = details.type || [];
+      const buildingLevels = details.buildingLevels;
+      
+      // Strong apartment indicators
+      if (buildingLevels && buildingLevels >= 4) {
+        return { isApartment: true, confidence: 0.9, reason: `${buildingLevels}-story building` };
+      }
+      
+      if (types.includes('apartment_complex') || types.includes('residential_building')) {
+        return { isApartment: true, confidence: 0.85, reason: 'Google Places identifies as apartment complex' };
+      }
+      
+      // Name-based detection
+      const apartmentKeywords = ['apartments', 'tower', 'condos', 'condominiums', 'residences', 'complex'];
+      if (apartmentKeywords.some(keyword => placeName.includes(keyword))) {
+        return { isApartment: true, confidence: 0.8, reason: `Building name contains "${placeName}"` };
+      }
+      
+      // Address-based detection
+      if (addressLower.includes('apt') || addressLower.includes('unit') || addressLower.includes('suite')) {
+        return { isApartment: true, confidence: 0.75, reason: 'Address contains unit number' };
+      }
+      
+      return { isApartment: false, confidence: 0.5, reason: 'No clear apartment indicators' };
+    };
+    
     if (!propertyCoordinates && GOOGLE_MAPS_API_KEY) {
       try {
         const geocodeResponse = await fetch(
@@ -80,6 +113,21 @@ Deno.serve(async (req) => {
                 propertyDetails.type = placeData.result.types;
                 propertyDetails.vicinity = placeData.result.vicinity;
                 propertyDetails.buildingLevels = placeData.result.building_levels;
+                propertyDetails.name = placeData.result.name;
+                
+                // Enhanced apartment detection
+                const apartmentDetection = detectApartmentBuilding(placeData.result, address);
+                if (apartmentDetection.isApartment) {
+                  console.log(`🏢 Apartment building detected: ${apartmentDetection.reason} (confidence: ${apartmentDetection.confidence})`);
+                  improvedClassification = {
+                    ...initialClassification,
+                    primaryType: 'apartment',
+                    subType: propertyDetails.name?.toLowerCase().includes('condo') ? 'condominium' : 'apartment_unit',
+                    confidence: apartmentDetection.confidence,
+                    restrictions: ['Limited individual property control', 'HOA restrictions may apply', 'Shared building amenities', 'No rooftop access', 'No parking control'],
+                    availableOpportunities: ['internet_sharing', 'storage_rental']
+                  };
+                }
               }
             } catch (placeError) {
               console.error('❌ Places API error:', placeError);
@@ -309,11 +357,15 @@ Deno.serve(async (req) => {
       console.log(`☀️ Enhanced solar data integrated: ${solarData.monthlyRevenue} → ${validatedSolarRevenue}, ${solarData.roofSegments?.length || 0} roof segments, ${solarData.maxSunshineHoursPerYear} sun hours/year`);
     }
     
-    // Normalize property type and add subType
+    // Create comprehensive analysis with improved classification
+    const finalClassification = improvedClassification.primaryType === 'apartment' ? 
+      improvedClassification.primaryType : 
+      normalizePropertyType(analysis.propertyType || improvedClassification.primaryType);
+      
     const normalizedAnalysis = {
       ...analysis,
-      propertyType: normalizePropertyType(analysis.propertyType || initialClassification.primaryType),
-      subType: analysis.subType || initialClassification.subType,
+      propertyType: finalClassification,
+      subType: analysis.subType || improvedClassification.subType,
       propertyAddress: propertyDetails.formattedAddress || address
     };
 
@@ -327,7 +379,7 @@ Deno.serve(async (req) => {
       propertyInfo: {
         address: propertyDetails.formattedAddress || address,
         coordinates: propertyCoordinates,
-        classification: initialClassification
+        classification: improvedClassification
       },
       imageAnalysis: imageAnalysis,
       solarData: solarData,
@@ -335,7 +387,9 @@ Deno.serve(async (req) => {
       validationApplied: true,
       enhancedClassification: true,
       enhancedSolarData: !!solarData?.roofSegments?.length,
-      debugTimings: debugTimings
+      debugTimings: debugTimings,
+      apartmentDetected: finalClassification === 'apartment',
+      classificationUsed: improvedClassification.primaryType
     };
     
     console.log('✅ Enhanced property analysis with detailed solar data completed successfully');
