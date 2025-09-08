@@ -151,8 +151,6 @@ Deno.serve(async (req) => {
     let enhancedPropertyData: any = {};
     const debugTimings: any = { start: Date.now() };
     
-    import { LatLng } from './types.ts';
-    
     // Run heavy operations in parallel with extended timeouts for correctness
     const STEP_TIMEOUT = 15000; // 15 seconds per step for correctness
     const OVERALL_TIMEOUT = 30000; // 30 seconds total for correctness
