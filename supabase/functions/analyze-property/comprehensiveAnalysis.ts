@@ -117,47 +117,39 @@ Return JSON format:
   });
 
   const data = await response.json();
-  const rawResponse = data.choices[0].message.content;
+  const rawResponse = data.choices[0]?.message?.content;
   
-  const jsonMatch = rawResponse.match(/\{[\s\S]*\}/);
-  if (!jsonMatch) {
-    console.log('⚠️ Could not parse comprehensive analysis JSON, using fallback');
-    // Fallback to basic classification
-    return {
-      primaryType: propertyInfo.classification?.primaryType || 'residential',
-      subType: propertyInfo.classification?.subType || 'single_family_home',
-      confidence: 0.6,
-      accessRights: {
-        hasRooftopAccess: true,
-        hasLandControl: true,
-        hasParkingControl: true,
-        hasIndividualControl: true
-      },
-      restrictions: [],
-      revenueOpportunities: []
-    };
+  if (!rawResponse || rawResponse.trim().length === 0) {
+    console.log('⚠️ Empty comprehensive analysis response, using fallback');
+    return generateFallbackClassification(propertyInfo);
   }
-
+  
   try {
-    const result = JSON.parse(jsonMatch[0]);
+    const result = JSON.parse(rawResponse);
     console.log('✅ Comprehensive property analysis completed with confidence:', result.confidence);
     return result;
   } catch (error) {
     console.error('Error parsing comprehensive analysis JSON:', error);
-    return {
-      primaryType: propertyInfo.classification?.primaryType || 'residential',
-      subType: propertyInfo.classification?.subType || 'single_family_home',
-      confidence: 0.6,
-      accessRights: {
-        hasRooftopAccess: true,
-        hasLandControl: true,
-        hasParkingControl: true,
-        hasIndividualControl: true
-      },
-      restrictions: [],
-      revenueOpportunities: []
-    };
+    console.log('⚠️ JSON parsing failed, using fallback classification');
+    return generateFallbackClassification(propertyInfo);
   }
+};
+
+function generateFallbackClassification(propertyInfo: any) {
+  return {
+    primaryType: propertyInfo.classification?.primaryType || 'residential',
+    subType: propertyInfo.classification?.subType || 'single_family_home',
+    confidence: 0.6,
+    accessRights: {
+      hasRooftopAccess: true,
+      hasLandControl: true,
+      hasParkingControl: true,
+      hasIndividualControl: true
+    },
+    restrictions: [],
+    revenueOpportunities: []
+  };
+}
 };
 
 export const createComprehensiveAnalysisPrompt = (

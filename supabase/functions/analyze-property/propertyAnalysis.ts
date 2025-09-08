@@ -557,3 +557,160 @@ function extractAmenities(analysisData: any): string[] {
   
   return amenities;
 }
+
+function generateFallbackAnalysis(
+  propertyInfo: PropertyInfo,
+  imageAnalysis: ImageAnalysis,
+  comprehensiveClassification: any
+): AnalysisResults {
+  console.log('🔄 Generating fallback analysis due to OpenAI issues');
+  
+  const isApartment = comprehensiveClassification.primaryType === 'residential' && 
+                     !comprehensiveClassification.accessRights?.hasIndividualControl;
+  
+  // Generate basic fallback data based on property type
+  const fallbackData = {
+    propertyType: comprehensiveClassification.primaryType || 'residential',
+    rooftop: {
+      area: imageAnalysis.roofSize || 1000,
+      solarCapacity: isApartment ? 0 : (imageAnalysis.roofSize || 1000) * 0.15,
+      solarPotential: !isApartment,
+      monthlyRevenue: isApartment ? 0 : Math.round((imageAnalysis.roofSize || 1000) * 0.1),
+      setupCost: isApartment ? 0 : 15000
+    },
+    parking: {
+      spaces: imageAnalysis.parkingSpaces || (isApartment ? 0 : 2),
+      monthlyRevenuePerSpace: isApartment ? 0 : 100,
+      totalMonthlyRevenue: isApartment ? 0 : (imageAnalysis.parkingSpaces || 2) * 100,
+      evChargerPotential: !isApartment
+    },
+    pool: {
+      present: imageAnalysis.hasPool || false,
+      monthlyRevenue: isApartment ? 0 : (imageAnalysis.hasPool ? 150 : 0)
+    },
+    storage: {
+      available: true,
+      monthlyRevenue: isApartment ? 15 : 50
+    },
+    internet: {
+      monthlyRevenue: 35
+    },
+    garden: {
+      area: imageAnalysis.gardenArea || (isApartment ? 0 : 500),
+      monthlyRevenue: isApartment ? 0 : 30
+    }
+  };
+
+  const totalRevenue = (fallbackData.rooftop.monthlyRevenue || 0) +
+                      (fallbackData.parking.totalMonthlyRevenue || 0) +
+                      (fallbackData.pool.monthlyRevenue || 0) +
+                      (fallbackData.storage.monthlyRevenue || 0) +
+                      (fallbackData.internet.monthlyRevenue || 0) +
+                      (fallbackData.garden.monthlyRevenue || 0);
+
+  const results: AnalysisResults = {
+    propertyType: fallbackData.propertyType,
+    amenities: extractAmenities(fallbackData),
+    rooftop: {
+      area: fallbackData.rooftop.area,
+      type: 'standard',
+      solarCapacity: fallbackData.rooftop.solarCapacity,
+      solarPotential: fallbackData.rooftop.solarPotential,
+      revenue: fallbackData.rooftop.monthlyRevenue,
+      setupCost: fallbackData.rooftop.setupCost,
+      usingRealSolarData: false
+    },
+    garden: {
+      area: fallbackData.garden.area,
+      opportunity: fallbackData.garden.monthlyRevenue > 0 ? 'Small' : 'None',
+      revenue: fallbackData.garden.monthlyRevenue
+    },
+    parking: {
+      spaces: fallbackData.parking.spaces,
+      rate: fallbackData.parking.monthlyRevenuePerSpace,
+      revenue: fallbackData.parking.totalMonthlyRevenue,
+      evChargerPotential: fallbackData.parking.evChargerPotential
+    },
+    pool: {
+      present: fallbackData.pool.present,
+      area: fallbackData.pool.present ? 300 : 0,
+      type: fallbackData.pool.present ? 'standard' : 'none',
+      revenue: fallbackData.pool.monthlyRevenue
+    },
+    sportsCourts: {
+      present: false,
+      types: [],
+      count: 0,
+      revenue: 0
+    },
+    storage: {
+      volume: 100,
+      revenue: fallbackData.storage.monthlyRevenue
+    },
+    bandwidth: {
+      available: 100,
+      revenue: fallbackData.internet.monthlyRevenue
+    },
+    shortTermRental: {
+      nightlyRate: 0,
+      monthlyProjection: 0
+    },
+    permits: [],
+    restrictions: comprehensiveClassification.restrictions,
+    topOpportunities: generateFallbackOpportunities(fallbackData, isApartment),
+    imageAnalysisSummary: imageAnalysis.summary || 'Fallback analysis due to API issues',
+    totalMonthlyRevenue: totalRevenue
+  };
+
+  return results;
+}
+
+function generateFallbackOpportunities(fallbackData: any, isApartment: boolean) {
+  const opportunities = [];
+
+  if (!isApartment && fallbackData.rooftop.monthlyRevenue > 0) {
+    opportunities.push({
+      title: 'Rooftop Solar Installation',
+      icon: 'sun',
+      monthlyRevenue: fallbackData.rooftop.monthlyRevenue,
+      description: 'Install solar panels for clean energy and savings',
+      setupCost: fallbackData.rooftop.setupCost,
+      roi: Math.ceil(fallbackData.rooftop.setupCost / fallbackData.rooftop.monthlyRevenue)
+    });
+  }
+
+  if (!isApartment && fallbackData.parking.totalMonthlyRevenue > 0) {
+    opportunities.push({
+      title: 'Parking Space Rental',
+      icon: 'car',
+      monthlyRevenue: fallbackData.parking.totalMonthlyRevenue,
+      description: 'Rent parking spaces to neighbors and commuters',
+      setupCost: 200,
+      roi: 2
+    });
+  }
+
+  if (fallbackData.internet.monthlyRevenue > 0) {
+    opportunities.push({
+      title: 'Internet Bandwidth Sharing',
+      icon: 'wifi',
+      monthlyRevenue: fallbackData.internet.monthlyRevenue,
+      description: isApartment ? 'Share unused internet bandwidth (apartment-friendly)' : 'Share unused internet bandwidth for passive income',
+      setupCost: 0,
+      roi: 0
+    });
+  }
+
+  if (fallbackData.storage.monthlyRevenue > 0) {
+    opportunities.push({
+      title: isApartment ? 'Unit Storage Rental' : 'Storage Space Rental',
+      icon: 'storage',
+      monthlyRevenue: fallbackData.storage.monthlyRevenue,
+      description: isApartment ? 'Rent personal storage space within your unit' : 'Rent storage space in garage or outbuildings',
+      setupCost: 0,
+      roi: 0
+    });
+  }
+
+  return opportunities.slice(0, 5); // Return top 5
+}
