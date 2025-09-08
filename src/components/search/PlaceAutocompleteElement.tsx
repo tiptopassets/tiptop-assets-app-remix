@@ -128,7 +128,7 @@ const PlaceAutocompleteElement: React.FC<Props> = ({ onSelect, placeholder = 'Se
       ref={inputRef}
       type="text"
       placeholder={placeholder}
-      className={`w-full h-10 px-3 py-2 text-sm border-none bg-transparent text-white placeholder-white/70 rounded-full focus:outline-none focus:ring-2 focus:ring-white/30 ${className || ''}`}
+      className={`w-full h-10 px-3 py-2 text-base md:text-sm border-none bg-transparent text-white placeholder-white/70 rounded-full focus:outline-none focus:ring-2 focus:ring-white/30 ${className || ''}`}
     />
   );
 };
