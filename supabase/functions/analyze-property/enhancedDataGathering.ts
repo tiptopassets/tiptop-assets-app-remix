@@ -117,8 +117,7 @@ Provide specific observations about the property's unique characteristics and re
             ]
           }
         ],
-        max_completion_tokens: 2000,
-        temperature: 0.2
+        max_completion_tokens: 2000
       }),
     });
 
