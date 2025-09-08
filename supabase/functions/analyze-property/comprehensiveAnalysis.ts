@@ -150,7 +150,6 @@ function generateFallbackClassification(propertyInfo: any) {
     revenueOpportunities: []
   };
 }
-};
 
 export const createComprehensiveAnalysisPrompt = (
   propertyInfo: any,
