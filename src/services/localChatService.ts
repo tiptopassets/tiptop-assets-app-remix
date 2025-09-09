@@ -313,31 +313,6 @@ export class LocalChatService {
       return 'ev_charging';
     }
     
-    // Creative and unique spaces - all should use Peerspace
-    if (lowerMessage.includes('art studio') || lowerMessage.includes('art space') || 
-        lowerMessage.includes('creative space') || lowerMessage.includes('studio space')) {
-      console.log('🔍 [ASSET_DETECTION] Detected: art-studio');
-      return 'art-studio';
-    }
-    
-    if (lowerMessage.includes('coworking') || lowerMessage.includes('co-working') || 
-        lowerMessage.includes('office space')) {
-      console.log('🔍 [ASSET_DETECTION] Detected: coworking');
-      return 'coworking';
-    }
-    
-    if (lowerMessage.includes('photo studio') || lowerMessage.includes('photography') ||
-        lowerMessage.includes('photoshoot')) {
-      console.log('🔍 [ASSET_DETECTION] Detected: photo-studio');
-      return 'photo-studio';
-    }
-    
-    if (lowerMessage.includes('unique space') || lowerMessage.includes('creative room') ||
-        lowerMessage.includes('specialty space')) {
-      console.log('🔍 [ASSET_DETECTION] Detected: unique-space');
-      return 'unique-space';
-    }
-    
     console.log('🔍 [ASSET_DETECTION] No asset detected in message:', lowerMessage);
     return null;
   }
@@ -447,13 +422,7 @@ Click on any partner below to get started with step-by-step setup instructions a
       'rooftop': 'Rooftop Solar',
       'garden': 'Garden/Yard Space',
       'ev_charging': 'EV Charging Station',
-      'bandwidth': 'Internet Bandwidth Sharing',
-      // Creative and unique spaces
-      'art-studio': 'Art Studio Space',
-      'coworking': 'Co-working Space',
-      'photo-studio': 'Photography Studio',
-      'unique-space': 'Unique Space Rental',
-      'creative-space': 'Creative Space'
+      'bandwidth': 'Internet Bandwidth Sharing'
     };
     
     return displayNames[assetType] || assetType.replace(/[_-]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
@@ -469,8 +438,6 @@ Click on any partner below to get started with step-by-step setup instructions a
     if (lowerMessage.includes('parking') || lowerMessage.includes('driveway')) return 'parking_setup';
     if (lowerMessage.includes('storage') || lowerMessage.includes('basement') || lowerMessage.includes('garage')) return 'storage_setup';
     if (lowerMessage.includes('space') && (lowerMessage.includes('event') || lowerMessage.includes('photo'))) return 'space_rental_setup';
-    if (lowerMessage.includes('art studio') || lowerMessage.includes('creative space') || lowerMessage.includes('studio')) return 'space_rental_setup';
-    if (lowerMessage.includes('coworking') || lowerMessage.includes('co-working') || lowerMessage.includes('office space')) return 'space_rental_setup';
     if (lowerMessage.includes('internet') || lowerMessage.includes('bandwidth')) return 'internet_setup';
     if (lowerMessage.includes('solar') || lowerMessage.includes('rooftop')) return 'solar_setup';
     if (lowerMessage.includes('ev') || lowerMessage.includes('charging')) return 'ev_setup';
@@ -868,16 +835,7 @@ To give you personalized recommendations, could you tell me what type of propert
       'garage': 'neighbor',
       'basement': 'neighbor',
       'space': 'peerspace',
-      'room': 'peerspace',
-      // Creative and unique spaces - all use Peerspace
-      'art-studio': 'peerspace',
-      'coworking': 'peerspace',
-      'photo-studio': 'peerspace',
-      'unique-space': 'peerspace',
-      'creative-space': 'peerspace',
-      'event-space': 'peerspace',
-      'event_space_rental': 'peerspace',
-      'home_gym_rental': 'peerspace'
+      'room': 'peerspace'
     };
     
     return typeMap[assetType.toLowerCase()] || 'peerspace';
