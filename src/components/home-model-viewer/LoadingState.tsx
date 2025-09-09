@@ -8,6 +8,9 @@ import ParkingIcon from '@/components/asset-icons/ParkingIcon';
 import StorageIcon from '@/components/asset-icons/StorageIcon';
 import CarIcon from '@/components/asset-icons/CarIcon';
 import EVChargerIcon from '@/components/asset-icons/EVChargerIcon';
+import SwimmingPoolIcon from '@/components/asset-icons/SwimmingPoolIcon';
+import SportsCourtIcon from '@/components/asset-icons/SportsCourtIcon';
+import HouseIcon from '@/components/asset-icons/HouseIcon';
 
 const LoadingState = () => {
   const [progress, setProgress] = useState(0);
@@ -27,6 +30,7 @@ const LoadingState = () => {
   }, []);
 
   const assetIcons = [
+    { component: HouseIcon, label: 'House' },
     { component: SolarPanelIcon, label: 'Solar Panel' },
     { component: GardenIcon, label: 'Garden' },
     { component: WifiIcon, label: 'WiFi' },
@@ -34,6 +38,8 @@ const LoadingState = () => {
     { component: StorageIcon, label: 'Storage' },
     { component: CarIcon, label: 'Car' },
     { component: EVChargerIcon, label: 'EV Charger' },
+    { component: SwimmingPoolIcon, label: 'Swimming Pool' },
+    { component: SportsCourtIcon, label: 'Sports Court' },
   ];
 
   return (
@@ -44,17 +50,16 @@ const LoadingState = () => {
 
       {/* Asset Icons Carousel */}
       <div className="mb-8 overflow-hidden">
-        <div className="flex animate-slide-left gap-4">
-          {/* Duplicate the icons to create seamless loop */}
-          {[...assetIcons, ...assetIcons].map((asset, index) => {
+        <div className="flex animate-slide-left gap-4 w-max">
+          {/* Triple the icons to create seamless infinite loop */}
+          {[...assetIcons, ...assetIcons, ...assetIcons].map((asset, index) => {
             const IconComponent = asset.component;
             return (
               <div
                 key={`${asset.label}-${index}`}
-                className="flex-shrink-0 w-16 h-16 bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl flex items-center justify-center animate-pulse"
+                className="flex-shrink-0 w-16 h-16 bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl flex items-center justify-center"
                 style={{
-                  animationDelay: `${index * 0.3}s`,
-                  animationDuration: '2s'
+                  animation: `pulse 2s infinite ease-in-out ${index * 0.1}s`
                 }}
               >
                 <div className="w-8 h-8">
