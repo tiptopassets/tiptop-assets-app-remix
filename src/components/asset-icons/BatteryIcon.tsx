@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 
-const SportsCourtIcon = () => {
+const BatteryIcon = () => {
   return (
     <motion.div 
       className="w-full h-full flex items-center justify-center"
@@ -11,10 +11,10 @@ const SportsCourtIcon = () => {
         <div className="relative w-full h-full flex items-center justify-center">
           <div className="absolute inset-0 bg-transparent rounded-lg transform rotate-3 translate-z-4 blur-[2px]"></div>
           <img 
-            src="/lovable-uploads/8ba119f3-849f-4b91-8a99-2d737a12a8b7.png" 
-            alt="Sports Court Icon" 
+            src="/lovable-uploads/76f34c86-decf-4d23-aeee-b23ba55c1be1.png" 
+            alt="Battery Icon" 
             className="relative z-10 w-8 h-8 object-contain m-auto"
-            style={{ filter: 'drop-shadow(0 0 8px rgba(34, 197, 94, 0.6))' }}
+            style={{ filter: 'drop-shadow(0 0 8px rgba(245, 158, 11, 0.6))' }}
           />
           <div className="absolute inset-0 rounded-lg bg-gradient-to-tr from-white/20 to-transparent opacity-40"></div>
         </div>
@@ -23,4 +23,4 @@ const SportsCourtIcon = () => {
   );
 };
 
-export default SportsCourtIcon;
+export default BatteryIcon;

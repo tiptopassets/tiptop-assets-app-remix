@@ -11,6 +11,7 @@ import EVChargerIcon from '@/components/asset-icons/EVChargerIcon';
 import SwimmingPoolIcon from '@/components/asset-icons/SwimmingPoolIcon';
 import SportsCourtIcon from '@/components/asset-icons/SportsCourtIcon';
 import HouseIcon from '@/components/asset-icons/HouseIcon';
+import BatteryIcon from '@/components/asset-icons/BatteryIcon';
 
 const LoadingState = () => {
   const [progress, setProgress] = useState(0);
@@ -40,6 +41,7 @@ const LoadingState = () => {
     { component: EVChargerIcon, label: 'EV Charger' },
     { component: SwimmingPoolIcon, label: 'Swimming Pool' },
     { component: SportsCourtIcon, label: 'Sports Court' },
+    { component: BatteryIcon, label: 'Battery' },
   ];
 
   return (
