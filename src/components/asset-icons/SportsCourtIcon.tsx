@@ -15,17 +15,17 @@ const SportsCourtIcon: React.FC<SportsCourtIconProps> = ({
 }) => {
   return (
     <motion.div
-      className={`relative inline-block ${glowing ? 'icon-glow' : ''}`}
+      className={`w-full h-full flex items-center justify-center ${glowing ? 'icon-glow' : ''}`}
       style={{ '--glow-color': color } as React.CSSProperties}
       whileHover={{ scale: 1.1 }}
       transition={{ type: "spring", stiffness: 300, damping: 20 }}
     >
       <svg
-        width={size}
-        height={size}
+        className="w-full h-full block"
         viewBox="0 0 24 24"
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
+        preserveAspectRatio="xMidYMid meet"
       >
         {/* Court outline */}
         <rect
@@ -37,6 +37,7 @@ const SportsCourtIcon: React.FC<SportsCourtIconProps> = ({
           stroke={color}
           strokeWidth="2"
           fill="none"
+          vectorEffect="non-scaling-stroke"
         />
         
         {/* Court center line */}
@@ -48,6 +49,7 @@ const SportsCourtIcon: React.FC<SportsCourtIconProps> = ({
           stroke={color}
           strokeWidth="1.5"
           strokeDasharray="2,2"
+          vectorEffect="non-scaling-stroke"
         />
         
         {/* Court center circle */}
@@ -58,6 +60,7 @@ const SportsCourtIcon: React.FC<SportsCourtIconProps> = ({
           stroke={color}
           strokeWidth="1.5"
           fill="none"
+          vectorEffect="non-scaling-stroke"
         />
         
         {/* Tennis net */}
@@ -68,6 +71,7 @@ const SportsCourtIcon: React.FC<SportsCourtIconProps> = ({
           y2="12"
           stroke={color}
           strokeWidth="2"
+          vectorEffect="non-scaling-stroke"
         />
         
         {/* Service boxes */}
@@ -79,6 +83,7 @@ const SportsCourtIcon: React.FC<SportsCourtIconProps> = ({
           stroke={color}
           strokeWidth="1"
           opacity="0.7"
+          vectorEffect="non-scaling-stroke"
         />
         <line
           x1="18"
@@ -88,6 +93,7 @@ const SportsCourtIcon: React.FC<SportsCourtIconProps> = ({
           stroke={color}
           strokeWidth="1"
           opacity="0.7"
+          vectorEffect="non-scaling-stroke"
         />
         
         {/* Ball */}
