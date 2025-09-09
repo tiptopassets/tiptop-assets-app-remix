@@ -11,7 +11,6 @@ import EVChargerIcon from '@/components/asset-icons/EVChargerIcon';
 import SwimmingPoolIcon from '@/components/asset-icons/SwimmingPoolIcon';
 import SportsCourtIcon from '@/components/asset-icons/SportsCourtIcon';
 import HouseIcon from '@/components/asset-icons/HouseIcon';
-import BatteryIcon from '@/components/asset-icons/BatteryIcon';
 
 const LoadingState = () => {
   const [progress, setProgress] = useState(0);
@@ -31,18 +30,16 @@ const LoadingState = () => {
   }, []);
 
   const assetIcons = [
+    { component: HouseIcon, label: 'House' },
+    { component: SolarPanelIcon, label: 'Solar Panel' },
+    { component: GardenIcon, label: 'Garden' },
+    { component: WifiIcon, label: 'WiFi' },
     { component: ParkingIcon, label: 'Parking' },
     { component: StorageIcon, label: 'Storage' },
     { component: CarIcon, label: 'Car' },
     { component: EVChargerIcon, label: 'EV Charger' },
     { component: SwimmingPoolIcon, label: 'Swimming Pool' },
-    { component: HouseIcon, label: 'House' },
-    { component: ParkingIcon, label: 'Parking 2' },
-    { component: WifiIcon, label: 'WiFi' },
-    { component: SolarPanelIcon, label: 'Solar Panel' },
-    { component: GardenIcon, label: 'Garden' },
     { component: SportsCourtIcon, label: 'Sports Court' },
-    { component: BatteryIcon, label: 'Battery' },
   ];
 
   return (
