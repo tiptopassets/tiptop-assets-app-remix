@@ -72,7 +72,7 @@ const LoadingState = () => {
       </div>
       
       {/* Progress Bar */}
-      <div className="max-w-md mx-auto mb-4 space-y-2">
+      <div className="max-w-md mx-auto mb-4 space-y-2 p-4 rounded-xl glass-effect">
         <Progress 
           value={progress} 
           className="h-2"
