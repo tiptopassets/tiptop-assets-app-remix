@@ -101,7 +101,17 @@ export const trackAnalysisCompleted = async (
     totalMonthlyRevenue = analysisResults.topOpportunities.reduce(
       (sum, opp) => sum + (opp.monthlyRevenue || (opp as any).revenue || 0), 0
     );
-    totalOpportunities = analysisResults.topOpportunities.length;
+    
+    // Apartment-aware opportunities counting
+    if ((analysisResults as any).propertyType === 'apartment') {
+      let apartmentOpps = 0;
+      if ((analysisResults.bandwidth?.revenue || (analysisResults.bandwidth as any)?.monthlyRevenue || 0) > 0) apartmentOpps++;
+      if ((analysisResults.storage?.revenue || (analysisResults.storage as any)?.monthlyRevenue || 0) > 0) apartmentOpps++;
+      totalOpportunities = apartmentOpps;
+      console.log('🏢 Apartment opportunities calculated:', { bandwidth: analysisResults.bandwidth?.revenue, storage: analysisResults.storage?.revenue, totalOpportunities });
+    } else {
+      totalOpportunities = analysisResults.topOpportunities.length;
+    }
   } else {
     console.log('📊 Fallback calculation from individual assets');
     // Enhanced fallback: calculate from all possible asset types and structures
@@ -118,7 +128,17 @@ export const trackAnalysisCompleted = async (
     ];
     
     totalMonthlyRevenue = assetRevenues.reduce((sum, revenue) => sum + revenue, 0);
-    totalOpportunities = assetRevenues.filter(revenue => revenue > 0).length;
+    
+    // Apartment-aware opportunities counting in fallback too
+    if ((analysisResults as any).propertyType === 'apartment') {
+      let apartmentOpps = 0;
+      if ((analysisResults.bandwidth?.revenue || (analysisResults.bandwidth as any)?.monthlyRevenue || 0) > 0) apartmentOpps++;
+      if ((analysisResults.storage?.revenue || (analysisResults.storage as any)?.monthlyRevenue || 0) > 0) apartmentOpps++;
+      totalOpportunities = apartmentOpps;
+      console.log('🏢 Apartment opportunities calculated (fallback):', { bandwidth: analysisResults.bandwidth?.revenue, storage: analysisResults.storage?.revenue, totalOpportunities });
+    } else {
+      totalOpportunities = assetRevenues.filter(revenue => revenue > 0).length;
+    }
   }
 
   // Use pre-calculated totals if available and higher

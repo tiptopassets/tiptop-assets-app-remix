@@ -72,7 +72,24 @@ const PropertySummaryCard: React.FC<PropertySummaryCardProps> = ({
 
   const propertyDisplay = getPropertyTypeDisplay();
   const analysisRevenue = analysisResults?.totalMonthlyRevenue || 0;
-  const opportunitiesCount = analysisResults?.topOpportunities?.length || 0;
+  
+  // Apartment-aware opportunities counting
+  const getOpportunitiesCount = () => {
+    if (analysisResults?.propertyType === 'apartment') {
+      let count = 0;
+      if (analysisResults.bandwidth?.revenue > 0) count++;
+      if (analysisResults.storage?.revenue > 0) count++;
+      console.log('🏢 Apartment opportunities count:', { 
+        bandwidth: analysisResults.bandwidth?.revenue, 
+        storage: analysisResults.storage?.revenue, 
+        count 
+      });
+      return count;
+    }
+    return analysisResults?.topOpportunities?.length || 0;
+  };
+  
+  const opportunitiesCount = getOpportunitiesCount();
 
   return (
     <motion.div
