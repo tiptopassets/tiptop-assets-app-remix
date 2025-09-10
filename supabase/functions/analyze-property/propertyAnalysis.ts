@@ -373,6 +373,7 @@ function generateBuildingTypeAwareOpportunities(
     console.log('🏢 Generating apartment-specific opportunities');
     console.log('🏢 Results data:', { bandwidth: results.bandwidth, storage: results.storage });
     console.log('🏢 Analysis data:', { internet: analysisData.internet, storage: analysisData.storage });
+    console.log('🏢 Top opportunities from GPT:', analysisData.topOpportunities);
     
     // Internet bandwidth sharing - always available for apartments
     if (results.bandwidth.revenue > 0) {
@@ -398,6 +399,27 @@ function generateBuildingTypeAwareOpportunities(
         setupCost: 0,
         roi: 0
       });
+    }
+
+    // Fallback: use GPT's topOpportunities directly if our generation missed them
+    if (analysisData.topOpportunities && analysisData.topOpportunities.length > 0) {
+      console.log('🏢 Adding opportunities from GPT topOpportunities array');
+      for (const gptOpp of analysisData.topOpportunities) {
+        const hasExisting = opportunities.some(opp => 
+          opp.title.toLowerCase().includes(gptOpp.title.toLowerCase().split(' ')[0])
+        );
+        if (!hasExisting) {
+          console.log('🏢 Adding GPT opportunity:', gptOpp.title, gptOpp.monthlyRevenue);
+          opportunities.push({
+            title: gptOpp.title,
+            icon: gptOpp.title.toLowerCase().includes('internet') || gptOpp.title.toLowerCase().includes('bandwidth') ? 'wifi' : 'storage',
+            monthlyRevenue: gptOpp.monthlyRevenue,
+            description: gptOpp.description,
+            setupCost: gptOpp.setupCost || 0,
+            roi: gptOpp.paybackMonths || 0
+          });
+        }
+      }
     }
 
     // Fallback: check analysisData if results don't have it
