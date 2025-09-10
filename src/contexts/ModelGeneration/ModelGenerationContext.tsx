@@ -2,7 +2,6 @@
 import { createContext, useContext, useState, ReactNode } from 'react';
 import { ModelGenerationContextType, ModelGenerationStatus, PropertyImages } from './types';
 import { useImageCapture } from './useImageCapture';
-import { usePropertyAnalysis } from './useModelGeneration';
 
 const ModelGenerationContext = createContext<ModelGenerationContextType | undefined>(undefined);
 
@@ -29,7 +28,7 @@ export const ModelGenerationProvider = ({ children }: { children: ReactNode }) =
     setGoogleImages([]);
   };
 
-  // Update progress with smooth animation - fixed type signature to match usage in hook
+  // Update progress with smooth animation
   const updateProgress = (newProgress: (prev: number) => number) => {
     setProgress(prev => newProgress(prev));
   };
@@ -40,18 +39,6 @@ export const ModelGenerationProvider = ({ children }: { children: ReactNode }) =
     setProgress,
     setPropertyImages,
     setErrorMessage
-  );
-
-  // Use the property analysis hook
-  const { generateModel } = usePropertyAnalysis(
-    setStatus,
-    setProgress,
-    updateProgress,
-    setErrorMessage,
-    propertyImages,
-    setHomeModelVisible,
-    setContentFromGPT,
-    setGoogleImages
   );
 
   return (
@@ -66,7 +53,7 @@ export const ModelGenerationProvider = ({ children }: { children: ReactNode }) =
         errorMessage,
         setErrorMessage,
         capturePropertyImages,
-        generateModel,
+        generateModel: () => Promise.resolve(), // Placeholder - use useModelGenerationActions hook in components
         resetGeneration,
         isHomeModelVisible,
         setHomeModelVisible,

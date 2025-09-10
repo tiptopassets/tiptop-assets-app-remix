@@ -1,6 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { useModelGeneration } from '@/contexts/ModelGeneration';
+import { useModelGenerationActions } from '@/contexts/ModelGeneration/useModelGenerationActions';
 import { useGoogleMap } from '@/contexts/GoogleMapContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
@@ -19,10 +20,10 @@ const ModelGenerationSheet = () => {
     progress,
     errorMessage,
     propertyImages,
-    resetGeneration,
-    generateModel
+    resetGeneration
   } = useModelGeneration();
   
+  const { generateModel } = useModelGenerationActions();
   const { analysisResults } = useGoogleMap();
   
   const navigate = useNavigate();
