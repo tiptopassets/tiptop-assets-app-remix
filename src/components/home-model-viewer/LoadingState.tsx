@@ -75,7 +75,7 @@ const LoadingState = () => {
       <div className="max-w-md mx-auto mb-4 space-y-2">
         <Progress 
           value={progress} 
-          className="h-2 bg-white/5 backdrop-blur-sm border border-white/20"
+          className="h-2"
         />
         <div className="flex justify-between text-xs text-gray-400">
           <span>Analyzing property images and data...</span>
