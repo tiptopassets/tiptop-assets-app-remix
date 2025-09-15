@@ -323,8 +323,8 @@ export class LocalChatService {
     
     if (lowerMessage.includes('art studio') || lowerMessage.includes('creative space') ||
         lowerMessage.includes('art space') || lowerMessage.includes('studio rental')) {
-      console.log('🔍 [ASSET_DETECTION] Detected: creative_space');
-      return 'creative_space';
+      console.log('🔍 [ASSET_DETECTION] Detected: art-studio');
+      return 'art-studio';
     }
     
     if (lowerMessage.includes('meeting room') || lowerMessage.includes('conference room') ||
