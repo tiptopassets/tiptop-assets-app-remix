@@ -1,6 +1,6 @@
 import { PropertyAnalysisData } from '@/hooks/useUserPropertyAnalysis';
 import { PartnerIntegrationService } from './partnerIntegrationService';
-import { getPartnersForAssetType, type PartnerInfo } from './partnersRegistry';
+import { getPartnersForAssetType, fetchPartners, type PartnerInfo } from './partnersRegistry';
 
 export interface ChatMessage {
   id: string;
@@ -374,7 +374,8 @@ export class LocalChatService {
 Click on any option below to get started with step-by-step setup instructions and use our referral links for the best benefits!`;
     } else {
       // Regular asset handling using centralized partner registry
-      const partnerInfos = await getPartnersForAssetType(assetType);
+      const fetchedPartners = await fetchPartners();
+      const partnerInfos = getPartnersForAssetType(assetType, fetchedPartners);
       console.log('🎯 [PARTNER_OPTIONS] Found partners:', partnerInfos.length, 'for asset:', assetType);
       
       // Convert PartnerInfo to the expected format for compatibility
