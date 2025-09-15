@@ -304,9 +304,10 @@ export class LocalChatService {
       return 'solar';
     }
     
-    if (lowerMessage.includes('garden') || lowerMessage.includes('yard')) {
-      console.log('🔍 [ASSET_DETECTION] Detected: garden');
-      return 'garden';
+    if (lowerMessage.includes('garden') || lowerMessage.includes('yard') || 
+        lowerMessage.includes('outdoor space')) {
+      console.log('🔍 [ASSET_DETECTION] Detected: experience');
+      return 'experience';
     }
     
     if (lowerMessage.includes('ev') || lowerMessage.includes('charging')) {
@@ -317,8 +318,8 @@ export class LocalChatService {
     if (lowerMessage.includes('coworking') || lowerMessage.includes('co-working') || 
         lowerMessage.includes('coworking space') || lowerMessage.includes('co-working space') ||
         lowerMessage.includes('workspace') || lowerMessage.includes('office space')) {
-      console.log('🔍 [ASSET_DETECTION] Detected: coworking_space');
-      return 'coworking_space';
+      console.log('🔍 [ASSET_DETECTION] Detected: coworking');
+      return 'coworking';
     }
     
     if (lowerMessage.includes('art studio') || lowerMessage.includes('creative space') ||
@@ -329,8 +330,26 @@ export class LocalChatService {
     
     if (lowerMessage.includes('meeting room') || lowerMessage.includes('conference room') ||
         lowerMessage.includes('meeting space')) {
-      console.log('🔍 [ASSET_DETECTION] Detected: meeting_room');
-      return 'meeting_room';
+      console.log('🔍 [ASSET_DETECTION] Detected: meeting-room');
+      return 'meeting-room';
+    }
+    
+    if (lowerMessage.includes('event space') || lowerMessage.includes('event venue') ||
+        lowerMessage.includes('venue rental')) {
+      console.log('🔍 [ASSET_DETECTION] Detected: event-space');
+      return 'event-space';
+    }
+    
+    if (lowerMessage.includes('photography') || lowerMessage.includes('photo studio') ||
+        lowerMessage.includes('photo shoot')) {
+      console.log('🔍 [ASSET_DETECTION] Detected: photography-studio');
+      return 'photography-studio';
+    }
+    
+    if (lowerMessage.includes('content') || lowerMessage.includes('video') ||
+        lowerMessage.includes('filming')) {
+      console.log('🔍 [ASSET_DETECTION] Detected: content-studio');
+      return 'content-studio';
     }
     
     console.log('🔍 [ASSET_DETECTION] No asset detected in message:', lowerMessage);
