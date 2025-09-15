@@ -1,5 +1,6 @@
 import { PropertyAnalysisData } from '@/hooks/useUserPropertyAnalysis';
 import { PartnerIntegrationService } from './partnerIntegrationService';
+import { getPartnersForAssetType, type PartnerInfo } from './partnersRegistry';
 
 export interface ChatMessage {
   id: string;
@@ -313,6 +314,25 @@ export class LocalChatService {
       return 'ev_charging';
     }
     
+    if (lowerMessage.includes('coworking') || lowerMessage.includes('co-working') || 
+        lowerMessage.includes('coworking space') || lowerMessage.includes('co-working space') ||
+        lowerMessage.includes('workspace') || lowerMessage.includes('office space')) {
+      console.log('🔍 [ASSET_DETECTION] Detected: coworking_space');
+      return 'coworking_space';
+    }
+    
+    if (lowerMessage.includes('art studio') || lowerMessage.includes('creative space') ||
+        lowerMessage.includes('art space') || lowerMessage.includes('studio rental')) {
+      console.log('🔍 [ASSET_DETECTION] Detected: creative_space');
+      return 'creative_space';
+    }
+    
+    if (lowerMessage.includes('meeting room') || lowerMessage.includes('conference room') ||
+        lowerMessage.includes('meeting space')) {
+      console.log('🔍 [ASSET_DETECTION] Detected: meeting_room');
+      return 'meeting_room';
+    }
+    
     console.log('🔍 [ASSET_DETECTION] No asset detected in message:', lowerMessage);
     return null;
   }
@@ -353,9 +373,23 @@ export class LocalChatService {
 
 Click on any option below to get started with step-by-step setup instructions and use our referral links for the best benefits!`;
     } else {
-      // Regular asset handling
-      partners = PartnerIntegrationService.getPlatformsByAsset(assetType);
-      console.log('🎯 [PARTNER_OPTIONS] Found partners:', partners.length, 'for asset:', assetType);
+      // Regular asset handling using centralized partner registry
+      const partnerInfos = await getPartnersForAssetType(assetType);
+      console.log('🎯 [PARTNER_OPTIONS] Found partners:', partnerInfos.length, 'for asset:', assetType);
+      
+      // Convert PartnerInfo to the expected format for compatibility
+      partners = partnerInfos.map((partnerInfo: PartnerInfo) => ({
+        id: partnerInfo.id,
+        name: partnerInfo.name,
+        description: partnerInfo.description,
+        briefDescription: partnerInfo.description,
+        referralLink: partnerInfo.referralLink,
+        earningRange: partnerInfo.monthlyEarnings,
+        setupTime: '30-60 minutes', // Default setup time
+        requirements: Object.values(partnerInfo.setupRequirements || {}),
+        setupSteps: ['Sign up with referral link', 'Complete profile setup', 'Start earning'],
+        priority: partnerInfo.priority
+      }));
       
       if (partners.length === 0) {
         console.log('⚠️ [PARTNER_OPTIONS] No partners found for asset type:', assetType);
@@ -422,7 +456,11 @@ Click on any partner below to get started with step-by-step setup instructions a
       'rooftop': 'Rooftop Solar',
       'garden': 'Garden/Yard Space',
       'ev_charging': 'EV Charging Station',
-      'bandwidth': 'Internet Bandwidth Sharing'
+      'bandwidth': 'Internet Bandwidth Sharing',
+      'coworking_space': 'Coworking Space',
+      'creative_space': 'Creative Space / Art Studio',
+      'meeting_room': 'Meeting Room',
+      'office_space': 'Office Space'
     };
     
     return displayNames[assetType] || assetType.replace(/[_-]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
