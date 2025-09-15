@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useDashboardJourneyData } from '@/hooks/useDashboardJourneyData';
-import { useUserProperties } from '@/hooks/useUserProperties';
+import { useUserProperties, UserProperty } from '@/hooks/useUserProperties';
 import { ChevronDown, MapPin, Plus, Settings } from 'lucide-react';
 import {
   DropdownMenu,
@@ -14,9 +14,24 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
-const DashboardSidebarHeader = () => {
+interface DashboardSidebarHeaderProps {
+  properties?: UserProperty[];
+  selectedPropertyId?: string;
+  onPropertySelect?: (propertyId: string) => void;
+}
+
+const DashboardSidebarHeader = ({ 
+  properties: propProperties, 
+  selectedPropertyId: propSelectedPropertyId, 
+  onPropertySelect 
+}: DashboardSidebarHeaderProps) => {
   const { journeyData } = useDashboardJourneyData();
-  const { properties, selectedProperty, selectProperty, loading } = useUserProperties();
+  const { properties: hookProperties, selectedProperty: hookSelectedProperty, loading } = useUserProperties();
+  
+  // Use props if available, fallback to hook data
+  const properties = propProperties && propProperties.length > 0 ? propProperties : hookProperties;
+  const selectedPropertyId = propSelectedPropertyId || hookSelectedProperty?.id;
+  const selectedProperty = properties.find(p => p.id === selectedPropertyId) || hookSelectedProperty;
   
   // Use multi-property system if available, fallback to single journey data
   const hasMultipleProperties = properties.length > 1;
@@ -105,7 +120,7 @@ const DashboardSidebarHeader = () => {
                   {properties.map((property) => (
                     <DropdownMenuItem
                       key={property.id}
-                      onClick={() => selectProperty(property.id)}
+                      onClick={() => onPropertySelect ? onPropertySelect(property.id) : console.log('No onPropertySelect handler')}
                       className={selectedProperty?.id === property.id ? 'bg-muted' : ''}
                     >
                       <div className="flex flex-col gap-1 w-full">
@@ -113,7 +128,7 @@ const DashboardSidebarHeader = () => {
                           {property.address}
                         </div>
                         <div className="text-xs text-muted-foreground">
-                          ${property.totalMonthlyRevenue}/mo • {property.totalOpportunities} opportunities
+                          ${property.totalMonthlyRevenue || 0}/mo • {property.totalOpportunities || 0} opportunities
                         </div>
                       </div>
                     </DropdownMenuItem>

@@ -2,11 +2,18 @@
 import { useState } from 'react';
 import { Menu, X } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { UserProperty } from '@/hooks/useUserProperties';
 import DashboardSidebarHeader from './DashboardSidebarHeader';
 import DashboardSidebarNavigation from './DashboardSidebarNavigation';
 import DashboardSidebarBottomNav from './DashboardSidebarBottomNav';
 
-const DashboardSidebar = () => {
+interface DashboardSidebarProps {
+  properties?: UserProperty[];
+  selectedPropertyId?: string;
+  onPropertySelect?: (propertyId: string) => void;
+}
+
+const DashboardSidebar = ({ properties, selectedPropertyId, onPropertySelect }: DashboardSidebarProps) => {
   const isMobile = useIsMobile();
   const [isOpen, setIsOpen] = useState(false);
 
@@ -36,7 +43,11 @@ const DashboardSidebar = () => {
           isOpen ? 'translate-x-0' : '-translate-x-full'
         }`}>
           <div className="flex flex-col h-full">
-            <DashboardSidebarHeader />
+            <DashboardSidebarHeader 
+              properties={properties}
+              selectedPropertyId={selectedPropertyId}
+              onPropertySelect={onPropertySelect}
+            />
             <DashboardSidebarNavigation />
             <DashboardSidebarBottomNav />
           </div>
@@ -47,7 +58,11 @@ const DashboardSidebar = () => {
 
   return (
     <div className="w-64 bg-gray-900 text-white min-h-screen flex flex-col fixed left-0 top-0 z-40">
-      <DashboardSidebarHeader />
+      <DashboardSidebarHeader 
+        properties={properties}
+        selectedPropertyId={selectedPropertyId}
+        onPropertySelect={onPropertySelect}
+      />
       <DashboardSidebarNavigation />
       <DashboardSidebarBottomNav />
     </div>

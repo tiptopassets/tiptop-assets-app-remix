@@ -3,12 +3,16 @@ import { ReactNode } from 'react';
 import DashboardSidebar from './DashboardSidebar';
 import { useAuth } from '@/contexts/AuthContext';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { UserProperty } from '@/hooks/useUserProperties';
 
 interface DashboardLayoutProps {
   children: ReactNode;
+  properties?: UserProperty[];
+  selectedPropertyId?: string;
+  onPropertySelect?: (propertyId: string) => void;
 }
 
-const DashboardLayout = ({ children }: DashboardLayoutProps) => {
+const DashboardLayout = ({ children, properties, selectedPropertyId, onPropertySelect }: DashboardLayoutProps) => {
   const { user, loading } = useAuth();
   const isMobile = useIsMobile();
 
@@ -27,7 +31,11 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   if (isMobile) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <DashboardSidebar />
+        <DashboardSidebar 
+          properties={properties}
+          selectedPropertyId={selectedPropertyId}
+          onPropertySelect={onPropertySelect}
+        />
         <main className="w-full overflow-auto">
           <div className="pt-16 px-4 pb-4">
             {children}
@@ -39,7 +47,11 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
 
   return (
     <div className="flex min-h-screen bg-gray-50">
-      <DashboardSidebar />
+      <DashboardSidebar 
+        properties={properties}
+        selectedPropertyId={selectedPropertyId}
+        onPropertySelect={onPropertySelect}
+      />
       <main className="flex-1 ml-64 overflow-auto">
         <div className="p-6 max-w-7xl mx-auto">
           {children}

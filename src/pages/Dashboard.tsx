@@ -114,7 +114,11 @@ const Dashboard = () => {
         };
 
         return (
-          <DashboardLayout>
+          <DashboardLayout
+            properties={properties}
+            selectedPropertyId={selectedPropertyId}
+            onPropertySelect={selectProperty}
+          >
             <JourneyTracker />
             <DashboardContent
               primaryAddress={selectedProperty.address}
