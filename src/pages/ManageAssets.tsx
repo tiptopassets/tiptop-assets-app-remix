@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useOptimizedAssetSelections } from '@/hooks/useOptimizedAssetSelections';
 import { usePartners } from '@/hooks/usePartners';
 import { getPartnerLogo, type PartnerInfo } from '@/services/partnersRegistry';
+import { trackAndOpenReferral } from '@/services/clickTrackingService';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Calendar } from '@/components/ui/calendar';
 import { Badge } from '@/components/ui/badge';
@@ -39,7 +40,11 @@ const ManageAssets: React.FC = () => {
   const getAssetIcon = (assetType: string) => registryGetAssetIcon(assetType, { className: 'w-5 h-5 object-contain' });
 
   const handlePartnerClick = (partner: PartnerInfo) => {
-    window.open(partner.referralLink, '_blank');
+    trackAndOpenReferral({
+      provider: partner.name,
+      url: partner.referralLink,
+      source: 'manage_assets_page'
+    });
   };
 
   const renderPartnerLogo = (partner: PartnerInfo) => {
