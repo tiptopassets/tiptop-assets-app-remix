@@ -288,7 +288,7 @@ export class PartnerIntegrationService {
       briefDescription: 'Private dog park rental service',
       assetTypes: ['yard', 'garden', 'outdoor_space'],
       earningRange: { min: 30, max: 200 },
-      referralLink: 'https://sniffspot.com',
+      referralLink: 'https://www.sniffspot.com/host',
       logoUrl: 'https://sniffspot.com/favicon.ico',
       priority: 6,
       setupTime: '1-2 hours',
