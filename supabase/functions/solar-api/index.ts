@@ -289,8 +289,8 @@ Deno.serve(async (req: Request) => {
     console.error('❌ Critical error in solar-api function:', error);
     
     // Enhanced error handling with fallback data
-    const fallbackSolarData = locationCoordinates ? 
-      generateEstimatedSolarData(locationCoordinates, 1500, '') : null;
+    const fallbackSolarData = coordinates ?
+      generateEstimatedSolarData(coordinates, 1500, '') : null;
     
     if (fallbackSolarData) {
       console.log('🔄 Returning fallback solar data due to error');
@@ -298,7 +298,7 @@ Deno.serve(async (req: Request) => {
         JSON.stringify({
           success: true,
           solarData: fallbackSolarData,
-          coordinates: locationCoordinates,
+          coordinates: coordinates,
           fallbackUsed: true,
           error: error.message || 'An error occurred, using estimated data'
         }),

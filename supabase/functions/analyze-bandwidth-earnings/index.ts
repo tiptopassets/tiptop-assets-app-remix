@@ -14,8 +14,11 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  let networkData;
   try {
-    const { networkData, requestType = 'earnings_analysis' } = await req.json();
+    const requestBody = await req.json();
+    networkData = requestBody.networkData;
+    const requestType = requestBody.requestType || 'earnings_analysis';
 
     console.log('🤖 AI Bandwidth Earnings Analysis Request:', { networkData, requestType });
 
@@ -125,8 +128,8 @@ Base your calculations on realistic market rates (typically $0.015-$0.025 per GB
     console.error('Error in analyze-bandwidth-earnings function:', error);
     return new Response(
       JSON.stringify({ 
-        error: error.message,
-        fallback: createFallbackAnalysis(networkData)
+        error: error instanceof Error ? error.message : 'Unknown error occurred',
+        fallback: networkData ? createFallbackAnalysis(networkData) : null
       }), 
       {
         status: 500,

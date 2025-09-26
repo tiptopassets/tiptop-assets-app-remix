@@ -1,15 +1,16 @@
 
 export interface PropertyInfo {
   address: string;
-  coordinates?: google.maps.LatLngLiteral;
+  coordinates?: { lat: number; lng: number };
   details?: any;
   solarData?: any;
-  propertyType?: string; // Added property type field
+  propertyType?: string;
+  classification?: any;
 }
 
 export interface AnalysisRequest {
   address: string;
-  coordinates?: google.maps.LatLngLiteral;
+  coordinates?: { lat: number; lng: number };
   satelliteImage?: string;
   forceLocalAnalysis?: boolean;
 }
@@ -38,6 +39,15 @@ export interface PropertyAnalysis {
     yearlyEnergyKWh?: number;
     panelsCount?: number;
     setupCost?: number;
+    maxSunshineHoursPerYear?: number;
+    roofSegments?: any[];
+    panelConfigurations?: any[];
+    panelCapacityWatts?: number;
+    panelHeightMeters?: number;
+    panelWidthMeters?: number;
+    panelLifetimeYears?: number;
+    carbonOffsetFactorKgPerMwh?: number;
+    imageryDate?: string;
   };
   garden: {
     area: number;

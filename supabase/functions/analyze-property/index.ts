@@ -111,8 +111,13 @@ Deno.serve(async (req) => {
         if (error) {
           console.error('❌ Error calling Solar API:', error);
           if (satelliteImage && satelliteImage.startsWith('data:image')) {
-            console.log('📸 Falling back to image analysis...');
-            imageAnalysis = await analyzeImage(satelliteImage, address);
+          console.log('📸 Falling back to image analysis...');
+            const analysisResult = await analyzeImage(satelliteImage, address);
+            imageAnalysis = {
+              ...analysisResult,
+              roofSize: typeof analysisResult.roofSize === 'string' ? 
+                parseInt(analysisResult.roofSize) || 0 : analysisResult.roofSize || 0
+            };
           }
         } else if (solarResponse.success && solarResponse.solarData) {
           console.log('✅ Received enhanced solar data:', solarResponse.solarData);
@@ -129,7 +134,12 @@ Deno.serve(async (req) => {
         
         if (satelliteImage && satelliteImage.startsWith('data:image')) {
           console.log('📸 Falling back to image analysis for non-solar data...');
-          imageAnalysis = await analyzeImage(satelliteImage, address);
+          const analysisResult = await analyzeImage(satelliteImage, address);
+          imageAnalysis = {
+            ...analysisResult,
+            roofSize: typeof analysisResult.roofSize === 'string' ? 
+              parseInt(analysisResult.roofSize) || 0 : analysisResult.roofSize || 0
+          };
         }
       }
     }
@@ -167,8 +177,6 @@ Deno.serve(async (req) => {
         revenue: validatedSolarRevenue,
         setupCost: solarData.setupCost,
         usingRealSolarData: solarData.usingRealSolarData,
-        // Enhanced solar data fields
-        maxSunshineHoursPerYear: solarData.maxSunshineHoursPerYear,
         roofSegments: solarData.roofSegments,
         panelConfigurations: solarData.panelConfigurations,
         panelCapacityWatts: solarData.panelCapacityWatts,
@@ -233,7 +241,7 @@ Deno.serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         success: false, 
-        error: error.message || 'An error occurred during property analysis'
+        error: error instanceof Error ? error.message : 'An error occurred during property analysis'
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

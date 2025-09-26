@@ -200,7 +200,7 @@ Return JSON with:
   const jsonMatch = rawResponse.match(/\{[\s\S]*\}/);
   if (!jsonMatch) {
     // Fallback based on classification
-    const isApartment = propertyInfo.classification?.subType === 'apartment' || 
+    const isApartment = (propertyInfo as any).classification?.subType === 'apartment' || 
                        propertyInfo.propertyType?.toLowerCase().includes('apartment') ||
                        propertyInfo.address.toLowerCase().includes('apt') ||
                        propertyInfo.address.toLowerCase().includes('unit');
