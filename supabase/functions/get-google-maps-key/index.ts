@@ -41,7 +41,7 @@ serve(async (req) => {
     console.error("Error in get-google-maps-key function:", error);
     return new Response(
       JSON.stringify({
-        error: error instanceof Error ? error.message : "Failed to get Google Maps API key",
+        error: error.message || "Failed to get Google Maps API key",
         fallbackAvailable: true,
         message: "Using fallback mode with local analysis is recommended."
       }),

@@ -1,24 +1,15 @@
 
-export interface LatLngLiteral {
-  lat: number;
-  lng: number;
-}
-
 export interface PropertyInfo {
   address: string;
-  coordinates?: LatLngLiteral;
+  coordinates?: google.maps.LatLngLiteral;
   details?: any;
   solarData?: any;
-  propertyType?: string;
-  classification?: {
-    type: string;
-    subType: string;
-  };
+  propertyType?: string; // Added property type field
 }
 
 export interface AnalysisRequest {
   address: string;
-  coordinates?: LatLngLiteral;
+  coordinates?: google.maps.LatLngLiteral;
   satelliteImage?: string;
   forceLocalAnalysis?: boolean;
 }

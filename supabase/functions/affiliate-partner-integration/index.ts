@@ -48,7 +48,7 @@ serve(async (req) => {
   } catch (error) {
     console.error('Affiliate integration error:', error);
     return new Response(JSON.stringify({ 
-      error: error instanceof Error ? error.message : 'Unknown error',
+      error: error.message,
       success: false 
     }), {
       status: 500,
@@ -70,7 +70,7 @@ async function generateReferralLink(userId: string | undefined, provider: string
   }
 
   let referralLink = '';
-  const userSubId = `tiptop_${userId ? userId.substring(0, 8) : 'guest'}`;
+  const userSubId = `tiptop_${userId.substring(0, 8)}`;
 
   switch (provider.toLowerCase()) {
     case 'flexoffers':
@@ -205,7 +205,7 @@ async function trackAffiliateClick(userId: string | undefined, sessionId: string
     return new Response(JSON.stringify({
       success: true,
       tracked: false,
-      error: error instanceof Error ? error.message : 'Unknown error'
+      error: error.message
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

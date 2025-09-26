@@ -45,8 +45,8 @@ async function initOpenAI(requestId: string) {
     console.log(`✅ [${requestId}] OpenAI SDK initialized`);
     return openai;
   } catch (error) {
-    console.error(`❌ [${requestId}] OpenAI SDK initialization failed:`, error instanceof Error ? error.message : 'Unknown error');
-    throw new Error(`OpenAI SDK initialization failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    console.error(`❌ [${requestId}] OpenAI SDK initialization failed:`, error.message);
+    throw new Error(`OpenAI SDK initialization failed: ${error.message}`);
   }
 }
 
@@ -90,10 +90,10 @@ serve(async (req) => {
 
     return result;
   } catch (error) {
-    console.error(`❌ [${requestId}] Error:`, error instanceof Error ? error.message : 'Unknown error');
+    console.error(`❌ [${requestId}] Error:`, error.message);
     return new Response(JSON.stringify({
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown error',
+      error: error.message,
       requestId
     }), {
       status: 500,
@@ -123,8 +123,8 @@ async function testOpenAIConnection(requestId: string) {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
   } catch (error) {
-    console.error(`❌ [${requestId}] OpenAI connection failed:`, error instanceof Error ? error.message : 'Unknown error');
-    throw new Error(`OpenAI connection failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    console.error(`❌ [${requestId}] OpenAI connection failed:`, error.message);
+    throw new Error(`OpenAI connection failed: ${error.message}`);
   }
 }
 
@@ -151,7 +151,7 @@ async function listAssistants(requestId: string) {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
   } catch (error) {
-    console.error(`❌ [${requestId}] List assistants failed:`, error instanceof Error ? error.message : 'Unknown error');
+    console.error(`❌ [${requestId}] List assistants failed:`, error.message);
     throw error;
   }
 }
@@ -193,7 +193,7 @@ IMPORTANT:
 - Connect recommendations to actual service providers in our database`,
     tools: [
       {
-        type: "function" as const,
+        type: "function",
         function: {
           name: "get_property_analysis",
           description: "Retrieve property analysis data for a user",
@@ -213,7 +213,7 @@ IMPORTANT:
         }
       },
       {
-        type: "function" as const,
+        type: "function",
         function: {
           name: "get_service_providers",
           description: "Get available service providers for specific asset types",
@@ -230,7 +230,7 @@ IMPORTANT:
         }
       },
       {
-        type: "function" as const,
+        type: "function",
         function: {
           name: "get_user_preferences",
           description: "Get user preferences and onboarding data",
@@ -246,7 +246,7 @@ IMPORTANT:
         }
       },
       {
-        type: "function" as const,
+        type: "function",
         function: {
           name: "create_recommendation",
           description: "Create a monetization recommendation for the user",
@@ -281,7 +281,7 @@ IMPORTANT:
         }
       },
       {
-        type: "function" as const,
+        type: "function",
         function: {
           name: "update_user_progress",
           description: "Update user's onboarding progress",
@@ -336,17 +336,17 @@ IMPORTANT:
     });
   } catch (error) {
     console.error(`❌ [${requestId}] Create assistant failed:`, {
-      message: error instanceof Error ? error.message : 'Unknown error',
-      status: (error as any).status,
-      code: (error as any).code
+      message: error.message,
+      status: error.status,
+      code: error.code
     });
     
     // Provide specific error messages for common issues
-    if ((error as any).status === 401) {
+    if (error.status === 401) {
       throw new Error('OpenAI API key is invalid or missing permissions for Assistant API');
-    } else if ((error as any).status === 429) {
+    } else if (error.status === 429) {
       throw new Error('Rate limit exceeded. Please try again in a moment.');
-    } else if (error instanceof Error && error.message.includes('insufficient_quota')) {
+    } else if (error.message.includes('insufficient_quota')) {
       throw new Error('Insufficient quota. Please check your OpenAI billing and ensure you have credits for Assistant API usage.');
     }
     

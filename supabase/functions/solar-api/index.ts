@@ -277,7 +277,7 @@ Deno.serve(async (req: Request) => {
           estimatedData: true,
           fallbackUsed: true,
           error: 'Failed to connect to Google Solar API - using estimates',
-          message: apiError instanceof Error ? apiError.message : 'Unknown API error'
+          message: apiError.message
         }),
         {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -289,8 +289,8 @@ Deno.serve(async (req: Request) => {
     console.error('❌ Critical error in solar-api function:', error);
     
     // Enhanced error handling with fallback data
-    const fallbackSolarData = coordinates ?
-      generateEstimatedSolarData(coordinates, 1500, '') : null;
+    const fallbackSolarData = locationCoordinates ? 
+      generateEstimatedSolarData(locationCoordinates, 1500, '') : null;
     
     if (fallbackSolarData) {
       console.log('🔄 Returning fallback solar data due to error');
@@ -298,9 +298,9 @@ Deno.serve(async (req: Request) => {
         JSON.stringify({
           success: true,
           solarData: fallbackSolarData,
-          coordinates: coordinates,
+          coordinates: locationCoordinates,
           fallbackUsed: true,
-          error: error instanceof Error ? error.message : 'An error occurred, using estimated data'
+          error: error.message || 'An error occurred, using estimated data'
         }),
         {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -312,7 +312,7 @@ Deno.serve(async (req: Request) => {
     return new Response(
       JSON.stringify({
         success: false,
-        error: error instanceof Error ? error.message : 'An unknown error occurred',
+        error: error.message || 'An unknown error occurred',
         fallbackAvailable: false
       }),
       {

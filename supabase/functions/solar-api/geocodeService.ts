@@ -88,7 +88,7 @@ export async function geocodeAddress(
     console.error('Geocoding error:', error);
     return {
       error: 'Failed to geocode address',
-      details: error instanceof Error ? error.message : 'Network error during geocoding'
+      details: error.message || 'Network error during geocoding'
     };
   }
 }

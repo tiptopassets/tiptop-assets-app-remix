@@ -34,7 +34,7 @@ serve(async (req: Request) => {
     return new Response(
       JSON.stringify({
         success: false,
-        error: error instanceof Error ? error.message : "An unknown error occurred",
+        error: error.message || "An unknown error occurred",
         details: "This endpoint has been deprecated"
       }),
       {

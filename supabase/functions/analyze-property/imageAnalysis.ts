@@ -114,7 +114,7 @@ Provide specific measurements where applicable and high confidence scores for bu
     
     return {
       analysis: data.choices[0].message.content,
-      roofSize: 1000, // Default value, will be updated by actual analysis
+      roofSize: 'Analyzed considering building type and access rights',
       solarPotential: 'Assessed based on building type restrictions and individual access rights'
     };
   } catch (error) {
