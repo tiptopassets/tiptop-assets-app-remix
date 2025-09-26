@@ -123,9 +123,10 @@ Base your calculations on realistic market rates (typically $0.015-$0.025 per GB
 
   } catch (error) {
     console.error('Error in analyze-bandwidth-earnings function:', error);
+    const { networkData } = await req.json().catch(() => ({ networkData: null }));
     return new Response(
       JSON.stringify({ 
-        error: error.message,
+        error: error instanceof Error ? error.message : 'Unknown error',
         fallback: createFallbackAnalysis(networkData)
       }), 
       {

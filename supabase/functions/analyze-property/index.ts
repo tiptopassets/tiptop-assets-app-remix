@@ -140,7 +140,10 @@ Deno.serve(async (req) => {
       details: propertyDetails,
       solarData: solarData,
       propertyType: propertyDetails.type ? propertyDetails.type.join(', ') : initialClassification.primaryType,
-      classification: initialClassification
+      classification: {
+        type: initialClassification.primaryType,
+        subType: initialClassification.subType
+      }
     };
     
     console.log('🔬 Generating property analysis with enhanced solar data');
@@ -166,17 +169,7 @@ Deno.serve(async (req) => {
         panelsCount: solarData.panelsCount,
         revenue: validatedSolarRevenue,
         setupCost: solarData.setupCost,
-        usingRealSolarData: solarData.usingRealSolarData,
-        // Enhanced solar data fields
-        maxSunshineHoursPerYear: solarData.maxSunshineHoursPerYear,
-        roofSegments: solarData.roofSegments,
-        panelConfigurations: solarData.panelConfigurations,
-        panelCapacityWatts: solarData.panelCapacityWatts,
-        panelHeightMeters: solarData.panelHeightMeters,
-        panelWidthMeters: solarData.panelWidthMeters,
-        panelLifetimeYears: solarData.panelLifetimeYears,
-        carbonOffsetFactorKgPerMwh: solarData.carbonOffsetFactorKgPerMwh,
-        imageryDate: solarData.imageryDate
+        usingRealSolarData: solarData.usingRealSolarData
       };
       
       const solarOpportunityIndex = analysis.topOpportunities.findIndex(
@@ -233,7 +226,7 @@ Deno.serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         success: false, 
-        error: error.message || 'An error occurred during property analysis'
+        error: error instanceof Error ? error.message : 'An error occurred during property analysis'
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

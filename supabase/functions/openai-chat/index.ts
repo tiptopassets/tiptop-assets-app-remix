@@ -127,7 +127,7 @@ serve(async (req: Request) => {
         return new Response(
           JSON.stringify({ 
             success: false, 
-            error: `OpenAI API Error: ${openaiError.message}` 
+            error: `OpenAI API Error: ${openaiError instanceof Error ? openaiError.message : 'Unknown error'}` 
           }),
           { headers: corsHeaders, status: 500 }
         );
@@ -147,7 +147,7 @@ serve(async (req: Request) => {
     return new Response(
       JSON.stringify({ 
         success: false, 
-        error: error.message 
+        error: error instanceof Error ? error.message : 'Unknown error' 
       }),
       { headers: corsHeaders, status: 500 }
     );

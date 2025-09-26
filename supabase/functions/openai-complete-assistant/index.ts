@@ -102,7 +102,7 @@ serve(async (req) => {
       } catch (error) {
         console.error('❌ Error creating assistant:', error);
         return new Response(
-          JSON.stringify({ error: `Failed to create assistant: ${error.message}` }),
+          JSON.stringify({ error: `Failed to create assistant: ${error instanceof Error ? error.message : 'Unknown error'}` }),
           { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
@@ -137,7 +137,7 @@ serve(async (req) => {
       } catch (error) {
         console.error('❌ Error creating thread:', error);
         return new Response(
-          JSON.stringify({ error: `Failed to create thread: ${error.message}` }),
+          JSON.stringify({ error: `Failed to create thread: ${error instanceof Error ? error.message : 'Unknown error'}` }),
           { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
@@ -168,7 +168,7 @@ serve(async (req) => {
     } catch (error) {
       console.error('❌ Error adding message:', error);
       return new Response(
-        JSON.stringify({ error: `Failed to add message: ${error.message}` }),
+        JSON.stringify({ error: `Failed to add message: ${error instanceof Error ? error.message : 'Unknown error'}` }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -198,7 +198,7 @@ serve(async (req) => {
     } catch (error) {
       console.error('❌ Error creating run:', error);
       return new Response(
-        JSON.stringify({ error: `Failed to create run: ${error.message}` }),
+        JSON.stringify({ error: `Failed to create run: ${error instanceof Error ? error.message : 'Unknown error'}` }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -234,7 +234,7 @@ serve(async (req) => {
       } catch (error) {
         console.error('❌ Error checking run status:', error);
         return new Response(
-          JSON.stringify({ error: `Failed to check run status: ${error.message}` }),
+          JSON.stringify({ error: `Failed to check run status: ${error instanceof Error ? error.message : 'Unknown error'}` }),
           { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
@@ -296,7 +296,7 @@ serve(async (req) => {
     } catch (error) {
       console.error('❌ Error retrieving response:', error);
       return new Response(
-        JSON.stringify({ error: `Failed to retrieve response: ${error.message}` }),
+        JSON.stringify({ error: `Failed to retrieve response: ${error instanceof Error ? error.message : 'Unknown error'}` }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -306,7 +306,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         error: 'Internal server error',
-        details: error.message,
+        details: error instanceof Error ? error.message : 'Unknown error',
         timestamp: new Date().toISOString()
       }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

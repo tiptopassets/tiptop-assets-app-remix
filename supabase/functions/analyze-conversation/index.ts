@@ -215,7 +215,7 @@ CONVERSATION INTELLIGENCE RULES:
   } catch (error) {
     console.error('Error in intelligent conversation analysis:', error);
     return new Response(JSON.stringify({ 
-      error: error.message,
+      error: error instanceof Error ? error.message : 'Unknown error',
       response: "I'm having trouble processing your message right now, but I'm here to help you explore property monetization opportunities. Could you tell me more about what you're looking to achieve with your property?",
       intentAnalysis: {
         primaryIntent: "information_seeking",
