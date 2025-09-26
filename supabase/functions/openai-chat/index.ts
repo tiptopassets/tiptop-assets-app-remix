@@ -127,7 +127,7 @@ serve(async (req: Request) => {
         return new Response(
           JSON.stringify({ 
             success: false, 
-            error: error instanceof Error ? error.message : 'Unknown error occurred', 
+            error: openaiError instanceof Error ? openaiError.message : 'Unknown error occurred', 
           }),
           { headers: corsHeaders, status: 500 }
         );

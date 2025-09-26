@@ -102,7 +102,7 @@ serve(async (req) => {
       } catch (error) {
         console.error('❌ Error creating assistant:', error);
         return new Response(
-          JSON.stringify({ error: `Failed to create assistant: ${error.message}` }),
+          JSON.stringify({ error: `Failed to create assistant: ${error instanceof Error ? error.message : 'Unknown error'}` }),
           { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
@@ -137,7 +137,7 @@ serve(async (req) => {
       } catch (error) {
         console.error('❌ Error creating thread:', error);
         return new Response(
-          JSON.stringify({ error: `Failed to create thread: ${error.message}` }),
+          JSON.stringify({ error: `Failed to create thread: ${error instanceof Error ? error.message : 'Unknown error'}` }),
           { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
@@ -165,13 +165,13 @@ serve(async (req) => {
 
       const messageData = await messageResponse.json();
       console.log('✅ Message added to thread:', messageData.id);
-    } catch (error) {
-      console.error('❌ Error adding message:', error);
-      return new Response(
-        JSON.stringify({ error: `Failed to add message: ${error.message}` }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
+      } catch (error) {
+        console.error('❌ Error adding message:', error);
+        return new Response(
+          JSON.stringify({ error: `Failed to add message: ${error instanceof Error ? error.message : 'Unknown error'}` }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
 
     // 7. Create and run the assistant
     console.log('🏃 Creating run...');
@@ -195,13 +195,13 @@ serve(async (req) => {
       const runData = await runResponse.json();
       runId = runData.id;
       console.log('✅ Run created:', runId);
-    } catch (error) {
-      console.error('❌ Error creating run:', error);
-      return new Response(
-        JSON.stringify({ error: `Failed to create run: ${error.message}` }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
+      } catch (error) {
+        console.error('❌ Error creating run:', error);
+        return new Response(
+          JSON.stringify({ error: `Failed to create run: ${error instanceof Error ? error.message : 'Unknown error'}` }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
 
     // 8. Poll for run completion
     console.log('⏱️ Polling for run completion...');
@@ -231,13 +231,13 @@ serve(async (req) => {
         if (runStatus === 'failed') {
           throw new Error(`Run failed: ${statusData.last_error?.message || 'Unknown error'}`);
         }
-      } catch (error) {
-        console.error('❌ Error checking run status:', error);
-        return new Response(
-          JSON.stringify({ error: `Failed to check run status: ${error.message}` }),
-          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
+        } catch (error) {
+          console.error('❌ Error checking run status:', error);
+          return new Response(
+            JSON.stringify({ error: `Failed to check run status: ${error instanceof Error ? error.message : 'Unknown error'}` }),
+            { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
     }
 
     if (runStatus !== 'completed') {
@@ -293,23 +293,23 @@ serve(async (req) => {
         }
       );
 
+      } catch (error) {
+        console.error('❌ Error retrieving response:', error);
+        return new Response(
+          JSON.stringify({ error: `Failed to retrieve response: ${error instanceof Error ? error.message : 'Unknown error'}` }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
     } catch (error) {
-      console.error('❌ Error retrieving response:', error);
+      console.error('❌ Unexpected error in OpenAI Complete Assistant function:', error);
       return new Response(
-        JSON.stringify({ error: `Failed to retrieve response: ${error.message}` }),
+        JSON.stringify({ 
+          error: 'Internal server error',
+          details: error instanceof Error ? error.message : 'Unknown error',
+          timestamp: new Date().toISOString()
+        }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
-
-  } catch (error) {
-    console.error('❌ Unexpected error in OpenAI Complete Assistant function:', error);
-    return new Response(
-      JSON.stringify({ 
-        error: 'Internal server error',
-        details: error.message,
-        timestamp: new Date().toISOString()
-      }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
-  }
 });

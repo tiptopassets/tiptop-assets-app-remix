@@ -91,7 +91,10 @@ serve(async (req) => {
         case 'puppeteer':
           // Third priority: Puppeteer automation
           if (credentials?.email && credentials?.password) {
-            syncedEarnings = await syncViaPuppeteer(supabase, user_id, serviceInfo, credentials);
+            syncedEarnings = await syncViaPuppeteer(supabase, user_id, serviceInfo, {
+              email: credentials.email,
+              password: credentials.password
+            });
             syncDetails = 'Synced via automated login';
           } else {
             // Try to get stored credentials
@@ -144,7 +147,7 @@ serve(async (req) => {
     } catch (syncError) {
       console.error(`Sync error for ${serviceInfo.integration_type}:`, syncError);
       syncStatus = 'error';
-      syncDetails = syncError.message || 'Unknown error during sync';
+      syncDetails = syncError instanceof Error ? syncError.message : 'Unknown error during sync';
       
       // Try fallback methods if primary method fails
       if (serviceInfo.integration_type === 'api' && earnings !== undefined) {
@@ -259,7 +262,7 @@ serve(async (req) => {
   } catch (error) {
     console.error('Unexpected error:', error);
     return new Response(
-      JSON.stringify({ error: 'Internal server error', details: error.message }),
+      JSON.stringify({ error: 'Internal server error', details: error instanceof Error ? error.message : 'Unknown error' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
@@ -267,7 +270,7 @@ serve(async (req) => {
 
 // Service-specific integration functions
 
-async function syncViaAPI(supabase, userId: string, service: ServiceInfo): Promise<number> {
+async function syncViaAPI(supabase: any, userId: string, service: ServiceInfo): Promise<number> {
   console.log(`Syncing ${service.name} via API for user ${userId}`);
   
   if (!service.api_url) {
@@ -279,7 +282,7 @@ async function syncViaAPI(supabase, userId: string, service: ServiceInfo): Promi
   return Math.floor(Math.random() * 200) + 50;
 }
 
-async function syncViaOAuth(supabase, userId: string, service: ServiceInfo): Promise<number> {
+async function syncViaOAuth(supabase: any, userId: string, service: ServiceInfo): Promise<number> {
   console.log(`Syncing ${service.name} via OAuth for user ${userId}`);
   
   // Get OAuth tokens from secure storage
@@ -300,7 +303,7 @@ async function syncViaOAuth(supabase, userId: string, service: ServiceInfo): Pro
 }
 
 async function syncViaPuppeteer(
-  supabase, 
+  supabase: any, 
   userId: string, 
   service: ServiceInfo, 
   credentials: { email: string; password: string }

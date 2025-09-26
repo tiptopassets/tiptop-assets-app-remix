@@ -19,8 +19,13 @@ Deno.serve(async (req: Request) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  let coordinates: { lat: number; lng: number } | undefined;
+  let address: string | undefined;
+
   try {
-    const { address, coordinates }: SolarApiRequest = await req.json();
+    const requestData: SolarApiRequest = await req.json();
+    coordinates = requestData.coordinates;
+    address = requestData.address;
     
     if (!address && !coordinates) {
       return new Response(
@@ -277,7 +282,7 @@ Deno.serve(async (req: Request) => {
           estimatedData: true,
           fallbackUsed: true,
           error: 'Failed to connect to Google Solar API - using estimates',
-          message: apiError.message
+          message: apiError instanceof Error ? apiError.message : 'Unknown API error'
         }),
         {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -285,34 +290,34 @@ Deno.serve(async (req: Request) => {
         }
       );
     }
-  } catch (error) {
-    console.error('❌ Critical error in solar-api function:', error);
-    
-    // Enhanced error handling with fallback data
-    const fallbackSolarData = coordinates ?
-      generateEstimatedSolarData(coordinates, 1500, '') : null;
-    
-    if (fallbackSolarData) {
-      console.log('🔄 Returning fallback solar data due to error');
-      return new Response(
-        JSON.stringify({
-          success: true,
-          solarData: fallbackSolarData,
-          coordinates: coordinates,
-          fallbackUsed: true,
-          error: error.message || 'An error occurred, using estimated data'
-        }),
-        {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 200
-        }
-      );
-    }
+    } catch (error) {
+      console.error('❌ Critical error in solar-api function:', error);
+      
+      // Enhanced error handling with fallback data - use original coordinates from request
+      const fallbackSolarData = coordinates ?
+        generateEstimatedSolarData(coordinates, 1500, '') : null;
+      
+      if (fallbackSolarData) {
+        console.log('🔄 Returning fallback solar data due to error');
+        return new Response(
+          JSON.stringify({
+            success: true,
+            solarData: fallbackSolarData,
+            coordinates: coordinates,
+            fallbackUsed: true,
+            error: error instanceof Error ? error.message : 'An error occurred, using estimated data'
+          }),
+          {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 200
+          }
+        );
+      }
     
     return new Response(
       JSON.stringify({
         success: false,
-        error: error.message || 'An unknown error occurred',
+        error: error instanceof Error ? error.message : 'An unknown error occurred',
         fallbackAvailable: false
       }),
       {

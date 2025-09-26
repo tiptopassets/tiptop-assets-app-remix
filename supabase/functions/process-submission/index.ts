@@ -164,14 +164,14 @@ async function submitToNeighbor(submission: PropertySubmission): Promise<{ succe
         message: "We couldn't submit your information to Neighbor at this time." 
       };
     }
-  } catch (error) {
-    console.error("Error submitting to Neighbor:", error);
-    return { 
-      success: false, 
-      error: error.message,
-      message: "An error occurred while submitting to Neighbor" 
-    };
-  }
+    } catch (error) {
+      console.error("Error submitting to Neighbor:", error);
+      return { 
+        success: false, 
+        error: error instanceof Error ? error.message : 'Unknown error',
+        message: "An error occurred while submitting to Neighbor" 
+      };
+    }
 }
 
 Deno.serve(async (req) => {
@@ -276,7 +276,7 @@ Deno.serve(async (req) => {
       JSON.stringify({ 
         success: false, 
         message: "Error processing submission",
-        error: error.message
+        error: error instanceof Error ? error.message : 'Unknown error'
       }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },

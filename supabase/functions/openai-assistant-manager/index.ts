@@ -77,28 +77,28 @@ serve(async (req): Promise<Response> => {
     try {
       switch (action) {
         case 'test_connection':
-          result = await Promise.race([testOpenAIConnection(requestId), actionTimeout]);
+          result = await Promise.race([testOpenAIConnection(requestId), actionTimeout]) as Response;
           break;
         case 'test_assistant_setup':
-          result = await Promise.race([testAssistantSetup(supabase, requestId), actionTimeout]);
+          result = await Promise.race([testAssistantSetup(supabase, requestId), actionTimeout]) as Response;
           break;
         case 'get_assistant':
-          result = await Promise.race([getAssistant(requestId), actionTimeout]);
+          result = await Promise.race([getAssistant(requestId), actionTimeout]) as Response;
           break;
         case 'create_thread':
-          result = await Promise.race([createThread(data, supabase, requestId), actionTimeout]);
+          result = await Promise.race([createThread(data, supabase, requestId), actionTimeout]) as Response;
           break;
         case 'send_message':
-          result = await Promise.race([sendMessage(data, supabase, requestId), actionTimeout]);
+          result = await Promise.race([sendMessage(data, supabase, requestId), actionTimeout]) as Response;
           break;
         case 'run_assistant':
-          result = await Promise.race([runAssistant(data, requestId), actionTimeout]);
+          result = await Promise.race([runAssistant(data, requestId), actionTimeout]) as Response;
           break;
         case 'get_run_status':
-          result = await Promise.race([getRunStatus(data, requestId), actionTimeout]);
+          result = await Promise.race([getRunStatus(data, requestId), actionTimeout]) as Response;
           break;
         case 'submit_tool_outputs':
-          result = await Promise.race([submitToolOutputs(data, supabase, requestId), actionTimeout]);
+          result = await Promise.race([submitToolOutputs(data, supabase, requestId), actionTimeout]) as Response;
           break;
         default:
           console.error(`❌ [${requestId}] Unknown action: ${action}`);

@@ -81,7 +81,7 @@ export async function handleSolarApiRequest(
     
     return {
       error: 'Failed to connect to Google Solar API',
-      details: apiError.message || 'Unknown network error'
+      details: apiError instanceof Error ? apiError.message : 'Unknown network error'
     };
   }
 }
