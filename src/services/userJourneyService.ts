@@ -254,26 +254,62 @@ export const trackOptionSelected = async (selectedOption: 'manual' | 'concierge'
   }
 };
 
-// Safe auth completion tracking - only links by session or explicit analysis_id
+// Safe auth completion tracking with session isolation to prevent cross-user leakage
 export const trackAuthCompleted = async (userId: string) => {
-  const sessionId = getSessionId();
-  
+  const currentSessionId = getSessionId();
+
   try {
     console.log('🔐 Starting safe auth completion tracking for user:', userId);
-    
-    // Link the current session journey to the authenticated user
-    const { error: linkError } = await supabase.rpc('link_journey_to_user', {
-      p_session_id: sessionId,
-      p_user_id: userId
-    });
 
-    if (linkError) {
-      console.error('❌ Error linking journey to user:', linkError);
-    } else {
-      console.log('✅ Journey linked to authenticated user:', userId);
+    // Check the existing journey for this session
+    const { data: existingJourney, error: journeyErr } = await supabase
+      .from('user_journey_complete')
+      .select('id, user_id, analysis_id, property_address')
+      .eq('session_id', currentSessionId)
+      .maybeSingle();
+
+    if (journeyErr) {
+      console.warn('⚠️ Could not fetch existing journey for session:', journeyErr);
     }
 
-    // Link session asset selections to the authenticated user
+    const hasAnalysisOrAddress = !!(existingJourney?.analysis_id || (existingJourney?.property_address && existingJourney.property_address.trim() !== ''));
+    const linkedToAnotherUser = !!(existingJourney?.user_id && existingJourney.user_id !== userId);
+
+    if (!existingJourney || (!hasAnalysisOrAddress && !linkedToAnotherUser)) {
+      // Safe to link this clean session journey to the authenticated user
+      const { error: linkError } = await supabase.rpc('link_journey_to_user', {
+        p_session_id: currentSessionId,
+        p_user_id: userId
+      });
+
+      if (linkError) {
+        console.error('❌ Error linking journey to user:', linkError);
+      } else {
+        console.log('✅ Journey linked to authenticated user:', userId);
+      }
+    } else {
+      // Session has prior analysis/address or is linked to another user → rotate session to isolate
+      const newSessionId = generateSessionId();
+      localStorage.setItem('tiptop_session_id', newSessionId);
+      console.log('🔄 Rotated session ID on auth to prevent data leakage:', { newSessionId });
+
+      // Start a fresh journey for this user
+      const { error: initErr } = await supabase.rpc('update_journey_step', {
+        p_session_id: newSessionId,
+        p_step: 'auth_completed',
+        p_data: {}
+      });
+      if (initErr) console.warn('⚠️ Could not initialize fresh journey after rotation:', initErr);
+
+      // Explicitly link the fresh session to the user
+      const { error: linkNewErr } = await supabase.rpc('link_journey_to_user', {
+        p_session_id: newSessionId,
+        p_user_id: userId
+      });
+      if (linkNewErr) console.warn('⚠️ Could not link fresh session to user:', linkNewErr);
+    }
+
+    // Link session asset selections to the authenticated user (anonymous_session_id flow)
     try {
       const { linkSessionToUser } = await import('./sessionStorageService');
       const linkedAssetCount = await linkSessionToUser(userId);
@@ -303,11 +339,14 @@ export const trackAuthCompleted = async (userId: string) => {
       try {
         const backups = JSON.parse(backupData);
         console.log('🔄 Found backup analysis data, attempting to recover:', backups.length, 'items');
+
+        // Use the latest session id after potential rotation
+        const effectiveSessionId = localStorage.getItem('tiptop_session_id') || currentSessionId;
         
         for (const backup of backups) {
-          // Try to save backup data to database now that user is authenticated
+          const targetSession = backup.sessionId || effectiveSessionId;
           const { error: backupError } = await supabase.rpc('update_journey_step', {
-            p_session_id: backup.sessionId || sessionId,
+            p_session_id: targetSession,
             p_step: 'analysis_completed',
             p_data: {
               property_address: backup.address,
@@ -318,27 +357,26 @@ export const trackAuthCompleted = async (userId: string) => {
               total_opportunities: backup.totalOpportunities
             }
           });
-          
+
           if (!backupError) {
-            // Link this recovered data to the user
             await supabase.rpc('link_journey_to_user', {
-              p_session_id: backup.sessionId || sessionId,
+              p_session_id: targetSession,
               p_user_id: userId
             });
             console.log('✅ Recovered backup analysis for:', backup.address);
           }
         }
-        
-        // Clear backup data after successful recovery
+
         localStorage.removeItem('tiptop_analysis_backup');
         console.log('🧹 Cleared backup data after recovery');
-        
+
       } catch (parseError) {
         console.warn('⚠️ Could not parse backup data:', parseError);
       }
     }
 
-    return sessionId;
+    // Return the active session id
+    return localStorage.getItem('tiptop_session_id');
   } catch (error) {
     console.error('❌ Error in trackAuthCompleted:', error);
     return null;

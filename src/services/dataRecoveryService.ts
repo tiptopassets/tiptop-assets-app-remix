@@ -61,14 +61,29 @@ export const repairJourneySummaryData = async (userId: string): Promise<void> =>
     try {
       const { getSessionId } = await import('@/services/userJourneyService');
       const sessionId = getSessionId();
-      const { error: linkSessionErr } = await supabase.rpc('link_journey_to_user', {
-        p_session_id: sessionId,
-        p_user_id: userId,
-      });
-      if (linkSessionErr) {
-        console.warn('⚠️ [REPAIR] Could not link current session to user:', linkSessionErr);
+
+      // Check if this session's journey already contains analysis/address (potentially from another user)
+      const { data: existingJourney } = await supabase
+        .from('user_journey_complete')
+        .select('id, user_id, analysis_id, property_address')
+        .eq('session_id', sessionId)
+        .maybeSingle();
+
+      const hasAnalysisOrAddress = !!(existingJourney?.analysis_id || (existingJourney?.property_address && existingJourney.property_address.trim() !== ''));
+      const linkedToAnotherUser = !!(existingJourney?.user_id && existingJourney.user_id !== userId);
+
+      if (!existingJourney || (!hasAnalysisOrAddress && !linkedToAnotherUser)) {
+        const { error: linkSessionErr } = await supabase.rpc('link_journey_to_user', {
+          p_session_id: sessionId,
+          p_user_id: userId,
+        });
+        if (linkSessionErr) {
+          console.warn('⚠️ [REPAIR] Could not link current session to user:', linkSessionErr);
+        } else {
+          console.log('✅ [REPAIR] Linked current session to user for journey data');
+        }
       } else {
-        console.log('✅ [REPAIR] Linked current session to user for journey data');
+        console.log('⏭️ [REPAIR] Skipping session linking to avoid cross-user leakage', { sessionId });
       }
     } catch (e) {
       console.warn('⚠️ [REPAIR] Unable to obtain session id for safe linking:', e);
