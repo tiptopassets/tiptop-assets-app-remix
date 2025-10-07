@@ -2,6 +2,7 @@
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { useGoogleMap } from '@/contexts/GoogleMapContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { SelectedAsset } from '@/types/analysis';
 
 interface ContinueButtonProps {
@@ -13,6 +14,7 @@ interface ContinueButtonProps {
 const ContinueButton = ({ selectedCount, onContinue, selectedAssetsData }: ContinueButtonProps) => {
   const navigate = useNavigate();
   const { analysisResults, address, currentAnalysisId } = useGoogleMap();
+  const { user } = useAuth();
 
   const handleContinue = () => {
     if (selectedCount < 2) {
@@ -41,6 +43,15 @@ const ContinueButton = ({ selectedCount, onContinue, selectedAssetsData }: Conti
     
     // Store in sessionStorage as backup
     sessionStorage.setItem('model-viewer-data', JSON.stringify(navigationData));
+    
+    console.log('📤 [CONTINUE] User authenticated?', !!user);
+    
+    // Check if user is authenticated
+    if (!user) {
+      console.log('🔐 [CONTINUE] User not authenticated, redirecting to auth');
+      navigate('/auth?returnTo=/model-viewer');
+      return;
+    }
     
     console.log('📤 [CONTINUE] Navigating to model-viewer with:', navigationData);
     

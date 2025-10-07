@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { CheckCircle2, Upload, User, LogIn } from 'lucide-react';
@@ -11,9 +11,10 @@ import { useJourneyTracking } from '@/hooks/useJourneyTracking';
 const Options = () => {
   const [selectedOption, setSelectedOption] = useState<'manual' | 'concierge' | null>(null);
   const [isInitialized, setIsInitialized] = useState(false);
-  const { signInWithGoogle, loading: authLoading, user } = useAuth();
+  const { loading: authLoading, user } = useAuth();
   const { trackOption } = useJourneyTracking();
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   console.log('🎯 Options page state:', {
     selectedOption,
@@ -31,6 +32,14 @@ const Options = () => {
     return () => clearTimeout(timer);
   }, []);
 
+  // Authentication guard - redirect if not authenticated
+  useEffect(() => {
+    if (!authLoading && !user) {
+      console.log('🔐 [OPTIONS] User not authenticated, redirecting to auth');
+      navigate('/auth?returnTo=/options');
+    }
+  }, [user, authLoading, navigate]);
+
   // Redirect authenticated users to onboarding with their last selection or dashboard
   useEffect(() => {
     if (user && !authLoading) {
@@ -41,8 +50,7 @@ const Options = () => {
         console.log('🎯 Redirecting to onboarding with option:', selectedOption);
         window.location.href = `/onboarding?option=${selectedOption}`;
       } else {
-        console.log('🔄 No selected option, redirecting to dashboard');
-        window.location.href = '/dashboard';
+        console.log('🔄 No selected option, staying on options page');
       }
     }
   }, [user, authLoading, selectedOption]);
@@ -67,25 +75,15 @@ const Options = () => {
       return;
     }
     
-    // Show toast and proceed with Google authentication
+    // User is already authenticated at this point (due to auth guard above)
+    // Just redirect to onboarding with the selected option
     toast({
       title: "Option Selected",
-      description: `${selectedOption === 'manual' ? 'Manual Upload' : 'Tiptop Concierge'} selected. Redirecting to authentication...`,
+      description: `${selectedOption === 'manual' ? 'Manual Upload' : 'Tiptop Concierge'} selected. Redirecting to onboarding...`,
     });
     
-    try {
-      console.log('🔐 Starting Google authentication with selected option:', selectedOption);
-      // Trigger Google authentication - this will redirect to Google and then back
-      // The useEffect above will handle the redirect to onboarding once authenticated
-      await signInWithGoogle();
-    } catch (error) {
-      console.error('❌ Google sign in error:', error);
-      toast({
-        title: "Authentication Error",
-        description: "There was a problem signing in with Google. Please try again.",
-        variant: "destructive"
-      });
-    }
+    console.log('🎯 Redirecting to onboarding with option:', selectedOption);
+    window.location.href = `/onboarding?option=${selectedOption}`;
   };
 
   // Show loading state while initializing or processing auth
@@ -221,23 +219,14 @@ const Options = () => {
           <div className="mt-12 flex justify-center">
             <Button 
               onClick={handleContinue} 
-              disabled={!selectedOption || authLoading}
+              disabled={!selectedOption}
               className="glass-effect bg-gradient-to-r from-tiptop-purple to-purple-600 hover:opacity-90 px-8 py-6 rounded-full flex items-center gap-3 text-xl disabled:opacity-50"
               style={{ 
                 boxShadow: '0 0 20px rgba(155, 135, 245, 0.5)',
               }}
             >
-              {authLoading ? (
-                <>
-                  <span>Processing...</span>
-                  <div className="h-5 w-5 border-2 border-white/80 border-t-transparent rounded-full animate-spin"></div>
-                </>
-              ) : (
-                <>
-                  <span>Continue to Authentication</span>
-                  <LogIn size={24} />
-                </>
-              )}
+              <span>Continue to Onboarding</span>
+              <LogIn size={24} />
             </Button>
           </div>
         </motion.div>

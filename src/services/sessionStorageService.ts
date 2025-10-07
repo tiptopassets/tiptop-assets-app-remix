@@ -104,7 +104,17 @@ export const saveAssetSelectionAnonymous = async (
   userId?: string
 ): Promise<string | null> => {
   try {
-    const sessionId = getSessionId();
+    // Check if user is authenticated - if so, save with user_id directly
+    const { supabase } = await import('@/integrations/supabase/client');
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    // If authenticated and no userId provided, use the authenticated user
+    if (user && !userId) {
+      userId = user.id;
+      console.log('✅ [SESSION-STORAGE] User authenticated, saving with user_id:', userId);
+    }
+    
+    const sessionId = userId ? null : getSessionId(); // Only use sessionId for anonymous users
     
     // Try to get analysis ID from localStorage if not provided
     if (!analysisId) {
@@ -119,7 +129,8 @@ export const saveAssetSelectionAnonymous = async (
       monthlyRevenue,
       analysisId,
       userId,
-      sessionId
+      sessionId,
+      isAuthenticated: !!userId
     });
 
     // CRITICAL: Check if this asset selection already exists to prevent duplicates
@@ -169,7 +180,7 @@ export const saveAssetSelectionAnonymous = async (
     // Insert new selection only if it doesn't exist
     const insertData = {
       user_id: userId || null,
-      session_id: sessionId,
+      session_id: sessionId || null,
       analysis_id: analysisId || null,
       asset_type: assetType,
       asset_data: assetData || {},

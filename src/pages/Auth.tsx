@@ -9,9 +9,15 @@ const Auth = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // If user is already authenticated, redirect to dashboard
+    // Get returnTo parameter from URL
+    const params = new URLSearchParams(window.location.search);
+    const returnTo = params.get('returnTo');
+    
+    // If user is already authenticated, redirect to returnTo or dashboard
     if (user && !loading) {
-      navigate('/dashboard');
+      const targetPath = returnTo || '/dashboard';
+      console.log('🔄 [AUTH] User authenticated, redirecting to:', targetPath);
+      navigate(targetPath);
       return;
     }
 

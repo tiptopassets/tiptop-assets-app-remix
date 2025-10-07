@@ -285,17 +285,28 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                   // Trigger analysis recovery with enhanced data consistency
                   handleAnalysisRecovery(currentSession.user.id);
                   
-                  // Only redirect to dashboard if user is on auth page (not homepage)
-                  // Allow signed-in users to stay on homepage to analyze new properties
+                  // Check for returnTo parameter in URL
+                  const params = new URLSearchParams(window.location.search);
+                  const returnTo = params.get('returnTo');
                   const currentPath = window.location.pathname;
-                  const shouldRedirectToDashboard = currentPath === '/auth' || currentPath.startsWith('/auth');
                   
-                  if (shouldRedirectToDashboard) {
-                    console.log('🔄 [AUTH] Redirecting to dashboard from auth page:', currentPath);
-                    navigate('/dashboard');
+                  // Determine redirect target
+                  let redirectPath = '/dashboard';
+                  
+                  if (returnTo) {
+                    // If we have a returnTo parameter, use it
+                    redirectPath = returnTo;
+                    console.log('🔄 [AUTH] Redirecting to returnTo path:', redirectPath);
+                  } else if (currentPath === '/auth' || currentPath.startsWith('/auth')) {
+                    // If on auth page without returnTo, go to dashboard
+                    console.log('🔄 [AUTH] Redirecting to dashboard from auth page');
                   } else {
+                    // If on other pages, stay on current page
                     console.log('🔄 [AUTH] Staying on current page:', currentPath);
+                    return;
                   }
+                  
+                  navigate(redirectPath);
                 }
               }, 100);
             }

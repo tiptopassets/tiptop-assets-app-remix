@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { useUserAssetSelections } from '@/hooks/useUserAssetSelections';
 import { useToast } from '@/hooks/use-toast';
 import { useAssetSelection } from '@/hooks/useAssetSelection';
+import { useAuth } from '@/contexts/AuthContext';
 import { SelectedAsset } from '@/types/analysis';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
@@ -19,6 +20,7 @@ const ModelViewer = () => {
   const { toast } = useToast();
   const { assetSelections } = useUserAssetSelections();
   const { saveSelection } = useAssetSelection();
+  const { user, loading: authLoading } = useAuth();
   const [selectedAssets, setSelectedAssets] = useState<string[]>([]);
   const [selectedAssetsData, setSelectedAssetsData] = useState<SelectedAsset[]>([]);
   const [analysisResults, setAnalysisResults] = useState<any>(null);
@@ -29,6 +31,14 @@ const ModelViewer = () => {
   // Centralized icon from registry
   const getAssetIcon = (assetType: string) =>
     registryGetAssetIcon(assetType, { className: 'w-8 h-8 md:w-12 md:h-12 object-contain' });
+
+  // Authentication guard - redirect if not authenticated
+  useEffect(() => {
+    if (!authLoading && !user) {
+      console.log('🔐 [MODEL-VIEWER] User not authenticated, redirecting to auth');
+      navigate('/auth?returnTo=/model-viewer');
+    }
+  }, [user, authLoading, navigate]);
 
   useEffect(() => {
     // Get data from navigation state or sessionStorage
