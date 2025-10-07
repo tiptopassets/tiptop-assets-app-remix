@@ -1564,6 +1564,10 @@ export type Database = {
         Args: { p_user_id: string }
         Returns: number
       }
+      repair_orphaned_user_selections: {
+        Args: { p_analysis_id: string; p_user_id: string }
+        Returns: number
+      }
       repair_recent_orphaned_selections: {
         Args: {
           p_analysis_id: string

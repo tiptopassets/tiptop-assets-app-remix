@@ -43,63 +43,59 @@ export const savePropertyAnalysis = async (
     }
 
     const totalRevenue = analysisResults.topOpportunities.reduce((sum, opp) => sum + (opp.monthlyRevenue || 0), 0);
+    const totalOpportunities = analysisResults.topOpportunities.length;
     
-    console.log('📊 [ANALYSIS SAVE] Preparing database insert with values:', {
+    // Get session ID for proper linking
+    const sessionId = localStorage.getItem('tiptop_session_id') || localStorage.getItem('anonymous_session_id');
+    
+    // Get property address from various possible sources
+    const propertyAddress = (analysisResults as any).propertyAddress || 
+                           (analysisResults as any).address || 
+                           (analysisResults as any).property_address ||
+                           'Property Address';
+    
+    console.log('📊 [ANALYSIS SAVE] Calling save_property_analysis RPC with:', {
+      userId,
+      sessionId,
+      propertyAddress,
       totalRevenue,
-      totalOpportunities: analysisResults.topOpportunities.length,
+      totalOpportunities,
       propertyType: analysisResults.propertyType,
-      hasCoordinates: !!coordinates,
-      satelliteImageUrl
+      hasCoordinates: !!coordinates
     });
 
-    const insertData = {
-      user_id: userId,
-      address_id: addressId,
-      analysis_results: analysisResults as any,
-      total_monthly_revenue: totalRevenue,
-      total_opportunities: analysisResults.topOpportunities.length,
-      property_type: analysisResults.propertyType,
-      coordinates,
-      satellite_image_url: satelliteImageUrl,
-      using_real_solar_data: analysisResults.rooftop?.usingRealSolarData || false
-    };
-
-    console.log('📤 [ANALYSIS SAVE] Inserting into user_property_analyses table...');
-
-    const { data, error } = await supabase
-      .from('user_property_analyses')
-      .insert(insertData)
-      .select()
-      .single();
+    // CRITICAL: Use the RPC function which handles all linking automatically
+    const { data, error } = await supabase.rpc('save_property_analysis', {
+      p_user_id: userId,
+      p_session_id: sessionId,
+      p_property_address: propertyAddress,
+      p_coordinates: coordinates,
+      p_analysis_results: analysisResults as any,
+      p_total_monthly_revenue: totalRevenue,
+      p_total_opportunities: totalOpportunities,
+      p_satellite_image_url: satelliteImageUrl
+    });
 
     if (error) {
-      console.error('❌ [ANALYSIS SAVE] Database insert failed:', {
+      console.error('❌ [ANALYSIS SAVE] RPC function failed:', {
         error: error.message,
         code: error.code,
         details: error.details,
-        hint: error.hint,
-        insertData: {
-          userId,
-          addressId,
-          totalRevenue,
-          totalOpportunities: analysisResults.topOpportunities.length,
-          propertyType: analysisResults.propertyType
-        }
+        hint: error.hint
       });
       throw error;
     }
     
-    console.log('✅ [ANALYSIS SAVE] Analysis saved successfully:', {
-      analysisId: data.id,
-      userId: data.user_id,
-      addressId: data.address_id,
-      totalRevenue: data.total_monthly_revenue,
-      totalOpportunities: data.total_opportunities,
-      propertyType: data.property_type,
-      createdAt: data.created_at
+    console.log('✅ [ANALYSIS SAVE] Analysis saved successfully via RPC:', {
+      analysisId: data,
+      userId,
+      sessionId,
+      totalRevenue,
+      totalOpportunities,
+      propertyType: analysisResults.propertyType
     });
     
-    return data.id;
+    return data;
   } catch (err) {
     console.error('❌ [ANALYSIS SAVE] Critical error saving property analysis:', {
       error: err instanceof Error ? err.message : 'Unknown error',
