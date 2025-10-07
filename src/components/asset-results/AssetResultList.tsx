@@ -246,14 +246,31 @@ const AssetResultList: React.FC<AssetResultListProps> = ({
     console.log('🚀 Continue clicked');
     console.log('📊 Selected assets count:', selectedAssets.length);
     console.log('📋 Selected assets data:', selectedAssetsData);
+    console.log('🔍 Current analysis ID:', currentAnalysisId);
     
     if (selectedAssets.length > 0) {
-      // Navigate to the new summary page instead of showing form
-      navigate('/model-viewer');
+      // Prepare navigation data with all necessary information
+      const navigationData = {
+        analysisResults,
+        address,
+        analysisId: currentAnalysisId,
+        selectedAssetsData,
+        timestamp: Date.now()
+      };
+      
+      console.log('📤 Navigating to model-viewer with data:', navigationData);
+      
+      // Store in sessionStorage as backup
+      sessionStorage.setItem('model-viewer-data', JSON.stringify(navigationData));
+      
+      // Navigate with state
+      navigate('/model-viewer', { 
+        state: navigationData
+      });
     } else {
       console.warn('⚠️ No assets selected when continue was clicked');
     }
-  }, [selectedAssets.length, selectedAssetsData, navigate]);
+  }, [selectedAssets.length, selectedAssetsData, navigate, currentAnalysisId, analysisResults, address]);
 
   const handleFormComplete = useCallback(async () => {
     console.log('🚀🚀🚀 ATTEMPTING TO SAVE ASSET SELECTION WITH ROBUST RECOVERY 🚀🚀🚀');
