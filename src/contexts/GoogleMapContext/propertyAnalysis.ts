@@ -277,7 +277,47 @@ async function saveToDatabaseIfAuthenticated(
   }
 
   if (!userId || !saveAddress || !savePropertyAnalysis) {
-    console.log('📝 User not authenticated or save functions not available, skipping database save');
+    // Save anonymously via RPC so we still get an analysis_id linked to session
+    try {
+      const { getSessionId, updateAssetSelectionsWithAnalysisId, storeAnalysisIdForSession } = await import('@/services/sessionStorageService');
+      const sessionId = getSessionId();
+      const totalRevenue = (analysisResults.topOpportunities || []).reduce((sum: number, opp: any) => sum + (opp.monthlyRevenue || 0), 0);
+      const totalOpportunities = (analysisResults.topOpportunities || []).length;
+
+      console.log('📝 Saving anonymous analysis via RPC...', { sessionId, totalRevenue, totalOpportunities });
+
+      const { data, error } = await supabase.rpc('save_property_analysis', {
+        p_user_id: null,
+        p_session_id: sessionId,
+        p_property_address: propertyAddress,
+        p_coordinates: coordinates as any,
+        p_analysis_results: analysisResults as any,
+        p_total_monthly_revenue: totalRevenue,
+        p_total_opportunities: totalOpportunities,
+        p_satellite_image_url: null
+      });
+
+      if (error) {
+        console.warn('⚠️ Anonymous analysis RPC failed (non-blocking):', error);
+        return;
+      }
+
+      const analysisId = data as unknown as string | null;
+      if (analysisId) {
+        console.log('✅ Anonymous analysis saved with ID:', analysisId);
+        // Persist and update context + pending selections
+        storeAnalysisIdForSession(analysisId);
+        if (setCurrentAnalysisId) setCurrentAnalysisId(analysisId);
+        try {
+          const updated = await updateAssetSelectionsWithAnalysisId(sessionId, analysisId);
+          console.log('🔗 Linked', updated, 'pending selections to analysis');
+        } catch (linkErr) {
+          console.warn('Could not link pending selections:', linkErr);
+        }
+      }
+    } catch (anonErr) {
+      console.warn('Anonymous save path encountered an error (non-blocking):', anonErr);
+    }
     return;
   }
 

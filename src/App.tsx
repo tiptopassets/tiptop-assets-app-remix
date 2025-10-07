@@ -14,7 +14,7 @@ import Index from './pages/Index';
 const Auth = lazy(() => import('./pages/Auth'));
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
-const ModelViewerWrapper = lazy(() => import('./components/model-viewer/ModelViewerWrapper'));
+import ModelViewerWrapper from './components/model-viewer/ModelViewerWrapper';
 const OnboardingChatbot = lazy(() => import('./pages/OnboardingChatbot'));
 const EnhancedOnboardingChatbot = lazy(() => import('./pages/EnhancedOnboardingChatbot'));
 const AddAsset = lazy(() => import('./pages/AddAsset'));
