@@ -1,5 +1,5 @@
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useUserProperties } from '@/hooks/useUserProperties';
 import DashboardLayout from '@/components/dashboard/DashboardLayout';
@@ -10,9 +10,12 @@ import DashboardAuthGuard from '@/components/dashboard/DashboardAuthGuard';
 import DashboardContent from '@/components/dashboard/DashboardContent';
 import DashboardErrorBoundary from '@/components/dashboard/DashboardErrorBoundary';
 import JourneyTracker from '@/components/JourneyTracker';
+import { FirstTimeUserOptionsBanner } from '@/components/dashboard/FirstTimeUserOptionsBanner';
+import { isFirstTimeUser } from '@/services/firstTimeUserService';
 
 const Dashboard = () => {
   const { user, loading: authLoading } = useAuth();
+  const [showFirstTimeBanner, setShowFirstTimeBanner] = useState(false);
   
   // Use the unified multi-property system
   const { 
@@ -25,6 +28,13 @@ const Dashboard = () => {
     refetch: refreshProperties,
     propertiesCount
   } = useUserProperties();
+
+  // Check if user is first-time user after authentication
+  useEffect(() => {
+    if (user && !authLoading) {
+      setShowFirstTimeBanner(isFirstTimeUser());
+    }
+  }, [user, authLoading]);
 
   const loading = propertiesLoading;
   const error = propertiesError;
@@ -120,6 +130,12 @@ const Dashboard = () => {
             onPropertySelect={selectProperty}
           >
             <JourneyTracker />
+            
+            {/* Show first-time user options banner */}
+            {showFirstTimeBanner && (
+              <FirstTimeUserOptionsBanner onDismiss={() => setShowFirstTimeBanner(false)} />
+            )}
+            
             <DashboardContent
               primaryAddress={selectedProperty.address}
               latestAnalysis={latestAnalysis}
