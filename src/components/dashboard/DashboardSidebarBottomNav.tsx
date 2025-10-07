@@ -6,7 +6,11 @@ import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/comp
 import { useAuth } from '@/contexts/AuthContext';
 import { useAdmin } from '@/hooks/useAdmin';
 
-const DashboardSidebarBottomNav = () => {
+interface DashboardSidebarBottomNavProps {
+  isCollapsed?: boolean;
+}
+
+const DashboardSidebarBottomNav = ({ isCollapsed = false }: DashboardSidebarBottomNavProps) => {
   const { signOut } = useAuth();
   const { isAdmin } = useAdmin();
 
@@ -21,7 +25,7 @@ const DashboardSidebarBottomNav = () => {
   return (
     <TooltipProvider>
       <div className="flex-shrink-0 border-t border-gray-800">
-        <div className="p-3 flex items-center justify-center gap-1">
+        <div className={`p-3 flex items-center ${isCollapsed ? 'flex-col gap-2' : 'justify-center gap-1'}`}>
           {/* Settings */}
           <Tooltip>
             <TooltipTrigger asChild>
@@ -32,7 +36,7 @@ const DashboardSidebarBottomNav = () => {
                 <Settings size={16} />
               </Link>
             </TooltipTrigger>
-            <TooltipContent side="top">
+            <TooltipContent side={isCollapsed ? "right" : "top"}>
               <p>Settings</p>
             </TooltipContent>
           </Tooltip>
@@ -47,7 +51,7 @@ const DashboardSidebarBottomNav = () => {
                 <User size={16} />
               </Link>
             </TooltipTrigger>
-            <TooltipContent side="top">
+            <TooltipContent side={isCollapsed ? "right" : "top"}>
               <p>Account</p>
             </TooltipContent>
           </Tooltip>
@@ -63,7 +67,7 @@ const DashboardSidebarBottomNav = () => {
                   <Shield size={16} />
                 </Link>
               </TooltipTrigger>
-              <TooltipContent side="top">
+              <TooltipContent side={isCollapsed ? "right" : "top"}>
                 <p>Admin Dashboard</p>
               </TooltipContent>
             </Tooltip>
@@ -81,7 +85,7 @@ const DashboardSidebarBottomNav = () => {
                 <LogOut size={16} />
               </Button>
             </TooltipTrigger>
-            <TooltipContent side="top">
+            <TooltipContent side={isCollapsed ? "right" : "top"}>
               <p>Sign Out</p>
             </TooltipContent>
           </Tooltip>

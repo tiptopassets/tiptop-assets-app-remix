@@ -1,5 +1,5 @@
 
-import { ReactNode } from 'react';
+import { ReactNode, useState } from 'react';
 import DashboardSidebar from './DashboardSidebar';
 import { useAuth } from '@/contexts/AuthContext';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -15,6 +15,7 @@ interface DashboardLayoutProps {
 const DashboardLayout = ({ children, properties, selectedPropertyId, onPropertySelect }: DashboardLayoutProps) => {
   const { user, loading } = useAuth();
   const isMobile = useIsMobile();
+  const [isSidebarHovered, setIsSidebarHovered] = useState(false);
 
   // Show loading state if authentication is still loading
   if (loading) {
@@ -47,12 +48,19 @@ const DashboardLayout = ({ children, properties, selectedPropertyId, onPropertyS
 
   return (
     <div className="flex min-h-screen bg-gray-50">
-      <DashboardSidebar 
-        properties={properties}
-        selectedPropertyId={selectedPropertyId}
-        onPropertySelect={onPropertySelect}
-      />
-      <main className="flex-1 ml-64 overflow-auto">
+      <div
+        onMouseEnter={() => setIsSidebarHovered(true)}
+        onMouseLeave={() => setIsSidebarHovered(false)}
+      >
+        <DashboardSidebar 
+          properties={properties}
+          selectedPropertyId={selectedPropertyId}
+          onPropertySelect={onPropertySelect}
+        />
+      </div>
+      <main className={`flex-1 overflow-auto transition-all duration-300 ${
+        isSidebarHovered ? 'ml-64' : 'ml-16'
+      }`}>
         <div className="p-6 max-w-7xl mx-auto">
           {children}
         </div>

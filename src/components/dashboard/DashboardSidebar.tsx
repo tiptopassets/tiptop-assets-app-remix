@@ -16,6 +16,7 @@ interface DashboardSidebarProps {
 const DashboardSidebar = ({ properties, selectedPropertyId, onPropertySelect }: DashboardSidebarProps) => {
   const isMobile = useIsMobile();
   const [isOpen, setIsOpen] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
 
   if (isMobile) {
     return (
@@ -47,24 +48,34 @@ const DashboardSidebar = ({ properties, selectedPropertyId, onPropertySelect }: 
               properties={properties}
               selectedPropertyId={selectedPropertyId}
               onPropertySelect={onPropertySelect}
+              isCollapsed={false}
             />
-            <DashboardSidebarNavigation />
-            <DashboardSidebarBottomNav />
+            <DashboardSidebarNavigation isCollapsed={false} />
+            <DashboardSidebarBottomNav isCollapsed={false} />
           </div>
         </div>
       </>
     );
   }
 
+  const isCollapsed = !isHovered;
+
   return (
-    <div className="w-64 bg-gray-900 text-white min-h-screen flex flex-col fixed left-0 top-0 z-40">
+    <div 
+      className={`bg-gray-900 text-white min-h-screen flex flex-col fixed left-0 top-0 z-40 transition-all duration-300 ease-in-out ${
+        isCollapsed ? 'w-16' : 'w-64'
+      }`}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
       <DashboardSidebarHeader 
         properties={properties}
         selectedPropertyId={selectedPropertyId}
         onPropertySelect={onPropertySelect}
+        isCollapsed={isCollapsed}
       />
-      <DashboardSidebarNavigation />
-      <DashboardSidebarBottomNav />
+      <DashboardSidebarNavigation isCollapsed={isCollapsed} />
+      <DashboardSidebarBottomNav isCollapsed={isCollapsed} />
     </div>
   );
 };

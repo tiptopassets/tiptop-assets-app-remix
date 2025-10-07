@@ -18,12 +18,14 @@ interface DashboardSidebarHeaderProps {
   properties?: UserProperty[];
   selectedPropertyId?: string;
   onPropertySelect?: (propertyId: string) => void;
+  isCollapsed?: boolean;
 }
 
 const DashboardSidebarHeader = ({ 
   properties: propProperties, 
   selectedPropertyId: propSelectedPropertyId, 
-  onPropertySelect 
+  onPropertySelect,
+  isCollapsed = false
 }: DashboardSidebarHeaderProps) => {
   const { journeyData } = useDashboardJourneyData();
   const { properties: hookProperties, selectedProperty: hookSelectedProperty, loading } = useUserProperties();
@@ -37,6 +39,35 @@ const DashboardSidebarHeader = ({
   const hasMultipleProperties = properties.length > 1;
   const currentAddress = selectedProperty?.address || journeyData?.propertyAddress;
   const currentRevenue = selectedProperty?.totalMonthlyRevenue || journeyData?.totalMonthlyRevenue;
+
+  if (isCollapsed) {
+    return (
+      <>
+        {/* Collapsed Header - Only show logo icon */}
+        <div className="p-4 border-b border-gray-800 flex-shrink-0 flex justify-center">
+          <Link to="/" className="text-2xl font-bold text-tiptop-purple hover:scale-105 transition-transform">
+            <MapPin className="h-6 w-6" />
+          </Link>
+        </div>
+        
+        {/* Collapsed Property Icon */}
+        <div className="p-3 border-b border-gray-800 flex-shrink-0 flex justify-center">
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="text-tiptop-purple">
+                  <MapPin className="h-5 w-5" />
+                </div>
+              </TooltipTrigger>
+              <TooltipContent side="right">
+                <p className="text-xs">{currentAddress || 'No property'}</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
+      </>
+    );
+  }
 
   return (
     <>
