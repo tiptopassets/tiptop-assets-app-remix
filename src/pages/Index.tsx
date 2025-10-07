@@ -11,26 +11,41 @@ import HomeModelViewer from '@/components/home-model-viewer';
 import DataSyncNotification from '@/components/DataSyncNotification';
 import JourneyTracker from '@/components/JourneyTracker';
 import { OpenAIConnectionTest } from '@/components/OpenAIConnectionTest';
+import { WelcomeTutorial } from '@/components/WelcomeTutorial';
 import { useGoogleMap } from '@/contexts/GoogleMapContext';
 import { useModelGeneration } from '@/contexts/ModelGeneration';
 import { Settings } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import FooterCarousel from '@/components/FooterCarousel';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAdmin } from '@/hooks/useAdmin';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { isFirstTimeUser, markUserAsReturning } from '@/services/firstTimeUserService';
 
 const Index = () => {
   const { isAnalyzing, analysisComplete, address, analysisResults } = useGoogleMap();
   const { status } = useModelGeneration();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [showingFormSection, setShowingFormSection] = useState(false);
+  const [showTutorial, setShowTutorial] = useState(false);
   const isMobile = useIsMobile();
   const hasAddress = !!address;
   const { user, loading } = useAuth();
   const { isAdmin } = useAdmin();
+
+  // Check if first-time user and show tutorial
+  useEffect(() => {
+    if (isFirstTimeUser()) {
+      setShowTutorial(true);
+    }
+  }, []);
+
+  const handleCloseTutorial = () => {
+    setShowTutorial(false);
+    markUserAsReturning();
+  };
 
   // Collapse UI elements when analysis is complete
   useEffect(() => {
@@ -62,6 +77,11 @@ const Index = () => {
 
       {/* Data Sync Notification Handler */}
       <DataSyncNotification />
+
+      {/* Welcome Tutorial */}
+      <AnimatePresence>
+        {showTutorial && <WelcomeTutorial onClose={handleCloseTutorial} />}
+      </AnimatePresence>
 
       {/* Content overlay - flex-1 to take available space */}
       <div className="relative z-10 flex-1 flex flex-col items-center">
