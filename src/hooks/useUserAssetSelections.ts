@@ -16,13 +16,13 @@ export const useUserAssetSelections = (analysisId?: string) => {
       setError(null);
       
       console.log('🔍 [ASSET-SELECTIONS] Loading asset selections for user:', user?.id || 'anonymous', 'analysisId:', analysisId);
-      // Load selections for the authenticated user or current anonymous session
-      const userSelections = await loadAssetSelections(user?.id);
+      // Load selections for the authenticated user or current anonymous session, filtered by analysisId
+      const userSelections = await loadAssetSelections(user?.id, analysisId);
       // Additionally, if authenticated, also include any lingering session selections for this browser session
       let sessionSelections: UserAssetSelection[] = [];
       const sessionId = localStorage.getItem('anonymous_session_id');
       if (user?.id && sessionId) {
-        sessionSelections = await loadAssetSelections(undefined);
+        sessionSelections = await loadAssetSelections(undefined, analysisId);
       }
 
       const combinedSelections: UserAssetSelection[] = [
@@ -39,11 +39,15 @@ export const useUserAssetSelections = (analysisId?: string) => {
       });
       const uniqueSelections = Array.from(uniqueSelectionsMap.values());
 
-      // Show all selections - filtering removed for better UX
-      console.log('🎯 [ASSET-SELECTIONS] Showing all asset selections (filtering disabled)');
-        
-      // Use all unique selections - no filtering for now
-      const finalSelections = uniqueSelections;
+      // Filter by analysisId if provided to show only selections for this property
+      let finalSelections = uniqueSelections;
+      
+      if (analysisId) {
+        finalSelections = uniqueSelections.filter(s => s.analysis_id === analysisId);
+        console.log('🎯 [ASSET-SELECTIONS] Filtered to analysis:', analysisId, 'Count:', finalSelections.length);
+      } else {
+        console.log('🎯 [ASSET-SELECTIONS] No analysisId filter - showing all selections');
+      }
       
       console.log('🧠 [ASSET-SELECTIONS] Final selection logic:', {
         analysisIdProvided: !!analysisId,

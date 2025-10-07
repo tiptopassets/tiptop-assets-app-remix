@@ -168,24 +168,40 @@ export const saveAssetSelectionAnonymous = async (
   }
 };
 
-// Load asset selections for session or user
-export const loadAssetSelections = async (userId?: string): Promise<any[]> => {
+// Load asset selections for session or user, optionally filtered by analysisId
+export const loadAssetSelections = async (userId?: string, analysisId?: string): Promise<any[]> => {
   try {
     const sessionId = !userId ? localStorage.getItem('anonymous_session_id') : null;
+    
+    console.log('📥 Loading asset selections:', { userId, analysisId, sessionId });
     
     let query = supabase.from('user_asset_selections').select('*');
     
     if (userId) {
+      // For authenticated users, only show their selections
       query = query.eq('user_id', userId);
     } else if (sessionId) {
+      // For anonymous users, only show session selections without user_id
       query = query.eq('session_id', sessionId).is('user_id', null);
     } else {
+      console.warn('⚠️ No userId or sessionId available for loading selections');
       return [];
+    }
+    
+    // Additional filter by analysis_id if provided
+    if (analysisId) {
+      query = query.eq('analysis_id', analysisId);
+      console.log('🔍 Filtering by analysis_id:', analysisId);
     }
     
     const { data, error } = await query.order('selected_at', { ascending: false });
 
-    if (error) throw error;
+    if (error) {
+      console.error('❌ Error loading asset selections:', error);
+      throw error;
+    }
+    
+    console.log('✅ Loaded asset selections:', data?.length || 0, 'items');
     return data || [];
   } catch (err) {
     console.error('Error loading asset selections:', err);
