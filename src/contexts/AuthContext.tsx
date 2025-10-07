@@ -8,6 +8,7 @@ import {
   hasUnauthenticatedAnalyses 
 } from '@/services/unauthenticatedAnalysisService';
 import { linkUserSessionOnAuth } from '@/services/authLinkingService';
+import { trackVisitorConversion, clearVisitorSession } from '@/services/visitorTrackingService';
 
 type AuthContextType = {
   session: Session | null;
@@ -275,6 +276,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                   // Link any anonymous session asset selections to the authenticated user
                   linkUserSessionOnAuth(currentSession.user.id);
                   
+                  // Track visitor conversion
+                  trackVisitorConversion(currentSession.user.id, 'signup');
+                  
                   // Trigger analysis recovery with enhanced data consistency
                   handleAnalysisRecovery(currentSession.user.id);
                   
@@ -301,6 +305,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             // Redirect to homepage if user logs out
             if (event === 'SIGNED_OUT') {
               console.log('🚪 [AUTH] User signed out, redirecting to home...');
+              clearVisitorSession();
               setTimeout(() => {
                 if (mounted) {
                   navigate('/');

@@ -23,6 +23,7 @@ import { useAdmin } from '@/hooks/useAdmin';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { isFirstTimeUser, markUserAsReturning } from '@/services/firstTimeUserService';
+import { trackVisitorPageView } from '@/services/visitorTrackingService';
 
 const Index = () => {
   const { isAnalyzing, analysisComplete, address, analysisResults } = useGoogleMap();
@@ -41,6 +42,14 @@ const Index = () => {
       setShowTutorial(true);
     }
   }, []);
+
+  // Track visitor page view
+  useEffect(() => {
+    if (!user) {
+      // Only track anonymous visitors
+      trackVisitorPageView('/');
+    }
+  }, [user]);
 
   const handleCloseTutorial = () => {
     setShowTutorial(false);
