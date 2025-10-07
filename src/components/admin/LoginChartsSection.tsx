@@ -118,15 +118,17 @@ export const LoginChartsSection = () => {
           ) : (
             <ChartContainer 
               config={chartConfig}
-              className="aspect-auto"
+              className="w-full h-full"
             >
-              <BarChart data={dailyLogins}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="date" />
-                <YAxis />
-                <Tooltip content={<ChartTooltipContent />} />
-                <Bar dataKey="count" fill="#8884d8" name="Logins" />
-              </BarChart>
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={dailyLogins}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="date" />
+                  <YAxis />
+                  <Tooltip content={<ChartTooltipContent />} />
+                  <Bar dataKey="count" fill="#8884d8" name="Logins" />
+                </BarChart>
+              </ResponsiveContainer>
             </ChartContainer>
           )}
         </CardContent>
@@ -142,30 +144,32 @@ export const LoginChartsSection = () => {
           ) : (
             <ChartContainer 
               config={chartConfig}
-              className="aspect-auto"
+              className="w-full h-full"
             >
-              <PieChart>
-                <Pie
-                  data={browserDistribution}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  outerRadius={80}
-                  fill="#8884d8"
-                  dataKey="value"
-                  nameKey="name"
-                  label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                >
-                  {browserDistribution.map((entry, index) => (
-                    <Cell 
-                      key={`cell-${index}`} 
-                      fill={chartConfig[entry.name as keyof typeof chartConfig]?.color || COLORS[index % COLORS.length]} 
-                    />
-                  ))}
-                </Pie>
-                <Tooltip content={<ChartTooltipContent />} />
-                <Legend />
-              </PieChart>
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={browserDistribution}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    outerRadius={80}
+                    fill="#8884d8"
+                    dataKey="value"
+                    nameKey="name"
+                    label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                  >
+                    {browserDistribution.map((entry, index) => (
+                      <Cell 
+                        key={`cell-${index}`} 
+                        fill={chartConfig[entry.name as keyof typeof chartConfig]?.color || COLORS[index % COLORS.length]} 
+                      />
+                    ))}
+                  </Pie>
+                  <Tooltip content={<ChartTooltipContent />} />
+                  <Legend />
+                </PieChart>
+              </ResponsiveContainer>
             </ChartContainer>
           )}
         </CardContent>
