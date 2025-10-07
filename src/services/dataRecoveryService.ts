@@ -57,22 +57,24 @@ export const repairJourneySummaryData = async (userId: string): Promise<void> =>
   try {
     console.log('🔧 [REPAIR] Starting journey data repair for user:', userId);
 
-    // Link any unlinked journey data that might belong to this user
-    const { error: linkError } = await supabase
-      .from('user_journey_complete')
-      .update({ user_id: userId })
-      .is('user_id', null)
-      .not('property_address', 'is', null)
-      .not('analysis_results', 'is', null)
-      .gte('updated_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()); // Last 24 hours
-
-    if (linkError) {
-      console.warn('⚠️ [REPAIR] Could not link unlinked journey data:', linkError);
-    } else {
-      console.log('✅ [REPAIR] Successfully linked unlinked journey data');
+    // Only link the CURRENT BROWSER SESSION to the authenticated user to avoid cross-user leakage
+    try {
+      const { getSessionId } = await import('@/services/userJourneyService');
+      const sessionId = getSessionId();
+      const { error: linkSessionErr } = await supabase.rpc('link_journey_to_user', {
+        p_session_id: sessionId,
+        p_user_id: userId,
+      });
+      if (linkSessionErr) {
+        console.warn('⚠️ [REPAIR] Could not link current session to user:', linkSessionErr);
+      } else {
+        console.log('✅ [REPAIR] Linked current session to user for journey data');
+      }
+    } catch (e) {
+      console.warn('⚠️ [REPAIR] Unable to obtain session id for safe linking:', e);
     }
 
-    // Ensure analysis_id is properly set in journey records
+    // Ensure analysis_id is properly set in this user's journey records only
     const { data: journeyWithoutAnalysisId } = await supabase
       .from('user_journey_complete')
       .select('id, property_address')
