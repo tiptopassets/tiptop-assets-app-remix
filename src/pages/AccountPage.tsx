@@ -6,16 +6,31 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { motion } from "framer-motion";
 import { User, Settings, Shield, CreditCard, Bell, Mail, Lock, Trash2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useNavigate } from "react-router-dom";
 
 const AccountPage = () => {
   const { user, signOut } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [isEditing, setIsEditing] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [notifications, setNotifications] = useState({
     email: true,
     push: false,
@@ -46,13 +61,43 @@ const AccountPage = () => {
     });
   };
 
-  const handleDeleteAccount = () => {
-    // This would typically show a confirmation dialog
-    toast({
-      title: "Account Deletion",
-      description: "Please contact support to delete your account.",
-      variant: "destructive",
-    });
+  const handleDeleteAccount = async () => {
+    if (!user) return;
+    
+    setIsDeleting(true);
+    
+    try {
+      // Delete user account via Supabase Admin API
+      const { error } = await supabase.rpc('delete_user_account');
+      
+      if (error) {
+        console.error('Error deleting account:', error);
+        toast({
+          title: "Error",
+          description: "Failed to delete account. Please try again or contact support.",
+          variant: "destructive",
+        });
+        setIsDeleting(false);
+        return;
+      }
+
+      toast({
+        title: "Account Deleted",
+        description: "Your account has been permanently deleted.",
+      });
+
+      // Sign out and redirect to home
+      await signOut();
+      navigate('/');
+    } catch (error) {
+      console.error('Error deleting account:', error);
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred. Please try again.",
+        variant: "destructive",
+      });
+      setIsDeleting(false);
+    }
   };
 
   return (
@@ -245,7 +290,7 @@ const AccountPage = () => {
                 <Button 
                   variant="destructive" 
                   className="w-full justify-start"
-                  onClick={handleDeleteAccount}
+                  onClick={() => setShowDeleteDialog(true)}
                 >
                   <Trash2 className="mr-2 h-4 w-4" />
                   Delete Account
@@ -288,6 +333,40 @@ const AccountPage = () => {
         </div>
 
       </motion.div>
+
+      {/* Delete Account Confirmation Dialog */}
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription className="space-y-2">
+              <p>
+                This action cannot be undone. This will permanently delete your account
+                and remove all your data from our servers including:
+              </p>
+              <ul className="list-disc list-inside space-y-1 text-sm">
+                <li>All property analyses</li>
+                <li>Asset selections and preferences</li>
+                <li>Earnings history</li>
+                <li>Account settings</li>
+              </ul>
+              <p className="font-semibold text-destructive mt-4">
+                This action is permanent and cannot be reversed.
+              </p>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteAccount}
+              disabled={isDeleting}
+              className="bg-destructive hover:bg-destructive/90"
+            >
+              {isDeleting ? "Deleting..." : "Delete My Account"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </DashboardLayout>
   );
 };
