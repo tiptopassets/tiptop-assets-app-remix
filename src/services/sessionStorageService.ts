@@ -93,7 +93,7 @@ export const updateAssetSelectionsWithAnalysisId = async (
   }
 };
 
-// Save asset selection for anonymous or authenticated users
+// Save asset selection for anonymous or authenticated users with deduplication
 export const saveAssetSelectionAnonymous = async (
   assetType: string,
   assetData: any,
@@ -104,7 +104,6 @@ export const saveAssetSelectionAnonymous = async (
   userId?: string
 ): Promise<string | null> => {
   try {
-    // Always create a session ID for linking purposes, even for authenticated users
     const sessionId = getSessionId();
     
     // Try to get analysis ID from localStorage if not provided
@@ -112,23 +111,66 @@ export const saveAssetSelectionAnonymous = async (
       analysisId = getStoredAnalysisId();
       console.log('🔍 Retrieved analysis ID from localStorage:', analysisId);
     } else {
-      // Store the analysis ID for future use
       storeAnalysisIdForSession(analysisId);
     }
     
-    console.log('💾 Saving asset selection:', {
+    console.log('💾 Saving asset selection (with deduplication):', {
       assetType,
       monthlyRevenue,
       analysisId,
       userId,
-      sessionId,
-      isAnonymous: !userId
+      sessionId
     });
 
+    // CRITICAL: Check if this asset selection already exists to prevent duplicates
+    let existingQuery = supabase
+      .from('user_asset_selections')
+      .select('id')
+      .eq('asset_type', assetType);
+
+    if (userId) {
+      existingQuery = existingQuery.eq('user_id', userId);
+    } else {
+      existingQuery = existingQuery.eq('session_id', sessionId);
+    }
+
+    if (analysisId) {
+      existingQuery = existingQuery.eq('analysis_id', analysisId);
+    }
+
+    const { data: existing, error: checkError } = await existingQuery.maybeSingle();
+
+    if (checkError) {
+      console.error('Error checking existing selection:', checkError);
+    }
+
+    // If selection exists, UPDATE instead of INSERT
+    if (existing?.id) {
+      console.log('🔄 Updating existing asset selection:', existing.id);
+      
+      const { data: updated, error: updateError } = await supabase
+        .from('user_asset_selections')
+        .update({
+          asset_data: assetData || {},
+          monthly_revenue: monthlyRevenue || 0,
+          setup_cost: setupCost || 0,
+          roi_months: roiMonths,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', existing.id)
+        .select()
+        .single();
+
+      if (updateError) throw updateError;
+      console.log('✅ Asset selection updated');
+      return updated.id;
+    }
+
+    // Insert new selection only if it doesn't exist
     const insertData = {
       user_id: userId || null,
       session_id: sessionId,
-      analysis_id: analysisId || null, // Now nullable
+      analysis_id: analysisId || null,
       asset_type: assetType,
       asset_data: assetData || {},
       monthly_revenue: monthlyRevenue || 0,
@@ -137,30 +179,16 @@ export const saveAssetSelectionAnonymous = async (
       status: 'selected'
     };
 
-    console.log('📊 Insert data:', insertData);
-
     const { data, error } = await supabase
       .from('user_asset_selections')
       .insert(insertData)
       .select()
       .single();
 
-    if (error) {
-      console.error('💥 Supabase error:', error);
-      throw error;
-    }
+    if (error) throw error;
+    if (!data) throw new Error('No data returned from insert');
     
-    if (!data) {
-      throw new Error('No data returned from insert operation');
-    }
-    
-    console.log('✅ Asset selection saved with ID:', data.id);
-    
-    // If we don't have an analysis ID yet, try to update later when it becomes available
-    if (!analysisId && sessionId) {
-      console.log('📝 Asset selection saved without analysis ID, will update when available');
-    }
-    
+    console.log('✅ New asset selection saved with ID:', data.id);
     return data.id;
   } catch (err) {
     console.error('❌ Error saving asset selection:', err);

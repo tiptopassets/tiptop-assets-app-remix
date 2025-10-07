@@ -38,11 +38,24 @@ export const useUserAssetSelections = (analysisId?: string) => {
         ...sessionSelections
       ].filter(Boolean) as UserAssetSelection[];
 
-      // Deduplicate by record id to avoid duplicates when session rows were already linked
+      // CRITICAL: Deduplicate by asset_type to prevent showing duplicate assets
+      // Keep only the most recent selection for each asset type
       const uniqueSelectionsMap = new Map<string, UserAssetSelection>();
       combinedSelections.forEach(s => {
-        if (s && s.id && !uniqueSelectionsMap.has(s.id)) {
-          uniqueSelectionsMap.set(s.id, s);
+        if (!s || !s.asset_type) return;
+        
+        const normalizedType = s.asset_type.toLowerCase().trim();
+        const existing = uniqueSelectionsMap.get(normalizedType);
+        
+        if (!existing) {
+          uniqueSelectionsMap.set(normalizedType, s);
+        } else {
+          // Keep the more recent selection
+          const existingDate = new Date(existing.selected_at || 0);
+          const currentDate = new Date(s.selected_at || 0);
+          if (currentDate > existingDate) {
+            uniqueSelectionsMap.set(normalizedType, s);
+          }
         }
       });
       const uniqueSelections = Array.from(uniqueSelectionsMap.values());
