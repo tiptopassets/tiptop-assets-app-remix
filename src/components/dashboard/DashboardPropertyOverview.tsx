@@ -32,7 +32,8 @@ const DashboardPropertyOverview: React.FC<DashboardPropertyOverviewProps> = ({
       console.log('🔄 [DASHBOARD] Analysis ID changed, refetching selections:', analysis.id);
       refetch();
     }
-  }, [analysis.id, refetch]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [analysis.id]); // refetch is now stable via useCallback, but we only want to trigger on analysisId change
 
   const handleStartAssetSetup = async (assetType?: string) => {
     try {

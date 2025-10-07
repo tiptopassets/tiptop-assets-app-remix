@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { loadAssetSelections } from '@/services/sessionStorageService';
 import { UserAssetSelection } from '@/types/userData';
@@ -9,9 +9,16 @@ export const useUserAssetSelections = (analysisId?: string) => {
   const [assetSelections, setAssetSelections] = useState<UserAssetSelection[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const isFetchingRef = useRef(false);
 
-  const loadSelections = async () => {
+  const loadSelections = useCallback(async () => {
+    // Prevent concurrent fetches
+    if (isFetchingRef.current) {
+      console.log('⏸️ [ASSET-SELECTIONS] Already fetching, skipping...');
+      return;
+    }
     try {
+      isFetchingRef.current = true;
       setLoading(true);
       setError(null);
       
@@ -46,15 +53,6 @@ export const useUserAssetSelections = (analysisId?: string) => {
       if (analysisId) {
         finalSelections = uniqueSelections.filter(s => s.analysis_id === analysisId);
         console.log('🎯 [ASSET-SELECTIONS] Filtered to analysis:', analysisId, 'Count:', finalSelections.length);
-        
-        // Fallback: If no assets found with specific analysisId, try loading all user assets
-        // This handles cases where assets were saved without analysisId
-        if (finalSelections.length === 0 && user?.id) {
-          console.log('⚠️ [ASSET-SELECTIONS] No assets found for analysisId, loading all user assets as fallback');
-          const allUserSelections = await loadAssetSelections(user.id);
-          finalSelections = allUserSelections;
-          console.log('🔄 [ASSET-SELECTIONS] Fallback loaded:', finalSelections.length, 'assets');
-        }
       } else {
         console.log('🎯 [ASSET-SELECTIONS] No analysisId filter - showing all selections');
       }
@@ -89,8 +87,9 @@ export const useUserAssetSelections = (analysisId?: string) => {
       setError(err instanceof Error ? err.message : 'Failed to load asset selections');
     } finally {
       setLoading(false);
+      isFetchingRef.current = false;
     }
-  };
+  }, [user?.id, analysisId]);
 
   // Auto-repair orphaned selections when loading
   const repairOrphanedSelections = async () => {
@@ -153,7 +152,7 @@ export const useUserAssetSelections = (analysisId?: string) => {
     };
     
     doLoad();
-  }, [user?.id, analysisId]); // Trigger reload when user or analysisId changes
+  }, [user?.id, analysisId, loadSelections]); // loadSelections is now stable via useCallback
 
   const isAssetConfigured = (assetType: string) => {
     return assetSelections.some(selection => 
