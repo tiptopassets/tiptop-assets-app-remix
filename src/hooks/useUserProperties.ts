@@ -54,9 +54,8 @@ export const useUserProperties = () => {
       }
 
       // Convert the unified data to UserProperty format
-      const properties: UserProperty[] = analysisData.map((analysis) => {
+      let properties: UserProperty[] = analysisData.map((analysis) => {
         const address = analysis.property_address || 'Unknown Address';
-        
         return {
           id: analysis.id,
           address,
@@ -69,23 +68,47 @@ export const useUserProperties = () => {
           satelliteImageUrl: analysis.satellite_image_url
         };
       });
+
+      // Safety filter: only keep the analysis tied to the user's latest journey (prevents cross-user leakage)
+      try {
+        const { data: latestJourney, error: journeyErr } = await supabase.rpc('get_user_dashboard_data', {
+          p_user_id: user.id
+        });
+        if (!journeyErr && latestJourney && latestJourney.length > 0) {
+          const jid = latestJourney[0].journey_id;
+          const aid = latestJourney[0].analysis_id as string | null;
+          console.log('🛡️ [USER-PROPERTIES] Using latest journey to scope properties:', { jid, aid });
+          if (aid) {
+            properties = properties.filter(p => p.id === aid);
+          } else {
+            // If no analysis_id yet, restrict to the most recent property only
+            properties = properties
+              .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+              .slice(0, 1);
+          }
+        } else {
+          // Fallback: restrict to most recent only
+          properties = properties
+            .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+            .slice(0, 1);
+        }
+      } catch (scopeErr) {
+        console.warn('⚠️ [USER-PROPERTIES] Failed to scope by journey, defaulting to most recent only:', scopeErr);
+        properties = properties
+          .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+          .slice(0, 1);
+      }
       
-      console.log('✅ [USER-PROPERTIES] Loaded properties from unified source:', {
+      console.log('✅ [USER-PROPERTIES] Loaded properties from unified source (scoped):', {
         count: properties.length,
-        properties: properties.map(p => ({
-          id: p.id,
-          address: p.address,
-          revenue: p.totalMonthlyRevenue,
-          opportunities: p.totalOpportunities,
-          source: analysisData.find(a => a.id === p.id)?.source_table
-        }))
+        properties: properties.map(p => ({ id: p.id, address: p.address, revenue: p.totalMonthlyRevenue }))
       });
 
       setProperties(properties);
       
-      // Select the most recent property by default
-      if (properties.length > 0 && !selectedPropertyId) {
-        console.log('🏠 [USER-PROPERTIES] Auto-selecting most recent property:', properties[0].id);
+      // Select the most recent (or scoped) property by default
+      if (properties.length > 0) {
+        console.log('🏠 [USER-PROPERTIES] Selecting property:', properties[0].id);
         setSelectedPropertyId(properties[0].id);
       }
 

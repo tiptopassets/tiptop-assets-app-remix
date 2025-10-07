@@ -270,6 +270,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               // Use setTimeout to prevent deadlocking in the auth state change handler
               setTimeout(() => {
                 if (mounted) {
+                  // Clear any stale analysis context from previous sessions/users
+                  localStorage.removeItem('currentAnalysisId');
+
                   // Count as actual login for SIGNED_IN events
                   updateLoginStats(currentSession.user.id, true);
                   
