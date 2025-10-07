@@ -98,6 +98,17 @@ export const useUserAssetSelections = (analysisId?: string) => {
       const sessionId = localStorage.getItem('anonymous_session_id');
       const currentAnalysisId = localStorage.getItem('currentAnalysisId');
       
+      // CRITICAL: Use provided analysisId parameter OR localStorage
+      const analysisIdToUse = analysisId || currentAnalysisId;
+      
+      console.log('🔍 [ASSET-SELECTIONS] Repair context:', {
+        hasUser: !!user?.id,
+        hasSessionId: !!sessionId,
+        providedAnalysisId: analysisId,
+        currentAnalysisId,
+        analysisIdToUse
+      });
+      
       // For authenticated users, repair any orphaned selections
       if (user?.id) {
         console.log('👤 [ASSET-SELECTIONS] Repairing for authenticated user:', user.id);
@@ -109,30 +120,32 @@ export const useUserAssetSelections = (analysisId?: string) => {
           console.log('🔗 [ASSET-SELECTIONS] Linked session selections:', linkedCount);
         }
         
-        // Strategy 2: Update selections with analysis ID
-        if (currentAnalysisId) {
+        // Strategy 2: Update selections with analysis ID (CRITICAL FIX)
+        if (analysisIdToUse) {
           const { repairOrphanedUserSelections } = await import('@/services/sessionStorageService');
-          const repairedCount = await repairOrphanedUserSelections(user.id, currentAnalysisId);
-          console.log('🔧 [ASSET-SELECTIONS] Repaired user selections:', repairedCount);
-        }
-        
-        // Strategy 3: Auto-recover analysis ID if needed
-        if (!currentAnalysisId) {
+          const repairedCount = await repairOrphanedUserSelections(user.id, analysisIdToUse);
+          console.log('🔧 [ASSET-SELECTIONS] Repaired user selections with analysis ID:', repairedCount);
+        } else {
+          // Strategy 3: Auto-recover analysis ID if needed
           const { getRecentAnalysisId } = await import('@/services/dataRecoveryService');
           const recoveredAnalysisId = await getRecentAnalysisId(user.id);
           if (recoveredAnalysisId) {
             localStorage.setItem('currentAnalysisId', recoveredAnalysisId);
-            console.log('🔄 [ASSET-SELECTIONS] Recovered analysis ID:', recoveredAnalysisId);
+            const { repairOrphanedUserSelections } = await import('@/services/sessionStorageService');
+            const repairedCount = await repairOrphanedUserSelections(user.id, recoveredAnalysisId);
+            console.log('🔄 [ASSET-SELECTIONS] Recovered and repaired with analysis ID:', recoveredAnalysisId, 'Count:', repairedCount);
+          } else {
+            console.warn('⚠️ [ASSET-SELECTIONS] No analysis ID available for repair');
           }
         }
         
         console.log('✅ [ASSET-SELECTIONS] Completed authenticated user repair');
       } else {
         // For anonymous users, just update with analysis ID if available
-        if (sessionId && currentAnalysisId) {
+        if (sessionId && analysisIdToUse) {
           const { updateAssetSelectionsWithAnalysisId } = await import('@/services/sessionStorageService');
-          await updateAssetSelectionsWithAnalysisId(sessionId, currentAnalysisId);
-          console.log('✅ [ASSET-SELECTIONS] Updated anonymous selections with analysis ID');
+          const updatedCount = await updateAssetSelectionsWithAnalysisId(sessionId, analysisIdToUse);
+          console.log('✅ [ASSET-SELECTIONS] Updated anonymous selections with analysis ID:', updatedCount);
         }
       }
     } catch (error) {

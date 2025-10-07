@@ -234,13 +234,25 @@ export const GoogleMapProvider = ({ children }: { children: React.ReactNode }) =
           
           // Update any pending asset selections with the analysis ID
           const sessionId = localStorage.getItem('anonymous_session_id');
-          if (sessionId) {
-            import('@/services/sessionStorageService').then(({ updateAssetSelectionsWithAnalysisId }) => {
-              updateAssetSelectionsWithAnalysisId(sessionId, id).catch(error => {
-                console.warn('Could not update asset selections with analysis ID:', error);
-              });
-            });
-          }
+          
+          // CRITICAL: Update for both anonymous (sessionId) and authenticated (userId) cases
+          import('@/services/sessionStorageService').then(async ({ updateAssetSelectionsWithAnalysisId, repairOrphanedUserSelections }) => {
+            try {
+              // Update session-based selections
+              if (sessionId) {
+                const sessionCount = await updateAssetSelectionsWithAnalysisId(sessionId, id);
+                console.log('✅ Updated', sessionCount, 'session-based asset selections with analysis ID');
+              }
+              
+              // Update user-based selections that don't have analysis_id yet
+              if (user?.id) {
+                const userCount = await repairOrphanedUserSelections(user.id, id);
+                console.log('✅ Updated', userCount, 'user-based asset selections with analysis ID');
+              }
+            } catch (error) {
+              console.warn('⚠️ Could not update asset selections with analysis ID:', error);
+            }
+          });
         },
         setCurrentAddressId: (id: string) => {
           console.log('💾 Storing address ID in context and localStorage:', id);
