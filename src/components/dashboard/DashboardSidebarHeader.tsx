@@ -43,10 +43,10 @@ const DashboardSidebarHeader = ({
   if (isCollapsed) {
     return (
       <>
-        {/* Collapsed Header - Only show logo icon */}
+        {/* Collapsed Header - Show vertical tiptop logo */}
         <div className="p-4 border-b border-gray-800 flex-shrink-0 flex justify-center">
-          <Link to="/" className="text-2xl font-bold text-tiptop-purple hover:scale-105 transition-transform">
-            <MapPin className="h-6 w-6" />
+          <Link to="/" className="text-lg font-bold text-tiptop-purple hover:scale-105 transition-transform flex flex-col items-center writing-mode-vertical">
+            <span className="transform rotate-0" style={{ writingMode: 'vertical-rl' }}>tiptop</span>
           </Link>
         </div>
         
