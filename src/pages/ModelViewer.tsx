@@ -40,31 +40,44 @@ const ModelViewer = () => {
         try {
           data = JSON.parse(storedData);
         } catch (e) {
-          console.error('Error parsing stored data:', e);
+          console.error('❌ Error parsing stored data:', e);
         }
       }
     }
+
+    console.log('📋 [MODEL-VIEWER] Loading with data:', {
+      hasLocationState: !!location.state,
+      hasStoredData: !!sessionStorage.getItem('model-viewer-data'),
+      dataKeys: data ? Object.keys(data) : 'none',
+      analysisId: data?.analysisId || 'none'
+    });
 
     if (data && data.analysisResults && data.address) {
       setAnalysisResults(data.analysisResults);
       setAddress(data.address);
       
-      // Store analysis ID if provided
-      if (data.analysisId) {
-        setAnalysisId(data.analysisId);
-        console.log('📋 Using analysis ID from navigation data:', data.analysisId);
+      // Store analysis ID - try multiple sources
+      const finalAnalysisId = data.analysisId || localStorage.getItem('currentAnalysisId');
+      
+      if (finalAnalysisId) {
+        setAnalysisId(finalAnalysisId);
+        console.log('✅ [MODEL-VIEWER] Using analysis ID:', finalAnalysisId, {
+          source: data.analysisId ? 'navigation' : 'localStorage'
+        });
+      } else {
+        console.warn('⚠️ [MODEL-VIEWER] No analysis ID available from any source');
       }
       
       // Use passed selected assets data if available
       if (data.selectedAssetsData && data.selectedAssetsData.length > 0) {
-        console.log('📋 Using passed selected assets data:', data.selectedAssetsData);
+        console.log('✅ [MODEL-VIEWER] Using passed selected assets data:', data.selectedAssetsData.length, 'assets');
         setSelectedAssetsData(data.selectedAssetsData);
         setSelectedAssets(data.selectedAssetsData.map((asset: SelectedAsset) => asset.title));
       }
       
       setIsLoading(false);
     } else {
-      console.log('No analysis data found, redirecting to home...');
+      console.error('❌ [MODEL-VIEWER] No valid analysis data found, redirecting to home');
       toast({
         title: "No Property Data Available",
         description: "Please complete the property analysis first",

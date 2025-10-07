@@ -14,7 +14,7 @@ import Index from './pages/Index';
 const Auth = lazy(() => import('./pages/Auth'));
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
-const ModelViewer = lazy(() => import('./pages/ModelViewer'));
+const ModelViewerWrapper = lazy(() => import('./components/model-viewer/ModelViewerWrapper'));
 const OnboardingChatbot = lazy(() => import('./pages/OnboardingChatbot'));
 const EnhancedOnboardingChatbot = lazy(() => import('./pages/EnhancedOnboardingChatbot'));
 const AddAsset = lazy(() => import('./pages/AddAsset'));
@@ -65,7 +65,7 @@ function App() {
                   <Route path="/dashboard/onboarding" element={<EnhancedOnboardingChatbot />} />
                   <Route path="/dashboard/settings" element={<SettingsPage />} />
                   <Route path="/dashboard/account" element={<AccountPage />} />
-                  <Route path="/model-viewer" element={<ModelViewer />} />
+                  <Route path="/model-viewer" element={<ModelViewerWrapper />} />
                   <Route path="/chatbot" element={<OnboardingChatbot />} />
                   <Route path="/submit-property" element={<SubmitProperty />} />
                   <Route path="/options" element={<Options />} />

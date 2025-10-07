@@ -21,17 +21,28 @@ const ContinueButton = ({ selectedCount, onContinue, selectedAssetsData }: Conti
     
     onContinue();
     
+    // Get analysisId from context or fallback to localStorage
+    const analysisId = currentAnalysisId || localStorage.getItem('currentAnalysisId');
+    
+    console.log('📋 [CONTINUE] Analysis ID:', {
+      fromContext: currentAnalysisId,
+      fromLocalStorage: localStorage.getItem('currentAnalysisId'),
+      final: analysisId
+    });
+    
     // Pass analysis data AND selected assets through navigation state and sessionStorage
     const navigationData = {
       analysisResults,
       address,
-      analysisId: currentAnalysisId, // Include the analysis ID
+      analysisId, // Include the analysis ID with fallback
       selectedAssetsData: selectedAssetsData || [],
       timestamp: Date.now()
     };
     
     // Store in sessionStorage as backup
     sessionStorage.setItem('model-viewer-data', JSON.stringify(navigationData));
+    
+    console.log('📤 [CONTINUE] Navigating to model-viewer with:', navigationData);
     
     // Navigate with state
     navigate('/model-viewer', { 
