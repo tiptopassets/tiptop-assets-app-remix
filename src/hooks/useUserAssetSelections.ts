@@ -16,6 +16,7 @@ export const useUserAssetSelections = (analysisId?: string) => {
       setError(null);
       
       console.log('🔍 [ASSET-SELECTIONS] Loading asset selections for user:', user?.id || 'anonymous', 'analysisId:', analysisId);
+      
       // Load selections for the authenticated user or current anonymous session, filtered by analysisId
       const userSelections = await loadAssetSelections(user?.id, analysisId);
       // Additionally, if authenticated, also include any lingering session selections for this browser session
@@ -45,6 +46,15 @@ export const useUserAssetSelections = (analysisId?: string) => {
       if (analysisId) {
         finalSelections = uniqueSelections.filter(s => s.analysis_id === analysisId);
         console.log('🎯 [ASSET-SELECTIONS] Filtered to analysis:', analysisId, 'Count:', finalSelections.length);
+        
+        // Fallback: If no assets found with specific analysisId, try loading all user assets
+        // This handles cases where assets were saved without analysisId
+        if (finalSelections.length === 0 && user?.id) {
+          console.log('⚠️ [ASSET-SELECTIONS] No assets found for analysisId, loading all user assets as fallback');
+          const allUserSelections = await loadAssetSelections(user.id);
+          finalSelections = allUserSelections;
+          console.log('🔄 [ASSET-SELECTIONS] Fallback loaded:', finalSelections.length, 'assets');
+        }
       } else {
         console.log('🎯 [ASSET-SELECTIONS] No analysisId filter - showing all selections');
       }
