@@ -67,8 +67,8 @@ const AccountPage = () => {
     setIsDeleting(true);
     
     try {
-      // Delete user account via Supabase Admin API
-      const { error } = await supabase.rpc('delete_user_account');
+      // Delete user account via Supabase RPC function
+      const { error } = await supabase.rpc('delete_user_account' as any);
       
       if (error) {
         console.error('Error deleting account:', error);
