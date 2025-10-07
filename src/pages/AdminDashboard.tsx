@@ -242,13 +242,13 @@ const AdminDashboard = () => {
         </Alert>
 
         <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid grid-cols-6 w-[720px]">
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="users">User Analytics</TabsTrigger>
-            <TabsTrigger value="services">Service Integrations</TabsTrigger>
-            <TabsTrigger value="partners">Partners</TabsTrigger>
-            <TabsTrigger value="properties">Properties</TabsTrigger>
-            <TabsTrigger value="earnings">Affiliate Earnings</TabsTrigger>
+          <TabsList className="inline-flex h-auto flex-wrap gap-2 bg-transparent p-0">
+            <TabsTrigger value="overview" className="px-4 py-2">Overview</TabsTrigger>
+            <TabsTrigger value="users" className="px-4 py-2">User Analytics</TabsTrigger>
+            <TabsTrigger value="services" className="px-4 py-2">Service Integrations</TabsTrigger>
+            <TabsTrigger value="partners" className="px-4 py-2">Partners</TabsTrigger>
+            <TabsTrigger value="properties" className="px-4 py-2">Properties</TabsTrigger>
+            <TabsTrigger value="earnings" className="px-4 py-2">Affiliate Earnings</TabsTrigger>
           </TabsList>
           
           <TabsContent value="overview" className="space-y-8">
