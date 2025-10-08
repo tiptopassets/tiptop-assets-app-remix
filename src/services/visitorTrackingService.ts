@@ -129,7 +129,7 @@ export const getVisitorAnalytics = async () => {
       conversions,
       conversionRate,
       avgTimeOnSite,
-      recentSessions: sessions?.slice(0, 10) || []
+      recentSessions: sessions || []
     };
   } catch (error) {
     console.error('Error getting visitor analytics:', error);

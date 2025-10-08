@@ -104,51 +104,6 @@ export const VisitorAnalyticsSection = () => {
         </Card>
       </div>
 
-      {/* Recent Visitor Sessions */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Recent Visitor Sessions</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            {analytics.recentSessions.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No visitor sessions yet</p>
-            ) : (
-              analytics.recentSessions.map((session: any) => (
-                <div 
-                  key={session.id} 
-                  className="flex items-center justify-between p-3 bg-muted/50 rounded-lg hover:bg-muted transition-colors"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className={`w-2 h-2 rounded-full ${session.user_id ? 'bg-green-500' : 'bg-blue-500'}`} />
-                    <div>
-                      <p className="text-sm font-medium">
-                        {session.landing_page || 'Home'}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {session.referrer === 'direct' ? 'Direct visit' : `From: ${session.referrer}`}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-xs font-medium">
-                      {format(new Date(session.started_at), 'MMM d, HH:mm')}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {session.user_id ? (
-                        <span className="text-green-600">Converted</span>
-                      ) : (
-                        `${formatTime(session.total_time_seconds || 0)}`
-                      )}
-                    </p>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        </CardContent>
-      </Card>
-
       {/* Visitor Insights */}
       <div className="grid gap-4 md:grid-cols-2">
         <Card>
@@ -201,6 +156,51 @@ export const VisitorAnalyticsSection = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Recent Visitor Sessions */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Recent Visitor Sessions</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-3">
+            {analytics.recentSessions.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No visitor sessions yet</p>
+            ) : (
+              analytics.recentSessions.map((session: any) => (
+                <div 
+                  key={session.id} 
+                  className="flex items-center justify-between p-3 bg-muted/50 rounded-lg hover:bg-muted transition-colors"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className={`w-2 h-2 rounded-full ${session.user_id ? 'bg-green-500' : 'bg-blue-500'}`} />
+                    <div>
+                      <p className="text-sm font-medium">
+                        {session.landing_page || 'Home'}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {session.referrer === 'direct' ? 'Direct visit' : `From: ${session.referrer}`}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-xs font-medium">
+                      {format(new Date(session.started_at), 'MMM d, HH:mm')}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {session.user_id ? (
+                        <span className="text-green-600">Converted</span>
+                      ) : (
+                        `${formatTime(session.total_time_seconds || 0)}`
+                      )}
+                    </p>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };
