@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { CheckCircle2, Upload, User, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useJourneyTracking } from '@/hooks/useJourneyTracking';
-import { markUserAsReturning } from '@/services/firstTimeUserService';
+import { markDashboardOptionsBannerSeen } from '@/services/firstTimeUserService';
 
 interface FirstTimeUserOptionsBannerProps {
   onDismiss: () => void;
@@ -30,8 +30,8 @@ export const FirstTimeUserOptionsBanner = ({ onDismiss }: FirstTimeUserOptionsBa
       return;
     }
     
-    // Mark user as returning so banner doesn't show again
-    markUserAsReturning();
+    // Mark banner as seen so it doesn't show again
+    markDashboardOptionsBannerSeen();
     
     toast({
       title: "Option Selected",
@@ -42,7 +42,7 @@ export const FirstTimeUserOptionsBanner = ({ onDismiss }: FirstTimeUserOptionsBa
   };
 
   const handleDismiss = () => {
-    markUserAsReturning();
+    markDashboardOptionsBannerSeen();
     onDismiss();
   };
 

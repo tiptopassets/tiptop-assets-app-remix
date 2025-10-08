@@ -22,7 +22,12 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useAdmin } from '@/hooks/useAdmin';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { isFirstTimeUser, markUserAsReturning } from '@/services/firstTimeUserService';
+import { 
+  shouldShowWelcomeTutorial, 
+  markWelcomeTutorialSeen,
+  shouldShowAssetSelectionTutorial,
+  markAssetSelectionTutorialSeen
+} from '@/services/firstTimeUserService';
 import { trackVisitorPageView } from '@/services/visitorTrackingService';
 import AssetSelectionTutorialBanner from '@/components/AssetSelectionTutorialBanner';
 
@@ -40,7 +45,7 @@ const Index = () => {
 
   // Check if first-time user and show tutorial
   useEffect(() => {
-    if (isFirstTimeUser()) {
+    if (shouldShowWelcomeTutorial()) {
       setShowTutorial(true);
     }
   }, []);
@@ -55,7 +60,7 @@ const Index = () => {
 
   const handleCloseTutorial = () => {
     setShowTutorial(false);
-    markUserAsReturning();
+    markWelcomeTutorialSeen();
   };
 
   // Collapse UI elements when analysis is complete
@@ -65,14 +70,14 @@ const Index = () => {
 
   // Show asset selection tutorial for first-time users after analysis completes
   useEffect(() => {
-    if (analysisComplete && isFirstTimeUser()) {
+    if (analysisComplete && shouldShowAssetSelectionTutorial()) {
       setShowAssetTutorial(true);
     }
   }, [analysisComplete]);
 
   const handleDismissAssetTutorial = () => {
     setShowAssetTutorial(false);
-    markUserAsReturning();
+    markAssetSelectionTutorialSeen();
   };
 
   // Show loading screen while auth is initializing

@@ -11,7 +11,7 @@ import DashboardContent from '@/components/dashboard/DashboardContent';
 import DashboardErrorBoundary from '@/components/dashboard/DashboardErrorBoundary';
 import JourneyTracker from '@/components/JourneyTracker';
 import { FirstTimeUserOptionsBanner } from '@/components/dashboard/FirstTimeUserOptionsBanner';
-import { isFirstTimeUser } from '@/services/firstTimeUserService';
+import { shouldShowDashboardOptionsBanner } from '@/services/firstTimeUserService';
 
 const Dashboard = () => {
   const { user, loading: authLoading } = useAuth();
@@ -32,7 +32,7 @@ const Dashboard = () => {
   // Check if user is first-time user after authentication
   useEffect(() => {
     if (user && !authLoading) {
-      setShowFirstTimeBanner(isFirstTimeUser());
+      setShowFirstTimeBanner(shouldShowDashboardOptionsBanner());
     }
   }, [user, authLoading]);
 
