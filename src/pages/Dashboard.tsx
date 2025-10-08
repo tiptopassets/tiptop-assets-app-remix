@@ -11,11 +11,13 @@ import DashboardContent from '@/components/dashboard/DashboardContent';
 import DashboardErrorBoundary from '@/components/dashboard/DashboardErrorBoundary';
 import JourneyTracker from '@/components/JourneyTracker';
 import { FirstTimeUserOptionsBanner } from '@/components/dashboard/FirstTimeUserOptionsBanner';
+import { ManualUploadInstructionsBanner } from '@/components/dashboard/ManualUploadInstructionsBanner';
 import { shouldShowDashboardOptionsBanner } from '@/services/firstTimeUserService';
 
 const Dashboard = () => {
   const { user, loading: authLoading } = useAuth();
   const [showFirstTimeBanner, setShowFirstTimeBanner] = useState(false);
+  const [showManualInstructions, setShowManualInstructions] = useState(false);
   
   // Use the unified multi-property system
   const { 
@@ -133,7 +135,20 @@ const Dashboard = () => {
             
             {/* Show first-time user options banner */}
             {showFirstTimeBanner && (
-              <FirstTimeUserOptionsBanner onDismiss={() => setShowFirstTimeBanner(false)} />
+              <FirstTimeUserOptionsBanner 
+                onDismiss={() => setShowFirstTimeBanner(false)}
+                onOptionSelected={(option) => {
+                  if (option === 'manual') {
+                    setShowManualInstructions(true);
+                  }
+                  // For concierge, just close (nothing else needed)
+                }}
+              />
+            )}
+            
+            {/* Show manual upload instructions after manual option selected */}
+            {showManualInstructions && (
+              <ManualUploadInstructionsBanner onDismiss={() => setShowManualInstructions(false)} />
             )}
             
             <DashboardContent

@@ -8,9 +8,10 @@ import { markDashboardOptionsBannerSeen } from '@/services/firstTimeUserService'
 
 interface FirstTimeUserOptionsBannerProps {
   onDismiss: () => void;
+  onOptionSelected?: (option: 'manual' | 'concierge') => void;
 }
 
-export const FirstTimeUserOptionsBanner = ({ onDismiss }: FirstTimeUserOptionsBannerProps) => {
+export const FirstTimeUserOptionsBanner = ({ onDismiss, onOptionSelected }: FirstTimeUserOptionsBannerProps) => {
   const [selectedOption, setSelectedOption] = useState<'manual' | 'concierge' | null>(null);
   const { trackOption } = useJourneyTracking();
   const { toast } = useToast();
@@ -35,10 +36,14 @@ export const FirstTimeUserOptionsBanner = ({ onDismiss }: FirstTimeUserOptionsBa
     
     toast({
       title: "Option Selected",
-      description: `${selectedOption === 'manual' ? 'Manual Upload' : 'Tiptop Concierge'} selected. Redirecting to onboarding...`,
+      description: `${selectedOption === 'manual' ? 'Manual Upload' : 'Tiptop Concierge'} selected.`,
     });
     
-    window.location.href = `/onboarding?option=${selectedOption}`;
+    // Notify parent about the selected option
+    onOptionSelected?.(selectedOption);
+    
+    // Close this banner
+    onDismiss();
   };
 
   const handleDismiss = () => {
