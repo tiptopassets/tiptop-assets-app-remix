@@ -24,6 +24,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { isFirstTimeUser, markUserAsReturning } from '@/services/firstTimeUserService';
 import { trackVisitorPageView } from '@/services/visitorTrackingService';
+import AssetSelectionTutorialBanner from '@/components/AssetSelectionTutorialBanner';
 
 const Index = () => {
   const { isAnalyzing, analysisComplete, address, analysisResults } = useGoogleMap();
@@ -31,6 +32,7 @@ const Index = () => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [showingFormSection, setShowingFormSection] = useState(false);
   const [showTutorial, setShowTutorial] = useState(false);
+  const [showAssetTutorial, setShowAssetTutorial] = useState(false);
   const isMobile = useIsMobile();
   const hasAddress = !!address;
   const { user, loading } = useAuth();
@@ -60,6 +62,18 @@ const Index = () => {
   useEffect(() => {
     setIsCollapsed(analysisComplete);
   }, [analysisComplete]);
+
+  // Show asset selection tutorial for first-time users after analysis completes
+  useEffect(() => {
+    if (analysisComplete && isFirstTimeUser()) {
+      setShowAssetTutorial(true);
+    }
+  }, [analysisComplete]);
+
+  const handleDismissAssetTutorial = () => {
+    setShowAssetTutorial(false);
+    markUserAsReturning();
+  };
 
   // Show loading screen while auth is initializing
   if (loading) {
@@ -165,9 +179,16 @@ const Index = () => {
             </div>
           )}
 
+          {/* Asset Selection Tutorial Banner */}
+          {showAssetTutorial && analysisComplete && (
+            <div className={`w-full ${showingFormSection ? 'mt-0' : 'mt-64 sm:mt-72 md:mt-80 lg:mt-96'}`}>
+              <AssetSelectionTutorialBanner onDismiss={handleDismissAssetTutorial} />
+            </div>
+          )}
+
           {/* Analysis results positioned extremely far down */}
           {analysisComplete && analysisResults && (
-            <div className={`w-full ${showingFormSection ? 'mt-0' : 'mt-64 sm:mt-72 md:mt-80 lg:mt-96'}`}>
+            <div className={`w-full ${showingFormSection || showAssetTutorial ? 'mt-0' : 'mt-64 sm:mt-72 md:mt-80 lg:mt-96'}`}>
               <AssetResultList 
                 analysisResults={analysisResults} 
                 onFormSectionToggle={setShowingFormSection}
