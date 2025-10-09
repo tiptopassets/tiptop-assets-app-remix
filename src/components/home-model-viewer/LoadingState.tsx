@@ -14,6 +14,20 @@ import HouseIcon from '@/components/asset-icons/HouseIcon';
 
 const LoadingState = () => {
   const [progress, setProgress] = useState(0);
+  const [currentTipIndex, setCurrentTipIndex] = useState(0);
+
+  const monetizationTips = [
+    "Did you know you could rent your parking and make $200-500/month?",
+    "Did you know you could make $300-800/month by renting your pool?",
+    "Your rooftop could generate $100-300/month with solar panels!",
+    "Unused storage space can earn you $50-200/month.",
+    "Your WiFi bandwidth could generate $20-50/month passively.",
+    "EV charging stations could bring in $150-400/month.",
+    "Your garden space could earn $100-250/month through sharing.",
+    "Sports courts can generate $200-600/month in rental income.",
+    "Extra parking spots are worth $150-350/month in urban areas.",
+    "Your driveway could be a $100-300/month asset!"
+  ];
 
   useEffect(() => {
     const progressInterval = setInterval(() => {
@@ -27,6 +41,14 @@ const LoadingState = () => {
     }, 500);
 
     return () => clearInterval(progressInterval);
+  }, []);
+
+  useEffect(() => {
+    const tipInterval = setInterval(() => {
+      setCurrentTipIndex(prev => (prev + 1) % monetizationTips.length);
+    }, 3000);
+
+    return () => clearInterval(tipInterval);
   }, []);
 
   const assetIcons = [
@@ -83,7 +105,9 @@ const LoadingState = () => {
         </div>
       </div>
       
-      <p className="text-white">Analyzing property images and data...</p>
+      <p className="text-white text-lg font-medium transition-all duration-500 ease-in-out min-h-[32px] px-4">
+        {monetizationTips[currentTipIndex]}
+      </p>
     </div>
   );
 };
