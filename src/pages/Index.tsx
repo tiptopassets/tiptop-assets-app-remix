@@ -105,6 +105,25 @@ const Index = () => {
     setShowLeadCapture(false);
   };
 
+  // Calculate total opportunities from analysis results
+  const getTotalOpportunityCount = () => {
+    if (!analysisResults) return 0;
+    
+    let count = 0;
+    
+    // Count opportunities with revenue > 0
+    if (analysisResults.rooftop?.revenue > 0) count++;
+    if (analysisResults.garden?.revenue > 0) count++;
+    if (analysisResults.parking?.revenue > 0) count++;
+    if (analysisResults.pool?.revenue > 0) count++;
+    if (analysisResults.sportsCourts?.revenue > 0) count++;
+    if (analysisResults.storage?.revenue > 0) count++;
+    if (analysisResults.bandwidth?.revenue > 0) count++;
+    if (analysisResults.shortTermRental?.monthlyProjection > 0) count++;
+    
+    return count;
+  };
+
   const handleCloseTutorial = () => {
     setShowTutorial(false);
     markWelcomeTutorialSeen();
@@ -161,7 +180,7 @@ const Index = () => {
       {/* Lead Capture Banner */}
       {showLeadCapture && analysisResults && (
         <LeadCaptureBanner
-          opportunityCount={analysisResults.topOpportunities?.length || 0}
+          opportunityCount={getTotalOpportunityCount()}
           onSubmit={handleLeadSubmit}
           onSkip={handleLeadSkip}
         />
