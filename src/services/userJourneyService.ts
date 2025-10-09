@@ -202,6 +202,36 @@ export const trackAnalysisCompleted = async (
   }
 };
 
+// Track lead capture
+export const trackLeadCaptured = async (contact: string, contactType: 'email' | 'phone') => {
+  const sessionId = getSessionId();
+  
+  try {
+    const { data, error } = await supabase.rpc('update_journey_step', {
+      p_session_id: sessionId,
+      p_step: 'analysis_completed',
+      p_data: {
+        extra_form_data: {
+          lead_contact: contact,
+          lead_type: contactType,
+          lead_captured_at: new Date().toISOString()
+        }
+      }
+    });
+
+    if (error) {
+      console.error('❌ Error tracking lead capture:', error);
+      return null;
+    }
+
+    console.log('✅ Lead capture tracked:', { contactType });
+    return data;
+  } catch (error) {
+    console.error('❌ Error in trackLeadCaptured:', error);
+    return null;
+  }
+};
+
 // Track when user views services
 export const trackServicesViewed = async (viewedServices: string[]) => {
   const sessionId = getSessionId();

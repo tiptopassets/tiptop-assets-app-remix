@@ -29,8 +29,10 @@ import {
   markAssetSelectionTutorialSeen,
   isFirstTimeUser
 } from '@/services/firstTimeUserService';
-import { trackVisitorPageView } from '@/services/visitorTrackingService';
+import { trackVisitorPageView, saveLeadContact, getVisitorSessionId } from '@/services/visitorTrackingService';
+import { trackLeadCaptured } from '@/services/userJourneyService';
 import AssetSelectionTutorialBanner from '@/components/AssetSelectionTutorialBanner';
+import LeadCaptureBanner from '@/components/LeadCaptureBanner';
 
 const Index = () => {
   const { isAnalyzing, analysisComplete, address, analysisResults } = useGoogleMap();
@@ -39,6 +41,8 @@ const Index = () => {
   const [showingFormSection, setShowingFormSection] = useState(false);
   const [showTutorial, setShowTutorial] = useState(false);
   const [showAssetTutorial, setShowAssetTutorial] = useState(false);
+  const [showLeadCapture, setShowLeadCapture] = useState(false);
+  const [leadCaptured, setLeadCaptured] = useState(false);
   const isMobile = useIsMobile();
   const hasAddress = !!address;
   const { user, loading } = useAuth();
@@ -58,6 +62,48 @@ const Index = () => {
       trackVisitorPageView('/');
     }
   }, [user]);
+
+  // Check if lead already captured for this session
+  useEffect(() => {
+    const sessionId = getVisitorSessionId();
+    const captured = localStorage.getItem(`lead_captured_${sessionId}`);
+    if (captured) {
+      setLeadCaptured(true);
+    }
+  }, []);
+
+  // Show lead capture banner after analysis completes
+  useEffect(() => {
+    if (analysisComplete && !user && !leadCaptured) {
+      setShowLeadCapture(true);
+    } else {
+      setShowLeadCapture(false);
+    }
+  }, [analysisComplete, user, leadCaptured]);
+
+  const handleLeadSubmit = async (contact: string, contactType: 'email' | 'phone') => {
+    try {
+      await saveLeadContact(contact, contactType);
+      await trackLeadCaptured(contact, contactType);
+      
+      const sessionId = getVisitorSessionId();
+      localStorage.setItem(`lead_captured_${sessionId}`, 'true');
+      
+      setLeadCaptured(true);
+      setShowLeadCapture(false);
+    } catch (error) {
+      console.error('Error submitting lead:', error);
+      throw error;
+    }
+  };
+
+  const handleLeadSkip = () => {
+    const sessionId = getVisitorSessionId();
+    localStorage.setItem(`lead_captured_${sessionId}`, 'skipped');
+    
+    setLeadCaptured(true);
+    setShowLeadCapture(false);
+  };
 
   const handleCloseTutorial = () => {
     setShowTutorial(false);
@@ -112,8 +158,20 @@ const Index = () => {
         {showTutorial && <WelcomeTutorial onClose={handleCloseTutorial} />}
       </AnimatePresence>
 
+      {/* Lead Capture Banner */}
+      {showLeadCapture && analysisResults && (
+        <LeadCaptureBanner
+          opportunityCount={analysisResults.topOpportunities?.length || 0}
+          onSubmit={handleLeadSubmit}
+          onSkip={handleLeadSkip}
+        />
+      )}
+
       {/* Content overlay - flex-1 to take available space */}
-      <div className="relative z-10 flex-1 flex flex-col items-center">
+      <div 
+        className="relative z-10 flex-1 flex flex-col items-center"
+        style={{ filter: showLeadCapture ? 'blur(8px)' : 'none', pointerEvents: showLeadCapture ? 'none' : 'auto' }}
+      >
         {/* Header - Responsive */}
         <header className="w-full p-3 sm:p-4 md:p-6 flex justify-between items-center">
           <Link to="/" className="text-xl sm:text-2xl md:text-3xl font-bold text-tiptop-purple hover:scale-105 transition-transform flex items-center">

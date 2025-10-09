@@ -137,6 +137,39 @@ export const getVisitorAnalytics = async () => {
   }
 };
 
+// Save lead contact information
+export const saveLeadContact = async (
+  contact: string,
+  contactType: 'email' | 'phone'
+) => {
+  try {
+    const sessionId = getVisitorSessionId();
+    
+    const leadData = {
+      lead_captured_at: new Date().toISOString(),
+      lead_type: contactType,
+      ...(contactType === 'email' ? { lead_email: contact } : { lead_phone: contact })
+    };
+    
+    // Update visitor session with lead data in extra_data
+    const { error } = await supabase
+      .from('visitor_sessions')
+      .update({
+        extra_data: leadData,
+        updated_at: new Date().toISOString()
+      })
+      .eq('session_id', sessionId);
+    
+    if (error) throw error;
+    
+    console.log('Lead contact saved:', { sessionId, contactType });
+    return true;
+  } catch (error) {
+    console.error('Error saving lead contact:', error);
+    throw error;
+  }
+};
+
 // Clear visitor session (on logout or new session)
 export const clearVisitorSession = () => {
   localStorage.removeItem('visitor_session_id');
