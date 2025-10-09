@@ -46,7 +46,7 @@ const LoadingState = () => {
   useEffect(() => {
     const tipInterval = setInterval(() => {
       setCurrentTipIndex(prev => (prev + 1) % monetizationTips.length);
-    }, 3000);
+    }, 5000);
 
     return () => clearInterval(tipInterval);
   }, []);
