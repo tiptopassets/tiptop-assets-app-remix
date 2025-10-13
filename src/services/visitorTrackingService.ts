@@ -54,7 +54,8 @@ export const trackVisitorPageView = async (page: string) => {
           referrer: referrer,
           user_agent: userAgent,
           current_step: 'landing',
-          started_at: new Date().toISOString()
+          started_at: new Date().toISOString(),
+          total_time_seconds: 0
         });
     }
     
@@ -167,6 +168,30 @@ export const saveLeadContact = async (
   } catch (error) {
     console.error('Error saving lead contact:', error);
     throw error;
+  }
+};
+
+// Update visitor session time
+export const updateVisitorSessionTime = async () => {
+  try {
+    const sessionId = getVisitorSessionId();
+    const firstSeen = localStorage.getItem('visitor_first_seen');
+    
+    if (!firstSeen) return;
+    
+    const totalTimeSeconds = Math.floor(
+      (new Date().getTime() - new Date(firstSeen).getTime()) / 1000
+    );
+    
+    await supabase
+      .from('visitor_sessions')
+      .update({
+        total_time_seconds: totalTimeSeconds,
+        updated_at: new Date().toISOString()
+      })
+      .eq('session_id', sessionId);
+  } catch (error) {
+    console.error('Error updating visitor session time:', error);
   }
 };
 

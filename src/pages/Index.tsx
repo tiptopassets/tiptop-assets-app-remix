@@ -29,7 +29,7 @@ import {
   markAssetSelectionTutorialSeen,
   isFirstTimeUser
 } from '@/services/firstTimeUserService';
-import { trackVisitorPageView, saveLeadContact, getVisitorSessionId } from '@/services/visitorTrackingService';
+import { trackVisitorPageView, updateVisitorSessionTime, saveLeadContact, getVisitorSessionId } from '@/services/visitorTrackingService';
 import { trackLeadCaptured } from '@/services/userJourneyService';
 import AssetSelectionTutorialBanner from '@/components/AssetSelectionTutorialBanner';
 import LeadCaptureBanner from '@/components/LeadCaptureBanner';
@@ -55,11 +55,30 @@ const Index = () => {
     }
   }, []);
 
-  // Track visitor page view
+  // Track visitor page view and set up time tracking
   useEffect(() => {
     if (!user) {
       // Only track anonymous visitors
       trackVisitorPageView('/');
+      
+      // Update time every 30 seconds
+      const timeUpdateInterval = setInterval(() => {
+        updateVisitorSessionTime();
+      }, 30000);
+      
+      // Update time when user leaves the page
+      const handleBeforeUnload = () => {
+        updateVisitorSessionTime();
+      };
+      
+      window.addEventListener('beforeunload', handleBeforeUnload);
+      
+      // Cleanup
+      return () => {
+        clearInterval(timeUpdateInterval);
+        window.removeEventListener('beforeunload', handleBeforeUnload);
+        updateVisitorSessionTime(); // Final update on unmount
+      };
     }
   }, [user]);
 
