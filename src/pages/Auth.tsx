@@ -3,6 +3,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Loader2 } from 'lucide-react';
+import { trackCompleteRegistration } from '@/services/facebookPixelService';
 
 const Auth = () => {
   const { user, loading, signInWithGoogle } = useAuth();
@@ -17,6 +18,10 @@ const Auth = () => {
     if (user && !loading) {
       const targetPath = returnTo || '/dashboard';
       console.log('🔄 [AUTH] User authenticated, redirecting to:', targetPath);
+      
+      // Track successful registration/login
+      trackCompleteRegistration('Google');
+      
       navigate(targetPath);
       return;
     }

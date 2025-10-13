@@ -31,6 +31,7 @@ import {
 } from '@/services/firstTimeUserService';
 import { trackVisitorPageView, updateVisitorSessionTime, saveLeadContact, getVisitorSessionId } from '@/services/visitorTrackingService';
 import { trackLeadCaptured } from '@/services/userJourneyService';
+import { trackPageView, trackViewContent, trackLead } from '@/services/facebookPixelService';
 import AssetSelectionTutorialBanner from '@/components/AssetSelectionTutorialBanner';
 import LeadCaptureBanner from '@/components/LeadCaptureBanner';
 
@@ -60,6 +61,7 @@ const Index = () => {
     if (!user) {
       // Only track anonymous visitors
       trackVisitorPageView('/');
+      trackPageView(); // Facebook Pixel tracking
       
       // Update time every 30 seconds
       const timeUpdateInterval = setInterval(() => {
@@ -95,6 +97,9 @@ const Index = () => {
   useEffect(() => {
     if (analysisComplete && !user && !leadCaptured) {
       setShowLeadCapture(true);
+      // Track that user viewed analysis results
+      const opportunityCount = getTotalOpportunityCount();
+      trackViewContent('Property Analysis Results', opportunityCount);
     } else {
       setShowLeadCapture(false);
     }
@@ -104,6 +109,9 @@ const Index = () => {
     try {
       await saveLeadContact(contact, contactType);
       await trackLeadCaptured(contact, contactType);
+      
+      // Track Facebook Pixel lead event
+      trackLead(contactType);
       
       const sessionId = getVisitorSessionId();
       localStorage.setItem(`lead_captured_${sessionId}`, 'true');

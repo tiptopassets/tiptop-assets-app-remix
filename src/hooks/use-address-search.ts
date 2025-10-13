@@ -3,6 +3,7 @@ import { useGoogleMap } from '@/contexts/GoogleMapContext';
 import { useToast } from '@/hooks/use-toast';
 import { useModelGeneration } from '@/contexts/ModelGeneration';
 import { useUserData } from '@/hooks/useUserData';
+import { trackSearch } from '@/services/facebookPixelService';
 
 export const useAddressSearch = () => {
   const { 
@@ -48,6 +49,9 @@ export const useAddressSearch = () => {
     if (analysisError) {
       setAnalysisError(null);
     }
+
+    // Track address search in Facebook Pixel
+    trackSearch(addressToAnalyze);
 
     generatePropertyAnalysis(addressToAnalyze);
   }, [generatePropertyAnalysis, analysisError, setAnalysisError]);
